@@ -1,6 +1,6 @@
 import React from 'react';
-import { ClientDashboard } from '../components/client/ClientDashboard';
+import { CandidateViewer } from '../components/client/CandidateViewer';
 
 export const CandidatesPage: React.FC = () => {
-  return <ClientDashboard view="candidates" />;
+  return <CandidateViewer />;
 };

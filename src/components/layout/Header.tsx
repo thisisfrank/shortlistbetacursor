@@ -7,7 +7,7 @@ import { Zap } from 'lucide-react';
 export const Header: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { userProfile } = useAuth();
+  const { userProfile, loading } = useAuth();
   
   // Get the role-appropriate home path
   const getRoleHomePath = (role: string): string => {
@@ -68,27 +68,40 @@ export const Header: React.FC = () => {
 
   const navItems = getNavItems();
   
-  // Auto-navigate to role home when role changes
+  // Auto-navigate to role home when role changes - with debouncing to prevent flashing
   React.useEffect(() => {
-    if (userProfile) {
+    // Don't run navigation logic while loading
+    if (loading) return;
+    
+    // Only run navigation logic if userProfile is loaded (not null and not undefined)
+    if (userProfile && userProfile.role) {
       const roleHomePath = getRoleHomePath(userProfile.role);
-      // Only navigate if we're not already on a valid path for this role or subscription pages
       const isOnValidPath = navItems.some(item => item.path === location.pathname);
       const isOnSubscriptionPath = location.pathname.startsWith('/subscription');
       const isOnAuthPath = location.pathname === '/login' || location.pathname === '/signup';
       
+      // Only navigate if we're not already on a valid path and not on auth/subscription pages
       if (location.pathname !== roleHomePath && !isOnValidPath && !isOnSubscriptionPath && !isOnAuthPath) {
-        console.log('🏠 Header: Navigating to role home:', roleHomePath);
-        navigate(roleHomePath);
+        // Add a small delay to prevent rapid navigation
+        const timeoutId = setTimeout(() => {
+          console.log('🏠 Header: Navigating to role home:', roleHomePath);
+          navigate(roleHomePath);
+        }, 100);
+        
+        return () => clearTimeout(timeoutId);
       }
-    } else {
-      // If no user profile (signed out), ensure we're on the landing page
+    } else if (userProfile === null) {
+      // Only navigate to landing page if we're not already there and not on auth pages
       if (location.pathname !== '/' && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/signup')) {
-        console.log('🏠 Header: No user profile, navigating to landing page');
-        navigate('/');
+        const timeoutId = setTimeout(() => {
+          console.log('🏠 Header: No user profile, navigating to landing page');
+          navigate('/');
+        }, 100);
+        
+        return () => clearTimeout(timeoutId);
       }
     }
-  }, [userProfile?.role, userProfile, navigate, location.pathname]);
+  }, [userProfile?.role, userProfile, loading, navigate, location.pathname, navItems]);
   
   return (
     <header className="bg-shadowforce border-b border-guardian/20 shadow-lg">
@@ -109,7 +122,9 @@ export const Header: React.FC = () => {
           </div>
           
           {/* Navigation - centered */}
-          <nav className="flex space-x-1 bg-shadowforce-light/50 rounded-xl px-2 py-2 border border-guardian/20">
+          <nav className={`flex space-x-1 bg-shadowforce-light/50 rounded-xl px-2 py-2 border border-guardian/20 transition-opacity duration-200 ${
+            loading ? 'opacity-50' : 'opacity-100'
+          }`}>
             {navItems.map((item) => (
               <Link
                 key={item.key}
