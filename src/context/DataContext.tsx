@@ -151,13 +151,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         return;
       }
 
+      console.log('🔍 Step 1: Getting current user...');
       // Get current user profile to determine role
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.log('❌ No authenticated user found');
         return;
       }
+      console.log('✅ Step 1 complete: User found:', user.email);
 
+      console.log('🔍 Step 2: Loading user profile...');
       // Get user profile to determine role
       const { data: userProfile, error: profileError } = await supabase
         .from('user_profiles')
@@ -169,6 +172,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         console.error('❌ Error loading user profile:', profileError);
         return;
       }
+      console.log('✅ Step 2 complete: User profile loaded');
 
       console.log('👤 User profile:', userProfile);
       const userRole = userProfile?.role || 'client';
@@ -191,7 +195,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         console.log('👥 Loaded clients for client user:', clientsData);
       } else {
         // For sourcers and admins, load all clients
-        console.log('👥 Loading all clients for sourcer/admin...');
+        console.log('🔍 Step 3: Loading all clients for sourcer/admin...');
         const { data: allClients, error: clientsError } = await supabase
           .from('clients')
           .select('*');
@@ -201,7 +205,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           return;
         }
         clientsData = allClients || [];
-        console.log('👥 Loaded all clients for sourcer/admin:', clientsData);
+        console.log('✅ Step 3 complete: Loaded all clients for sourcer/admin:', clientsData);
       }
 
       // Load jobs based on user role
