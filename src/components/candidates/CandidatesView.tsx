@@ -685,10 +685,23 @@ export const CandidatesView: React.FC = () => {
     totalCandidates: candidates?.length || 0
   });
 
-  // Ensure we have valid data arrays
+  // Ensure we have valid data arrays with fallbacks
   const safeJobs = jobs || [];
   const safeClients = clients || [];
   const safeCandidates = candidates || [];
+  
+  // Additional safety check
+  if (typeof safeClients === 'undefined') {
+    console.error('❌ clients is undefined, using empty array');
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-supernova mx-auto mb-4"></div>
+          <p className="text-guardian font-jakarta">Loading data...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Filter jobs to only show those submitted by the current authenticated user
   const userJobs = safeJobs.filter(job => {
