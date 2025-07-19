@@ -707,10 +707,10 @@ export const CandidatesView: React.FC = () => {
   const userJobs = safeJobs.filter(job => {
     if (!user || !job) return false; // No user or invalid job, no jobs
     
-    const client = getClientById(job.clientId);
-    const matchesUser = client && client.email === user.email;
+    // Jobs now reference user_id directly (new architecture)
+    const matchesUser = job.userId === user.id;
     
-    console.log(`Job ${job.id}: client email ${client?.email}, user email ${user.email}, matches: ${matchesUser}`);
+    console.log(`Job ${job.id}: job userId ${job.userId}, user id ${user.id}, matches: ${matchesUser}`);
     
     return matchesUser;
   });
