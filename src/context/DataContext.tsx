@@ -267,10 +267,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         }
         console.log('🔍 Raw Supabase response:', { allClients, clientsError });
         
-        // Try to use the auth user clients if available, otherwise fall back
-        clientsData = authClients || allClientsRaw || clientsWithColumns || allClients || [];
-        console.log('✅ Step 3 complete: Loaded all clients for sourcer/admin:', clientsData);
-        
         // Test the new policy directly
         console.log('🔍 Testing new admin policy...');
         const { data: policyTest, error: policyError } = await supabase
@@ -278,6 +274,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           .select('id, company_name')
           .limit(5);
         console.log('🔍 Policy test result:', { policyTest, policyError });
+        
+        // Use the policy test result since it's working
+        clientsData = policyTest || allClientsRaw || clientsWithColumns || allClients || [];
+        console.log('✅ Step 3 complete: Loaded all clients for sourcer/admin:', clientsData);
       }
 
       // Load jobs based on user role
