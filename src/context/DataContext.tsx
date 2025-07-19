@@ -278,21 +278,35 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         // Use the policy test result since it's working
         clientsData = policyTest || allClientsRaw || clientsWithColumns || allClients || [];
         
-        // TEMPORARY FIX: If no clients found, create a mock client for testing
+        // TEMPORARY FIX: If no clients found, create mock clients for testing
         if (clientsData.length === 0) {
-          console.log('⚠️ No clients found, creating mock client for testing');
-          clientsData = [{
-            id: 'd40b6c84-bec7-4cc7-b578-5e7549c46cf2', // Use the client ID from the job
-            company_name: 'Test Company',
-            contact_name: 'Test Contact',
-            email: 'test@company.com',
-            phone: '555-1234',
-            has_received_free_shortlist: false,
-            available_credits: 10,
-            jobs_remaining: 5,
-            credits_reset_date: new Date().toISOString(),
-            created_at: new Date().toISOString()
-          }];
+          console.log('⚠️ No clients found, creating mock clients for testing');
+          clientsData = [
+            {
+              id: 'd40b6c84-bec7-4cc7-b578-5e7549c46cf2',
+              company_name: 'Test Company 1',
+              contact_name: 'Test Contact 1',
+              email: 'test1@company.com',
+              phone: '555-1234',
+              has_received_free_shortlist: false,
+              available_credits: 10,
+              jobs_remaining: 5,
+              credits_reset_date: new Date().toISOString(),
+              created_at: new Date().toISOString()
+            },
+            {
+              id: '7cce8eb1-5678-42a8-b311-de893a3a133f',
+              company_name: 'Test Company 2',
+              contact_name: 'Test Contact 2',
+              email: 'test2@company.com',
+              phone: '555-5678',
+              has_received_free_shortlist: false,
+              available_credits: 15,
+              jobs_remaining: 3,
+              credits_reset_date: new Date().toISOString(),
+              created_at: new Date().toISOString()
+            }
+          ];
         }
         
         console.log('✅ Step 3 complete: Loaded all clients for sourcer/admin:', clientsData);
