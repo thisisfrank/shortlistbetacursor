@@ -14,6 +14,9 @@ export const ClientIntakeForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
+  const { addJob } = useData();
+  const { user } = useAuth();
+  
   const [formData, setFormData] = useState({
     companyName: '',
     contactName: '',
@@ -29,8 +32,6 @@ export const ClientIntakeForm: React.FC = () => {
     keySellingPoints: [] as string[],
     candidatesRequested: '1'
   });
-
-  // Removed all localStorage persistence
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -176,12 +177,17 @@ export const ClientIntakeForm: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    console.log('🎯 Form submission started...');
+    console.log('🎯 REAL job submission started...');
     setIsSubmitting(true);
     
     try {
-      // Simulate job submission (completely disconnected from any user/client data)
-      console.log('📋 Job data to submit:', {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      // Create the job data to submit
+      const jobData = {
+        userId: user.id,
         companyName: formData.companyName,
         title: formData.title,
         description: formData.description,
@@ -192,20 +198,22 @@ export const ClientIntakeForm: React.FC = () => {
         salaryRangeMax: parseInt(formData.salaryRangeMax),
         keySellingPoints: formData.keySellingPoints,
         candidatesRequested: parseInt(formData.candidatesRequested)
-      });
+      };
+
+      console.log('📋 REAL job data to submit:', jobData);
       
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Use the actual DataContext addJob function
+      const newJob = await addJob(jobData);
       
-      console.log('✅ Job submission simulated successfully');
+      console.log('✅ REAL job created successfully:', newJob);
       
       // Move to confirmation step
       setCurrentStep('confirmation');
     } catch (error) {
-      console.error('💥 Error submitting form:', error);
+      console.error('💥 Error submitting REAL job:', error);
       alert(`Submission failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
-      console.log('🏁 Form submission process complete');
+      console.log('🏁 REAL job submission process complete');
       setIsSubmitting(false);
     }
   };
@@ -229,8 +237,6 @@ export const ClientIntakeForm: React.FC = () => {
     setErrors({});
     setCurrentStep('company-info');
   };
-
-  // Removed clearOldData and all localStorage usage
 
   return (
     <Card className="max-w-4xl mx-auto glow-supernova">
