@@ -212,6 +212,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           .select('*', { count: 'exact', head: true });
         console.log('🔍 Client count result:', { clientCount, countError });
         
+        // Try different query approaches
+        console.log('🔍 Trying different query approaches...');
+        
+        // Approach 1: Select specific columns
+        const { data: clientsWithColumns, error: columnsError } = await supabase
+          .from('clients')
+          .select('id, company_name, contact_name, email, phone, available_credits, jobs_remaining, created_at');
+        
+        console.log('🔍 Approach 1 (specific columns):', { clientsWithColumns, columnsError });
+        
+        // Approach 2: Use the working test query pattern
         const { data: allClients, error: clientsError } = await supabase
           .from('clients')
           .select('*');
@@ -221,7 +232,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           return;
         }
         console.log('🔍 Raw Supabase response:', { allClients, clientsError });
-        clientsData = allClients || [];
+        
+        // Use whichever approach worked
+        clientsData = clientsWithColumns || allClients || [];
         console.log('✅ Step 3 complete: Loaded all clients for sourcer/admin:', clientsData);
       }
 
