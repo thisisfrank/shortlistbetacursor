@@ -180,7 +180,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   }, [data]);
 
-  // Handle user changes - reset data when user logs out
+  // Handle user changes - reset data when user logs out, load data when user logs in
   useEffect(() => {
     if (!user) {
       // User logged out, reset data to initial dummy state
@@ -195,12 +195,128 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       localStorage.removeItem('candidates');
       localStorage.removeItem('tiers');
     } else {
-      // User logged in, ensure we have fresh data
-      console.log('✅ DataContext: User logged in, ready for new user data:', user.email);
+      // User logged in, load their data from Supabase
+      console.log('✅ DataContext: User logged in, loading data for:', user.email);
+      loadUserData(user.email);
     }
-    // Note: When user logs in, components will trigger their own data fetches
-    // or the user will add new data through the normal flow
   }, [user]);
+
+  const loadUserData = async (userEmail: string) => {
+    try {
+      console.log('📥 Loading user data from Supabase...');
+      
+      // Check if Supabase is configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        console.log('⚠️ Supabase not configured, using local data');
+        return;
+      }
+
+      // Load clients for this user
+      const { data: clientsData, error: clientsError } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('email', userEmail);
+
+      if (clientsError) {
+        console.error('❌ Error loading clients:', clientsError);
+        return;
+      }
+
+      console.log('👥 Loaded clients:', clientsData);
+
+      // Load jobs for these clients
+      if (clientsData && clientsData.length > 0) {
+        const clientIds = clientsData.map(c => c.id);
+        
+        const { data: jobsData, error: jobsError } = await supabase
+          .from('jobs')
+          .select('*')
+          .in('client_id', clientIds);
+
+        if (jobsError) {
+          console.error('❌ Error loading jobs:', jobsError);
+        } else {
+          console.log('💼 Loaded jobs:', jobsData);
+        }
+
+        // Load candidates for these jobs
+        if (jobsData && jobsData.length > 0) {
+          const jobIds = jobsData.map(j => j.id);
+          
+          const { data: candidatesData, error: candidatesError } = await supabase
+            .from('candidates')
+            .select('*')
+            .in('job_id', jobIds);
+
+          if (candidatesError) {
+            console.error('❌ Error loading candidates:', candidatesError);
+          } else {
+            console.log('👤 Loaded candidates:', candidatesData);
+          }
+
+          // Update state with loaded data
+          const loadedClients = clientsData.map(c => ({
+            id: c.id,
+            companyName: c.company_name,
+            contactName: c.contact_name,
+            email: c.email,
+            phone: c.phone,
+            hasReceivedFreeShortlist: c.has_received_free_shortlist,
+            tierId: 'tier-free', // Default for now
+            availableCredits: c.available_credits,
+            jobsRemaining: c.jobs_remaining,
+            creditsResetDate: new Date(c.credits_reset_date),
+            createdAt: new Date(c.created_at)
+          }));
+
+          const loadedJobs = jobsData ? jobsData.map(j => ({
+            id: j.id,
+            clientId: j.client_id,
+            title: j.title,
+            description: j.description,
+            seniorityLevel: j.seniority_level,
+            workArrangement: j.work_arrangement,
+            location: j.location,
+            salaryRangeMin: j.salary_range_min,
+            salaryRangeMax: j.salary_range_max,
+            keySellingPoints: j.key_selling_points,
+            status: j.status,
+            sourcerName: j.sourcer_name,
+            completionLink: j.completion_link,
+            candidatesRequested: j.candidates_requested,
+            createdAt: new Date(j.created_at),
+            updatedAt: new Date(j.updated_at)
+          })) : [];
+
+          const loadedCandidates = candidatesData ? candidatesData.map(c => ({
+            id: c.id,
+            jobId: c.job_id,
+            firstName: c.first_name,
+            lastName: c.last_name,
+            headline: c.headline,
+            location: c.location,
+            linkedinUrl: c.linkedin_url,
+            experience: c.experience,
+            education: c.education,
+            skills: c.skills,
+            summary: c.summary,
+            submittedAt: new Date(c.submitted_at)
+          })) : [];
+
+          setData(prev => ({
+            ...prev,
+            clients: loadedClients,
+            jobs: loadedJobs,
+            candidates: loadedCandidates
+          }));
+
+          console.log('✅ User data loaded successfully');
+        }
+      }
+    } catch (error) {
+      console.error('💥 Error loading user data:', error);
+    }
+  };
 
   const addClient = (clientData: Omit<Client, 'id' | 'createdAt' | 'tierId' | 'availableCredits' | 'jobsRemaining' | 'creditsResetDate'>) => {
     return new Promise<Client>(async (resolve, reject) => {

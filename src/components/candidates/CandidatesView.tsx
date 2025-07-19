@@ -652,7 +652,11 @@ export const CandidatesView: React.FC = () => {
     if (!user) return false; // No user, no jobs
     
     const client = getClientById(job.clientId);
-    return client && client.email === user.email;
+    const matchesUser = client && client.email === user.email;
+    
+    console.log(`Job ${job.id}: client email ${client?.email}, user email ${user.email}, matches: ${matchesUser}`);
+    
+    return matchesUser;
   });
   
   const filteredJobs = userJobs.filter(job => {
@@ -817,13 +821,17 @@ export const CandidatesView: React.FC = () => {
                               variant={
                                 job.status === 'Unclaimed' 
                                   ? 'warning' 
-                                  : job.status === 'Completed' 
+                                  : job.status === 'In Progress'
+                                    ? 'info'
+                                    : job.status === 'Completed' 
                                     ? 'success' 
                                     : 'default'
                               }
                               className="mb-3"
                             >
-                              {job.status}
+                              {job.status === 'Unclaimed' ? 'AWAITING SOURCER' : 
+                               job.status === 'In Progress' ? 'IN PROGRESS' :
+                               job.status}
                             </Badge>
                           </div>
                         </div>
