@@ -200,6 +200,8 @@ export const ClientIntakeForm: React.FC = () => {
 
   const handleSubmit = async () => {
     console.log('🎯 Form submission started for authenticated user...');
+    console.log('👤 Current user email:', user?.email);
+    console.log('📝 Form email:', formData.email);
     setIsSubmitting(true);
     
     try {
@@ -213,7 +215,7 @@ export const ClientIntakeForm: React.FC = () => {
         client = await addClient({
           companyName: formData.companyName,
           contactName: formData.contactName,
-          email: formData.email,
+          email: user.email, // Use authenticated user's email, not form email
           phone: formData.phone,
           hasReceivedFreeShortlist: false
         });
