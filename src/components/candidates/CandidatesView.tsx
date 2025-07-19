@@ -10,7 +10,7 @@ import { Button } from '../ui/Button';
 import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download } from 'lucide-react';
 
 export const CandidatesView: React.FC = () => {
-  const { jobs, candidates, getCandidatesByJob, getClientById, getJobById } = useData();
+  const { jobs, candidates, clients, getCandidatesByJob, getClientById, getJobById } = useData();
   const { user, userProfile } = useAuth();
   const navigate = useNavigate();
   

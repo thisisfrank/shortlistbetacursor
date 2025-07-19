@@ -33,7 +33,7 @@ const extractCompanyName = (subtitle: string): string => {
   if (!subtitle) return 'N/A';
   
   // The subtitle often contains "Company Name · Employment Type"
-  // We want to extract just the company name
+  // We want to extract just the company name=
   const parts = subtitle.split('·');
   return parts[0]?.trim() || subtitle.trim();
 };
