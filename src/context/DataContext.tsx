@@ -227,6 +227,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           .limit(10);
         console.log('🔍 Raw select result:', { allClientsRaw, rawError });
         
+        // Try to check if this is an RLS issue by testing with a different user context
+        console.log('🔍 Testing RLS bypass...');
+        const { data: rlsTest, error: rlsError } = await supabase
+          .from('clients')
+          .select('id')
+          .limit(1);
+        console.log('🔍 RLS test result:', { rlsTest, rlsError });
+        
+        // Try to see if we can access clients as the authenticated user
+        console.log('🔍 Testing as authenticated user...');
+        const { data: authClients, error: authError } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('user_id', user.id);
+        console.log('🔍 Auth user clients:', { authClients, authError });
+        
         // Try different query approaches
         console.log('🔍 Trying different query approaches...');
         
@@ -248,8 +264,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         }
         console.log('🔍 Raw Supabase response:', { allClients, clientsError });
         
-        // Use the raw select result if it worked, otherwise fall back
-        clientsData = allClientsRaw || clientsWithColumns || allClients || [];
+        // Try to use the auth user clients if available, otherwise fall back
+        clientsData = authClients || allClientsRaw || clientsWithColumns || allClients || [];
         console.log('✅ Step 3 complete: Loaded all clients for sourcer/admin:', clientsData);
       }
 
