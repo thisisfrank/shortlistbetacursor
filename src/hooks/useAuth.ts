@@ -14,6 +14,7 @@ export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [signOutLoading, setSignOutLoading] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -247,21 +248,26 @@ export const useAuth = () => {
   const signOut = async () => {
     console.log('🚪 Signing out...');
     
-    // Clear local state immediately for faster response
-    // Don't set loading to true during sign-out to prevent flickering
-    setUser(null);
-    setUserProfile(null);
-    setLoading(false);
-    localStorage.removeItem('sourcerName');
-    localStorage.removeItem('savedSourcers');
+    // Set sign-out loading state
+    setSignOutLoading(true);
     
     try {
       const { error } = await supabase.auth.signOut();
       console.log('🚪 Supabase signOut result:', { error });
+      
+      // Clear local state after successful sign-out
+      setUser(null);
+      setUserProfile(null);
+      setLoading(false);
+      localStorage.removeItem('sourcerName');
+      localStorage.removeItem('savedSourcers');
+      
       return { error };
     } catch (error) {
       console.error('💥 Sign out error:', error);
       return { error: { message: 'Error signing out' } };
+    } finally {
+      setSignOutLoading(false);
     }
   };
 
@@ -269,6 +275,7 @@ export const useAuth = () => {
     user,
     userProfile,
     loading,
+    signOutLoading,
     signIn,
     signUp,
     signOut,

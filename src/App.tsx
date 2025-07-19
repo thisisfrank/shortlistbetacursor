@@ -29,6 +29,7 @@ import { SignupPage } from './components/auth/SignupPage';
 import { SubscriptionPlans } from './components/subscription/SubscriptionPlans';
 import { SubscriptionSuccess } from './components/subscription/SubscriptionSuccess';
 import { AuthDebug } from './components/debug/AuthDebug';
+import { SignOutWrapper } from './components/auth/SignOutWrapper';
 
 function App() {
   useEffect(() => {
@@ -53,41 +54,43 @@ function App() {
   return (
     <AuthProvider>
       <DataProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public Routes - no layout wrapper to avoid auth loading issues */}
-            <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-            <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
-            
-            {/* All other routes use Layout */}
-            <Route path="/*" element={
-              <Layout>
-                <Routes>
-                  {/* Landing Page - accessible to all, but shows different content based on auth */}
-                  <Route path="/" element={<LandingPage />} />
-                  
-                  {/* Role-Specific Routes */}
-                  <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
-                  <Route path="/sourcer" element={<SourcerRoute><SourcerPage /></SourcerRoute>} />
-                  
-                  {/* Client Routes */}
-                  <Route path="/client" element={<ClientRoute><ClientPage /></ClientRoute>} />
-                  <Route path="/candidates" element={<ClientRoute><CandidatesPage /></ClientRoute>} />
-                  
-                  {/* Subscription Routes - Client Only */}
-                  <Route path="/subscription" element={
-                    <ClientRoute><SubscriptionPlans /></ClientRoute>
-                  } />
-                  <Route path="/subscription/success" element={<ClientRoute><SubscriptionSuccess /></ClientRoute>} />
-                  
-                  {/* Catch-all - redirect to appropriate home based on role */}
-                  <Route path="*" element={<LandingPage />} />
-                </Routes>
-              </Layout>
-            } />
-          </Routes>
-          <AuthDebug />
-        </BrowserRouter>
+        <SignOutWrapper>
+          <BrowserRouter>
+            <Routes>
+              {/* Public Routes - no layout wrapper to avoid auth loading issues */}
+              <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+              <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
+              
+              {/* All other routes use Layout */}
+              <Route path="/*" element={
+                <Layout>
+                  <Routes>
+                    {/* Landing Page - accessible to all, but shows different content based on auth */}
+                    <Route path="/" element={<LandingPage />} />
+                    
+                    {/* Role-Specific Routes */}
+                    <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+                    <Route path="/sourcer" element={<SourcerRoute><SourcerPage /></SourcerRoute>} />
+                    
+                    {/* Client Routes */}
+                    <Route path="/client" element={<ClientRoute><ClientPage /></ClientRoute>} />
+                    <Route path="/candidates" element={<ClientRoute><CandidatesPage /></ClientRoute>} />
+                    
+                    {/* Subscription Routes - Client Only */}
+                    <Route path="/subscription" element={
+                      <ClientRoute><SubscriptionPlans /></ClientRoute>
+                    } />
+                    <Route path="/subscription/success" element={<ClientRoute><SubscriptionSuccess /></ClientRoute>} />
+                    
+                    {/* Catch-all - redirect to appropriate home based on role */}
+                    <Route path="*" element={<LandingPage />} />
+                  </Routes>
+                </Layout>
+              } />
+            </Routes>
+            <AuthDebug />
+          </BrowserRouter>
+        </SignOutWrapper>
       </DataProvider>
     </AuthProvider>
   );
