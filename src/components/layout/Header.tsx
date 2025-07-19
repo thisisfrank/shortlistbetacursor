@@ -107,11 +107,12 @@ export const Header: React.FC = () => {
       }
     } else if (userProfile === null) {
       // Only navigate to landing page if we're not already there and not on auth pages
+      // Add a longer delay for sign-out to prevent flickering
       if (location.pathname !== '/' && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/signup')) {
         const timeoutId = setTimeout(() => {
           console.log('🏠 Header: No user profile, navigating to landing page');
           navigate('/');
-        }, 100);
+        }, 200); // Increased delay for sign-out
         
         return () => clearTimeout(timeoutId);
       }

@@ -27,7 +27,7 @@ export const ClientMenu: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      navigate('/');
+      // Let the Header's auto-navigation handle the redirect
     } catch (error) {
       console.error('Error signing out:', error);
     }
