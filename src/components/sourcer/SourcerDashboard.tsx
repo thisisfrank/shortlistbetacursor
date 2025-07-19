@@ -28,7 +28,17 @@ export const SourcerDashboard: React.FC = () => {
     selectedJobId,
     selectedJob: selectedJob ? { id: selectedJob.id, clientId: selectedJob.clientId } : null,
     client: client ? { id: client.id, companyName: client.companyName } : null,
-    allClients: jobs.length > 0 ? jobs[0].clientId : 'no jobs'
+    allClients: jobs.length > 0 ? jobs[0].clientId : 'no jobs',
+    clientsArray: jobs.length > 0 ? jobs.map(j => j.clientId) : [],
+    getClientById: typeof getClientById
+  });
+  
+  // Debug modal condition
+  console.log('🔍 Modal condition debug:', {
+    selectedJob: !!selectedJob,
+    client: !!client,
+    modalShouldShow: !!(selectedJob && client),
+    selectedJobId
   });
 
   // Filter jobs based on the filter and search
