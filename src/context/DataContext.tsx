@@ -341,8 +341,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         tierId: 'tier-free', // Default for now
         availableCredits: c.available_credits,
         jobsRemaining: c.jobs_remaining,
-        creditsResetDate: new Date(c.credits_reset_date),
-        createdAt: new Date(c.created_at)
+        creditsResetDate: c.credits_reset_date ? new Date(c.credits_reset_date) : new Date(),
+        createdAt: c.created_at ? new Date(c.created_at) : new Date()
       }));
 
       const loadedJobs = jobsData.map(j => ({
@@ -360,8 +360,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         sourcerName: j.sourcer_name,
         completionLink: j.completion_link,
         candidatesRequested: j.candidates_requested,
-        createdAt: new Date(j.created_at),
-        updatedAt: new Date(j.updated_at)
+        createdAt: j.created_at ? new Date(j.created_at) : new Date(),
+        updatedAt: j.updated_at ? new Date(j.updated_at) : new Date()
       }));
 
       const loadedCandidates = candidatesData.map(c => ({
@@ -376,7 +376,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         education: c.education,
         skills: c.skills,
         summary: c.summary,
-        submittedAt: new Date(c.submitted_at)
+        submittedAt: c.submitted_at ? new Date(c.submitted_at) : new Date()
       }));
 
       console.log('📊 Setting data with:', {
