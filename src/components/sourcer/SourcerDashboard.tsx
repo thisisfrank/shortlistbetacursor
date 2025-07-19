@@ -22,6 +22,14 @@ export const SourcerDashboard: React.FC = () => {
   // Get the selected job and its client
   const selectedJob = selectedJobId ? jobs.find(job => job.id === selectedJobId) || null : null;
   const client = selectedJob ? getClientById(selectedJob.clientId) : null;
+  
+  // Debug client retrieval
+  console.log('🔍 Client debug:', {
+    selectedJobId,
+    selectedJob: selectedJob ? { id: selectedJob.id, clientId: selectedJob.clientId } : null,
+    client: client ? { id: client.id, companyName: client.companyName } : null,
+    allClients: jobs.length > 0 ? jobs[0].clientId : 'no jobs'
+  });
 
   // Filter jobs based on the filter and search
   const filteredJobs = jobs.filter(job => {
