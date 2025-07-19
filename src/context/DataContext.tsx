@@ -211,108 +211,163 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         return;
       }
 
-      // Load clients for this user
-      const { data: clientsData, error: clientsError } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('email', userEmail);
-
-      if (clientsError) {
-        console.error('❌ Error loading clients:', clientsError);
+      // Get current user profile to determine role
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('❌ No authenticated user found');
         return;
       }
 
-      console.log('👥 Loaded clients:', clientsData);
+      // Get user profile to determine role
+      const { data: userProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
 
-      // Load jobs for these clients
-      if (clientsData && clientsData.length > 0) {
-        const clientIds = clientsData.map(c => c.id);
-        
-        const { data: jobsData, error: jobsError } = await supabase
-          .from('jobs')
+      if (profileError) {
+        console.error('❌ Error loading user profile:', profileError);
+        return;
+      }
+
+      console.log('👤 User profile:', userProfile);
+      const userRole = userProfile?.role || 'client';
+
+      // Load clients for this user (only for clients)
+      let clientsData = [];
+      if (userRole === 'client') {
+        const { data: clientData, error: clientsError } = await supabase
+          .from('clients')
           .select('*')
-          .in('client_id', clientIds);
+          .eq('email', userEmail);
+
+        if (clientsError) {
+          console.error('❌ Error loading clients:', clientsError);
+          return;
+        }
+        clientsData = clientData || [];
+        console.log('👥 Loaded clients for client user:', clientsData);
+      } else {
+        // For sourcers and admins, load all clients
+        const { data: allClients, error: clientsError } = await supabase
+          .from('clients')
+          .select('*');
+
+        if (clientsError) {
+          console.error('❌ Error loading all clients:', clientsError);
+          return;
+        }
+        clientsData = allClients || [];
+        console.log('👥 Loaded all clients for sourcer/admin:', clientsData);
+      }
+
+      // Load jobs based on user role
+      let jobsData = [];
+      if (userRole === 'client') {
+        // For clients, only load jobs for their clients
+        if (clientsData.length > 0) {
+          const clientIds = clientsData.map(c => c.id);
+          const { data: clientJobs, error: jobsError } = await supabase
+            .from('jobs')
+            .select('*')
+            .in('client_id', clientIds);
+
+          if (jobsError) {
+            console.error('❌ Error loading client jobs:', jobsError);
+          } else {
+            jobsData = clientJobs || [];
+            console.log('💼 Loaded jobs for client user:', jobsData);
+          }
+        }
+      } else {
+        // For sourcers and admins, load all jobs
+        const { data: allJobs, error: jobsError } = await supabase
+          .from('jobs')
+          .select('*');
 
         if (jobsError) {
-          console.error('❌ Error loading jobs:', jobsError);
+          console.error('❌ Error loading all jobs:', jobsError);
         } else {
-          console.log('💼 Loaded jobs:', jobsData);
-        }
-
-        // Load candidates for these jobs
-        if (jobsData && jobsData.length > 0) {
-          const jobIds = jobsData.map(j => j.id);
-          
-          const { data: candidatesData, error: candidatesError } = await supabase
-            .from('candidates')
-            .select('*')
-            .in('job_id', jobIds);
-
-          if (candidatesError) {
-            console.error('❌ Error loading candidates:', candidatesError);
-          } else {
-            console.log('👤 Loaded candidates:', candidatesData);
-          }
-
-          // Update state with loaded data
-          const loadedClients = clientsData.map(c => ({
-            id: c.id,
-            companyName: c.company_name,
-            contactName: c.contact_name,
-            email: c.email,
-            phone: c.phone,
-            hasReceivedFreeShortlist: c.has_received_free_shortlist,
-            tierId: 'tier-free', // Default for now
-            availableCredits: c.available_credits,
-            jobsRemaining: c.jobs_remaining,
-            creditsResetDate: new Date(c.credits_reset_date),
-            createdAt: new Date(c.created_at)
-          }));
-
-          const loadedJobs = jobsData ? jobsData.map(j => ({
-            id: j.id,
-            clientId: j.client_id,
-            title: j.title,
-            description: j.description,
-            seniorityLevel: j.seniority_level,
-            workArrangement: j.work_arrangement,
-            location: j.location,
-            salaryRangeMin: j.salary_range_min,
-            salaryRangeMax: j.salary_range_max,
-            keySellingPoints: j.key_selling_points,
-            status: j.status,
-            sourcerName: j.sourcer_name,
-            completionLink: j.completion_link,
-            candidatesRequested: j.candidates_requested,
-            createdAt: new Date(j.created_at),
-            updatedAt: new Date(j.updated_at)
-          })) : [];
-
-          const loadedCandidates = candidatesData ? candidatesData.map(c => ({
-            id: c.id,
-            jobId: c.job_id,
-            firstName: c.first_name,
-            lastName: c.last_name,
-            headline: c.headline,
-            location: c.location,
-            linkedinUrl: c.linkedin_url,
-            experience: c.experience,
-            education: c.education,
-            skills: c.skills,
-            summary: c.summary,
-            submittedAt: new Date(c.submitted_at)
-          })) : [];
-
-          setData(prev => ({
-            ...prev,
-            clients: loadedClients,
-            jobs: loadedJobs,
-            candidates: loadedCandidates
-          }));
-
-          console.log('✅ User data loaded successfully');
+          jobsData = allJobs || [];
+          console.log('💼 Loaded all jobs for sourcer/admin:', jobsData);
         }
       }
+
+      // Load candidates for these jobs
+      let candidatesData = [];
+      if (jobsData.length > 0) {
+        const jobIds = jobsData.map(j => j.id);
+        
+        const { data: jobCandidates, error: candidatesError } = await supabase
+          .from('candidates')
+          .select('*')
+          .in('job_id', jobIds);
+
+        if (candidatesError) {
+          console.error('❌ Error loading candidates:', candidatesError);
+        } else {
+          candidatesData = jobCandidates || [];
+          console.log('👤 Loaded candidates:', candidatesData);
+        }
+      }
+
+      // Update state with loaded data
+      const loadedClients = clientsData.map(c => ({
+        id: c.id,
+        companyName: c.company_name,
+        contactName: c.contact_name,
+        email: c.email,
+        phone: c.phone,
+        hasReceivedFreeShortlist: c.has_received_free_shortlist,
+        tierId: 'tier-free', // Default for now
+        availableCredits: c.available_credits,
+        jobsRemaining: c.jobs_remaining,
+        creditsResetDate: new Date(c.credits_reset_date),
+        createdAt: new Date(c.created_at)
+      }));
+
+      const loadedJobs = jobsData.map(j => ({
+        id: j.id,
+        clientId: j.client_id,
+        title: j.title,
+        description: j.description,
+        seniorityLevel: j.seniority_level,
+        workArrangement: j.work_arrangement,
+        location: j.location,
+        salaryRangeMin: j.salary_range_min,
+        salaryRangeMax: j.salary_range_max,
+        keySellingPoints: j.key_selling_points,
+        status: j.status,
+        sourcerName: j.sourcer_name,
+        completionLink: j.completion_link,
+        candidatesRequested: j.candidates_requested,
+        createdAt: new Date(j.created_at),
+        updatedAt: new Date(j.updated_at)
+      }));
+
+      const loadedCandidates = candidatesData.map(c => ({
+        id: c.id,
+        jobId: c.job_id,
+        firstName: c.first_name,
+        lastName: c.last_name,
+        headline: c.headline,
+        location: c.location,
+        linkedinUrl: c.linkedin_url,
+        experience: c.experience,
+        education: c.education,
+        skills: c.skills,
+        summary: c.summary,
+        submittedAt: new Date(c.submitted_at)
+      }));
+
+      setData(prev => ({
+        ...prev,
+        clients: loadedClients,
+        jobs: loadedJobs,
+        candidates: loadedCandidates
+      }));
+
+      console.log('✅ User data loaded successfully for role:', userRole);
     } catch (error) {
       console.error('💥 Error loading user data:', error);
     }
