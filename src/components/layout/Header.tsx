@@ -139,7 +139,7 @@ export const Header: React.FC = () => {
           
           {/* Navigation - centered */}
           <nav className={`flex space-x-1 bg-shadowforce-light/50 rounded-xl px-2 py-2 border border-guardian/20 transition-opacity duration-200 ${
-            loading ? 'opacity-50' : 'opacity-100'
+            loading && userProfile ? 'opacity-50' : 'opacity-100'
           }`}>
             {navItems.map((item) => {
               const active = isActive(item.path);

@@ -248,6 +248,7 @@ export const useAuth = () => {
     console.log('🚪 Signing out...');
     
     // Clear local state immediately for faster response
+    // Don't set loading to true during sign-out to prevent flickering
     setUser(null);
     setUserProfile(null);
     setLoading(false);

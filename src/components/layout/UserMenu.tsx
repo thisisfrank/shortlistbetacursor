@@ -27,7 +27,13 @@ export const UserMenu: React.FC = () => {
   };
   
   const getMenuContent = () => {
-    if (!user || !userProfile) {
+    // During sign-out, user might be null but userProfile still exists briefly
+    // Show anonymous menu immediately when user is null to prevent flickering
+    if (!user) {
+      return <AnonymousMenu />;
+    }
+    
+    if (!userProfile) {
       return <AnonymousMenu />;
     }
 
