@@ -25,7 +25,21 @@ export const Header: React.FC = () => {
   const isActive = (path: string) => {
     if (!userProfile) return location.pathname === path;
     
-    // Special handling for role-based home pages
+    // For clients, handle both home page and candidates page
+    if (userProfile.role === 'client') {
+      // If we're on the home page and checking the home path
+      if (path === '/' && location.pathname === '/') {
+        return true;
+      }
+      // If we're on the candidates page and checking the candidates path
+      if (path === '/candidates' && location.pathname === '/candidates') {
+        return true;
+      }
+      // For other paths, use exact match
+      return location.pathname === path;
+    }
+    
+    // For other roles, use the original logic
     const roleHomePath = getRoleHomePath(userProfile.role);
     
     // If we're checking the role's home path and we're currently on it
@@ -125,19 +139,23 @@ export const Header: React.FC = () => {
           <nav className={`flex space-x-1 bg-shadowforce-light/50 rounded-xl px-2 py-2 border border-guardian/20 transition-opacity duration-200 ${
             loading ? 'opacity-50' : 'opacity-100'
           }`}>
-            {navItems.map((item) => (
-              <Link
-                key={item.key}
-                to={item.path}
-                className={`px-6 py-3 rounded-lg text-sm font-jakarta font-semibold transition-all duration-200 ${
-                  isActive(item.path) 
-                    ? 'bg-supernova text-shadowforce shadow-lg glow-supernova' 
-                    : 'text-guardian hover:bg-shadowforce-light hover:text-supernova'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const active = isActive(item.path);
+              console.log(`Navigation item: ${item.label} (${item.path}) - Active: ${active} - Current path: ${location.pathname}`);
+              return (
+                <Link
+                  key={item.key}
+                  to={item.path}
+                  className={`px-6 py-3 rounded-lg text-sm font-jakarta font-semibold transition-all duration-200 ${
+                    active
+                      ? 'bg-supernova text-shadowforce shadow-lg glow-supernova' 
+                      : 'text-guardian hover:bg-shadowforce-light hover:text-supernova'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
           
           {/* User Menu - positioned absolutely to the right */}
