@@ -205,6 +205,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           .limit(1);
         console.log('🔍 Test query result:', { testClients, testError });
         
+        // Try a different approach - check if we can see any clients
+        console.log('🔍 Trying to get client count...');
+        const { count: clientCount, error: countError } = await supabase
+          .from('clients')
+          .select('*', { count: 'exact', head: true });
+        console.log('🔍 Client count result:', { clientCount, countError });
+        
         const { data: allClients, error: clientsError } = await supabase
           .from('clients')
           .select('*');
