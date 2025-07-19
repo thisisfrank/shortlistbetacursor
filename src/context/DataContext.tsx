@@ -48,9 +48,9 @@ interface DataProviderProps {
   children: ReactNode;
 }
 
-// Create dummy data for demonstration
-const createDummyData = () => {
-  const dummyTiers: Tier[] = [
+// Create empty data for fresh platform
+const createEmptyData = () => {
+  const emptyTiers: Tier[] = [
     {
       id: 'tier-free',
       name: 'Free',
@@ -85,83 +85,23 @@ const createDummyData = () => {
     }
   ];
 
-  const dummyClients: Client[] = [
-    {
-      id: 'client-1',
-      companyName: 'TechCorp AI Solutions',
-      contactName: 'Sarah Johnson',
-      email: 'sarah.johnson@techcorp.ai',
-      phone: '+1 (555) 123-4567',
-      hasReceivedFreeShortlist: false,
-      tierId: 'tier-free',
-      availableCredits: 20,
-      jobsRemaining: 1,
-      creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-      createdAt: new Date('2024-01-15')
-    }
-  ];
-
-  const dummyJobs: Job[] = [
-    {
-      id: 'job-1',
-      clientId: 'client-1',
-      title: 'Senior AI Engineer',
-      description: `We are seeking a highly skilled Senior AI Engineer to join our cutting-edge AI development team. The ideal candidate will have extensive experience in machine learning, deep learning, and AI model development.
-
-Key Responsibilities:
-• Design and implement advanced AI/ML algorithms and models
-• Develop and optimize neural networks for various applications
-• Work with large datasets and implement data preprocessing pipelines
-• Collaborate with cross-functional teams to integrate AI solutions
-• Research and implement state-of-the-art AI techniques
-• Mentor junior engineers and contribute to technical documentation
-
-Required Skills:
-• 5+ years of experience in AI/ML development
-• Proficiency in Python, TensorFlow, PyTorch, and scikit-learn
-• Strong background in mathematics, statistics, and computer science
-• Experience with cloud platforms (AWS, GCP, or Azure)
-• Knowledge of MLOps practices and model deployment`,
-      seniorityLevel: 'Senior',
-      workArrangement: 'Hybrid',
-      location: 'San Francisco, CA',
-      salaryRangeMin: 150000,
-      salaryRangeMax: 220000,
-      keySellingPoints: [
-        'Competitive salary with equity package',
-        'Work on cutting-edge AI projects',
-        'Flexible hybrid work arrangement',
-        'Comprehensive health and dental coverage',
-        'Annual learning and development budget',
-        'Stock options and performance bonuses',
-        'Collaborative and innovative team environment'
-      ],
-      status: 'Unclaimed',
-      sourcerName: null,
-      completionLink: null,
-      candidatesRequested: 15,
-      createdAt: new Date('2024-01-16'),
-      updatedAt: new Date('2024-01-16')
-    }
-  ];
-
-  const dummyCandidates: Candidate[] = [
-    // No dummy candidates - start fresh
-  ];
+  const emptyClients: Client[] = [];
+  const emptyJobs: Job[] = [];
+  const emptyCandidates: Candidate[] = [];
 
   return {
-    tiers: dummyTiers,
-    clients: dummyClients,
-    jobs: dummyJobs,
-    candidates: dummyCandidates
+    tiers: emptyTiers,
+    clients: emptyClients,
+    jobs: emptyJobs,
+    candidates: emptyCandidates
   };
 };
 
-// Load data from localStorage if available, otherwise use dummy data
+// Load data from localStorage if available, otherwise use empty data
 const loadInitialData = () => {
-  // Start with dummy data for initial load
+  // Start with empty data for initial load
   // Real data will be loaded from Supabase in useEffect
-  return createDummyData();
+  return createEmptyData();
 };
 
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
@@ -183,9 +123,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   // Handle user changes - reset data when user logs out, load data when user logs in
   useEffect(() => {
     if (!user) {
-      // User logged out, reset data to initial dummy state
+      // User logged out, reset data to initial empty state
       console.log('🔄 DataContext: User logged out, resetting state');
-      const freshData = createDummyData();
+      const freshData = createEmptyData();
       setData(freshData);
       
       // Also clear localStorage to prevent stale data
@@ -1024,7 +964,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       localStorage.removeItem('jobs');
       localStorage.removeItem('candidates');
       localStorage.removeItem('tiers');
-      const freshData = createDummyData();
+      const freshData = createEmptyData();
       setData(freshData);
       console.log('Data reset successfully');
     }
