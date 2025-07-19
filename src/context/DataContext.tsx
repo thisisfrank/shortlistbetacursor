@@ -196,6 +196,15 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       } else {
         // For sourcers and admins, load all clients
         console.log('🔍 Step 3: Loading all clients for sourcer/admin...');
+        
+        // Test if we can access the clients table at all
+        console.log('🔍 Testing clients table access...');
+        const { data: testClients, error: testError } = await supabase
+          .from('clients')
+          .select('count')
+          .limit(1);
+        console.log('🔍 Test query result:', { testClients, testError });
+        
         const { data: allClients, error: clientsError } = await supabase
           .from('clients')
           .select('*');
@@ -204,6 +213,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           console.error('❌ Error loading all clients:', clientsError);
           return;
         }
+        console.log('🔍 Raw Supabase response:', { allClients, clientsError });
         clientsData = allClients || [];
         console.log('✅ Step 3 complete: Loaded all clients for sourcer/admin:', clientsData);
       }
