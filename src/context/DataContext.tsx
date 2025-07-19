@@ -102,67 +102,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [data, setData] = useState(() => loadInitialData());
   const { user } = useAuth();
 
-  // DEBUG: Check and clear any old localStorage data
+  // SIMPLE: One effect, one purpose - load data when user changes
   useEffect(() => {
-    console.log('🧹 DataContext: Checking for old localStorage data...');
-    const oldJobs = localStorage.getItem('jobs');
-    const oldCandidates = localStorage.getItem('candidates');
-    const oldFormData = localStorage.getItem('clientIntakeFormData');
-    
-    let foundOldData = false;
-    
-    if (oldJobs) {
-      console.log('🗑️ Found old jobs data:', JSON.parse(oldJobs));
-      localStorage.removeItem('jobs');
-      foundOldData = true;
+    if (!user) {
+      console.log('🔄 DataContext: User logged out, resetting state');
+      setData(createEmptyData());
+    } else {
+      console.log('✅ DataContext: User logged in, loading data for:', user.email);
+      loadUserData(user.email);
     }
-    if (oldCandidates) {
-      console.log('🗑️ Found old candidates data:', JSON.parse(oldCandidates));
-      localStorage.removeItem('candidates');
-      foundOldData = true;
-    }
-    if (oldFormData) {
-      console.log('🗑️ Found old form data:', JSON.parse(oldFormData));
-      localStorage.removeItem('clientIntakeFormData');
-      foundOldData = true;
-    }
-    
-    if (foundOldData) {
-      console.log('🔄 DataContext: Old data found, forcing fresh state reset...');
-      const freshData = createEmptyData();
-      setData(freshData);
-      
-      // Force reload user data if user is logged in
-      if (user?.email) {
-        setTimeout(() => {
-          console.log('🔄 DataContext: Forcing fresh data reload for:', user.email);
-          loadUserData(user.email);
-        }, 500);
-      }
-    }
-    
-    console.log('✅ DataContext: Old localStorage data cleared');
   }, [user]);
-
-  // No localStorage persistence - always load fresh from Supabase
-
-        // Handle user changes - reset data when user logs out, load data when user logs in
-      useEffect(() => {
-        if (!user) {
-          // User logged out, reset data to initial empty state
-          console.log('🔄 DataContext: User logged out, resetting state');
-          const freshData = createEmptyData();
-          setData(freshData);
-        } else {
-          // User logged in, load their data from Supabase
-          console.log('✅ DataContext: User logged in, loading data for:', user.email);
-          
-          // Force reload data from Supabase
-          setTimeout(() => {
-            loadUserData(user.email);
-          }, 100);
-        }
-      }, [user]);
 
   const loadUserData = async (userEmail: string) => {
     try {
@@ -290,14 +239,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         jobsCount: loadedJobs.length,
         candidatesCount: loadedCandidates.length
       });
-
-      // DEBUG: Log the actual job data being set
-      console.log('🔍 Job data being loaded:', loadedJobs.map(j => ({
-        id: j.id,
-        email: j.sourcerName, // Assuming sourcerName is the user who created the job
-        companyName: j.companyName,
-        source: 'supabase'
-      })));
 
       setData(prev => ({
         ...prev,

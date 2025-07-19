@@ -7,7 +7,7 @@ import { Button } from '../ui/Button';
 import { Search, ClipboardList, Check, Clock, Zap, Target, Users } from 'lucide-react';
 
 export const SourcerDashboard: React.FC = () => {
-  const { jobs, getClientById, updateJob } = useData();
+  const { jobs, updateJob } = useData();
   const [filter, setFilter] = useState<'all' | 'unclaimed' | 'claimed' | 'completed'>('all');
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -21,7 +21,7 @@ export const SourcerDashboard: React.FC = () => {
 
   // Get the selected job and its client
   const selectedJob = selectedJobId ? jobs.find(job => job.id === selectedJobId) || null : null;
-  const client = selectedJob ? getClientById(selectedJob.clientId) : null;
+      const companyName = selectedJob?.companyName || 'Unknown Company';
 
   // Debug client retrieval
   console.log('🔍 Client debug:', {

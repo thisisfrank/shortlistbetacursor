@@ -7,7 +7,7 @@ import { JobDetailModal } from '../sourcer/JobDetailModal';
 import { Search, CalendarDays, Users, Filter, Trash2, Zap, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 
 export const AdminPanel: React.FC = () => {
-  const { clients, jobs, tiers, getClientById, getTierById, deleteJob, deleteClient, updateJob } = useData();
+  const { clients, jobs, tiers, getTierById, deleteJob, deleteClient, updateJob } = useData();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);

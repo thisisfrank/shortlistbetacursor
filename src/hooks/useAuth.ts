@@ -17,188 +17,43 @@ export const useAuth = () => {
   const [signOutLoading, setSignOutLoading] = useState(false);
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      console.log('🔍 Getting initial session...');
+    // SIMPLE: Get session and listen for changes
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
       
-      try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      if (currentUser) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
         
-        console.log('🔗 Supabase URL:', supabaseUrl);
-        console.log('🔑 Has Anon Key:', !!supabaseAnonKey);
-        
-        // Check if environment variables are missing
-        if (!supabaseUrl || !supabaseAnonKey) {
-          console.error('❌ Missing Supabase environment variables');
-          setUser(null);
-          setUserProfile(null);
-          setLoading(false);
-          return;
-        }
-        
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        console.log('📡 Session response received:', { hasSession: !!session, error: sessionError });
-        
-        if (sessionError) {
-          console.error('❌ Error getting session:', sessionError);
-          setUser(null);
-          setUserProfile(null);
-          setLoading(false);
-          return;
-        }
-        
-        const currentUser = session?.user ?? null;
-        console.log('👤 Initial session user:', currentUser?.email || 'No user');
-        
-        setUser(currentUser);
-        
-        if (currentUser) {
-          console.log('📋 User found, fetching profile...');
-          
-          try {
-            // Add timeout to prevent hanging
-            // Try a simpler query first to debug the issue
-            console.log('🔍 Querying profile with ID:', currentUser.id);
-            
-            const profilePromise = supabase
-              .from('user_profiles')
-              .select('id, email, role, created_at, updated_at')
-              .eq('id', currentUser.id)
-              .maybeSingle();
-            
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 30000)
-            );
-            
-            const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
-            
-            console.log('📊 Profile query result:', { hasProfile: !!profile, error: error });
-            
-            if (error) {
-              console.error('⚠️ Error fetching user profile:', error);
-              console.log('🔍 Error details:', { code: error.code, message: error.message, details: error.details });
-              
-              // Log all errors for debugging since we know the profile exists
-              console.log('🔍 All error details:', { 
-                code: error.code, 
-                message: error.message, 
-                details: error.details,
-                hint: error.hint 
-              });
-              
-              // For now, let's just set the profile to null and continue
-              // This will allow the user to proceed while we debug the query issue
-              setUserProfile(null);
-              
-              setUserProfile(null);
-            } else {
-              if (profile) {
-                console.log('✅ User profile found:', profile);
-                const userProfile: UserProfile = {
-                  id: profile.id,
-                  email: profile.email,
-                  role: profile.role,
-                  created_at: profile.created_at,
-                  updated_at: profile.updated_at
-                };
-                setUserProfile(userProfile);
-              } else {
-                console.log('⚠️ No user profile found, waiting for trigger to create it');
-                setUserProfile(null);
-              }
-            }
-          } catch (profileError) {
-            console.error('💥 Profile fetch failed:', profileError);
-            setUserProfile(null);
-          }
-        } else {
-          console.log('🚫 No user session found');
-          setUserProfile(null);
-        }
-      } catch (error) {
-        console.error('💥 Error in getInitialSession:', error);
-        setUser(null);
-        setUserProfile(null);
+        setUserProfile(profile);
       }
-      
       setLoading(false);
-      console.log('🏁 Auth initialization complete');
     };
 
-    getInitialSession();
+    initAuth();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('🔄 Auth state change:', event);
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-        
-        if (currentUser) {
-          console.log('👤 Auth change - fetching profile for:', currentUser.email);
-          
-          try {
-            // Add timeout for auth state changes too
-            // Try a simpler query first to debug the issue
-            console.log('🔍 Auth change - Querying profile with ID:', currentUser.id);
-            
-            const profilePromise = supabase
-              .from('user_profiles')
-              .select('id, email, role, created_at, updated_at')
-              .eq('id', currentUser.id)
-              .maybeSingle();
-            
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 30000)
-            );
-            
-            const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
-            
-            if (error) {
-              console.error('⚠️ Auth change - Error fetching user profile:', error);
-              console.log('🔍 Auth change - Error details:', { code: error.code, message: error.message, details: error.details });
-              
-              // Log all errors for debugging since we know the profile exists
-              console.log('🔍 Auth change - All error details:', { 
-                code: error.code, 
-                message: error.message, 
-                details: error.details,
-                hint: error.hint 
-              });
-              
-              // For now, let's just set the profile to null and continue
-              // This will allow the user to proceed while we debug the query issue
-              setUserProfile(null);
-              
-              setUserProfile(null);
-            } else {
-              if (profile) {
-                console.log('✅ Auth change - Profile found:', profile);
-                const userProfile: UserProfile = {
-                  id: profile.id,
-                  email: profile.email,
-                  role: profile.role,
-                  created_at: profile.created_at,
-                  updated_at: profile.updated_at
-                };
-                setUserProfile(userProfile);
-              } else {
-                console.log('⚠️ Auth change - No profile found, waiting for trigger');
-                setUserProfile(null);
-              }
-            }
-          } catch (profileError) {
-            console.error('💥 Auth change profile fetch failed:', profileError);
-            setUserProfile(null);
-          }
-        } else {
-          console.log('🚫 Auth change - No user');
-          setUserProfile(null);
-        }
-        setLoading(false);
+    // SIMPLE: Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      if (currentUser) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+        setUserProfile(profile);
+      } else {
+        setUserProfile(null);
       }
-    );
+      setLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);

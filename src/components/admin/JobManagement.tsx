@@ -9,7 +9,7 @@ import { FormInput, FormTextarea, FormSelect } from '../forms/FormInput';
 import { Search, CalendarDays, Filter, Trash2, Edit, X, Save } from 'lucide-react';
 
 export const JobManagement: React.FC = () => {
-  const { jobs, getClientById, deleteJob, updateJob } = useData();
+  const { jobs, deleteJob, updateJob } = useData();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);

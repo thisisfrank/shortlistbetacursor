@@ -275,7 +275,7 @@ export const CandidatesView: React.FC = () => {
   // If a job is selected, show candidates for that job
   if (selectedJobId) {
     const selectedJob = getJobById(selectedJobId);
-    const client = selectedJob ? getClientById(selectedJob.clientId) : null;
+    const companyName = selectedJob?.companyName || 'Unknown Company';
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
@@ -296,7 +296,7 @@ export const CandidatesView: React.FC = () => {
             </h2>
             {selectedJob && (
               <p className="text-xl text-guardian text-center font-jakarta">
-                {selectedJob.companyName}
+                {companyName}
               </p>
             )}
           </header>
@@ -717,10 +717,9 @@ export const CandidatesView: React.FC = () => {
   const filteredJobs = userJobs.filter(job => {
     if (search) {
       const searchLower = search.toLowerCase();
-      const client = getClientById(job.clientId);
       return (
         job.title.toLowerCase().includes(searchLower) ||
-        (client && client.companyName.toLowerCase().includes(searchLower))
+        (job.companyName && job.companyName.toLowerCase().includes(searchLower))
       );
     }
     return true;
@@ -857,7 +856,6 @@ export const CandidatesView: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {sortedJobs.map(job => {
-                  const client = getClientById(job.clientId);
                   const jobCandidates = getCandidatesByJob(job.id);
                   
                   return (
