@@ -172,10 +172,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
       console.log('👤 User profile:', userProfile);
       const userRole = userProfile?.role || 'client';
+      console.log('🎭 Detected user role:', userRole);
 
       // Load clients for this user (only for clients)
       let clientsData = [];
       if (userRole === 'client') {
+        console.log('👤 Loading clients for client user...');
         const { data: clientData, error: clientsError } = await supabase
           .from('clients')
           .select('*')
@@ -189,6 +191,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         console.log('👥 Loaded clients for client user:', clientsData);
       } else {
         // For sourcers and admins, load all clients
+        console.log('👥 Loading all clients for sourcer/admin...');
         const { data: allClients, error: clientsError } = await supabase
           .from('clients')
           .select('*');
@@ -299,6 +302,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         summary: c.summary,
         submittedAt: new Date(c.submitted_at)
       }));
+
+      console.log('📊 Setting data with:', {
+        clientsCount: loadedClients.length,
+        jobsCount: loadedJobs.length,
+        candidatesCount: loadedCandidates.length
+      });
 
       setData(prev => ({
         ...prev,
