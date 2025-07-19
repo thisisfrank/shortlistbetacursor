@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Job, Client } from '../../types';
+import { Job } from '../../types';
 import { useData } from '../../context/DataContext';
 import { JobTimer } from '../ui/JobTimer';
 import { testApifyResponse } from '../../services/apifyService';
@@ -10,7 +10,6 @@ import { X, CheckCircle, AlertCircle, Plus, Trash2, Zap, Users, ExternalLink } f
 
 interface JobDetailModalProps {
   job: Job;
-  client: Client;
   onClose: () => void;
   onClaim?: (jobId: string, sourcerName: string) => void;
   onComplete?: (jobId: string) => void;
@@ -18,7 +17,6 @@ interface JobDetailModalProps {
 
 export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   job,
-  client,
   onClose,
   onClaim,
   onComplete
@@ -345,19 +343,19 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
             </div>
             
             <div className="bg-supernova/10 border border-supernova/30 p-6 rounded-lg mb-6">
-              <p className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide mb-3">Client Information</p>
+              <p className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide mb-3">Company Information</p>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <p className="text-sm font-jakarta font-semibold text-guardian">Contact</p>
-                  <p className="text-white-knight font-jakarta font-bold">{client.contactName}</p>
+                  <p className="text-sm font-jakarta font-semibold text-guardian">Company</p>
+                  <p className="text-white-knight font-jakarta font-bold">{job.companyName}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-jakarta font-semibold text-guardian">Email</p>
-                  <p className="text-white-knight font-jakarta font-bold">{client.email}</p>
+                  <p className="text-sm font-jakarta font-semibold text-guardian">Location</p>
+                  <p className="text-white-knight font-jakarta font-bold">{job.location}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-jakarta font-semibold text-guardian">Phone</p>
-                  <p className="text-white-knight font-jakarta font-bold">{client.phone}</p>
+                  <p className="text-sm font-jakarta font-semibold text-guardian">Work Arrangement</p>
+                  <p className="text-white-knight font-jakarta font-bold">{job.workArrangement}</p>
                 </div>
                 <div>
                   <p className="text-sm font-jakarta font-semibold text-guardian">Posted</p>

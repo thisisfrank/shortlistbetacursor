@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Job, Client } from '../../types';
+import { Job } from '../../types';
 import { JobCard } from './JobCard';
 import { JobDetailModal } from './JobDetailModal';
 import { useData } from '../../context/DataContext';
@@ -23,21 +23,11 @@ export const SourcerDashboard: React.FC = () => {
   const selectedJob = selectedJobId ? jobs.find(job => job.id === selectedJobId) || null : null;
       const companyName = selectedJob?.companyName || 'Unknown Company';
 
-  // Debug client retrieval
-  console.log('🔍 Client debug:', {
-    selectedJobId,
-    selectedJob: selectedJob ? { id: selectedJob.id, clientId: selectedJob.clientId } : null,
-    client: client ? { id: client.id, companyName: client.companyName } : null,
-    allClients: jobs.length > 0 ? jobs[0].clientId : 'no jobs',
-    clientsArray: jobs.length > 0 ? jobs.map(j => j.clientId) : [],
-    getClientById: typeof getClientById
-  });
-  
   // Debug modal condition
   console.log('🔍 Modal condition debug:', {
     selectedJob: !!selectedJob,
-    client: !!client,
-    modalShouldShow: !!(selectedJob && client),
+    companyName: selectedJob?.companyName,
+    modalShouldShow: !!selectedJob,
     selectedJobId
   });
 
@@ -271,10 +261,9 @@ export const SourcerDashboard: React.FC = () => {
           )}
         </div>
         
-        {selectedJob && client && (
+        {selectedJob && (
           <JobDetailModal
             job={selectedJob}
-            client={client}
             onClose={handleCloseModal}
             onClaim={handleClaimJob}
             onComplete={handleCompleteJob}
@@ -286,7 +275,7 @@ export const SourcerDashboard: React.FC = () => {
           <div className="fixed bottom-4 right-4 bg-red-500 text-white p-4 rounded-lg z-50">
             <p>Selected Job ID: {selectedJobId}</p>
             <p>Selected Job: {selectedJob ? 'Yes' : 'No'}</p>
-            <p>Client: {client ? 'Yes' : 'No'}</p>
+            <p>Company: {selectedJob?.companyName || 'Unknown'}</p>
           </div>
         )}
       </div>
