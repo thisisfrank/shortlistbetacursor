@@ -271,7 +271,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         console.log('🔍 Testing new admin policy...');
         const { data: policyTest, error: policyError } = await supabase
           .from('clients')
-          .select('id, company_name')
+          .select('*')
           .limit(5);
         console.log('🔍 Policy test result:', { policyTest, policyError });
         
