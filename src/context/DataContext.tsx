@@ -212,6 +212,21 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           .select('*', { count: 'exact', head: true });
         console.log('🔍 Client count result:', { clientCount, countError });
         
+        // Try a simple select all to see what we get
+        console.log('🔍 Trying simple select all...');
+        const { data: simpleClients, error: simpleError } = await supabase
+          .from('clients')
+          .select('*');
+        console.log('🔍 Simple select result:', { simpleClients, simpleError });
+        
+        // Try with no filters at all
+        console.log('🔍 Trying with no filters...');
+        const { data: allClientsRaw, error: rawError } = await supabase
+          .from('clients')
+          .select('id, company_name, email')
+          .limit(10);
+        console.log('🔍 Raw select result:', { allClientsRaw, rawError });
+        
         // Try different query approaches
         console.log('🔍 Trying different query approaches...');
         
@@ -233,8 +248,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         }
         console.log('🔍 Raw Supabase response:', { allClients, clientsError });
         
-        // Use whichever approach worked
-        clientsData = clientsWithColumns || allClients || [];
+        // Use the raw select result if it worked, otherwise fall back
+        clientsData = allClientsRaw || clientsWithColumns || allClients || [];
         console.log('✅ Step 3 complete: Loaded all clients for sourcer/admin:', clientsData);
       }
 
