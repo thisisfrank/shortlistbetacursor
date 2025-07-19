@@ -1,9 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
-import { useSubscription } from '../../../hooks/useSubscription';
-import { useData } from '../../../context/DataContext';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { Users, Clock, Briefcase, Calendar, CreditCard, LogOut, Crown } from 'lucide-react';
@@ -19,22 +16,14 @@ export const ClientMenu: React.FC = () => {
       console.error('Error signing out:', error);
     }
   };
-  
-  const formatDate = (date: Date) => {
-    return new Intl.DateTypeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    }).format(new Date(date));
-  };
 
   return (
     <>
-      {/* User Info - COMPLETELY STATIC */}
+      {/* COMPLETELY STATIC USER INFO */}
       <div className="mb-6 pb-4 border-b border-guardian/20">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-anton text-lg text-white-knight uppercase tracking-wide">
-            CLIENT USER
+            STATIC USER
           </h3>
           <Badge variant="outline" className="text-xs">
             FREE
@@ -42,7 +31,7 @@ export const ClientMenu: React.FC = () => {
         </div>
       </div>
       
-      {/* Subscription Status - STATIC */}
+      {/* STATIC SUBSCRIPTION */}
       <div className="mb-6">
         <div className="p-4 rounded-lg bg-orange-500/10 border border-orange-500/30">
           <div className="flex items-center justify-between mb-2">
@@ -59,7 +48,7 @@ export const ClientMenu: React.FC = () => {
         </div>
       </div>
 
-      {/* Credits & Usage - STATIC NUMBERS */}
+      {/* STATIC CREDITS */}
       <div className="space-y-4 mb-6">
         <div className="bg-supernova/10 border border-supernova/30 p-4 rounded-lg">
           <div className="flex items-center justify-between mb-2">
@@ -117,7 +106,7 @@ export const ClientMenu: React.FC = () => {
         </div>
       </div>
       
-      {/* Action Buttons */}
+      {/* ACTION BUTTONS */}
       <div className="space-y-3">
         <Button 
           onClick={() => navigate('/subscription')}
