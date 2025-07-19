@@ -203,7 +203,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   const loadUserData = async (userEmail: string) => {
     try {
-      console.log('📥 Loading user data from Supabase...');
+      console.log('📥 Loading user data from Supabase for:', userEmail);
       
       // Check if Supabase is configured
       if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {

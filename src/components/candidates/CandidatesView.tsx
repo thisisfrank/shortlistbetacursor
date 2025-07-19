@@ -647,6 +647,14 @@ export const CandidatesView: React.FC = () => {
   }
   
   // Show jobs list
+  // Debug: Log current state
+  console.log('🔍 CandidatesView Debug:', {
+    user: user?.email,
+    totalJobs: jobs.length,
+    totalClients: clients.length,
+    totalCandidates: candidates.length
+  });
+
   // Filter jobs to only show those submitted by the current authenticated user
   const userJobs = jobs.filter(job => {
     if (!user) return false; // No user, no jobs
@@ -658,6 +666,8 @@ export const CandidatesView: React.FC = () => {
     
     return matchesUser;
   });
+
+  console.log('👤 User jobs found:', userJobs.length);
   
   const filteredJobs = userJobs.filter(job => {
     if (search) {
