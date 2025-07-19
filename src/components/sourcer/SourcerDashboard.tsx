@@ -68,6 +68,8 @@ export const SourcerDashboard: React.FC = () => {
     setSelectedJobId(null);
   };
 
+
+
   // Claim a job
   const handleClaimJob = (jobId: string, name: string) => {
     // Store sourcer name in localStorage for future use
