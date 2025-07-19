@@ -46,6 +46,9 @@ export const useAuth = () => {
 
     // SIMPLE: Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Skip the initial session event since initAuth already handles it
+      if (event === 'INITIAL_SESSION') return;
+      
       try {
         const currentUser = session?.user ?? null;
         setUser(currentUser);
@@ -63,8 +66,6 @@ export const useAuth = () => {
       } catch (error) {
         console.error('Auth change error:', error);
         setUserProfile(null);
-      } finally {
-        setLoading(false);
       }
     });
 
