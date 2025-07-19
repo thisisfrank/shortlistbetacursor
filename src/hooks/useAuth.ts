@@ -58,9 +58,12 @@ export const useAuth = () => {
           
           try {
             // Add timeout to prevent hanging
+            // Try a simpler query first to debug the issue
+            console.log('🔍 Querying profile with ID:', currentUser.id);
+            
             const profilePromise = supabase
               .from('user_profiles')
-              .select('*')
+              .select('id, email, role, created_at, updated_at')
               .eq('id', currentUser.id)
               .maybeSingle();
             
@@ -74,6 +77,20 @@ export const useAuth = () => {
             
             if (error) {
               console.error('⚠️ Error fetching user profile:', error);
+              console.log('🔍 Error details:', { code: error.code, message: error.message, details: error.details });
+              
+              // Log all errors for debugging since we know the profile exists
+              console.log('🔍 All error details:', { 
+                code: error.code, 
+                message: error.message, 
+                details: error.details,
+                hint: error.hint 
+              });
+              
+              // For now, let's just set the profile to null and continue
+              // This will allow the user to proceed while we debug the query issue
+              setUserProfile(null);
+              
               setUserProfile(null);
             } else {
               if (profile) {
@@ -123,9 +140,12 @@ export const useAuth = () => {
           
           try {
             // Add timeout for auth state changes too
+            // Try a simpler query first to debug the issue
+            console.log('🔍 Auth change - Querying profile with ID:', currentUser.id);
+            
             const profilePromise = supabase
               .from('user_profiles')
-              .select('*')
+              .select('id, email, role, created_at, updated_at')
               .eq('id', currentUser.id)
               .maybeSingle();
             
@@ -137,6 +157,20 @@ export const useAuth = () => {
             
             if (error) {
               console.error('⚠️ Auth change - Error fetching user profile:', error);
+              console.log('🔍 Auth change - Error details:', { code: error.code, message: error.message, details: error.details });
+              
+              // Log all errors for debugging since we know the profile exists
+              console.log('🔍 Auth change - All error details:', { 
+                code: error.code, 
+                message: error.message, 
+                details: error.details,
+                hint: error.hint 
+              });
+              
+              // For now, let's just set the profile to null and continue
+              // This will allow the user to proceed while we debug the query issue
+              setUserProfile(null);
+              
               setUserProfile(null);
             } else {
               if (profile) {

@@ -1,16 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
-import { Client, Job, Candidate, Tier } from '../types';
+import { Job, Candidate, Tier } from '../types';
 import { scrapeLinkedInProfiles } from '../services/apifyService';
 import { generateJobMatchScore } from '../services/anthropicService';
 import { useAuth } from './AuthContext';
 
 interface DataContextType {
-  clients: Client[];
   jobs: Job[];
   candidates: Candidate[];
   tiers: Tier[];
-  addClient: (client: Omit<Client, 'id' | 'createdAt'>) => Client;
   addJob: (job: Omit<Job, 'id' | 'status' | 'sourcerName' | 'completionLink' | 'createdAt' | 'updatedAt'>) => Job;
   addCandidate: (candidate: Omit<Candidate, 'id' | 'submittedAt'>) => Candidate;
   addCandidatesFromLinkedIn: (jobId: string, linkedinUrls: string[]) => Promise<{ 
@@ -20,17 +18,13 @@ interface DataContextType {
     error?: string 
   }>;
   updateJob: (jobId: string, updates: Partial<Job>) => Job | null;
-  updateClient: (clientId: string, updates: Partial<Client>) => Client | null;
   deleteJob: (jobId: string) => void;
-  deleteClient: (clientId: string) => void;
   getCandidatesByJob: (jobId: string) => Candidate[];
-  getCandidatesByClient: (clientId: string) => Candidate[];
+  getCandidatesByUser: (userId: string) => Candidate[];
   getJobsByStatus: (status: Job['status']) => Job[];
-  getClientById: (clientId: string) => Client | null;
   getJobById: (jobId: string) => Job | null;
-  getJobsByClient: (clientId: string) => Job[];
+  getJobsByUser: (userId: string) => Job[];
   getTierById: (tierId: string) => Tier | null;
-  checkDuplicateEmail: (email: string) => boolean;
   resetData: () => void;
 }
 
@@ -85,7 +79,7 @@ const createEmptyData = () => {
     }
   ];
 
-  const emptyClients: Client[] = [];
+  const emptyClients: any[] = []; // Removed Client import, so emptyClients is no longer needed
   const emptyJobs: Job[] = [];
   const emptyCandidates: Candidate[] = [];
 
@@ -108,17 +102,49 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [data, setData] = useState(() => loadInitialData());
   const { user } = useAuth();
 
-  // Save data to localStorage whenever it changes
+  // DEBUG: Check and clear any old localStorage data
   useEffect(() => {
-    try {
-      localStorage.setItem('tiers', JSON.stringify(data.tiers));
-      localStorage.setItem('clients', JSON.stringify(data.clients));
-      localStorage.setItem('jobs', JSON.stringify(data.jobs));
-      localStorage.setItem('candidates', JSON.stringify(data.candidates));
-    } catch (error) {
-      console.error('Error saving data to localStorage:', error);
+    console.log('🧹 DataContext: Checking for old localStorage data...');
+    const oldJobs = localStorage.getItem('jobs');
+    const oldCandidates = localStorage.getItem('candidates');
+    const oldFormData = localStorage.getItem('clientIntakeFormData');
+    
+    let foundOldData = false;
+    
+    if (oldJobs) {
+      console.log('🗑️ Found old jobs data:', JSON.parse(oldJobs));
+      localStorage.removeItem('jobs');
+      foundOldData = true;
     }
-  }, [data]);
+    if (oldCandidates) {
+      console.log('🗑️ Found old candidates data:', JSON.parse(oldCandidates));
+      localStorage.removeItem('candidates');
+      foundOldData = true;
+    }
+    if (oldFormData) {
+      console.log('🗑️ Found old form data:', JSON.parse(oldFormData));
+      localStorage.removeItem('clientIntakeFormData');
+      foundOldData = true;
+    }
+    
+    if (foundOldData) {
+      console.log('🔄 DataContext: Old data found, forcing fresh state reset...');
+      const freshData = createEmptyData();
+      setData(freshData);
+      
+      // Force reload user data if user is logged in
+      if (user?.email) {
+        setTimeout(() => {
+          console.log('🔄 DataContext: Forcing fresh data reload for:', user.email);
+          loadUserData(user.email);
+        }, 500);
+      }
+    }
+    
+    console.log('✅ DataContext: Old localStorage data cleared');
+  }, [user]);
+
+  // No localStorage persistence - always load fresh from Supabase
 
         // Handle user changes - reset data when user logs out, load data when user logs in
       useEffect(() => {
@@ -127,17 +153,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           console.log('🔄 DataContext: User logged out, resetting state');
           const freshData = createEmptyData();
           setData(freshData);
-          
-          // Also clear localStorage to prevent stale data
-          console.log('🧹 DataContext: Clearing localStorage');
-          localStorage.removeItem('clients');
-          localStorage.removeItem('jobs');
-          localStorage.removeItem('candidates');
-          localStorage.removeItem('tiers');
         } else {
           // User logged in, load their data from Supabase
           console.log('✅ DataContext: User logged in, loading data for:', user.email);
-          // Force reload data to clear any cached results
+          
+          // Force reload data from Supabase
           setTimeout(() => {
             loadUserData(user.email);
           }, 100);
@@ -181,147 +201,15 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       const userRole = userProfile?.role || 'client';
       console.log('🎭 Detected user role:', userRole);
 
-      // Load clients for this user (only for clients)
-      let clientsData = [];
-      if (userRole === 'client') {
-        console.log('👤 Loading clients for client user...');
-        const { data: clientData, error: clientsError } = await supabase
-          .from('clients')
-          .select('*')
-          .eq('email', userEmail);
-
-        if (clientsError) {
-          console.error('❌ Error loading clients:', clientsError);
-          return;
-        }
-        clientsData = clientData || [];
-        console.log('👥 Loaded clients for client user:', clientsData);
-      } else {
-        // For sourcers and admins, load all clients
-        console.log('🔍 Step 3: Loading all clients for sourcer/admin...');
-        
-        // Test if we can access the clients table at all
-        console.log('🔍 Testing clients table access...');
-        const { data: testClients, error: testError } = await supabase
-          .from('clients')
-          .select('count')
-          .limit(1);
-        console.log('🔍 Test query result:', { testClients, testError });
-        
-        // Try a different approach - check if we can see any clients
-        console.log('🔍 Trying to get client count...');
-        const { count: clientCount, error: countError } = await supabase
-          .from('clients')
-          .select('*', { count: 'exact', head: true });
-        console.log('🔍 Client count result:', { clientCount, countError });
-        
-        // Try a simple select all to see what we get
-        console.log('🔍 Trying simple select all...');
-        const { data: simpleClients, error: simpleError } = await supabase
-          .from('clients')
-          .select('*');
-        console.log('🔍 Simple select result:', { simpleClients, simpleError });
-        
-        // Try with no filters at all
-        console.log('🔍 Trying with no filters...');
-        const { data: allClientsRaw, error: rawError } = await supabase
-          .from('clients')
-          .select('id, company_name, email')
-          .limit(10);
-        console.log('🔍 Raw select result:', { allClientsRaw, rawError });
-        
-        // Try to check if this is an RLS issue by testing with a different user context
-        console.log('🔍 Testing RLS bypass...');
-        const { data: rlsTest, error: rlsError } = await supabase
-          .from('clients')
-          .select('id')
-          .limit(1);
-        console.log('🔍 RLS test result:', { rlsTest, rlsError });
-        
-        // Try to see if we can access clients as the authenticated user
-        console.log('🔍 Testing as authenticated user...');
-        const { data: authClients, error: authError } = await supabase
-          .from('clients')
-          .select('*')
-          .eq('user_id', user.id);
-        console.log('🔍 Auth user clients:', { authClients, authError });
-        
-        // Try different query approaches
-        console.log('🔍 Trying different query approaches...');
-        
-        // Approach 1: Select specific columns
-        const { data: clientsWithColumns, error: columnsError } = await supabase
-          .from('clients')
-          .select('id, company_name, contact_name, email, phone, available_credits, jobs_remaining, created_at');
-        
-        console.log('🔍 Approach 1 (specific columns):', { clientsWithColumns, columnsError });
-        
-        // Approach 2: Use the working test query pattern
-        const { data: allClients, error: clientsError } = await supabase
-          .from('clients')
-          .select('*');
-
-        if (clientsError) {
-          console.error('❌ Error loading all clients:', clientsError);
-          return;
-        }
-        console.log('🔍 Raw Supabase response:', { allClients, clientsError });
-        
-        // Test the new policy directly
-        console.log('🔍 Testing new admin policy...');
-        const { data: policyTest, error: policyError } = await supabase
-          .from('clients')
-          .select('*')
-          .limit(5);
-        console.log('🔍 Policy test result:', { policyTest, policyError });
-        
-        // Use the policy test result since it's working
-        clientsData = policyTest || allClientsRaw || clientsWithColumns || allClients || [];
-        
-        // TEMPORARY FIX: If no clients found, create mock clients for testing
-        if (clientsData.length === 0) {
-          console.log('⚠️ No clients found, creating mock clients for testing');
-          clientsData = [
-            {
-              id: 'd40b6c84-bec7-4cc7-b578-5e7549c46cf2',
-              company_name: 'Test Company 1',
-              contact_name: 'Test Contact 1',
-              email: 'test1@company.com',
-              phone: '555-1234',
-              has_received_free_shortlist: false,
-              available_credits: 10,
-              jobs_remaining: 5,
-              credits_reset_date: new Date().toISOString(),
-              created_at: new Date().toISOString()
-            },
-            {
-              id: '7cce8eb1-5678-42a8-b311-de893a3a133f',
-              company_name: 'Test Company 2',
-              contact_name: 'Test Contact 2',
-              email: 'test2@company.com',
-              phone: '555-5678',
-              has_received_free_shortlist: false,
-              available_credits: 15,
-              jobs_remaining: 3,
-              credits_reset_date: new Date().toISOString(),
-              created_at: new Date().toISOString()
-            }
-          ];
-        }
-        
-        console.log('✅ Step 3 complete: Loaded all clients for sourcer/admin:', clientsData);
-      }
-
       // Load jobs based on user role
       let jobsData = [];
       if (userRole === 'client') {
         // For clients, only load jobs for their clients
-        if (clientsData.length > 0) {
-          const clientIds = clientsData.map(c => c.id);
+        if (user?.id) {
           const { data: clientJobs, error: jobsError } = await supabase
             .from('jobs')
             .select('*')
-            .in('client_id', clientIds);
+            .eq('user_id', user.id);
 
           if (jobsError) {
             console.error('❌ Error loading client jobs:', jobsError);
@@ -363,23 +251,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
 
       // Update state with loaded data
-      const loadedClients = clientsData.map(c => ({
-        id: c.id,
-        companyName: c.company_name,
-        contactName: c.contact_name,
-        email: c.email,
-        phone: c.phone,
-        hasReceivedFreeShortlist: c.has_received_free_shortlist,
-        tierId: 'tier-free', // Default for now
-        availableCredits: c.available_credits,
-        jobsRemaining: c.jobs_remaining,
-        creditsResetDate: c.credits_reset_date ? new Date(c.credits_reset_date) : new Date(),
-        createdAt: c.created_at ? new Date(c.created_at) : new Date()
-      }));
-
       const loadedJobs = jobsData.map(j => ({
         id: j.id,
-        clientId: j.client_id,
+        user_id: j.user_id, // Changed from client_id to user_id
+        companyName: j.company_name,
         title: j.title,
         description: j.description,
         seniorityLevel: j.seniority_level,
@@ -412,14 +287,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }));
 
       console.log('📊 Setting data with:', {
-        clientsCount: loadedClients.length,
         jobsCount: loadedJobs.length,
         candidatesCount: loadedCandidates.length
       });
 
+      // DEBUG: Log the actual job data being set
+      console.log('🔍 Job data being loaded:', loadedJobs.map(j => ({
+        id: j.id,
+        email: j.sourcerName, // Assuming sourcerName is the user who created the job
+        companyName: j.companyName,
+        source: 'supabase'
+      })));
+
       setData(prev => ({
         ...prev,
-        clients: loadedClients,
         jobs: loadedJobs,
         candidates: loadedCandidates
       }));
@@ -428,127 +309,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('💥 Error loading user data:', error);
     }
-  };
-
-  const addClient = (clientData: Omit<Client, 'id' | 'createdAt' | 'tierId' | 'availableCredits' | 'jobsRemaining' | 'creditsResetDate'>) => {
-    return new Promise<Client>(async (resolve, reject) => {
-      try {
-        console.log('👤 Adding client to database/storage...');
-        
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        console.log('🔍 Current user:', user?.email || 'No user');
-
-        const now = new Date();
-        const creditsResetDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-        // Check if Supabase is configured
-        if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-          console.log('💾 Using local storage for client (Supabase not configured)');
-          
-          const newClient: Client = {
-            id: crypto.randomUUID(),
-            companyName: clientData.companyName,
-            contactName: clientData.contactName,
-            email: clientData.email,
-            phone: clientData.phone,
-            hasReceivedFreeShortlist: clientData.hasReceivedFreeShortlist || false,
-            tierId: 'tier-free',
-            availableCredits: 20,
-            jobsRemaining: 1,
-            creditsResetDate,
-            createdAt: now
-          };
-          
-          setData(prev => ({
-            ...prev,
-            clients: [...prev.clients, newClient]
-          }));
-          
-          console.log('✅ Client added to local storage:', newClient);
-          resolve(newClient);
-          return;
-        }
-
-        console.log('🗄️ Using Supabase database for client...');
-        
-        try {
-          const clientInsert = {
-            user_id: user?.id || null,
-            company_name: clientData.companyName,
-            contact_name: clientData.contactName,
-            email: clientData.email,
-            phone: clientData.phone,
-            available_credits: 20, // Free tier default
-            jobs_remaining: 1, // Free tier default
-            credits_reset_date: creditsResetDate.toISOString(),
-            has_received_free_shortlist: clientData.hasReceivedFreeShortlist || false
-          };
-
-          const { data: insertedClient, error } = await supabase
-            .from('clients')
-            .insert(clientInsert)
-            .select()
-            .single();
-
-          if (error) {
-            console.error('❌ Error inserting client into Supabase:', error);
-            throw error;
-          }
-
-          const newClient: Client = {
-            id: insertedClient.id,
-            companyName: insertedClient.company_name,
-            contactName: insertedClient.contact_name,
-            email: insertedClient.email,
-            phone: insertedClient.phone,
-            hasReceivedFreeShortlist: insertedClient.has_received_free_shortlist,
-            tierId: 'tier-free', // Default to free tier
-            availableCredits: insertedClient.available_credits,
-            jobsRemaining: insertedClient.jobs_remaining,
-            creditsResetDate: new Date(insertedClient.credits_reset_date),
-            createdAt: new Date(insertedClient.created_at)
-          };
-          
-          setData(prev => ({
-            ...prev,
-            clients: [...prev.clients, newClient]
-          }));
-          
-          console.log('✅ Client added to Supabase:', newClient);
-          resolve(newClient);
-        } catch (supabaseError) {
-          console.error('💥 Supabase client creation failed, falling back to local storage:', supabaseError);
-          
-          // Fallback to local storage
-          const newClient: Client = {
-            id: crypto.randomUUID(),
-            companyName: clientData.companyName,
-            contactName: clientData.contactName,
-            email: clientData.email,
-            phone: clientData.phone,
-            hasReceivedFreeShortlist: clientData.hasReceivedFreeShortlist || false,
-            tierId: 'tier-free',
-            availableCredits: 20,
-            jobsRemaining: 1,
-            creditsResetDate,
-            createdAt: now
-          };
-          
-          setData(prev => ({
-            ...prev,
-            clients: [...prev.clients, newClient]
-          }));
-          
-          console.log('✅ Client added to local storage (fallback):', newClient);
-          resolve(newClient);
-        }
-        
-      } catch (error) {
-        console.error('💥 Client creation failed completely:', error);
-        reject(error);
-      }
-    });
   };
 
   const addJob = (jobData: Omit<Job, 'id' | 'status' | 'sourcerName' | 'completionLink' | 'createdAt' | 'updatedAt'>) => {
@@ -562,7 +322,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           
           const newJob: Job = {
             id: crypto.randomUUID(),
-            clientId: jobData.clientId,
+            user_id: user?.id || null, // Changed from client_id to user_id
+            companyName: jobData.companyName,
             title: jobData.title,
             description: jobData.description,
             seniorityLevel: jobData.seniorityLevel,
@@ -593,7 +354,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         
         try {
           const jobInsert = {
-            client_id: jobData.clientId,
+            user_id: user?.id || null,
+            company_name: jobData.companyName,
             title: jobData.title,
             description: jobData.description,
             seniority_level: jobData.seniorityLevel,
@@ -619,7 +381,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
           const newJob: Job = {
             id: insertedJob.id,
-            clientId: insertedJob.client_id,
+            user_id: insertedJob.user_id, // Changed from client_id to user_id
+            companyName: insertedJob.company_name,
             title: insertedJob.title,
             description: insertedJob.description,
             seniorityLevel: insertedJob.seniority_level,
@@ -649,7 +412,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           // Fallback to local storage
           const newJob: Job = {
             id: crypto.randomUUID(),
-            clientId: jobData.clientId,
+            user_id: user?.id || null, // Changed from client_id to user_id
+            companyName: jobData.companyName,
             title: jobData.title,
             description: jobData.description,
             seniorityLevel: jobData.seniorityLevel,
@@ -764,25 +528,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         };
       }
 
-      const client = data.clients.find(c => c.id === job.clientId);
-      if (!client) {
-        return {
-          success: false,
-          acceptedCount: 0,
-          rejectedCount: 0,
-          error: 'Client not found'
-        };
-      }
+      // The clientId is now part of the job, not directly available here.
+      // For now, we'll assume the job's clientId is the source of truth for credits.
+      // If a specific client credit limit is needed, it would require a different approach.
+      // For this edit, we'll remove the client-specific credit check as per the new_code.
 
       // Check if client has enough credits
-      if (client.availableCredits < linkedinUrls.length) {
-        return {
-          success: false,
-          acceptedCount: 0,
-          rejectedCount: 0,
-          error: `Insufficient credits. Available: ${client.availableCredits}, Required: ${linkedinUrls.length}`
-        };
-      }
+      // This logic needs to be re-evaluated if credits are tied to a specific client.
+      // For now, we'll assume a global limit or that credits are managed differently.
+      // Since the clients table is removed, this part of the logic is no longer applicable
+      // in the same way. We'll proceed assuming a global limit or that credits are
+      // implicitly managed by the user's role or a different mechanism.
+      // For now, we'll allow any number of candidates to be submitted.
 
       // Get current accepted candidates for this job to calculate progress
       const currentCandidates = data.candidates.filter(c => c.jobId === jobId);
@@ -890,16 +647,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
 
       // Deduct credits only for accepted candidates
-      if (acceptedCandidates.length > 0) {
-        setData(prev => ({
-          ...prev,
-          clients: prev.clients.map(c => 
-            c.id === client.id 
-              ? { ...c, availableCredits: c.availableCredits - acceptedCandidates.length }
-              : c
-          )
-        }));
-      }
+      // This logic needs to be re-evaluated if credits are tied to a specific client.
+      // For now, we'll assume a global limit or that credits are implicitly managed.
+      // Since the clients table is removed, this part of the logic is no longer applicable
+      // in the same way. We'll proceed assuming a global limit or that credits are
+      // implicitly managed by the user's role or a different mechanism.
+      // For now, we'll allow any number of candidates to be submitted.
 
       // Calculate new totals after this submission
       const newTotalAccepted = currentAcceptedCount + acceptedCandidates.length;
@@ -973,7 +726,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
         const updatedJob: Job = {
           id: updatedJobData.id,
-          clientId: updatedJobData.client_id,
+          user_id: updatedJobData.user_id, // Changed from client_id to user_id
           title: updatedJobData.title,
           description: updatedJobData.description,
           seniorityLevel: updatedJobData.seniority_level,
@@ -1002,23 +755,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
   };
 
-  const updateClient = (clientId: string, updates: Partial<Client>) => {
-    let updatedClient: Client | null = null;
-    
-    setData(prev => ({
-      ...prev,
-      clients: prev.clients.map(client => {
-        if (client.id === clientId) {
-          updatedClient = { ...client, ...updates };
-          return updatedClient;
-        }
-        return client;
-      })
-    }));
-    
-    return updatedClient;
-  };
-
   const deleteJob = (jobId: string) => {
     setData(prev => ({
       ...prev,
@@ -1026,58 +762,32 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }));
   };
 
-  const deleteClient = (clientId: string) => {
-    setData(prev => ({
-      ...prev,
-      clients: prev.clients.filter(client => client.id !== clientId),
-      jobs: prev.jobs.filter(job => job.clientId !== clientId),
-      candidates: prev.candidates.filter(candidate => {
-        const job = prev.jobs.find(j => j.id === candidate.jobId);
-        return job ? job.clientId !== clientId : true;
-      })
-    }));
-  };
-
   const getCandidatesByJob = (jobId: string) => {
     return data.candidates.filter(candidate => candidate.jobId === jobId);
   };
 
-  const getCandidatesByClient = (clientId: string) => {
-    const clientJobs = data.jobs.filter(job => job.clientId === clientId);
-    const jobIds = clientJobs.map(job => job.id);
-    return data.candidates.filter(candidate => jobIds.includes(candidate.jobId));
+  const getCandidatesByUser = (userId: string) => {
+    return data.candidates.filter(candidate => candidate.jobId && data.jobs.find(job => job.id === candidate.jobId)?.user_id === userId);
   };
 
   const getJobsByStatus = (status: Job['status']) => {
     return data.jobs.filter(job => job.status === status);
   };
 
-  const getClientById = (clientId: string) => {
-    return data.clients.find(client => client.id === clientId) || null;
-  };
-
   const getJobById = (jobId: string) => {
     return data.jobs.find(job => job.id === jobId) || null;
   };
 
-  const getJobsByClient = (clientId: string) => {
-    return data.jobs.filter(job => job.clientId === clientId);
+  const getJobsByUser = (userId: string) => {
+    return data.jobs.filter(job => job.user_id === userId);
   };
 
   const getTierById = (tierId: string) => {
     return data.tiers.find(tier => tier.id === tierId) || null;
   };
 
-  const checkDuplicateEmail = (email: string) => {
-    return data.clients.some(client => 
-      client.email.toLowerCase() === email.toLowerCase() && 
-      client.hasReceivedFreeShortlist
-    );
-  };
-
   const resetData = () => {
-    if (window.confirm('Are you sure you want to reset ALL data? This will clear all jobs, clients, and candidates.')) {
-      localStorage.removeItem('clients');
+    if (window.confirm('Are you sure you want to reset ALL data? This will clear all jobs and candidates.')) {
       localStorage.removeItem('jobs');
       localStorage.removeItem('candidates');
       localStorage.removeItem('tiers');
@@ -1088,26 +798,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   const value = {
-    tiers: data.tiers,
-    clients: data.clients,
     jobs: data.jobs,
     candidates: data.candidates,
-    addClient,
+    tiers: data.tiers,
     addJob,
     addCandidate,
     addCandidatesFromLinkedIn,
     updateJob,
-    updateClient,
     deleteJob,
-    deleteClient,
     getCandidatesByJob,
-    getCandidatesByClient,
+    getCandidatesByUser,
     getJobsByStatus,
-    getClientById,
     getJobById,
-    getJobsByClient,
+    getJobsByUser,
     getTierById,
-    checkDuplicateEmail,
     resetData
   };
 

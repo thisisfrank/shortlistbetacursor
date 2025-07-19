@@ -284,7 +284,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
           <div className="flex justify-between items-start mb-8">
             <div>
               <h3 className="text-3xl font-anton text-white-knight mb-2 uppercase tracking-wide">{job.title}</h3>
-              <p className="text-xl text-supernova font-jakarta font-semibold">{client.companyName}</p>
+              <p className="text-xl text-supernova font-jakarta font-semibold">{job.companyName}</p>
             </div>
             <div className="flex flex-col items-end gap-3">
               <Badge 

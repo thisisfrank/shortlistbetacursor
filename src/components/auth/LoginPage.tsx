@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Card, CardContent } from '../ui/Card';
@@ -14,6 +14,15 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Check for profile missing flag and redirect to signup
+  useEffect(() => {
+    const profileMissing = localStorage.getItem('profileMissing');
+    if (profileMissing === 'true') {
+      localStorage.removeItem('profileMissing');
+      setError('Account not found. Please sign up first.');
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

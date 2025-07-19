@@ -22,7 +22,7 @@ export const SourcerDashboard: React.FC = () => {
   // Get the selected job and its client
   const selectedJob = selectedJobId ? jobs.find(job => job.id === selectedJobId) || null : null;
   const client = selectedJob ? getClientById(selectedJob.clientId) : null;
-  
+
   // Debug client retrieval
   console.log('🔍 Client debug:', {
     selectedJobId,

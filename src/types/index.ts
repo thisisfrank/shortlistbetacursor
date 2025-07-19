@@ -1,15 +1,15 @@
-export interface Client {
+export interface UserProfile {
   id: string;
-  companyName: string;
-  contactName: string;
   email: string;
-  phone: string;
-  hasReceivedFreeShortlist: boolean;
+  role: 'client' | 'sourcer' | 'admin';
+  // Subscription fields moved from Client
   tierId: string;
   availableCredits: number;
   jobsRemaining: number;
   creditsResetDate: Date;
+  hasReceivedFreeShortlist: boolean;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Tier {
@@ -23,7 +23,8 @@ export interface Tier {
 
 export interface Job {
   id: string;
-  clientId: string;
+  userId: string; // Changed from clientId to userId
+  companyName: string; // Company hiring for this specific job
   title: string;
   description: string;
   seniorityLevel: 'Junior' | 'Mid' | 'Senior' | 'Executive';

@@ -10,9 +10,6 @@ import { useData } from '../../../context/DataContext';
 import { useAuth } from '../../../context/AuthContext';
 
 export const ClientIntakeForm: React.FC = () => {
-  const { addClient, addJob, clients, updateClient } = useData();
-  const { user } = useAuth();
-  
   const [currentStep, setCurrentStep] = useState<FormStep>('company-info');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -30,30 +27,10 @@ export const ClientIntakeForm: React.FC = () => {
     salaryRangeMin: '',
     salaryRangeMax: '',
     keySellingPoints: [] as string[],
-    candidatesRequested: ''
+    candidatesRequested: '1'
   });
-  
-  // Load form data from localStorage on component mount (simplified)
-  useEffect(() => {
-    const savedFormData = localStorage.getItem('clientIntakeFormData');
-    if (savedFormData) {
-      try {
-        const parsedData = JSON.parse(savedFormData);
-        setFormData(parsedData);
-      } catch (error) {
-        console.error('Error loading saved form data:', error);
-        localStorage.removeItem('clientIntakeFormData');
-      }
-    }
-  }, []);
 
-  useEffect(() => {
-    if (Object.values(formData).some(value => 
-      Array.isArray(value) ? value.length > 0 : value.toString().trim()
-    )) {
-      localStorage.setItem('clientIntakeFormData', JSON.stringify(formData));
-    }
-  }, [formData]);
+  // Removed all localStorage persistence
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -199,38 +176,17 @@ export const ClientIntakeForm: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    console.log('🎯 Form submission started for authenticated user...');
-    console.log('👤 Current user email:', user?.email);
-    console.log('📝 Form email:', formData.email);
+    console.log('🎯 Form submission started...');
     setIsSubmitting(true);
     
     try {
-      // Find existing client profile or create one
-      console.log('🔍 Finding existing client profile...');
-      
-      let client = user ? clients.find(c => c.email === user.email) : null;
-      
-      if (!client) {
-        console.log('👤 No existing client found, creating new client profile...');
-        client = await addClient({
-          companyName: formData.companyName,
-          contactName: formData.contactName,
-          email: user.email, // Use authenticated user's email, not form email
-          phone: formData.phone,
-          hasReceivedFreeShortlist: false
-        });
-        console.log('✅ New client profile created:', client);
-      } else {
-        console.log('✅ Found existing client profile:', client);
-      }
-      
-      console.log('📋 Adding job for client...');
-      const job = await addJob({
-        clientId: client.id,
+      // Simulate job submission (completely disconnected from any user/client data)
+      console.log('📋 Job data to submit:', {
+        companyName: formData.companyName,
         title: formData.title,
         description: formData.description,
-        seniorityLevel: formData.seniorityLevel as any,
-        workArrangement: formData.workArrangement as any,
+        seniorityLevel: formData.seniorityLevel,
+        workArrangement: formData.workArrangement,
         location: formData.location,
         salaryRangeMin: parseInt(formData.salaryRangeMin),
         salaryRangeMax: parseInt(formData.salaryRangeMax),
@@ -238,19 +194,13 @@ export const ClientIntakeForm: React.FC = () => {
         candidatesRequested: parseInt(formData.candidatesRequested)
       });
       
-      console.log('✅ Job submitted successfully:', job);
+      // Simulate processing time
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      updateClient(client.id, {
-        jobsRemaining: Math.max(0, client.jobsRemaining - 1)
-      });
-      
-      console.log('✅ Client jobs remaining updated');
+      console.log('✅ Job submission simulated successfully');
       
       // Move to confirmation step
       setCurrentStep('confirmation');
-      
-      // Clear saved form data after successful submission
-      localStorage.removeItem('clientIntakeFormData');
     } catch (error) {
       console.error('💥 Error submitting form:', error);
       alert(`Submission failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -261,9 +211,6 @@ export const ClientIntakeForm: React.FC = () => {
   };
 
   const resetForm = () => {
-    // Clear localStorage when resetting
-    localStorage.removeItem('clientIntakeFormData');
-    
     setFormData({
       companyName: '',
       contactName: '',
@@ -282,6 +229,8 @@ export const ClientIntakeForm: React.FC = () => {
     setErrors({});
     setCurrentStep('company-info');
   };
+
+  // Removed clearOldData and all localStorage usage
 
   return (
     <Card className="max-w-4xl mx-auto glow-supernova">

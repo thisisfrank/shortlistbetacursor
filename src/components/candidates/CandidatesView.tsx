@@ -294,9 +294,9 @@ export const CandidatesView: React.FC = () => {
             <h2 className="text-3xl md:text-4xl font-anton text-supernova mb-4 text-center uppercase tracking-wide">
               {selectedJob?.title}
             </h2>
-            {client && (
+            {selectedJob && (
               <p className="text-xl text-guardian text-center font-jakarta">
-                {client.companyName}
+                {selectedJob.companyName}
               </p>
             )}
           </header>
@@ -906,12 +906,10 @@ export const CandidatesView: React.FC = () => {
                           </div>
                         </div>
                         
-                        {client && (
-                          <div className="mb-4 p-3 bg-supernova/10 border border-supernova/30 rounded-lg">
-                            <p className="text-sm font-jakarta font-semibold text-supernova">Company</p>
-                            <p className="text-white-knight font-jakarta font-bold">{client.companyName}</p>
-                          </div>
-                        )}
+                        <div className="mb-4 p-3 bg-supernova/10 border border-supernova/30 rounded-lg">
+                          <p className="text-sm font-jakarta font-semibold text-supernova">Company</p>
+                          <p className="text-white-knight font-jakarta font-bold">{job.companyName}</p>
+                        </div>
                         
                         <div className="space-y-3 mb-6">
                           <div className="flex items-center text-sm text-guardian">
