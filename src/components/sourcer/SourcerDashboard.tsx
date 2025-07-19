@@ -260,6 +260,15 @@ export const SourcerDashboard: React.FC = () => {
             onComplete={handleCompleteJob}
           />
         )}
+        
+        {/* Debug info */}
+        {selectedJobId && (
+          <div className="fixed bottom-4 right-4 bg-red-500 text-white p-4 rounded-lg z-50">
+            <p>Selected Job ID: {selectedJobId}</p>
+            <p>Selected Job: {selectedJob ? 'Yes' : 'No'}</p>
+            <p>Client: {client ? 'Yes' : 'No'}</p>
+          </div>
+        )}
       </div>
     </div>
   );
