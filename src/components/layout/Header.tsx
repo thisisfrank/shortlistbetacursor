@@ -141,7 +141,6 @@ export const Header: React.FC = () => {
           }`}>
             {navItems.map((item) => {
               const active = isActive(item.path);
-              console.log(`Navigation item: ${item.label} (${item.path}) - Active: ${active} - Current path: ${location.pathname}`);
               return (
                 <Link
                   key={item.key}

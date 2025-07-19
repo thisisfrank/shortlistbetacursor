@@ -31,9 +31,16 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
     return <Navigate to="/login" replace />;
   }
 
-  // No user profile - shouldn't happen with simplified auth
-  if (!userProfile) {
-    return <Navigate to="/login" replace />;
+  // No user profile but user exists - profile might still be loading
+  if (!userProfile && user) {
+    return (
+      <div className="min-h-screen bg-shadowforce flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-supernova mx-auto mb-4"></div>
+          <p className="text-guardian font-jakarta">Loading your profile...</p>
+        </div>
+      </div>
+    );
   }
 
   // Check if user's role is allowed

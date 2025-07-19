@@ -180,15 +180,17 @@ export const useAuth = () => {
       
       console.log('🔐 Sign in result:', { success: !error, error: error?.message });
       
+      // Don't set loading to false here - let the auth state change handle it
+      // This prevents the flickering issue
+      
       return { data, error };
     } catch (error) {
       console.error('💥 Sign in catch error:', error);
+      setLoading(false); // Only set loading to false on error
       return { 
         data: null, 
         error: { message: 'Network error. Please try again.' } 
       };
-    } finally {
-      setLoading(false);
     }
   };
 
