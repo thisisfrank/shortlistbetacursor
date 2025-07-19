@@ -9,6 +9,14 @@ import { Users, Trash2, Edit, X, Save, Crown, CreditCard, Plus } from 'lucide-re
 export const ClientManagement: React.FC = () => {
   const { clients, jobs, tiers, getTierById, deleteClient, updateClient } = useData();
   const [editingClientId, setEditingClientId] = useState<string | null>(null);
+  
+  // Debug: Log client data
+  console.log('🔍 ClientManagement Debug:', {
+    totalClients: clients?.length || 0,
+    clients: clients,
+    totalJobs: jobs?.length || 0,
+    totalTiers: tiers?.length || 0
+  });
   const [editForm, setEditForm] = useState<any>({});
   const [showUpgradeModal, setShowUpgradeModal] = useState<string | null>(null);
   const [showCreditsModal, setShowCreditsModal] = useState<string | null>(null);
