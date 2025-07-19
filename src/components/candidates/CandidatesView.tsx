@@ -10,7 +10,7 @@ import { Button } from '../ui/Button';
 import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download } from 'lucide-react';
 
 export const CandidatesView: React.FC = () => {
-  const { jobs, candidates, clients, getCandidatesByJob, getClientById, getJobById } = useData();
+  const { jobs, candidates, getCandidatesByJob, getJobById } = useData();
   const { user, userProfile } = useAuth();
   const navigate = useNavigate();
   
@@ -681,27 +681,12 @@ export const CandidatesView: React.FC = () => {
   console.log('🔍 CandidatesView Debug:', {
     user: user?.email,
     totalJobs: jobs?.length || 0,
-    totalClients: clients?.length || 0,
     totalCandidates: candidates?.length || 0
   });
 
   // Ensure we have valid data arrays with fallbacks
   const safeJobs = jobs || [];
-  const safeClients = clients || [];
   const safeCandidates = candidates || [];
-  
-  // Additional safety check
-  if (typeof safeClients === 'undefined') {
-    console.error('❌ clients is undefined, using empty array');
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-supernova mx-auto mb-4"></div>
-          <p className="text-guardian font-jakarta">Loading data...</p>
-        </div>
-      </div>
-    );
-  }
 
   // Filter jobs to only show those submitted by the current authenticated user
   const userJobs = safeJobs.filter(job => {
@@ -718,7 +703,7 @@ export const CandidatesView: React.FC = () => {
   console.log('👤 User jobs found:', userJobs.length);
   
   // Show loading state if data is still loading
-  if (!jobs || !clients || !candidates) {
+  if (!jobs || !candidates) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
         <div className="text-center">
