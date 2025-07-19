@@ -13,6 +13,36 @@ export const CandidatesView: React.FC = () => {
   const { jobs, candidates, getCandidatesByJob, getClientById, getJobById } = useData();
   const { user, userProfile } = useAuth();
   const navigate = useNavigate();
+  
+  // Add error boundary
+  const [hasError, setHasError] = React.useState(false);
+  
+  React.useEffect(() => {
+    const handleError = (error: ErrorEvent) => {
+      console.error('CandidatesView Error:', error);
+      setHasError(true);
+    };
+    
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+  
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-anton text-white-knight mb-4">Something went wrong</h2>
+          <p className="text-guardian font-jakarta mb-4">Please refresh the page and try again.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-6 py-3 bg-supernova text-shadowforce rounded-lg font-jakarta font-bold"
+          >
+            REFRESH PAGE
+          </button>
+        </div>
+      </div>
+    );
+  }
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [expandedCandidates, setExpandedCandidates] = useState<Set<string>>(new Set());
@@ -650,14 +680,19 @@ export const CandidatesView: React.FC = () => {
   // Debug: Log current state
   console.log('🔍 CandidatesView Debug:', {
     user: user?.email,
-    totalJobs: jobs.length,
-    totalClients: clients.length,
-    totalCandidates: candidates.length
+    totalJobs: jobs?.length || 0,
+    totalClients: clients?.length || 0,
+    totalCandidates: candidates?.length || 0
   });
 
+  // Ensure we have valid data arrays
+  const safeJobs = jobs || [];
+  const safeClients = clients || [];
+  const safeCandidates = candidates || [];
+
   // Filter jobs to only show those submitted by the current authenticated user
-  const userJobs = jobs.filter(job => {
-    if (!user) return false; // No user, no jobs
+  const userJobs = safeJobs.filter(job => {
+    if (!user || !job) return false; // No user or invalid job, no jobs
     
     const client = getClientById(job.clientId);
     const matchesUser = client && client.email === user.email;
@@ -668,6 +703,18 @@ export const CandidatesView: React.FC = () => {
   });
 
   console.log('👤 User jobs found:', userJobs.length);
+  
+  // Show loading state if data is still loading
+  if (!jobs || !clients || !candidates) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-supernova mx-auto mb-4"></div>
+          <p className="text-guardian font-jakarta">Loading your candidates...</p>
+        </div>
+      </div>
+    );
+  }
   
   const filteredJobs = userJobs.filter(job => {
     if (search) {
