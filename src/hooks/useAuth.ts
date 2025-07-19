@@ -247,6 +247,13 @@ export const useAuth = () => {
   const signOut = async () => {
     console.log('🚪 Signing out...');
     
+    // Clear local state immediately for faster response
+    setUser(null);
+    setUserProfile(null);
+    setLoading(false);
+    localStorage.removeItem('sourcerName');
+    localStorage.removeItem('savedSourcers');
+    
     try {
       const { error } = await supabase.auth.signOut();
       console.log('🚪 Supabase signOut result:', { error });
@@ -254,15 +261,6 @@ export const useAuth = () => {
     } catch (error) {
       console.error('💥 Sign out error:', error);
       return { error: { message: 'Error signing out' } };
-    } finally {
-      // Ensure local state is cleared regardless of API call success
-      console.log('🧹 Clearing auth state and localStorage');
-      setUser(null);
-      setUserProfile(null);
-      setLoading(false);
-      // Clear application-specific localStorage
-      localStorage.removeItem('sourcerName');
-      localStorage.removeItem('savedSourcers');
     }
   };
 

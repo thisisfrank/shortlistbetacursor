@@ -17,6 +17,7 @@ export const Header: React.FC = () => {
       case 'sourcer':
         return '/sourcer';
       case 'client':
+        return '/client'; // Changed from '/' to '/client' for clients
       default:
         return '/';
     }
@@ -25,10 +26,10 @@ export const Header: React.FC = () => {
   const isActive = (path: string) => {
     if (!userProfile) return location.pathname === path;
     
-    // For clients, handle both home page and candidates page
+    // For clients, handle both client page and candidates page
     if (userProfile.role === 'client') {
-      // If we're on the home page and checking the home path
-      if (path === '/' && location.pathname === '/') {
+      // If we're on the client page and checking the client path
+      if (path === '/client' && location.pathname === '/client') {
         return true;
       }
       // If we're on the candidates page and checking the candidates path
@@ -62,7 +63,7 @@ export const Header: React.FC = () => {
     switch (userProfile.role) {
       case 'client':
         return [
-          { path: '/', label: 'GET CANDIDATES', key: 'submit' },
+          { path: '/client', label: 'GET CANDIDATES', key: 'submit' },
           { path: '/candidates', label: 'MY CANDIDATES', key: 'candidates' }
         ];
       case 'sourcer':
