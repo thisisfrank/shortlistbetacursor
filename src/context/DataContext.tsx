@@ -253,7 +253,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       // Update state with loaded data
       const loadedJobs = jobsData.map(j => ({
         id: j.id,
-        user_id: j.user_id, // Changed from client_id to user_id
+        userId: j.user_id, // Map database user_id to frontend userId
         companyName: j.company_name,
         title: j.title,
         description: j.description,
@@ -381,7 +381,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
           const newJob: Job = {
             id: insertedJob.id,
-            user_id: insertedJob.user_id, // Changed from client_id to user_id
+            userId: insertedJob.user_id, // Map database user_id to frontend userId
             companyName: insertedJob.company_name,
             title: insertedJob.title,
             description: insertedJob.description,
@@ -726,7 +726,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
         const updatedJob: Job = {
           id: updatedJobData.id,
-          user_id: updatedJobData.user_id, // Changed from client_id to user_id
+          userId: updatedJobData.user_id, // Map database user_id to frontend userId
           title: updatedJobData.title,
           description: updatedJobData.description,
           seniorityLevel: updatedJobData.seniority_level,
