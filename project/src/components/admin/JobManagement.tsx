@@ -10,6 +10,9 @@ import { Search, CalendarDays, Filter, Trash2, Edit, X, Save } from 'lucide-reac
 
 export const JobManagement: React.FC = () => {
   const { jobs, deleteJob, updateJob } = useData();
+  
+  // Defensive programming: ensure arrays are defined
+  const safeJobs = jobs || [];
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -17,11 +20,11 @@ export const JobManagement: React.FC = () => {
   const [editForm, setEditForm] = useState<any>({});
   
   // Get selected job and client
-  const selectedJob = selectedJobId ? jobs.find(job => job.id === selectedJobId) || null : null;
+  const selectedJob = selectedJobId ? safeJobs.find(job => job.id === selectedJobId) || null : null;
   const client = selectedJob ? getClientById(selectedJob.userId) : null;
   
   // Filter jobs based on status and search
-  const filteredJobs = jobs.filter(job => {
+  const filteredJobs = safeJobs.filter(job => {
     // Filter by status
     if (statusFilter !== 'all' && job.status !== statusFilter) {
       return false;
