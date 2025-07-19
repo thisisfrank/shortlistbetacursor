@@ -120,26 +120,29 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   }, [data]);
 
-  // Handle user changes - reset data when user logs out, load data when user logs in
-  useEffect(() => {
-    if (!user) {
-      // User logged out, reset data to initial empty state
-      console.log('🔄 DataContext: User logged out, resetting state');
-      const freshData = createEmptyData();
-      setData(freshData);
-      
-      // Also clear localStorage to prevent stale data
-      console.log('🧹 DataContext: Clearing localStorage');
-      localStorage.removeItem('clients');
-      localStorage.removeItem('jobs');
-      localStorage.removeItem('candidates');
-      localStorage.removeItem('tiers');
-    } else {
-      // User logged in, load their data from Supabase
-      console.log('✅ DataContext: User logged in, loading data for:', user.email);
-      loadUserData(user.email);
-    }
-  }, [user]);
+        // Handle user changes - reset data when user logs out, load data when user logs in
+      useEffect(() => {
+        if (!user) {
+          // User logged out, reset data to initial empty state
+          console.log('🔄 DataContext: User logged out, resetting state');
+          const freshData = createEmptyData();
+          setData(freshData);
+          
+          // Also clear localStorage to prevent stale data
+          console.log('🧹 DataContext: Clearing localStorage');
+          localStorage.removeItem('clients');
+          localStorage.removeItem('jobs');
+          localStorage.removeItem('candidates');
+          localStorage.removeItem('tiers');
+        } else {
+          // User logged in, load their data from Supabase
+          console.log('✅ DataContext: User logged in, loading data for:', user.email);
+          // Force reload data to clear any cached results
+          setTimeout(() => {
+            loadUserData(user.email);
+          }, 100);
+        }
+      }, [user]);
 
   const loadUserData = async (userEmail: string) => {
     try {
@@ -267,6 +270,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         // Try to use the auth user clients if available, otherwise fall back
         clientsData = authClients || allClientsRaw || clientsWithColumns || allClients || [];
         console.log('✅ Step 3 complete: Loaded all clients for sourcer/admin:', clientsData);
+        
+        // Test the new policy directly
+        console.log('🔍 Testing new admin policy...');
+        const { data: policyTest, error: policyError } = await supabase
+          .from('clients')
+          .select('id, company_name')
+          .limit(5);
+        console.log('🔍 Policy test result:', { policyTest, policyError });
       }
 
       // Load jobs based on user role
