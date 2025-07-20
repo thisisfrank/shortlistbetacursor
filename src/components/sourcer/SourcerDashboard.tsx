@@ -23,13 +23,7 @@ export const SourcerDashboard: React.FC = () => {
   const selectedJob = selectedJobId ? jobs.find(job => job.id === selectedJobId) || null : null;
       const companyName = selectedJob?.companyName || 'Unknown Company';
 
-  // Debug modal condition
-  console.log('🔍 Modal condition debug:', {
-    selectedJob: !!selectedJob,
-    companyName: selectedJob?.companyName,
-    modalShouldShow: !!selectedJob,
-    selectedJobId
-  });
+
 
   // Filter jobs based on the filter and search
   const filteredJobs = jobs.filter(job => {
