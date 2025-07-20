@@ -630,8 +630,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             summary: candidate.summary
           }));
           
-          // Insert candidates into Supabase
           console.log('📤 Inserting candidates to Supabase:', candidatesToInsert.length);
+          console.log('📋 Candidate data to insert:', candidatesToInsert);
           
           const { data: insertedCandidates, error: insertError } = await supabase
             .from('candidates')
@@ -650,6 +650,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           }
           
           console.log('✅ Candidates saved to Supabase:', insertedCandidates.length);
+          console.log('📊 Inserted candidates data:', insertedCandidates);
           
           // Update local state with the actual database records
           const savedCandidates = insertedCandidates.map(c => ({
@@ -667,15 +668,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             submittedAt: new Date(c.submitted_at)
           }));
           
+          console.log('🔄 Updating local state with saved candidates...');
           setData(prev => ({
             ...prev,
             candidates: [...prev.candidates, ...savedCandidates]
           }));
+          console.log('✅ Local state updated successfully');
           
         } catch (error) {
           console.error('💥 Error saving candidates to database:', error);
           throw error;
         }
+      } else {
+        console.log('ℹ️ No accepted candidates to save');
       }
 
       // Deduct credits only for accepted candidates
