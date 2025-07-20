@@ -51,8 +51,9 @@ export const LoginPage: React.FC = () => {
         const errorMessage = signInError.message === 'Invalid login credentials' 
           ? 'Account not found. Please check your email or sign up for a new account.'
           : signInError.message || 'Login failed. Please try again.';
+        console.log('🚨 About to set error message:', errorMessage);
         setError(errorMessage);
-        console.log('🚨 Setting error message:', errorMessage);
+        console.log('🚨 Error message set, current state should update');
       } else if (data?.user) {
         console.log('✅ Login successful, redirecting...');
         // Check for redirect parameter
@@ -96,19 +97,15 @@ export const LoginPage: React.FC = () => {
           )}
           
           {/* Debug: Show error state */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mb-4 p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400">
-              Debug: Error state = "{error}"
-            </div>
-          )}
+          <div className="mb-4 p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400">
+            Debug: Error state = "{error}"
+          </div>
           
-          {/* Test error display - always show this in development */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center">
-              <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
-              <p className="text-red-400 font-jakarta text-sm">Test error message - this should always show in development</p>
-            </div>
-          )}
+          {/* Test error display - always show this */}
+          <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center">
+            <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
+            <p className="text-red-400 font-jakarta text-sm">Test error message - this should always show</p>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <FormInput
