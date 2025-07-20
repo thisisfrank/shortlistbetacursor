@@ -26,6 +26,7 @@ interface DataContextType {
   getJobsByUser: (userId: string) => Job[];
   getTierById: (tierId: string) => Tier | null;
   resetData: () => void;
+  testInsertCandidate: () => Promise<{ success: boolean; data: any; error: any }>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
