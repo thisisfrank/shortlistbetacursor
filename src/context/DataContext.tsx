@@ -738,6 +738,57 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  // Test function to manually insert a candidate
+  const testInsertCandidate = async () => {
+    try {
+      console.log('🧪 Testing candidate insertion...');
+      
+      const testCandidate = {
+        job_id: data.jobs[0]?.id || 'test-job-id',
+        first_name: 'Test',
+        last_name: 'Candidate',
+        linkedin_url: 'https://linkedin.com/in/test',
+        headline: 'Test Headline',
+        location: 'Test Location',
+        experience: [{ title: 'Test Role', company: 'Test Company', duration: '1 year' }],
+        education: [{ school: 'Test University', degree: 'Test Degree' }],
+        skills: ['Test Skill 1', 'Test Skill 2'],
+        summary: 'Test summary'
+      };
+      
+      console.log('📤 Inserting test candidate:', testCandidate);
+      
+      const { data: insertedCandidate, error } = await supabase
+        .from('candidates')
+        .insert(testCandidate)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('❌ Test insertion failed:', error);
+        console.error('❌ Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+      } else {
+        console.log('✅ Test insertion successful:', insertedCandidate);
+      }
+      
+      return { success: !error, data: insertedCandidate, error };
+    } catch (error) {
+      console.error('💥 Test insertion error:', error);
+      return { success: false, data: null, error };
+    }
+  };
+
+  // Expose test function globally for console access
+  if (typeof window !== 'undefined') {
+    (window as any).testCandidateInsertion = testInsertCandidate;
+    console.log('🔧 Global test function available: window.testCandidateInsertion()');
+  }
+
   const value = {
     jobs: data.jobs,
     candidates: data.candidates,
@@ -753,7 +804,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     getJobById,
     getJobsByUser,
     getTierById,
-    resetData
+    resetData,
+    testInsertCandidate
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

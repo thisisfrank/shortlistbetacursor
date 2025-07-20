@@ -7,7 +7,7 @@ import { JobDetailModal } from '../sourcer/JobDetailModal';
 import { Search, CalendarDays, Users, Filter, Trash2, Zap, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 
 export const AdminPanel: React.FC = () => {
-  const { clients, jobs, tiers, getTierById, deleteJob, deleteClient, updateJob } = useData();
+  const { clients, jobs, tiers, getTierById, deleteJob, deleteClient, updateJob, testInsertCandidate } = useData();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -104,6 +104,21 @@ export const AdminPanel: React.FC = () => {
           <p className="text-xl text-guardian text-center font-jakarta max-w-2xl mx-auto">
             Monitor performance, manage clients and jobs, oversee sourcing operations
           </p>
+          
+          {/* Test Database Connection */}
+          <div className="mt-6 text-center">
+            <Button 
+              onClick={async () => {
+                const result = await testInsertCandidate();
+                console.log('🧪 Test result:', result);
+                alert(result.success ? '✅ Database connection working!' : '❌ Database connection failed. Check console for details.');
+              }}
+              variant="outline"
+              size="sm"
+            >
+              🧪 Test Database Connection
+            </Button>
+          </div>
         </header>
         
         {/* Dashboard Stats */}
