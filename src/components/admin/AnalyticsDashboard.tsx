@@ -5,7 +5,7 @@ import { Button } from '../ui/Button';
 import { TrendingUp, Calendar, Users, Briefcase, Target, Clock, DollarSign, Award } from 'lucide-react';
 
 export const AnalyticsDashboard: React.FC = () => {
-  const { jobs, clients, candidates, getCandidatesByJob } = useData();
+  const { jobs, candidates, getCandidatesByJob } = useData();
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
 
   // Calculate date range
@@ -22,7 +22,6 @@ export const AnalyticsDashboard: React.FC = () => {
 
   const startDate = getDateRange();
   const filteredJobs = jobs.filter(job => new Date(job.createdAt) >= startDate);
-  const filteredClients = clients.filter(client => new Date(client.createdAt) >= startDate);
   const filteredCandidates = candidates.filter(candidate => new Date(candidate.submittedAt) >= startDate);
 
   // Performance metrics
@@ -68,67 +67,74 @@ export const AnalyticsDashboard: React.FC = () => {
     completed: filteredJobs.filter(job => job.status === 'Completed').length,
   };
 
-  // Client activity
-  const clientActivity = clients.map(client => {
-    const clientJobs = jobs.filter(job => job.clientId === client.id);
-    const clientCandidates = candidates.filter(candidate => {
-      const job = jobs.find(j => j.id === candidate.jobId);
-      return job && job.clientId === client.id;
-    });
-    
-    return {
-      ...client,
-      jobCount: clientJobs.length,
-      candidateCount: clientCandidates.length,
-      completedJobs: clientJobs.filter(job => job.status === 'Completed').length
-    };
-  }).sort((a, b) => b.jobCount - a.jobCount).slice(0, 5);
+  // Company activity (replaced client activity)
+  const companyActivity = jobs
+    .filter(job => job.companyName) // Only jobs with company names
+    .reduce((acc, job) => {
+      const company = job.companyName!;
+      if (!acc[company]) {
+        acc[company] = {
+          companyName: company,
+          jobCount: 0,
+          candidateCount: 0,
+          completedJobs: 0
+        };
+      }
+      acc[company].jobCount++;
+      acc[company].candidateCount += getCandidatesByJob(job.id).length;
+      if (job.status === 'Completed') {
+        acc[company].completedJobs++;
+      }
+      return acc;
+    }, {} as Record<string, { companyName: string; jobCount: number; candidateCount: number; completedJobs: number }>);
+
+  const topCompanies = Object.values(companyActivity)
+    .sort((a, b) => b.jobCount - a.jobCount)
+    .slice(0, 5);
 
   return (
     <div className="space-y-8">
       {/* Time Range Selector */}
       <div className="flex justify-center">
-        <div className="flex gap-2 bg-shadowforce-light/50 rounded-xl p-2 border border-guardian/20">
-          {[
-            { value: '7d', label: '7 Days' },
-            { value: '30d', label: '30 Days' },
-            { value: '90d', label: '90 Days' },
-            { value: 'all', label: 'All Time' }
-          ].map((option) => (
-            <Button
-              key={option.value}
-              variant={timeRange === option.value ? 'primary' : 'ghost'}
-              size="sm"
-              onClick={() => setTimeRange(option.value as any)}
-            >
-              {option.label}
-            </Button>
-          ))}
+        <div className="bg-shadowforce rounded-lg p-2 border border-guardian/20">
+          <div className="flex space-x-1">
+            {(['7d', '30d', '90d', 'all'] as const).map(range => (
+              <Button
+                key={range}
+                variant={timeRange === range ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setTimeRange(range)}
+                className="text-xs"
+              >
+                {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : range === '90d' ? '90 Days' : 'All Time'}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Key Performance Metrics */}
+      {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-br from-green-500/20 to-green-500/10 border-green-500/30">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-anton text-lg text-green-400 uppercase tracking-wide">Completion Rate</h3>
-                <p className="text-3xl font-anton text-white-knight">{completionRate}%</p>
-              </div>
-              <Target className="text-green-400" size={32} />
-            </div>
-          </CardContent>
-        </Card>
-
         <Card className="bg-gradient-to-br from-blue-500/20 to-blue-500/10 border-blue-500/30">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-anton text-lg text-blue-400 uppercase tracking-wide">Avg Candidates/Job</h3>
+                <h3 className="text-sm font-anton text-blue-400 uppercase tracking-wide">Completion Rate</h3>
+                <p className="text-3xl font-anton text-white-knight">{completionRate}%</p>
+              </div>
+              <Target className="text-blue-400" size={32} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-green-500/20 to-green-500/10 border-green-500/30">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-anton text-green-400 uppercase tracking-wide">Avg Candidates</h3>
                 <p className="text-3xl font-anton text-white-knight">{avgCandidatesPerJob}</p>
               </div>
-              <Users className="text-blue-400" size={32} />
+              <Users className="text-green-400" size={32} />
             </div>
           </CardContent>
         </Card>
@@ -137,28 +143,28 @@ export const AnalyticsDashboard: React.FC = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-anton text-lg text-purple-400 uppercase tracking-wide">Avg Time to Complete</h3>
-                <p className="text-3xl font-anton text-white-knight">{avgDays}d</p>
+                <h3 className="text-sm font-anton text-purple-400 uppercase tracking-wide">Avg Days</h3>
+                <p className="text-3xl font-anton text-white-knight">{avgDays}</p>
               </div>
               <Clock className="text-purple-400" size={32} />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-supernova/20 to-supernova/10 border-supernova/30">
+        <Card className="bg-gradient-to-br from-orange-500/20 to-orange-500/10 border-orange-500/30">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-anton text-lg text-supernova uppercase tracking-wide">Active Sourcers</h3>
-                <p className="text-3xl font-anton text-white-knight">{Object.keys(sourcerStats).length}</p>
+                <h3 className="text-sm font-anton text-orange-400 uppercase tracking-wide">Total Jobs</h3>
+                <p className="text-3xl font-anton text-white-knight">{filteredJobs.length}</p>
               </div>
-              <Award className="text-supernova" size={32} />
+              <Briefcase className="text-orange-400" size={32} />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts and Detailed Analytics */}
+      {/* Charts and Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Job Status Distribution */}
         <Card>
@@ -169,108 +175,131 @@ export const AnalyticsDashboard: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-guardian font-jakarta">Unclaimed</span>
-                <div className="flex items-center gap-3">
-                  <div className="w-32 bg-shadowforce rounded-full h-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-32 bg-guardian/20 rounded-full h-2">
                     <div 
-                      className="bg-orange-500 h-3 rounded-full transition-all duration-300"
+                      className="bg-orange-400 h-2 rounded-full" 
                       style={{ width: `${filteredJobs.length > 0 ? (statusDistribution.unclaimed / filteredJobs.length) * 100 : 0}%` }}
                     ></div>
                   </div>
-                  <span className="text-white-knight font-anton w-8">{statusDistribution.unclaimed}</span>
+                  <span className="text-white-knight font-jakarta font-semibold">{statusDistribution.unclaimed}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-guardian font-jakarta">In Progress</span>
-                <div className="flex items-center gap-3">
-                  <div className="w-32 bg-shadowforce rounded-full h-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-32 bg-guardian/20 rounded-full h-2">
                     <div 
-                      className="bg-blue-500 h-3 rounded-full transition-all duration-300"
+                      className="bg-purple-400 h-2 rounded-full" 
                       style={{ width: `${filteredJobs.length > 0 ? (statusDistribution.claimed / filteredJobs.length) * 100 : 0}%` }}
                     ></div>
                   </div>
-                  <span className="text-white-knight font-anton w-8">{statusDistribution.claimed}</span>
+                  <span className="text-white-knight font-jakarta font-semibold">{statusDistribution.claimed}</span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-guardian font-jakarta">Completed</span>
-                <div className="flex items-center gap-3">
-                  <div className="w-32 bg-shadowforce rounded-full h-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-32 bg-guardian/20 rounded-full h-2">
                     <div 
-                      className="bg-green-500 h-3 rounded-full transition-all duration-300"
+                      className="bg-green-400 h-2 rounded-full" 
                       style={{ width: `${filteredJobs.length > 0 ? (statusDistribution.completed / filteredJobs.length) * 100 : 0}%` }}
                     ></div>
                   </div>
-                  <span className="text-white-knight font-anton w-8">{statusDistribution.completed}</span>
+                  <span className="text-white-knight font-jakarta font-semibold">{statusDistribution.completed}</span>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Top Performing Sourcers */}
+        {/* Top Sourcers */}
         <Card>
           <CardHeader>
-            <h3 className="text-xl font-anton text-white-knight uppercase tracking-wide">Top Performing Sourcers</h3>
+            <h3 className="text-xl font-anton text-white-knight uppercase tracking-wide">Top Sourcers</h3>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {topSourcers.length > 0 ? (
+              {topSourcers.length === 0 ? (
+                <p className="text-guardian font-jakarta text-center">No sourcer activity in this period</p>
+              ) : (
                 topSourcers.map(([sourcer, stats], index) => (
-                  <div key={sourcer} className="flex items-center justify-between p-3 bg-shadowforce rounded-lg">
+                  <div key={sourcer} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-supernova rounded-full flex items-center justify-center">
-                        <span className="text-shadowforce font-anton text-sm">#{index + 1}</span>
+                      <div className="w-8 h-8 bg-supernova/20 rounded-full flex items-center justify-center">
+                        <span className="text-supernova font-anton text-sm">{index + 1}</span>
                       </div>
                       <div>
                         <p className="text-white-knight font-jakarta font-semibold">{sourcer}</p>
-                        <p className="text-guardian font-jakarta text-sm">{stats.candidates} candidates sourced</p>
+                        <p className="text-guardian text-sm">{stats.candidates} candidates</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-supernova font-anton text-lg">{stats.completed}</p>
-                      <p className="text-guardian font-jakarta text-xs">jobs completed</p>
+                      <p className="text-white-knight font-anton">{stats.completed}</p>
+                      <p className="text-guardian text-xs">completed</p>
                     </div>
                   </div>
                 ))
-              ) : (
-                <p className="text-guardian font-jakarta text-center py-8">No sourcer activity in this period</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Most Active Clients */}
-        <Card>
-          <CardHeader>
-            <h3 className="text-xl font-anton text-white-knight uppercase tracking-wide">Most Active Clients</h3>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {clientActivity.length > 0 ? (
-                clientActivity.map((client, index) => (
-                  <div key={client.id} className="flex items-center justify-between p-3 bg-shadowforce rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                        <span className="text-white font-anton text-sm">#{index + 1}</span>
-                      </div>
-                      <div>
-                        <p className="text-white-knight font-jakarta font-semibold">{client.companyName}</p>
-                        <p className="text-guardian font-jakarta text-sm">{client.contactName}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-blue-400 font-anton text-lg">{client.jobCount}</p>
-                      <p className="text-guardian font-jakarta text-xs">jobs posted</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-guardian font-jakarta text-center py-8">No client activity found</p>
               )}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Company Activity */}
+      <Card>
+        <CardHeader>
+          <h3 className="text-xl font-anton text-white-knight uppercase tracking-wide">Top Companies</h3>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-guardian/20">
+              <thead className="bg-shadowforce">
+                <tr>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
+                    Company
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
+                    Jobs
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
+                    Candidates
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
+                    Completed
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-shadowforce-light divide-y divide-guardian/20">
+                {topCompanies.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-guardian font-jakarta">
+                      No company activity in this period
+                    </td>
+                  </tr>
+                ) : (
+                  topCompanies.map(company => (
+                    <tr key={company.companyName} className="hover:bg-shadowforce transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-jakarta font-bold text-white-knight">{company.companyName}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
+                        {company.jobCount}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
+                        {company.candidateCount}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
+                        {company.completedJobs}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
