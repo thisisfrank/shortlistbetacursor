@@ -579,12 +579,71 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         }
       }
 
-      // Only add accepted candidates to the system
+      // Save accepted candidates to Supabase and update local state
       if (acceptedCandidates.length > 0) {
-        setData(prev => ({
-          ...prev,
-          candidates: [...prev.candidates, ...acceptedCandidates]
-        }));
+        try {
+          console.log('💾 Saving candidates to Supabase:', acceptedCandidates.length);
+          
+          // Prepare candidates for database insertion
+          const candidatesToInsert = acceptedCandidates.map(candidate => ({
+            job_id: candidate.jobId,
+            first_name: candidate.firstName,
+            last_name: candidate.lastName,
+            linkedin_url: candidate.linkedinUrl,
+            headline: candidate.headline,
+            location: candidate.location,
+            experience: candidate.experience,
+            education: candidate.education,
+            skills: candidate.skills,
+            summary: candidate.summary
+          }));
+          
+          // Insert candidates into Supabase
+          console.log('📤 Inserting candidates to Supabase:', candidatesToInsert.length);
+          
+          const { data: insertedCandidates, error: insertError } = await supabase
+            .from('candidates')
+            .insert(candidatesToInsert)
+            .select();
+          
+          if (insertError) {
+            console.error('❌ Error inserting candidates to Supabase:', insertError);
+            console.error('❌ Insert error details:', {
+              code: insertError.code,
+              message: insertError.message,
+              details: insertError.details,
+              hint: insertError.hint
+            });
+            throw new Error(`Failed to save candidates: ${insertError.message}`);
+          }
+          
+          console.log('✅ Candidates saved to Supabase:', insertedCandidates.length);
+          
+          // Update local state with the actual database records
+          const savedCandidates = insertedCandidates.map(c => ({
+            id: c.id,
+            jobId: c.job_id,
+            firstName: c.first_name,
+            lastName: c.last_name,
+            linkedinUrl: c.linkedin_url,
+            headline: c.headline,
+            location: c.location,
+            experience: c.experience,
+            education: c.education,
+            skills: c.skills,
+            summary: c.summary,
+            submittedAt: new Date(c.submitted_at)
+          }));
+          
+          setData(prev => ({
+            ...prev,
+            candidates: [...prev.candidates, ...savedCandidates]
+          }));
+          
+        } catch (error) {
+          console.error('💥 Error saving candidates to database:', error);
+          throw error;
+        }
       }
 
       // Deduct credits only for accepted candidates
