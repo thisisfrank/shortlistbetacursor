@@ -70,7 +70,7 @@ export const useAuth = () => {
     const setupAuthListener = () => {
       console.log('🔐 Setting up auth state listener...');
       
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
         console.log('🔐 Auth state change:', event, !!session?.user);
         
         // Skip initial session event - we handle it in initAuth
@@ -98,18 +98,22 @@ export const useAuth = () => {
             if (error) {
               console.error('❌ Error loading profile in auth change:', error);
               setUserProfile(null);
+              // Don't set loading to false here - let the signIn function handle it
             } else {
               console.log('✅ Profile loaded in auth change:', profile?.role);
               setUserProfile(profile);
+              // Don't set loading to false here - let the signIn function handle it
             }
           } else {
             console.log('🔐 User signed out, clearing profile');
             setUserProfile(null);
+            // Don't set loading to false here - let the signIn function handle it
           }
         } catch (error) {
           console.error('💥 Auth change error:', error);
           if (isMounted) {
             setUserProfile(null);
+            // Don't set loading to false here - let the signIn function handle it
           }
         }
       });
@@ -136,7 +140,9 @@ export const useAuth = () => {
   const signIn = async (email: string, password: string) => {
     try {
       console.log('🔐 Attempting sign in for:', email);
+      console.log('🔐 Current loading state before signIn:', loading);
       setLoading(true);
+      console.log('🔐 Loading state set to true');
       
       // Add timeout to prevent infinite loading
       const timeoutPromise = new Promise((_, reject) => {
@@ -153,11 +159,13 @@ export const useAuth = () => {
       console.log('🔐 Sign in result:', { success: !error, error: error?.message });
       
       // Always set loading to false after sign-in attempt
+      console.log('🔐 Setting loading to false after sign-in attempt');
       setLoading(false);
       
       return { data, error };
     } catch (error) {
       console.error('💥 Sign in catch error:', error);
+      console.log('🔐 Setting loading to false after catch error');
       setLoading(false);
       return { 
         data: null, 

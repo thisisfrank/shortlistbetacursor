@@ -4,9 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Card, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { FormInput } from '../forms/FormInput';
-import { LoadingSpinner } from '../ui/LoadingSpinner';
-import { ErrorMessage } from '../ui/ErrorMessage';
-import { Zap } from 'lucide-react';
+import { Zap, AlertCircle } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { signIn } = useAuth();
@@ -44,7 +42,10 @@ export const LoginPage: React.FC = () => {
 
       if (signInError) {
         console.error('❌ Sign in error:', signInError);
-        setError(signInError.message || 'Login failed. Please try again.');
+        // Ensure we show the error message properly
+        const errorMessage = signInError.message || 'Login failed. Please try again.';
+        setError(errorMessage);
+        console.log('🚨 Setting error message:', errorMessage);
       } else if (data?.user) {
         console.log('✅ Login successful, redirecting...');
         // Check for redirect parameter
@@ -81,11 +82,10 @@ export const LoginPage: React.FC = () => {
           </div>
 
           {error && (
-            <ErrorMessage 
-              message={error}
-              variant="error"
-              className="mb-6"
-            />
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center">
+              <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
+              <p className="text-red-400 font-jakarta text-sm">{error}</p>
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
