@@ -204,6 +204,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       const loadedJobs = jobsData.map(j => ({
         id: j.id,
         userId: j.user_id, // Map database user_id to frontend userId
+        userEmail: j.user_email, // Add user_email to the mapping
         companyName: j.company_name,
         title: j.title,
         description: j.description,
@@ -265,6 +266,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           const newJob: Job = {
             id: crypto.randomUUID(),
             userId: user?.id || null,
+            userEmail: user?.email || null, // Add userEmail for local storage
             companyName: jobData.companyName,
             title: jobData.title,
             description: jobData.description,
@@ -298,6 +300,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           // Create the job insert object with only the fields we know exist
           const jobInsert: any = {
             user_id: user?.id || null,
+            user_email: user?.email || null,
             title: jobData.title,
             description: jobData.description,
             seniority_level: jobData.seniorityLevel,
@@ -339,6 +342,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           const newJob: Job = {
             id: insertedJob.id,
             userId: insertedJob.user_id,
+            userEmail: insertedJob.user_email,
             companyName: insertedJob.company_name || jobData.companyName,
             title: insertedJob.title,
             description: insertedJob.description,
@@ -370,6 +374,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           const newJob: Job = {
             id: crypto.randomUUID(),
             userId: user?.id || null,
+            userEmail: user?.email || null, // Add userEmail for local storage
             companyName: jobData.companyName,
             title: jobData.title,
             description: jobData.description,
@@ -829,6 +834,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         const updatedJob: Job = {
           id: updatedJobData.id,
           userId: updatedJobData.user_id, // Map database user_id to frontend userId
+          userEmail: updatedJobData.user_email, // Map database user_email to frontend userEmail
           title: updatedJobData.title,
           description: updatedJobData.description,
           seniorityLevel: updatedJobData.seniority_level,

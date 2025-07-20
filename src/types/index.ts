@@ -24,6 +24,7 @@ export interface Tier {
 export interface Job {
   id: string;
   userId: string; // Changed from clientId to userId
+  userEmail?: string; // Email of the user who submitted the job
   companyName: string; // Company hiring for this specific job
   title: string;
   description: string;
