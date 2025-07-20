@@ -12,6 +12,14 @@ export interface Client {
   createdAt: Date;
 }
 
+export interface UserProfile {
+  id: string;
+  email: string;
+  role: 'client' | 'sourcer' | 'admin';
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Tier {
   id: string;
   name: string;
@@ -23,7 +31,8 @@ export interface Tier {
 
 export interface Job {
   id: string;
-  clientId: string;
+  userId: string; // ✅ Changed from clientId to userId to match UserProfile system
+  companyName: string; // ✅ Added companyName to match database schema
   title: string;
   description: string;
   seniorityLevel: 'Junior' | 'Mid' | 'Senior' | 'Executive';

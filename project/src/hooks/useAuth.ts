@@ -15,6 +15,59 @@ export const useAuth = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [signOutLoading, setSignOutLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // ✅ DEFENSIVE: Add retry mechanism for profile fetches
+  const fetchUserProfile = async (userId: string, retryCount = 0): Promise<UserProfile | null> => {
+    const maxRetries = 3;
+    
+    try {
+      console.log(`🔍 Fetching user profile (attempt ${retryCount + 1}/${maxRetries + 1})...`);
+      
+      const profilePromise = supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000) // ✅ Reduced to 5s
+      );
+      
+      const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
+      
+      if (error) {
+        console.error('⚠️ Profile fetch error:', error);
+        if (retryCount < maxRetries) {
+          console.log(`🔄 Retrying profile fetch in 1s...`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          return fetchUserProfile(userId, retryCount + 1);
+        }
+        return null;
+      }
+      
+      if (profile) {
+        console.log('✅ Profile fetched successfully:', profile);
+        return {
+          id: profile.id,
+          email: profile.email,
+          role: profile.role,
+          created_at: profile.created_at,
+          updated_at: profile.updated_at
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('💥 Profile fetch failed:', error);
+      if (retryCount < maxRetries) {
+        console.log(`🔄 Retrying profile fetch in 1s...`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return fetchUserProfile(userId, retryCount + 1);
+      }
+      return null;
+    }
+  };
 
   useEffect(() => {
     // Get initial session
@@ -56,43 +109,11 @@ export const useAuth = () => {
         if (currentUser) {
           console.log('📋 User found, fetching profile...');
           
-          try {
-            // Add timeout to prevent hanging
-            const profilePromise = supabase
-              .from('user_profiles')
-              .select('*')
-              .eq('id', currentUser.id)
-              .maybeSingle();
-            
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 10000) // ✅ Reduced from 30s to 10s
-            );
-            
-            const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
-            
-            console.log('📊 Profile query result:', { hasProfile: !!profile, error: error });
-            
-            if (error) {
-              console.error('⚠️ Error fetching user profile:', error);
-              setUserProfile(null);
-            } else {
-              if (profile) {
-                console.log('✅ User profile found:', profile);
-                const userProfile: UserProfile = {
-                  id: profile.id,
-                  email: profile.email,
-                  role: profile.role,
-                  created_at: profile.created_at,
-                  updated_at: profile.updated_at
-                };
-                setUserProfile(userProfile);
-              } else {
-                console.log('⚠️ No user profile found, waiting for trigger to create it');
-                setUserProfile(null);
-              }
-            }
-          } catch (profileError) {
-            console.error('💥 Profile fetch failed:', profileError);
+          const profile = await fetchUserProfile(currentUser.id);
+          if (profile) {
+            setUserProfile(profile);
+          } else {
+            console.log('⚠️ No user profile found, waiting for trigger to create it');
             setUserProfile(null);
           }
         } else {
@@ -111,57 +132,40 @@ export const useAuth = () => {
 
     getInitialSession();
 
-    // Listen for auth changes
+    // ✅ DEFENSIVE: Improved auth state change handler
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔄 Auth state change:', event);
+        
+        // ✅ DEFENSIVE: Handle refresh token errors gracefully
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('🔄 Token refreshed successfully');
+          return;
+        }
+        
         const currentUser = session?.user ?? null;
         setUser(currentUser);
         
         if (currentUser) {
           console.log('👤 Auth change - fetching profile for:', currentUser.email);
           
-          try {
-            // Add timeout for auth state changes too
-            const profilePromise = supabase
-              .from('user_profiles')
-              .select('*')
-              .eq('id', currentUser.id)
-              .maybeSingle();
-            
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 10000) // ✅ Reduced from 30s to 10s
-            );
-            
-            const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
-            
-            if (error) {
-              console.error('⚠️ Auth change - Error fetching user profile:', error);
-              setUserProfile(null);
-            } else {
-              if (profile) {
-                console.log('✅ Auth change - Profile found:', profile);
-                const userProfile: UserProfile = {
-                  id: profile.id,
-                  email: profile.email,
-                  role: profile.role,
-                  created_at: profile.created_at,
-                  updated_at: profile.updated_at
-                };
-                setUserProfile(userProfile);
-              } else {
-                console.log('⚠️ Auth change - No profile found, waiting for trigger');
-                setUserProfile(null);
-              }
-            }
-          } catch (profileError) {
-            console.error('💥 Auth change profile fetch failed:', profileError);
+          const profile = await fetchUserProfile(currentUser.id);
+          if (profile) {
+            setUserProfile(profile);
+          } else {
+            console.log('⚠️ Auth change - No profile found, waiting for trigger');
             setUserProfile(null);
           }
         } else {
           console.log('🚫 Auth change - No user');
           setUserProfile(null);
         }
+        
+        // ✅ DEFENSIVE: Clear any previous auth errors on successful state change
+        if (event === 'SIGNED_IN') {
+          setAuthError(null);
+        }
+        
         setLoading(false);
       }
     );
@@ -173,6 +177,7 @@ export const useAuth = () => {
     try {
       console.log('🔐 Attempting sign in for:', email);
       setLoading(true);
+      setAuthError(null);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -181,13 +186,18 @@ export const useAuth = () => {
       
       console.log('🔐 Sign in result:', { success: !error, error: error?.message });
       
+      if (error) {
+        setAuthError(error.message);
+      }
+      
       // Don't set loading to false here - let the auth state change handle it
       // This prevents the flickering issue
       
       return { data, error };
     } catch (error) {
-      console.error('💥 Sign in catch error:', error);
-      setLoading(false); // Only set loading to false on error
+      console.error('💥 Sign in error:', error);
+      setAuthError('Network error. Please try again.');
+      setLoading(false);
       return { 
         data: null, 
         error: { message: 'Network error. Please try again.' } 
@@ -196,10 +206,11 @@ export const useAuth = () => {
   };
 
   const signUp = async (email: string, password: string, role: 'client' | 'sourcer' = 'client') => {
-    console.log('📝 Attempting signup with:', { email, passwordLength: password.length, role });
-    setLoading(true);
-    
     try {
+      console.log('📝 Attempting sign up for:', email);
+      setLoading(true);
+      setAuthError(null);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -233,9 +244,15 @@ export const useAuth = () => {
         }
       }
       
+      if (error) {
+        setAuthError(error.message);
+      }
+      
       return { data, error };
     } catch (error) {
       console.error('💥 Signup error:', error);
+      setAuthError('Network error. Please try again.');
+      setLoading(false);
       return { 
         data: null, 
         error: { message: 'Network error. Please try again.' } 
@@ -250,6 +267,7 @@ export const useAuth = () => {
     
     // Set sign-out loading state
     setSignOutLoading(true);
+    setAuthError(null);
     
     try {
       const { error } = await supabase.auth.signOut();
@@ -265,6 +283,7 @@ export const useAuth = () => {
       return { error };
     } catch (error) {
       console.error('💥 Sign out error:', error);
+      setAuthError('Error signing out');
       return { error: { message: 'Error signing out' } };
     } finally {
       setSignOutLoading(false);
@@ -276,6 +295,7 @@ export const useAuth = () => {
     userProfile,
     loading,
     signOutLoading,
+    authError, // ✅ Expose auth errors for UI feedback
     signIn,
     signUp,
     signOut,
