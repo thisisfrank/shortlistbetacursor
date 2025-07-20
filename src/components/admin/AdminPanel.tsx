@@ -7,21 +7,19 @@ import { JobDetailModal } from '../sourcer/JobDetailModal';
 import { Search, CalendarDays, Users, Filter, Trash2, Zap, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 
 export const AdminPanel: React.FC = () => {
-  const { clients, jobs, tiers, getTierById, deleteJob, deleteClient, updateJob, testInsertCandidate } = useData();
+  const { jobs, tiers, getTierById, deleteJob, updateJob } = useData();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   
-  // Get counts for dashboard
-  const totalClients = clients.length;
+  // Get counts for dashboard - removed clients references
   const totalJobs = jobs.length;
   const unclaimedJobs = jobs.filter(job => job.status === 'Unclaimed').length;
   const claimedJobs = jobs.filter(job => job.status === 'Claimed').length;
   const completedJobs = jobs.filter(job => job.status === 'Completed').length;
   
-  // Get selected job and client
+  // Get selected job - removed client lookup since company info is in job
   const selectedJob = selectedJobId ? jobs.find(job => job.id === selectedJobId) || null : null;
-  const client = selectedJob ? getClientById(selectedJob.clientId) : null;
   
   // Filter jobs based on status and search
   const filteredJobs = jobs.filter(job => {
@@ -33,12 +31,11 @@ export const AdminPanel: React.FC = () => {
     // Filter by search
     if (search) {
       const searchLower = search.toLowerCase();
-      const client = getClientById(job.clientId);
       
       return (
         job.title.toLowerCase().includes(searchLower) ||
         job.description.toLowerCase().includes(searchLower) ||
-        (client && client.companyName.toLowerCase().includes(searchLower)) ||
+        (job.companyName && job.companyName.toLowerCase().includes(searchLower)) ||
         (job.sourcerName && job.sourcerName.toLowerCase().includes(searchLower))
       );
     }
@@ -62,28 +59,18 @@ export const AdminPanel: React.FC = () => {
 
   const handleDeleteJob = (jobId: string) => {
     if (window.confirm('Are you sure you want to delete this job? This action cannot be undone.')) {
-      deleteJob(jobId).catch(error => {
-        console.error('Error deleting job:', error);
-        alert('Error deleting job. Please try again.');
-      });
+      deleteJob(jobId);
     }
   };
 
-  const handleDeleteClient = (clientId: string) => {
-    if (window.confirm('Are you sure you want to delete this client and all associated jobs? This action cannot be undone.')) {
-      deleteClient(clientId).catch(error => {
-        console.error('Error deleting client:', error);
-        alert('Error deleting client. Please try again.');
-      });
-    }
-  };
-
-  const handleCompleteJob = (jobId: string) => {
+  const handleCompleteJob = async (jobId: string) => {
     if (window.confirm('Are you sure you want to mark this job as completed?')) {
-      updateJob(jobId, { status: 'Completed' }).catch(error => {
+      try {
+        await updateJob(jobId, { status: 'Completed' });
+      } catch (error) {
         console.error('Error updating job:', error);
         alert('Error updating job. Please try again.');
-      });
+      }
     }
   };
   
@@ -102,39 +89,12 @@ export const AdminPanel: React.FC = () => {
             ADMIN CONTROL
           </h1>
           <p className="text-xl text-guardian text-center font-jakarta max-w-2xl mx-auto">
-            Monitor performance, manage clients and jobs, oversee sourcing operations
+            Monitor performance, manage jobs, oversee sourcing operations
           </p>
-          
-          {/* Test Database Connection */}
-          <div className="mt-6 text-center">
-            <Button 
-              onClick={async () => {
-                const result = await testInsertCandidate();
-                console.log('🧪 Test result:', result);
-                alert(result.success ? '✅ Database connection working!' : '❌ Database connection failed. Check console for details.');
-              }}
-              variant="outline"
-              size="sm"
-            >
-              🧪 Test Database Connection
-            </Button>
-          </div>
         </header>
         
         {/* Dashboard Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
-          <Card className="bg-gradient-to-br from-supernova/20 to-supernova/10 border-supernova/30 hover:border-supernova/50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-anton text-lg text-supernova uppercase tracking-wide">Total Clients</h3>
-                  <p className="text-3xl font-anton text-white-knight">{totalClients}</p>
-                </div>
-                <Users className="text-supernova" size={32} />
-              </div>
-            </CardContent>
-          </Card>
-          
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           <Card className="bg-gradient-to-br from-blue-500/20 to-blue-500/10 border-blue-500/30 hover:border-blue-500/50">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -209,11 +169,11 @@ export const AdminPanel: React.FC = () => {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="block rounded-lg border-guardian/30 bg-shadowforce text-white-knight focus:ring-supernova focus:border-supernova font-jakarta"
+                    className="rounded-lg border-guardian/30 bg-shadowforce text-white-knight focus:ring-supernova focus:border-supernova font-jakarta"
                   >
-                    <option value="all">All Statuses</option>
+                    <option value="all">All Jobs</option>
                     <option value="Unclaimed">Unclaimed</option>
-                    <option value="Claimed">Claimed</option>
+                    <option value="Claimed">In Progress</option>
                     <option value="Completed">Completed</option>
                   </select>
                 </div>
@@ -225,7 +185,7 @@ export const AdminPanel: React.FC = () => {
                 <thead className="bg-shadowforce">
                   <tr>
                     <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                      Job
+                      Job Details
                     </th>
                     <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
                       Company
@@ -253,7 +213,6 @@ export const AdminPanel: React.FC = () => {
                     </tr>
                   ) : (
                     sortedJobs.map(job => {
-                      const jobClient = getClientById(job.clientId);
                       return (
                         <tr key={job.id} className="hover:bg-shadowforce transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -261,55 +220,54 @@ export const AdminPanel: React.FC = () => {
                             <div className="text-sm text-guardian">{job.seniorityLevel} • {job.workArrangement}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-white-knight font-jakarta font-semibold">{jobClient?.companyName}</div>
-                            <div className="text-sm text-guardian">{jobClient?.contactName}</div>
+                            <div className="text-sm text-white-knight font-jakarta font-semibold">{job.companyName}</div>
+                            <div className="text-sm text-guardian">{job.location}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <Badge 
-                              variant={
-                                job.status === 'Unclaimed' 
-                                  ? 'warning' 
-                                  : job.status === 'Completed' 
-                                    ? 'success' 
-                                    : 'default'
-                              }
+                              variant={job.status === 'Completed' ? 'success' : job.status === 'Claimed' ? 'warning' : 'default'}
                             >
                               {job.status}
                             </Badge>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
-                            {job.sourcerName || '—'}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-white-knight font-jakarta">
+                              {job.sourcerName || 'Unassigned'}
+                            </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
-                            <div className="flex items-center">
-                              <CalendarDays size={14} className="mr-2" />
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-guardian font-jakarta">
                               {formatDate(job.createdAt)}
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => setSelectedJobId(job.id)}
-                            >
-                              VIEW
-                            </Button>
-                            {job.status === 'Claimed' && (
-                              <Button 
-                                variant="success" 
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                onClick={() => setSelectedJobId(job.id)}
+                                variant="outline"
                                 size="sm"
-                                onClick={() => handleCompleteJob(job.id)}
                               >
-                                COMPLETE
+                                View
                               </Button>
-                            )}
-                            <Button 
-                              variant="error" 
-                              size="sm"
-                              onClick={() => handleDeleteJob(job.id)}
-                            >
-                              <Trash2 size={14} />
-                            </Button>
+                              {job.status !== 'Completed' && (
+                                <Button
+                                  onClick={() => handleCompleteJob(job.id)}
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-green-400 border-green-400/30 hover:bg-green-400/10"
+                                >
+                                  Complete
+                                </Button>
+                              )}
+                              <Button
+                                onClick={() => handleDeleteJob(job.id)}
+                                variant="outline"
+                                size="sm"
+                                className="text-red-400 border-red-400/30 hover:bg-red-400/10"
+                              >
+                                <Trash2 size={16} />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -321,107 +279,15 @@ export const AdminPanel: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* Client List */}
-        <Card>
-          <CardContent className="p-8">
-            <h2 className="text-2xl font-anton text-white-knight mb-8 uppercase tracking-wide">Clients</h2>
-            
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-guardian/20">
-                <thead className="bg-shadowforce">
-                  <tr>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                      Company
-                    </th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                      Contact
-                    </th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                      Jobs
-                    </th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                      Joined
-                    </th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-shadowforce-light divide-y divide-guardian/20">
-                  {clients.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-guardian font-jakarta">
-                        No clients found.
-                      </td>
-                    </tr>
-                  ) : (
-                    clients.map(client => {
-                      const clientJobs = jobs.filter(job => job.clientId === client.id);
-                      return (
-                        <tr key={client.id} className="hover:bg-shadowforce transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-jakarta font-bold text-white-knight">{client.companyName}</div>
-                            <div className="text-sm text-guardian">
-                              {getTierById(client.tierId)?.name || 'Unknown Tier'}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-white-knight font-jakarta font-semibold">{client.contactName}</div>
-                            <div className="text-sm text-guardian">{client.phone}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-white-knight font-jakarta">{client.email}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
-                            <div className="flex items-center">
-                              <Users size={14} className="mr-2" />
-                              {clientJobs.length}
-                            </div>
-                            <div className="text-xs text-guardian/60">
-                              Credits: {client.availableCredits} | Jobs: {client.jobsRemaining}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
-                            {formatDate(client.createdAt)}
-                            <div className="text-xs text-guardian/60">
-                              Reset: {formatDate(client.creditsResetDate)}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge variant={client.hasReceivedFreeShortlist ? 'success' : 'outline'}>
-                              {client.hasReceivedFreeShortlist ? 'Free Used' : 'New Client'}
-                            </Badge>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Button 
-                              variant="error" 
-                              size="sm"
-                              onClick={() => handleDeleteClient(client.id)}
-                            >
-                              <Trash2 size={14} />
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {selectedJob && client && (
+        {/* Job Detail Modal */}
+        {selectedJob && (
           <JobDetailModal
             job={selectedJob}
-            client={client}
             onClose={() => setSelectedJobId(null)}
+            onClaim={() => {
+              // Handle claim logic here if needed
+              setSelectedJobId(null);
+            }}
           />
         )}
       </div>

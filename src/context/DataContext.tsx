@@ -26,6 +26,7 @@ interface DataContextType {
   getJobsByUser: (userId: string) => Job[];
   getTierById: (tierId: string) => Tier | null;
   resetData: () => void;
+  testInsertCandidate: () => Promise<{ success: boolean; data: any; error: any }>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -469,19 +470,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         };
       }
 
-      // The clientId is now part of the job, not directly available here.
-      // For now, we'll assume the job's clientId is the source of truth for credits.
-      // If a specific client credit limit is needed, it would require a different approach.
-      // For this edit, we'll remove the client-specific credit check as per the new_code.
-
-      // Check if client has enough credits
-      // This logic needs to be re-evaluated if credits are tied to a specific client.
-      // For now, we'll assume a global limit or that credits are managed differently.
-      // Since the clients table is removed, this part of the logic is no longer applicable
-      // in the same way. We'll proceed assuming a global limit or that credits are
-      // implicitly managed by the user's role or a different mechanism.
-      // For now, we'll allow any number of candidates to be submitted.
-
       // Get current accepted candidates for this job to calculate progress
       const currentCandidates = data.candidates.filter(c => c.jobId === jobId);
       const currentAcceptedCount = currentCandidates.length;
@@ -656,14 +644,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           throw error;
         }
       }
-
-      // Deduct credits only for accepted candidates
-      // This logic needs to be re-evaluated if credits are tied to a specific client.
-      // For now, we'll assume a global limit or that credits are implicitly managed.
-      // Since the clients table is removed, this part of the logic is no longer applicable
-      // in the same way. We'll proceed assuming a global limit or that credits are
-      // implicitly managed by the user's role or a different mechanism.
-      // For now, we'll allow any number of candidates to be submitted.
 
       // Calculate new totals after this submission
       const newTotalAccepted = currentAcceptedCount + acceptedCandidates.length;

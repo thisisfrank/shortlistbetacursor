@@ -10,15 +10,30 @@ import { Zap, BarChart3, Users, Briefcase, Settings, TrendingUp } from 'lucide-r
 import { Button } from '../ui/Button';
 
 export const AdminDashboard: React.FC = () => {
-  const { jobs, clients, candidates } = useData();
+  const { jobs, candidates } = useData();
   const [activeTab, setActiveTab] = useState<'analytics' | 'jobs' | 'clients' | 'sourcers'>('analytics');
 
   const tabs = [
     { id: 'analytics', label: 'ANALYTICS', icon: TrendingUp },
     { id: 'jobs', label: 'JOBS', icon: Briefcase },
-    { id: 'clients', label: 'CLIENTS', icon: Users },
+    { id: 'clients', label: 'USERS', icon: Users },
     { id: 'sourcers', label: 'SOURCERS', icon: Zap },
   ] as const;
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'analytics':
+        return <AnalyticsDashboard />;
+      case 'jobs':
+        return <JobManagement />;
+      case 'clients':
+        return <ClientManagement />;
+      case 'sourcers':
+        return <SourcerManagement />;
+      default:
+        return <AnalyticsDashboard />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
@@ -32,24 +47,26 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
           <h1 className="text-5xl md:text-6xl font-anton text-white-knight mb-4 text-center uppercase tracking-wide">
-            ADMIN CONTROL
+            ADMIN DASHBOARD
           </h1>
           <p className="text-xl text-guardian text-center font-jakarta max-w-2xl mx-auto">
-            Monitor performance, manage clients and jobs, oversee sourcing operations
+            Monitor performance, manage jobs and users, oversee sourcing operations
           </p>
         </header>
 
-        {/* Navigation Tabs */}
-        <div className="mb-12">
-          <div className="flex flex-wrap justify-center gap-2 bg-shadowforce-light/50 rounded-xl p-2 border border-guardian/20">
+        {/* Stats Overview */}
+        <AdminStats jobs={jobs} />
+
+        {/* Tab Navigation */}
+        <div className="mb-8">
+          <div className="flex flex-wrap justify-center gap-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <Button
                   key={tab.id}
-                  variant={activeTab === tab.id ? 'primary' : 'ghost'}
-                  size="md"
                   onClick={() => setActiveTab(tab.id)}
+                  variant={activeTab === tab.id ? 'default' : 'outline'}
                   className="flex items-center gap-2"
                 >
                   <Icon size={18} />
@@ -61,16 +78,19 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'analytics' && (
-          <div className="space-y-8">
-            <AdminStats jobs={jobs} clients={clients} />
-            <AnalyticsDashboard />
+        <div className="mb-12">
+          {renderTabContent()}
+        </div>
+
+        {/* System Controls */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <Settings className="text-supernova" size={24} />
+            <h2 className="text-2xl font-anton text-white-knight uppercase tracking-wide">System Controls</h2>
           </div>
-        )}
-        {activeTab === 'jobs' && <JobManagement />}
-        {activeTab === 'clients' && <ClientManagement />}
-        {activeTab === 'sourcers' && <SourcerManagement />}
+          <SystemControls />
+        </div>
       </div>
     </div>
   );
-}
+};

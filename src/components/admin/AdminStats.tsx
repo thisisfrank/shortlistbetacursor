@@ -1,34 +1,20 @@
 import React from 'react';
-import { Job, Client } from '../../types';
+import { Job } from '../../types';
 import { Card, CardContent } from '../ui/Card';
 import { Users, TrendingUp, Clock, CheckCircle, Zap } from 'lucide-react';
 
 interface AdminStatsProps {
   jobs: Job[];
-  clients: Client[];
 }
 
-export const AdminStats: React.FC<AdminStatsProps> = ({ jobs, clients }) => {
-  const totalClients = clients.length;
+export const AdminStats: React.FC<AdminStatsProps> = ({ jobs }) => {
   const totalJobs = jobs.length;
   const unclaimedJobs = jobs.filter(job => job.status === 'Unclaimed').length;
   const claimedJobs = jobs.filter(job => job.status === 'Claimed').length;
   const completedJobs = jobs.filter(job => job.status === 'Completed').length;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
-      <Card className="bg-gradient-to-br from-supernova/20 to-supernova/10 border-supernova/30 hover:border-supernova/50">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-anton text-lg text-supernova uppercase tracking-wide">Total Clients</h3>
-              <p className="text-3xl font-anton text-white-knight">{totalClients}</p>
-            </div>
-            <Users className="text-supernova" size={32} />
-          </div>
-        </CardContent>
-      </Card>
-      
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
       <Card className="bg-gradient-to-br from-blue-500/20 to-blue-500/10 border-blue-500/30 hover:border-blue-500/50">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
