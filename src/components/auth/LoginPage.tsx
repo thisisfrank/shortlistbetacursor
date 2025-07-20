@@ -44,7 +44,7 @@ export const LoginPage: React.FC = () => {
         console.error('❌ Sign in error:', signInError);
         // Provide a more user-friendly error message that suggests signing up
         const errorMessage = signInError.message === 'Invalid login credentials' 
-          ? 'Account not found. Please check your email or sign up for a new account.'
+          ? 'Account not found. Please sign up for a new account.'
           : signInError.message || 'Login failed. Please try again.';
         setError(errorMessage);
       } else if (data?.user) {
@@ -83,9 +83,24 @@ export const LoginPage: React.FC = () => {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center">
-              <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
-              <p className="text-red-400 font-jakarta text-sm">{error}</p>
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <div className="flex items-center mb-3">
+                <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
+                <p className="text-red-400 font-jakarta text-sm">{error}</p>
+              </div>
+              {error.includes('Account not found') && (
+                <div className="mt-3 pt-3 border-t border-red-500/20">
+                  <p className="text-guardian font-jakarta text-sm mb-2">
+                    New to Super Recruiter?
+                  </p>
+                  <Link
+                    to="/signup"
+                    className="inline-flex items-center px-4 py-2 bg-supernova text-white-knight rounded-lg text-sm font-semibold hover:bg-supernova-light transition-colors"
+                  >
+                    Create Account
+                  </Link>
+                </div>
+              )}
             </div>
           )}
 
