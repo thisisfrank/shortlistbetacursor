@@ -10,7 +10,7 @@ import { useData } from '../../../context/DataContext';
 import { useAuth } from '../../../context/AuthContext';
 
 export const ClientIntakeForm: React.FC = () => {
-  const { addClient, addJob, clients, updateClient } = useData();
+  const { addJob } = useData(); // ✅ Removed addClient, updateClient - not needed
   const { user } = useAuth();
   
   const [currentStep, setCurrentStep] = useState<FormStep>('company-info');
@@ -55,9 +55,7 @@ export const ClientIntakeForm: React.FC = () => {
     }
   }, [formData]);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
@@ -201,32 +199,18 @@ export const ClientIntakeForm: React.FC = () => {
   const handleSubmit = async () => {
     console.log('🎯 Form submission started for authenticated user...');
     console.log('👤 Current user email:', user?.email);
-    console.log('📝 Form email:', formData.email);
+    console.log('📝 Form company:', formData.companyName);
     setIsSubmitting(true);
     
     try {
-      // Find existing client profile or create one
-      console.log('🔍 Finding existing client profile...');
+      // ✅ No need to create/find client - user already exists from auth
+      // Just create the job directly linked to the authenticated user
+      console.log('📋 Adding job for authenticated user...');
       
-      let client = user ? clients.find(c => c.email === user.email) : null;
-      
-      if (!client) {
-        console.log('👤 No existing client found, creating new client profile...');
-        client = await addClient({
-          companyName: formData.companyName,
-          contactName: formData.contactName,
-          email: user.email, // Use authenticated user's email, not form email
-          phone: formData.phone,
-          hasReceivedFreeShortlist: false
-        });
-        console.log('✅ New client profile created:', client);
-      } else {
-        console.log('✅ Found existing client profile:', client);
-      }
-      
-      console.log('📋 Adding job for client...');
       const job = await addJob({
-        clientId: client.id,
+        // ✅ Use user ID directly from auth context (Job type expects clientId)
+        clientId: user?.id || '', 
+        companyName: formData.companyName,
         title: formData.title,
         description: formData.description,
         seniorityLevel: formData.seniorityLevel as any,
@@ -240,11 +224,7 @@ export const ClientIntakeForm: React.FC = () => {
       
       console.log('✅ Job submitted successfully:', job);
       
-      updateClient(client.id, {
-        jobsRemaining: Math.max(0, client.jobsRemaining - 1)
-      });
-      
-      console.log('✅ Client jobs remaining updated');
+      // ✅ No need to update client credits - using user-based system now
       
       // Move to confirmation step
       setCurrentStep('confirmation');
@@ -309,9 +289,9 @@ export const ClientIntakeForm: React.FC = () => {
           <RequirementsStep
             formData={formData}
             onChange={handleInputChange}
-            onSellingPointsChange={handleSellingPointsChange}
             onNext={goToNextStep}
             onBack={goToPreviousStep}
+            onSellingPointsChange={handleSellingPointsChange}
             errors={errors}
           />
         )}
@@ -327,9 +307,12 @@ export const ClientIntakeForm: React.FC = () => {
         )}
         
         {currentStep === 'confirmation' && (
-          <ConfirmationStep onReset={resetForm} />
+          <ConfirmationStep
+            onReset={resetForm}
+            companyName={formData.companyName}
+            jobTitle={formData.title}
+          />
         )}
-        
       </CardContent>
     </Card>
   );
