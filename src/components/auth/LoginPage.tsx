@@ -42,8 +42,10 @@ export const LoginPage: React.FC = () => {
 
       if (signInError) {
         console.error('❌ Sign in error:', signInError);
-        // Ensure we show the error message properly
-        const errorMessage = signInError.message || 'Login failed. Please try again.';
+        // Provide a more user-friendly error message that suggests signing up
+        const errorMessage = signInError.message === 'Invalid login credentials' 
+          ? 'Account not found. Please check your email or sign up for a new account.'
+          : signInError.message || 'Login failed. Please try again.';
         setError(errorMessage);
         console.log('🚨 Setting error message:', errorMessage);
       } else if (data?.user) {
@@ -85,6 +87,13 @@ export const LoginPage: React.FC = () => {
             <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center">
               <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
               <p className="text-red-400 font-jakarta text-sm">{error}</p>
+            </div>
+          )}
+          
+          {/* Debug: Show error state */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mb-4 p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400">
+              Debug: Error state = "{error}"
             </div>
           )}
 
