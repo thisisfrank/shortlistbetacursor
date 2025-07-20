@@ -771,21 +771,28 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               } else {
                 console.log(`✅ Credits deducted: ${currentCredits} → ${newCredits} (${creditsToDeduct} used)`);
                 
-                // Log transaction to audit trail
-                const { error: auditError } = await supabase
-                  .from('credit_transactions')
-                  .insert({
-                    user_id: currentUser.id,
-                    transaction_type: 'deduction',
-                    amount: creditsToDeduct,
-                    description: `Candidate submission for job ${jobId}: ${acceptedCandidates.length} candidates accepted`,
-                    job_id: jobId
-                  });
-                
-                if (auditError) {
+                // Log transaction to audit trail (optional - won't break if table doesn't exist)
+                try {
+                  const { error: auditError } = await supabase
+                    .from('credit_transactions')
+                    .insert({
+                      user_id: currentUser.id,
+                      transaction_type: 'deduction',
+                      amount: creditsToDeduct,
+                      description: `Candidate submission for job ${jobId}: ${acceptedCandidates.length} candidates accepted`,
+                      job_id: jobId
+                    });
+                  
+                  if (auditError) {
+                    console.error('❌ Error logging credit transaction:', auditError);
+                    // Don't fail the entire operation if audit logging fails
+                    console.log('⚠️ Credit transaction logging failed, but credits were deducted successfully');
+                  } else {
+                    console.log('📝 Credit transaction logged to audit trail');
+                  }
+                } catch (auditError) {
                   console.error('❌ Error logging credit transaction:', auditError);
-                } else {
-                  console.log('📝 Credit transaction logged to audit trail');
+                  console.log('⚠️ Credit transaction logging failed, but credits were deducted successfully');
                 }
               }
             }
