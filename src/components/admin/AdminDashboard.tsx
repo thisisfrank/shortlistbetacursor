@@ -4,20 +4,22 @@ import { AdminStats } from './AdminStats';
 import { JobManagement } from './JobManagement';
 import { ClientManagement } from './ClientManagement';
 import { SourcerManagement } from './SourcerManagement';
+import { UserManagement } from './UserManagement';
 import { SystemControls } from './SystemControls';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
-import { Zap, BarChart3, Users, Briefcase, Settings, TrendingUp } from 'lucide-react';
+import { Zap, BarChart3, Users, Briefcase, Settings, TrendingUp, Shield } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 export const AdminDashboard: React.FC = () => {
   const { jobs, clients, candidates } = useData();
-  const [activeTab, setActiveTab] = useState<'analytics' | 'jobs' | 'clients' | 'sourcers'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'jobs' | 'clients' | 'sourcers' | 'users'>('analytics');
 
   const tabs = [
     { id: 'analytics', label: 'ANALYTICS', icon: TrendingUp },
     { id: 'jobs', label: 'JOBS', icon: Briefcase },
     { id: 'clients', label: 'CLIENTS', icon: Users },
     { id: 'sourcers', label: 'SOURCERS', icon: Zap },
+    { id: 'users', label: 'USERS', icon: Shield },
   ] as const;
 
   return (
@@ -70,6 +72,7 @@ export const AdminDashboard: React.FC = () => {
         {activeTab === 'jobs' && <JobManagement />}
         {activeTab === 'clients' && <ClientManagement />}
         {activeTab === 'sourcers' && <SourcerManagement />}
+        {activeTab === 'users' && <UserManagement />}
       </div>
     </div>
   );
