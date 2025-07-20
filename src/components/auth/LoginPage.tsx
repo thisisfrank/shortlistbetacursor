@@ -15,6 +15,11 @@ export const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Debug: Log error state changes
+  useEffect(() => {
+    console.log('🔍 Error state changed to:', error);
+  }, [error]);
+
   // Check for profile missing flag and redirect to signup
   useEffect(() => {
     const profileMissing = localStorage.getItem('profileMissing');
@@ -94,6 +99,14 @@ export const LoginPage: React.FC = () => {
           {process.env.NODE_ENV === 'development' && (
             <div className="mb-4 p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400">
               Debug: Error state = "{error}"
+            </div>
+          )}
+          
+          {/* Test error display - always show this in development */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center">
+              <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
+              <p className="text-red-400 font-jakarta text-sm">Test error message - this should always show in development</p>
             </div>
           )}
 
