@@ -264,7 +264,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           
           const newJob: Job = {
             id: crypto.randomUUID(),
-            user_id: user?.id || null, // Changed from client_id to user_id
+            userId: user?.id || null,
             companyName: jobData.companyName,
             title: jobData.title,
             description: jobData.description,
@@ -295,9 +295,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         console.log('🗄️ Using Supabase database for job...');
         
         try {
-          const jobInsert = {
+          // Create the job insert object with only the fields we know exist
+          const jobInsert: any = {
             user_id: user?.id || null,
-            company_name: jobData.companyName,
             title: jobData.title,
             description: jobData.description,
             seniority_level: jobData.seniorityLevel,
@@ -309,7 +309,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             candidates_requested: jobData.candidatesRequested,
             status: 'Unclaimed'
           };
+
+          // Add company_name if it exists in the schema
+          if (jobData.companyName) {
+            jobInsert.company_name = jobData.companyName;
+          }
         
+          console.log('📤 Inserting job with data:', jobInsert);
+          
           const { data: insertedJob, error } = await supabase
             .from('jobs')
             .insert(jobInsert)
@@ -318,13 +325,21 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
           if (error) {
             console.error('❌ Error inserting job into Supabase:', error);
+            console.error('❌ Error details:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            });
             throw error;
           }
 
+          console.log('✅ Job inserted successfully:', insertedJob);
+
           const newJob: Job = {
             id: insertedJob.id,
-            userId: insertedJob.user_id, // Map database user_id to frontend userId
-            companyName: insertedJob.company_name,
+            userId: insertedJob.user_id,
+            companyName: insertedJob.company_name || jobData.companyName,
             title: insertedJob.title,
             description: insertedJob.description,
             seniorityLevel: insertedJob.seniority_level,
@@ -354,7 +369,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           // Fallback to local storage
           const newJob: Job = {
             id: crypto.randomUUID(),
-            user_id: user?.id || null, // Changed from client_id to user_id
+            userId: user?.id || null,
             companyName: jobData.companyName,
             title: jobData.title,
             description: jobData.description,
@@ -695,6 +710,81 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       resultMessage += isJobComplete 
         ? '🎉 JOB COMPLETED! All required candidates have been submitted.' 
         : `🎯 NEXT STEPS: Submit ${stillNeeded} more quality candidate${stillNeeded !== 1 ? 's' : ''} to complete this job.`;
+      
+      // AUTO-COMPLETE: Mark job as completed if requirements are met
+      if (isJobComplete) {
+        try {
+          console.log('🎯 Auto-completing job:', jobId);
+          await updateJob(jobId, {
+            status: 'Completed',
+            completionLink: `Auto-completed with ${acceptedCandidates.length} candidates submitted`
+          });
+          console.log('✅ Job auto-completed successfully');
+        } catch (completionError) {
+          console.error('❌ Error auto-completing job:', completionError);
+          // Don't fail the entire operation if auto-completion fails
+        }
+      }
+      
+      // CREDIT DEDUCTION: Deduct credits for accepted candidates
+      if (acceptedCandidates.length > 0) {
+        try {
+          console.log('💰 Deducting credits for accepted candidates:', acceptedCandidates.length);
+          
+          // Get current user profile
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          if (!currentUser) {
+            console.warn('⚠️ No authenticated user found for credit deduction');
+          } else {
+            // Get current user profile
+            const { data: userProfile, error: profileError } = await supabase
+              .from('user_profiles')
+              .select('available_credits')
+              .eq('id', currentUser.id)
+              .single();
+            
+            if (profileError) {
+              console.error('❌ Error loading user profile for credit deduction:', profileError);
+            } else if (userProfile) {
+              const currentCredits = userProfile.available_credits || 0;
+              const creditsToDeduct = acceptedCandidates.length;
+              const newCredits = Math.max(0, currentCredits - creditsToDeduct);
+              
+              // Update user profile with new credit count
+              const { error: updateError } = await supabase
+                .from('user_profiles')
+                .update({ available_credits: newCredits })
+                .eq('id', currentUser.id);
+              
+              if (updateError) {
+                console.error('❌ Error updating credits:', updateError);
+              } else {
+                console.log(`✅ Credits deducted: ${currentCredits} → ${newCredits} (${creditsToDeduct} used)`);
+                
+                // Log transaction to audit trail
+                const { error: auditError } = await supabase
+                  .from('credit_transactions')
+                  .insert({
+                    user_id: currentUser.id,
+                    transaction_type: 'deduction',
+                    amount: creditsToDeduct,
+                    description: `Candidate submission for job ${jobId}: ${acceptedCandidates.length} candidates accepted`,
+                    job_id: jobId
+                  });
+                
+                if (auditError) {
+                  console.error('❌ Error logging credit transaction:', auditError);
+                } else {
+                  console.log('📝 Credit transaction logged to audit trail');
+                }
+              }
+            }
+          }
+        } catch (creditError) {
+          console.error('❌ Error in credit deduction:', creditError);
+          // Don't fail the entire operation if credit deduction fails
+        }
+      }
       
       // Return results with detailed information
       return {
