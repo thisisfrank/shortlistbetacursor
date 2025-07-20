@@ -15,61 +15,122 @@ export const useAuth = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [signOutLoading, setSignOutLoading] = useState(false);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   useEffect(() => {
-    // SIMPLE: Get session and listen for changes
+    let isMounted = true;
+    let authSubscription: any = null;
+
     const initAuth = async () => {
       try {
+        console.log('🔐 Initializing auth...');
+        
         const { data: { session } } = await supabase.auth.getSession();
         const currentUser = session?.user ?? null;
+        
+        if (!isMounted) return;
+        
+        console.log('🔐 Session found:', !!currentUser);
         setUser(currentUser);
         
         if (currentUser) {
-          const { data: profile } = await supabase
+          console.log('🔐 Loading user profile...');
+          const { data: profile, error } = await supabase
             .from('user_profiles')
             .select('*')
             .eq('id', currentUser.id)
             .single();
           
-          setUserProfile(profile);
-        }
-      } catch (error) {
-        console.error('Auth initialization error:', error);
-        setUser(null);
-        setUserProfile(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initAuth();
-
-    // SIMPLE: Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Skip the initial session event since initAuth already handles it
-      if (event === 'INITIAL_SESSION') return;
-      
-      try {
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-        
-        if (currentUser) {
-          const { data: profile } = await supabase
-            .from('user_profiles')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single();
-          setUserProfile(profile);
+          if (!isMounted) return;
+          
+          if (error) {
+            console.error('❌ Error loading user profile:', error);
+            setUserProfile(null);
+          } else {
+            console.log('✅ User profile loaded:', profile?.role);
+            setUserProfile(profile);
+          }
         } else {
           setUserProfile(null);
         }
       } catch (error) {
-        console.error('Auth change error:', error);
-        setUserProfile(null);
+        console.error('💥 Auth initialization error:', error);
+        if (isMounted) {
+          setUser(null);
+          setUserProfile(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+          setAuthInitialized(true);
+        }
+      }
+    };
+
+    const setupAuthListener = () => {
+      console.log('🔐 Setting up auth state listener...');
+      
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('🔐 Auth state change:', event, !!session?.user);
+        
+        // Skip initial session event - we handle it in initAuth
+        if (event === 'INITIAL_SESSION') {
+          console.log('🔐 Skipping INITIAL_SESSION event');
+          return;
+        }
+        
+        if (!isMounted) return;
+        
+        try {
+          const currentUser = session?.user ?? null;
+          setUser(currentUser);
+          
+          if (currentUser) {
+            console.log('🔐 Loading profile for auth change...');
+            const { data: profile, error } = await supabase
+              .from('user_profiles')
+              .select('*')
+              .eq('id', currentUser.id)
+              .single();
+            
+            if (!isMounted) return;
+            
+            if (error) {
+              console.error('❌ Error loading profile in auth change:', error);
+              setUserProfile(null);
+            } else {
+              console.log('✅ Profile loaded in auth change:', profile?.role);
+              setUserProfile(profile);
+            }
+          } else {
+            console.log('🔐 User signed out, clearing profile');
+            setUserProfile(null);
+          }
+        } catch (error) {
+          console.error('💥 Auth change error:', error);
+          if (isMounted) {
+            setUserProfile(null);
+          }
+        }
+      });
+      
+      authSubscription = subscription;
+    };
+
+    // Initialize auth
+    initAuth().then(() => {
+      if (isMounted) {
+        setupAuthListener();
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('🔐 Cleaning up auth listener...');
+      isMounted = false;
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -77,10 +138,17 @@ export const useAuth = () => {
       console.log('🔐 Attempting sign in for:', email);
       setLoading(true);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Sign in timeout')), 10000); // 10 second timeout
+      });
+      
+      const signInPromise = supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
+      
+      const { data, error } = await Promise.race([signInPromise, timeoutPromise]) as any;
       
       console.log('🔐 Sign in result:', { success: !error, error: error?.message });
       
@@ -93,7 +161,7 @@ export const useAuth = () => {
       setLoading(false);
       return { 
         data: null, 
-        error: { message: 'Network error. Please try again.' } 
+        error: { message: error instanceof Error ? error.message : 'Network error. Please try again.' } 
       };
     }
   };
@@ -149,27 +217,49 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
-    console.log('🚪 Signing out...');
+    console.log('🚪 Starting sign out process...');
     
     // Set sign-out loading state
     setSignOutLoading(true);
     
     try {
-      const { error } = await supabase.auth.signOut();
-      console.log('🚪 Supabase signOut result:', { error });
-      
-      // Clear local state after successful sign-out
-      setUser(null);
-      setUserProfile(null);
-      setLoading(false);
+      // Clear local storage first
       localStorage.removeItem('sourcerName');
       localStorage.removeItem('savedSourcers');
       
-      return { error };
+      console.log('🚪 Calling Supabase signOut...');
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('❌ Supabase signOut error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Supabase signOut successful');
+      
+      // Clear local state
+      setUser(null);
+      setUserProfile(null);
+      setLoading(false);
+      
+      console.log('✅ Local state cleared');
+      
+      return { error: null };
     } catch (error) {
       console.error('💥 Sign out error:', error);
-      return { error: { message: 'Error signing out' } };
+      
+      // Even if Supabase fails, clear local state to prevent stuck loading
+      setUser(null);
+      setUserProfile(null);
+      setLoading(false);
+      
+      return { 
+        error: { 
+          message: error instanceof Error ? error.message : 'Error signing out' 
+        } 
+      };
     } finally {
+      console.log('🚪 Sign out process complete, clearing loading state');
       setSignOutLoading(false);
     }
   };

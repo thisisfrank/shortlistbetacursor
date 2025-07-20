@@ -502,6 +502,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           uniqueUrls.push(url);
         }
       });
+      
+      // Check if we have any unique URLs to process
+      if (uniqueUrls.length === 0) {
+        return {
+          success: false,
+          acceptedCount: 0,
+          rejectedCount: duplicateUrls.length,
+          error: `All ${duplicateUrls.length} LinkedIn profiles have already been submitted for this job. Please try different profiles.`
+        };
+      }
+      
       // Use the actual Apify scraping service
       const scrapingResult = await scrapeLinkedInProfiles(uniqueUrls);
       
