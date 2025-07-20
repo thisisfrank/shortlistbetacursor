@@ -15,11 +15,6 @@ export const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Debug: Log error state changes
-  useEffect(() => {
-    console.log('🔍 Error state changed to:', error);
-  }, [error]);
-
   // Check for profile missing flag and redirect to signup
   useEffect(() => {
     const profileMissing = localStorage.getItem('profileMissing');
@@ -51,15 +46,7 @@ export const LoginPage: React.FC = () => {
         const errorMessage = signInError.message === 'Invalid login credentials' 
           ? 'Account not found. Please check your email or sign up for a new account.'
           : signInError.message || 'Login failed. Please try again.';
-        console.log('🚨 About to set error message:', errorMessage);
-        
-        // Force state update with setTimeout to ensure it happens after current execution
-        setTimeout(() => {
-          setError(errorMessage);
-          console.log('🚨 Error message set via setTimeout');
-        }, 0);
-        
-        console.log('🚨 Error message set, current state should update');
+        setError(errorMessage);
       } else if (data?.user) {
         console.log('✅ Login successful, redirecting...');
         // Check for redirect parameter
@@ -95,24 +82,12 @@ export const LoginPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Always show error message for testing */}
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center">
-            <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
-            <p className="text-red-400 font-jakarta text-sm">
-              {error || 'No error message set'}
-            </p>
-          </div>
-          
-          {/* Debug: Show error state */}
-          <div className="mb-4 p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400">
-            Debug: Error state = "{error}"
-          </div>
-          
-          {/* Test error display - always show this */}
-          <div className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center">
-            <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
-            <p className="text-red-400 font-jakarta text-sm">Test error message - this should always show</p>
-          </div>
+          {error && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center">
+              <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
+              <p className="text-red-400 font-jakarta text-sm">{error}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <FormInput
