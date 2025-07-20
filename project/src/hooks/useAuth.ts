@@ -24,14 +24,35 @@ export const useAuth = () => {
     try {
       console.log(`🔍 Fetching user profile (attempt ${retryCount + 1}/${maxRetries + 1})...`);
       
+      // ✅ HEALTH CHECK: Test Supabase connection first
+      if (retryCount === 0) {
+        try {
+          const { data: healthCheck } = await supabase
+            .from('user_profiles')
+            .select('id')
+            .limit(1);
+          console.log('✅ Supabase connection healthy');
+        } catch (healthError) {
+          console.error('⚠️ Supabase connection issue detected:', healthError);
+          // If connection is bad, wait longer before retry
+          if (retryCount < maxRetries) {
+            const delay = 5000; // 5s delay for connection issues
+            console.log(`🔄 Connection issue detected, waiting ${delay/1000}s before retry...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return fetchUserProfile(userId, retryCount + 1);
+          }
+        }
+      }
+      
       const profilePromise = supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
       
+      // ✅ INCREASED: Extended timeout to handle Supabase latency
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 5000) // ✅ Reduced to 5s
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 15000) // ✅ Increased to 15s
       );
       
       const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
@@ -39,8 +60,10 @@ export const useAuth = () => {
       if (error) {
         console.error('⚠️ Profile fetch error:', error);
         if (retryCount < maxRetries) {
-          console.log(`🔄 Retrying profile fetch in 1s...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          // ✅ EXPONENTIAL BACKOFF: Increase delay with each retry
+          const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+          console.log(`🔄 Retrying profile fetch in ${delay/1000}s...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
           return fetchUserProfile(userId, retryCount + 1);
         }
         return null;
@@ -61,8 +84,10 @@ export const useAuth = () => {
     } catch (error) {
       console.error('💥 Profile fetch failed:', error);
       if (retryCount < maxRetries) {
-        console.log(`🔄 Retrying profile fetch in 1s...`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // ✅ EXPONENTIAL BACKOFF: Increase delay with each retry
+        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+        console.log(`🔄 Retrying profile fetch in ${delay/1000}s...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
         return fetchUserProfile(userId, retryCount + 1);
       }
       return null;
@@ -154,7 +179,11 @@ export const useAuth = () => {
             setUserProfile(profile);
           } else {
             console.log('⚠️ Auth change - No profile found, waiting for trigger');
-            setUserProfile(null);
+            // ✅ FALLBACK: Don't set profile to null immediately, keep previous state
+            // This prevents navigation issues during temporary network problems
+            if (!userProfile) {
+              setUserProfile(null);
+            }
           }
         } else {
           console.log('🚫 Auth change - No user');
