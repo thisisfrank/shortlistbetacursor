@@ -65,7 +65,7 @@ export const useAuth = () => {
               .maybeSingle();
             
             const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 30000)
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 10000) // ✅ Reduced from 30s to 10s
             );
             
             const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
@@ -130,7 +130,7 @@ export const useAuth = () => {
               .maybeSingle();
             
             const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 30000)
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 10000) // ✅ Reduced from 30s to 10s
             );
             
             const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
