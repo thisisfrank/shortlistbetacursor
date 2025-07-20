@@ -32,11 +32,11 @@ BEGIN
     NEW.id,
     NEW.email,
     CASE 
-      WHEN NEW.email = 'thisisfrankgonzalez@gmail.com' THEN 'admin'
-      WHEN NEW.email = 'thisisjasongonzalez@gmail.com' THEN 'sourcer'
-      WHEN NEW.email = 'client@test.com' THEN 'client'
-      WHEN NEW.email = 'client2@test.com' THEN 'client'
-      ELSE 'client'
+      WHEN NEW.email = 'thisisfrankgonzalez@gmail.com' THEN 'admin'::user_role
+      WHEN NEW.email = 'thisisjasongonzalez@gmail.com' THEN 'sourcer'::user_role
+      WHEN NEW.email = 'client@test.com' THEN 'client'::user_role
+      WHEN NEW.email = 'client2@test.com' THEN 'client'::user_role
+      ELSE 'client'::user_role
     END
   );
   RETURN NEW;
@@ -61,11 +61,11 @@ SELECT
   au.id,
   au.email,
   CASE 
-    WHEN au.email = 'thisisfrankgonzalez@gmail.com' THEN 'admin'
-    WHEN au.email = 'thisisjasongonzalez@gmail.com' THEN 'sourcer'
-    WHEN au.email = 'client@test.com' THEN 'client'
-    WHEN au.email = 'client2@test.com' THEN 'client'
-    ELSE 'client'
+    WHEN au.email = 'thisisfrankgonzalez@gmail.com' THEN 'admin'::user_role
+    WHEN au.email = 'thisisjasongonzalez@gmail.com' THEN 'sourcer'::user_role
+    WHEN au.email = 'client@test.com' THEN 'client'::user_role
+    WHEN au.email = 'client2@test.com' THEN 'client'::user_role
+    ELSE 'client'::user_role
   END
 FROM auth.users au
 WHERE NOT EXISTS (
