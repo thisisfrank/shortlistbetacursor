@@ -14,7 +14,7 @@ export const FormInput: React.FC<FormInputProps> = ({
   className = '',
   ...props
 }) => {
-  const inputId = id || label.toLowerCase().replace(/\s+/g, '-');
+  const inputId = id || (label || '').toLowerCase().replace(/\s+/g, '-');
 
   return (
     <div className="mb-8">
@@ -59,7 +59,7 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
   className = '',
   ...props
 }) => {
-  const inputId = id || label.toLowerCase().replace(/\s+/g, '-');
+  const inputId = id || (label || '').toLowerCase().replace(/\s+/g, '-');
 
   return (
     <div className="mb-8">
@@ -106,7 +106,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
   className = '',
   ...props
 }) => {
-  const inputId = id || label.toLowerCase().replace(/\s+/g, '-');
+  const inputId = id || (label || '').toLowerCase().replace(/\s+/g, '-');
 
   return (
     <div className="mb-8">
