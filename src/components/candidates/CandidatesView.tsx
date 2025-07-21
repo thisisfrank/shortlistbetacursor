@@ -408,17 +408,6 @@ export const CandidatesView: React.FC = () => {
                               </div>
                             )}
                           </div>
-                          
-                          {/* Selection Checkbox */}
-                          <div className="col-span-1 flex justify-center">
-                            <input
-                              type="checkbox"
-                              checked={selectedCandidates.has(candidate.id)}
-                              onChange={() => toggleCandidateSelection(candidate.id)}
-                              className="w-5 h-5 text-supernova bg-gray-700 border-gray-600 rounded focus:ring-supernova focus:ring-2"
-                            />
-                          </div>
-                          
                           {/* Name and basic info */}
                           <div className="col-span-2">
                             <h4 className="text-xl font-anton text-white-knight mb-2 uppercase tracking-wide">
@@ -427,7 +416,6 @@ export const CandidatesView: React.FC = () => {
                                 : `${candidate.firstName} ${candidate.lastName}`}
                             </h4>
                           </div>
-                          
                           {/* Actions */}
                           <div className="col-span-2 text-right">
                             <Button
@@ -448,6 +436,15 @@ export const CandidatesView: React.FC = () => {
                                 </>
                               )}
                             </Button>
+                          </div>
+                          {/* Selection Checkbox - moved to far right */}
+                          <div className="col-span-1 flex justify-end">
+                            <input
+                              type="checkbox"
+                              checked={selectedCandidates.has(candidate.id)}
+                              onChange={() => toggleCandidateSelection(candidate.id)}
+                              className="w-5 h-5 text-supernova bg-gray-700 border-gray-600 rounded focus:ring-supernova focus:ring-2"
+                            />
                           </div>
                         </div>
                         
