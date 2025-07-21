@@ -21,31 +21,20 @@ export const AdminMenu: React.FC = () => {
 
   return (
     <>
-      <div className="mb-6 pb-4 border-b border-guardian/20">
+      <div className="mb-6 pb-4 border-b border-guardian/20 text-center flex flex-col items-center">
         <h3 className="font-anton text-lg text-white-knight uppercase tracking-wide">
           {user?.email?.split('@')[0] || 'Admin'}
         </h3>
         <p className="text-guardian font-jakarta text-sm">{user?.email}</p>
-        <Badge variant="success" className="text-xs mt-2">
-          ADMIN ACCESS
-        </Badge>
       </div>
       
-      <div className="space-y-3">
-        <Link
-          to="/admin"
-          className="flex items-center justify-center w-full px-4 py-3 bg-supernova text-shadowforce font-jakarta font-bold rounded-lg hover:bg-supernova-light transition-colors duration-200"
-        >
-          <Crown className="mr-2" size={16} />
-          ADMIN CONTROL
-        </Link>
-        
+      <div className="space-y-3 flex flex-col items-center">
         <Button 
           onClick={handleSignOut}
           variant="ghost"
           size="lg"
           fullWidth
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 justify-center"
         >
           <LogOut className="mr-2" size={16} />
           SIGN OUT

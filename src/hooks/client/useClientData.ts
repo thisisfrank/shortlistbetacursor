@@ -1,6 +1,6 @@
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../useAuth';
-import { Client, Job, Candidate } from '../../types';
+import { Job, Candidate } from '../../types';
 
 export const useClientData = () => {
   const { user, userProfile } = useAuth();
@@ -11,29 +11,23 @@ export const useClientData = () => {
     throw new Error('Unauthorized: Client access required');
   }
 
-  // Get current client based on authenticated user
-  const getCurrentClient = (): Client | null => {
-    if (!user) return null;
-    return dataContext.clients.find(client => client.email === user.email) || null;
-  };
-
-  const currentClient = getCurrentClient();
-
-  // Client-specific data access (filtered)
+  // Jobs submitted by this user
   const getMyJobs = (): Job[] => {
-    if (!currentClient) return [];
-    return dataContext.jobs.filter(job => job.clientId === currentClient.id);
+    if (!user) return [];
+    return dataContext.jobs.filter(job => job.userId === user.id);
   };
 
+  // Candidates for this user's jobs
   const getMyCandidates = (): Candidate[] => {
-    if (!currentClient) return [];
-    return dataContext.getCandidatesByClient(currentClient.id);
+    const myJobs = getMyJobs();
+    const myJobIds = myJobs.map(job => job.id);
+    return dataContext.candidates.filter(candidate => myJobIds.includes(candidate.jobId));
   };
 
   const getMyJobById = (jobId: string): Job | null => {
     const job = dataContext.getJobById(jobId);
-    if (!job || !currentClient || job.clientId !== currentClient.id) {
-      return null; // Don't allow access to other clients' jobs
+    if (!job || !user || job.userId !== user.id) {
+      return null;
     }
     return job;
   };
@@ -44,79 +38,58 @@ export const useClientData = () => {
     return dataContext.getCandidatesByJob(jobId);
   };
 
-  // Client-specific computed data
+  // Stats for this user
   const getClientStats = () => {
-    if (!currentClient) return null;
-    
     const myJobs = getMyJobs();
     const myCandidates = getMyCandidates();
-    
     return {
       totalJobs: myJobs.length,
       totalCandidates: myCandidates.length,
       completedJobs: myJobs.filter(job => job.status === 'Completed').length,
       pendingJobs: myJobs.filter(job => job.status !== 'Completed').length,
-      availableCredits: currentClient.availableCredits,
-      jobsRemaining: currentClient.jobsRemaining,
-      creditsResetDate: currentClient.creditsResetDate,
-      tier: dataContext.getTierById(currentClient.tierId),
+      availableCredits: userProfile.availableCredits,
+      jobsRemaining: userProfile.jobsRemaining,
+      creditsResetDate: userProfile.creditsResetDate,
+      tier: dataContext.getTierById(userProfile.tierId),
     };
   };
 
-  // Client-specific actions (with permission checks)
-  const submitJob = (jobData: Omit<Job, 'id' | 'status' | 'sourcerName' | 'completionLink' | 'createdAt' | 'updatedAt' | 'clientId'>) => {
-    if (!currentClient) {
-      throw new Error('No client profile found');
-    }
-
-    if (currentClient.jobsRemaining <= 0) {
+  // Actions
+  const submitJob = (jobData: Omit<Job, 'id' | 'status' | 'sourcerName' | 'completionLink' | 'createdAt' | 'updatedAt' | 'userId'>) => {
+    if (!userProfile || userProfile.jobsRemaining <= 0) {
       throw new Error('No job submissions remaining for this billing period');
     }
-
     return dataContext.addJob({
       ...jobData,
-      clientId: currentClient.id
+      userId: user?.id || '',
+      userEmail: user?.email || '',
     });
   };
 
   const canSubmitJob = (): boolean => {
-    return currentClient ? currentClient.jobsRemaining > 0 : false;
+    return userProfile.jobsRemaining > 0;
   };
 
   const canRequestCandidates = (count: number): boolean => {
-    return currentClient ? currentClient.availableCredits >= count : false;
+    return userProfile.availableCredits >= count;
   };
 
-  // Subscription helpers
   const needsUpgrade = (): boolean => {
-    if (!currentClient) return false;
-    return currentClient.availableCredits <= 0 || currentClient.jobsRemaining <= 0;
+    return userProfile.availableCredits <= 0 || userProfile.jobsRemaining <= 0;
   };
 
   return {
-    // Client profile
-    currentClient,
-    
-    // Filtered data access
     myJobs: getMyJobs(),
     myCandidates: getMyCandidates(),
     getMyJobById,
     getMyCandidatesByJob,
-    
-    // Stats and computed data
     clientStats: getClientStats(),
-    
-    // Actions (permission-checked)
     submitJob,
     canSubmitJob,
     canRequestCandidates,
     needsUpgrade,
-    
-    // Utility functions
     checkDuplicateEmail: dataContext.checkDuplicateEmail,
     getTierById: dataContext.getTierById,
-    
-    // Read-only access to tiers for subscription info
     tiers: dataContext.tiers,
   };
 };

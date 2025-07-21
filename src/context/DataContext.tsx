@@ -80,13 +80,11 @@ const createEmptyData = () => {
     }
   ];
 
-  const emptyClients: any[] = []; // Removed Client import, so emptyClients is no longer needed
   const emptyJobs: Job[] = [];
   const emptyCandidates: Candidate[] = [];
 
   return {
     tiers: emptyTiers,
-    clients: emptyClients,
     jobs: emptyJobs,
     candidates: emptyCandidates
   };

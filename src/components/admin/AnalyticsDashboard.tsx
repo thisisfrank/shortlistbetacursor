@@ -127,14 +127,14 @@ export const AnalyticsDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-500/20 to-green-500/10 border-green-500/30">
+        <Card className="bg-gradient-to-br from-orange-500/20 to-orange-500/10 border-orange-500/30">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-anton text-green-400 uppercase tracking-wide">Avg Candidates</h3>
+                <h3 className="text-sm font-anton text-orange-400 uppercase tracking-wide">Avg Candidates</h3>
                 <p className="text-3xl font-anton text-white-knight">{avgCandidatesPerJob}</p>
               </div>
-              <Users className="text-green-400" size={32} />
+              <Users className="text-orange-400" size={32} />
             </div>
           </CardContent>
         </Card>
@@ -151,14 +151,14 @@ export const AnalyticsDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-500/20 to-orange-500/10 border-orange-500/30">
+        <Card className="bg-gradient-to-br from-green-500/20 to-green-500/10 border-green-500/30">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-anton text-orange-400 uppercase tracking-wide">Total Jobs</h3>
+                <h3 className="text-sm font-anton text-green-400 uppercase tracking-wide">Total Jobs</h3>
                 <p className="text-3xl font-anton text-white-knight">{filteredJobs.length}</p>
               </div>
-              <Briefcase className="text-orange-400" size={32} />
+              <Briefcase className="text-green-400" size={32} />
             </div>
           </CardContent>
         </Card>
