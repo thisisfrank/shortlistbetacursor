@@ -118,12 +118,11 @@ export const useSourcerData = () => {
   const searchJobs = (query: string): Job[] => {
     const searchLower = query.toLowerCase();
     return getAllJobsForSourcing().filter(job => {
-      const client = dataContext.getClientById(job.clientId);
       return (
         job.title.toLowerCase().includes(searchLower) ||
         job.description.toLowerCase().includes(searchLower) ||
         job.location.toLowerCase().includes(searchLower) ||
-        (client && client.companyName.toLowerCase().includes(searchLower))
+        (job.companyName && job.companyName.toLowerCase().includes(searchLower))
       );
     });
   };
@@ -155,7 +154,6 @@ export const useSourcerData = () => {
     searchJobs,
     
     // Read-only access to shared data
-    getClientById: dataContext.getClientById,
     getJobById: dataContext.getJobById,
     getCandidatesByJob: dataContext.getCandidatesByJob,
   };

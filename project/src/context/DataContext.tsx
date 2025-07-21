@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
-import { Job, Candidate, Tier, UserProfile } from '../types';
+import { Job, Candidate, Tier } from '../types';
 import { scrapeLinkedInProfiles } from '../services/apifyService';
 import { generateJobMatchScore } from '../services/anthropicService';
 import { useAuth } from './AuthContext';
@@ -9,9 +9,6 @@ interface DataContextType {
   jobs: Job[];
   candidates: Candidate[];
   tiers: Tier[];
-  userProfiles: UserProfile[];
-  // Legacy support for admin components (maps to userProfiles)
-  clients: UserProfile[];
   addJob: (job: Omit<Job, 'id' | 'status' | 'sourcerName' | 'completionLink' | 'createdAt' | 'updatedAt'>) => Job;
   addCandidate: (candidate: Omit<Candidate, 'id' | 'submittedAt'>) => Candidate;
   addCandidatesFromLinkedIn: (jobId: string, linkedinUrls: string[]) => Promise<{ 
@@ -28,11 +25,8 @@ interface DataContextType {
   getJobById: (jobId: string) => Job | null;
   getJobsByUser: (userId: string) => Job[];
   getTierById: (tierId: string) => Tier | null;
-  // Legacy support for admin components
-  getClientById: (clientId: string) => UserProfile | null;
-  deleteClient: (clientId: string) => void;
-  updateClient: (clientId: string, updates: Partial<UserProfile>) => void;
   resetData: () => void;
+  testInsertCandidate: () => Promise<{ success: boolean; data: any; error: any }>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -86,13 +80,13 @@ const createEmptyData = () => {
     }
   ];
 
-  const emptyUserProfiles: UserProfile[] = [];
+  const emptyClients: any[] = []; // Removed Client import, so emptyClients is no longer needed
   const emptyJobs: Job[] = [];
   const emptyCandidates: Candidate[] = [];
 
   return {
     tiers: emptyTiers,
-    userProfiles: emptyUserProfiles,
+    clients: emptyClients,
     jobs: emptyJobs,
     candidates: emptyCandidates
   };
@@ -106,14 +100,7 @@ const loadInitialData = () => {
 };
 
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
-  const [data, setData] = useState(() => {
-    const initialData = loadInitialData();
-    // Ensure userProfiles is always defined
-    return {
-      ...initialData,
-      userProfiles: initialData.userProfiles || []
-    };
-  });
+  const [data, setData] = useState(() => loadInitialData());
   const { user } = useAuth();
 
   // SIMPLE: One effect, one purpose - load data when user changes
@@ -213,25 +200,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         }
       }
 
-      // Load user profiles for admin components
-      let userProfilesData: UserProfile[] = [];
-      if (userRole === 'admin') {
-        const { data: allUserProfiles, error: profilesError } = await supabase
-          .from('user_profiles')
-          .select('*');
-
-        if (profilesError) {
-          console.error('❌ Error loading user profiles:', profilesError);
-        } else {
-          userProfilesData = allUserProfiles || [];
-          console.log('👤 Loaded user profiles for admin:', userProfilesData);
-        }
-      }
-
       // Update state with loaded data
       const loadedJobs = jobsData.map(j => ({
         id: j.id,
         userId: j.user_id, // Map database user_id to frontend userId
+        userEmail: j.user_email, // Add user_email to the mapping
         companyName: j.company_name,
         title: j.title,
         description: j.description,
@@ -272,8 +245,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       setData(prev => ({
         ...prev,
         jobs: loadedJobs,
-        candidates: loadedCandidates,
-        userProfiles: userProfilesData // Add user profiles to state
+        candidates: loadedCandidates
       }));
 
       console.log('✅ User data loaded successfully for role:', userRole);
@@ -293,7 +265,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           
           const newJob: Job = {
             id: crypto.randomUUID(),
-            user_id: user?.id || null, // Changed from client_id to user_id
+            userId: user?.id || null,
+            userEmail: user?.email || null, // Add userEmail for local storage
             companyName: jobData.companyName,
             title: jobData.title,
             description: jobData.description,
@@ -324,9 +297,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         console.log('🗄️ Using Supabase database for job...');
         
         try {
-          const jobInsert = {
+          // Create the job insert object with only the fields we know exist
+          const jobInsert: any = {
             user_id: user?.id || null,
-            company_name: jobData.companyName,
+            user_email: user?.email || null,
             title: jobData.title,
             description: jobData.description,
             seniority_level: jobData.seniorityLevel,
@@ -338,7 +312,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             candidates_requested: jobData.candidatesRequested,
             status: 'Unclaimed'
           };
+
+          // Add company_name if it exists in the schema
+          if (jobData.companyName) {
+            jobInsert.company_name = jobData.companyName;
+          }
         
+          console.log('📤 Inserting job with data:', jobInsert);
+          
           const { data: insertedJob, error } = await supabase
             .from('jobs')
             .insert(jobInsert)
@@ -347,13 +328,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
           if (error) {
             console.error('❌ Error inserting job into Supabase:', error);
+            console.error('❌ Error details:', {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            });
             throw error;
           }
 
+          console.log('✅ Job inserted successfully:', insertedJob);
+
           const newJob: Job = {
             id: insertedJob.id,
-            userId: insertedJob.user_id, // Map database user_id to frontend userId
-            companyName: insertedJob.company_name,
+            userId: insertedJob.user_id,
+            userEmail: insertedJob.user_email,
+            companyName: insertedJob.company_name || jobData.companyName,
             title: insertedJob.title,
             description: insertedJob.description,
             seniorityLevel: insertedJob.seniority_level,
@@ -383,7 +373,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           // Fallback to local storage
           const newJob: Job = {
             id: crypto.randomUUID(),
-            user_id: user?.id || null, // Changed from client_id to user_id
+            userId: user?.id || null,
+            userEmail: user?.email || null, // Add userEmail for local storage
             companyName: jobData.companyName,
             title: jobData.title,
             description: jobData.description,
@@ -532,6 +523,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           uniqueUrls.push(url);
         }
       });
+      
+      // Check if we have any unique URLs to process
+      if (uniqueUrls.length === 0) {
+        return {
+          success: false,
+          acceptedCount: 0,
+          rejectedCount: duplicateUrls.length,
+          error: `All ${duplicateUrls.length} LinkedIn profiles have already been submitted for this job. Please try different profiles.`
+        };
+      }
+      
       // Use the actual Apify scraping service
       const scrapingResult = await scrapeLinkedInProfiles(uniqueUrls);
       
@@ -609,12 +611,76 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         }
       }
 
-      // Only add accepted candidates to the system
+      // Save accepted candidates to Supabase and update local state
       if (acceptedCandidates.length > 0) {
-        setData(prev => ({
-          ...prev,
-          candidates: [...prev.candidates, ...acceptedCandidates]
-        }));
+        try {
+          console.log('💾 Saving candidates to Supabase:', acceptedCandidates.length);
+          
+          // Prepare candidates for database insertion
+          const candidatesToInsert = acceptedCandidates.map(candidate => ({
+            job_id: candidate.jobId,
+            first_name: candidate.firstName,
+            last_name: candidate.lastName,
+            linkedin_url: candidate.linkedinUrl,
+            headline: candidate.headline,
+            location: candidate.location,
+            experience: candidate.experience,
+            education: candidate.education,
+            skills: candidate.skills,
+            summary: candidate.summary
+          }));
+          
+          console.log('📤 Inserting candidates to Supabase:', candidatesToInsert.length);
+          console.log('📋 Candidate data to insert:', candidatesToInsert);
+          
+          const { data: insertedCandidates, error: insertError } = await supabase
+            .from('candidates')
+            .insert(candidatesToInsert)
+            .select();
+          
+          if (insertError) {
+            console.error('❌ Error inserting candidates to Supabase:', insertError);
+            console.error('❌ Insert error details:', {
+              code: insertError.code,
+              message: insertError.message,
+              details: insertError.details,
+              hint: insertError.hint
+            });
+            throw new Error(`Failed to save candidates: ${insertError.message}`);
+          }
+          
+          console.log('✅ Candidates saved to Supabase:', insertedCandidates.length);
+          console.log('📊 Inserted candidates data:', insertedCandidates);
+          
+          // Update local state with the actual database records
+          const savedCandidates = insertedCandidates.map(c => ({
+            id: c.id,
+            jobId: c.job_id,
+            firstName: c.first_name,
+            lastName: c.last_name,
+            linkedinUrl: c.linkedin_url,
+            headline: c.headline,
+            location: c.location,
+            experience: c.experience,
+            education: c.education,
+            skills: c.skills,
+            summary: c.summary,
+            submittedAt: new Date(c.submitted_at)
+          }));
+          
+          console.log('🔄 Updating local state with saved candidates...');
+          setData(prev => ({
+            ...prev,
+            candidates: [...prev.candidates, ...savedCandidates]
+          }));
+          console.log('✅ Local state updated successfully');
+          
+        } catch (error) {
+          console.error('💥 Error saving candidates to database:', error);
+          throw error;
+        }
+      } else {
+        console.log('ℹ️ No accepted candidates to save');
       }
 
       // Deduct credits only for accepted candidates
@@ -654,6 +720,88 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       resultMessage += isJobComplete 
         ? '🎉 JOB COMPLETED! All required candidates have been submitted.' 
         : `🎯 NEXT STEPS: Submit ${stillNeeded} more quality candidate${stillNeeded !== 1 ? 's' : ''} to complete this job.`;
+      
+      // AUTO-COMPLETE: Mark job as completed if requirements are met
+      if (isJobComplete) {
+        try {
+          console.log('🎯 Auto-completing job:', jobId);
+          await updateJob(jobId, {
+            status: 'Completed',
+            completionLink: `Auto-completed with ${acceptedCandidates.length} candidates submitted`
+          });
+          console.log('✅ Job auto-completed successfully');
+        } catch (completionError) {
+          console.error('❌ Error auto-completing job:', completionError);
+          // Don't fail the entire operation if auto-completion fails
+        }
+      }
+      
+      // CREDIT DEDUCTION: Deduct credits for accepted candidates
+      if (acceptedCandidates.length > 0) {
+        try {
+          console.log('💰 Deducting credits for accepted candidates:', acceptedCandidates.length);
+          
+          // Get current user profile
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          if (!currentUser) {
+            console.warn('⚠️ No authenticated user found for credit deduction');
+          } else {
+            // Get current user profile
+            const { data: userProfile, error: profileError } = await supabase
+              .from('user_profiles')
+              .select('available_credits')
+              .eq('id', currentUser.id)
+              .single();
+            
+            if (profileError) {
+              console.error('❌ Error loading user profile for credit deduction:', profileError);
+            } else if (userProfile) {
+              const currentCredits = userProfile.available_credits || 0;
+              const creditsToDeduct = acceptedCandidates.length;
+              const newCredits = Math.max(0, currentCredits - creditsToDeduct);
+              
+              // Update user profile with new credit count
+              const { error: updateError } = await supabase
+                .from('user_profiles')
+                .update({ available_credits: newCredits })
+                .eq('id', currentUser.id);
+              
+              if (updateError) {
+                console.error('❌ Error updating credits:', updateError);
+              } else {
+                console.log(`✅ Credits deducted: ${currentCredits} → ${newCredits} (${creditsToDeduct} used)`);
+                
+                // Log transaction to audit trail (optional - won't break if table doesn't exist)
+                try {
+                  const { error: auditError } = await supabase
+                    .from('credit_transactions')
+                    .insert({
+                      user_id: currentUser.id,
+                      transaction_type: 'deduction',
+                      amount: creditsToDeduct,
+                      description: `Candidate submission for job ${jobId}: ${acceptedCandidates.length} candidates accepted`,
+                      job_id: jobId
+                    });
+                  
+                  if (auditError) {
+                    console.error('❌ Error logging credit transaction:', auditError);
+                    // Don't fail the entire operation if audit logging fails
+                    console.log('⚠️ Credit transaction logging failed, but credits were deducted successfully');
+                  } else {
+                    console.log('📝 Credit transaction logged to audit trail');
+                  }
+                } catch (auditError) {
+                  console.error('❌ Error logging credit transaction:', auditError);
+                  console.log('⚠️ Credit transaction logging failed, but credits were deducted successfully');
+                }
+              }
+            }
+          }
+        } catch (creditError) {
+          console.error('❌ Error in credit deduction:', creditError);
+          // Don't fail the entire operation if credit deduction fails
+        }
+      }
       
       // Return results with detailed information
       return {
@@ -698,6 +846,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         const updatedJob: Job = {
           id: updatedJobData.id,
           userId: updatedJobData.user_id, // Map database user_id to frontend userId
+          userEmail: updatedJobData.user_email, // Map database user_email to frontend userEmail
           title: updatedJobData.title,
           description: updatedJobData.description,
           seniorityLevel: updatedJobData.seniority_level,
@@ -757,26 +906,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return data.tiers.find(tier => tier.id === tierId) || null;
   };
 
-  const getClientById = (clientId: string) => {
-    return data.userProfiles.find(profile => profile.id === clientId) || null;
-  };
-
-  const deleteClient = (clientId: string) => {
-    setData(prev => ({
-      ...prev,
-      userProfiles: prev.userProfiles.filter(profile => profile.id !== clientId)
-    }));
-  };
-
-  const updateClient = (clientId: string, updates: Partial<UserProfile>) => {
-    setData(prev => ({
-      ...prev,
-      userProfiles: prev.userProfiles.map(profile => 
-        profile.id === clientId ? { ...profile, ...updates } : profile
-      )
-    }));
-  };
-
   const resetData = () => {
     if (window.confirm('Are you sure you want to reset ALL data? This will clear all jobs and candidates.')) {
       localStorage.removeItem('jobs');
@@ -788,12 +917,61 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  // Test function to manually insert a candidate
+  const testInsertCandidate = async () => {
+    try {
+      console.log('🧪 Testing candidate insertion...');
+      
+      const testCandidate = {
+        job_id: data.jobs[0]?.id || 'test-job-id',
+        first_name: 'Test',
+        last_name: 'Candidate',
+        linkedin_url: 'https://linkedin.com/in/test',
+        headline: 'Test Headline',
+        location: 'Test Location',
+        experience: [{ title: 'Test Role', company: 'Test Company', duration: '1 year' }],
+        education: [{ school: 'Test University', degree: 'Test Degree' }],
+        skills: ['Test Skill 1', 'Test Skill 2'],
+        summary: 'Test summary'
+      };
+      
+      console.log('📤 Inserting test candidate:', testCandidate);
+      
+      const { data: insertedCandidate, error } = await supabase
+        .from('candidates')
+        .insert(testCandidate)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('❌ Test insertion failed:', error);
+        console.error('❌ Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+      } else {
+        console.log('✅ Test insertion successful:', insertedCandidate);
+      }
+      
+      return { success: !error, data: insertedCandidate, error };
+    } catch (error) {
+      console.error('💥 Test insertion error:', error);
+      return { success: false, data: null, error };
+    }
+  };
+
+  // Expose test function globally for console access
+  if (typeof window !== 'undefined') {
+    (window as any).testCandidateInsertion = testInsertCandidate;
+    console.log('🔧 Global test function available: window.testCandidateInsertion()');
+  }
+
   const value = {
     jobs: data.jobs,
     candidates: data.candidates,
     tiers: data.tiers,
-    userProfiles: data.userProfiles, // Expose userProfiles to the context
-    clients: data.userProfiles, // Expose clients to the context (for admin components)
     addJob,
     addCandidate,
     addCandidatesFromLinkedIn,
@@ -805,10 +983,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     getJobById,
     getJobsByUser,
     getTierById,
-    getClientById, // Add getClientById to the context
-    deleteClient, // Add deleteClient to the context
-    updateClient, // Add updateClient to the context
-    resetData
+    resetData,
+    testInsertCandidate
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

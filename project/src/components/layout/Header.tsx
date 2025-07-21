@@ -7,7 +7,7 @@ import { Zap } from 'lucide-react';
 export const Header: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, userProfile, loading } = useAuth(); // ✅ Added user to check actual auth state
+  const { userProfile, loading } = useAuth();
   
   // Get the role-appropriate home path
   const getRoleHomePath = (role: string): string => {
@@ -83,19 +83,12 @@ export const Header: React.FC = () => {
 
   const navItems = getNavItems();
   
-  // ✅ DEFENSIVE: Improved auto-navigation logic
+  // Auto-navigate to role home when role changes - with debouncing to prevent flashing
   React.useEffect(() => {
     // Don't run navigation logic while loading
     if (loading) return;
     
-    // ✅ DEFENSIVE: Only navigate if we have a clear auth state
-    // If user exists but no profile, wait for profile to load
-    if (user && !userProfile) {
-      console.log('🏠 Header: User authenticated but profile loading, waiting...');
-      return;
-    }
-    
-    // If we have a user profile, handle role-based navigation
+    // Only run navigation logic if userProfile is loaded (not null and not undefined)
     if (userProfile && userProfile.role) {
       const roleHomePath = getRoleHomePath(userProfile.role);
       const isOnValidPath = navItems.some(item => item.path === location.pathname);
@@ -112,21 +105,19 @@ export const Header: React.FC = () => {
         
         return () => clearTimeout(timeoutId);
       }
-    } 
-    // ✅ DEFENSIVE: Only navigate to landing if user is actually signed out
-    else if (!user && userProfile === null) {
-      // Only navigate to landing page if we're not already there and not on auth pages
-      // Add a longer delay for sign-out to prevent flickering
+    } else if (userProfile === null && !loading) {
+      // FIXED: Only navigate to landing page after loading is complete AND userProfile is null
+      // This prevents premature redirects during the initial loading phase
       if (location.pathname !== '/' && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/signup')) {
         const timeoutId = setTimeout(() => {
-          console.log('🏠 Header: User signed out, navigating to landing page');
+          console.log('🏠 Header: No user profile after loading complete, navigating to landing page');
           navigate('/');
-        }, 200); // Increased delay for sign-out
+        }, 200);
         
         return () => clearTimeout(timeoutId);
       }
     }
-  }, [user, userProfile?.role, userProfile, loading, navigate, location.pathname, navItems]);
+  }, [userProfile?.role, userProfile, loading, navigate, location.pathname, navItems]);
   
   return (
     <header className="bg-shadowforce border-b border-guardian/20 shadow-lg">

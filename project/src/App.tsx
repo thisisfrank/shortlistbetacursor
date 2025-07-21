@@ -28,8 +28,7 @@ import { SignupPage } from './components/auth/SignupPage';
 // Subscription Pages
 import { SubscriptionPlans } from './components/subscription/SubscriptionPlans';
 import { SubscriptionSuccess } from './components/subscription/SubscriptionSuccess';
-import { AuthDebug } from './components/debug/AuthDebug';
-import { DataDebug } from './components/debug/DataDebug';
+
 import { SignOutWrapper } from './components/auth/SignOutWrapper';
 
 function App() {
@@ -89,8 +88,7 @@ function App() {
                 </Layout>
               } />
             </Routes>
-            <AuthDebug />
-            <DataDebug />
+
           </BrowserRouter>
         </SignOutWrapper>
       </DataProvider>

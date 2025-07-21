@@ -1,6 +1,18 @@
 import { generateCandidateSummary } from './anthropicService';
 
-const APIFY_API_TOKEN = import.meta.env.VITE_APIFY_API_TOKEN || 'your_apify_api_token_here';
+const APIFY_API_TOKEN = import.meta.env.VITE_APIFY_API_TOKEN;
+
+// Debug logging for environment variables
+console.log('🔧 Apify Debug Info:', {
+  hasToken: !!APIFY_API_TOKEN,
+  tokenLength: APIFY_API_TOKEN?.length || 0,
+  tokenPreview: APIFY_API_TOKEN ? `${APIFY_API_TOKEN.substring(0, 15)}...` : 'undefined',
+  allEnvVars: Object.keys(import.meta.env).filter(key => key.startsWith('VITE_'))
+});
+
+if (!APIFY_API_TOKEN) {
+  console.warn('⚠️ VITE_APIFY_API_TOKEN not configured. Apify LinkedIn scraping will not work.');
+}
 const APIFY_ACTOR_ID = '2SyF0bVxmgGr8IVCZ';
 
 export interface LinkedInProfile {

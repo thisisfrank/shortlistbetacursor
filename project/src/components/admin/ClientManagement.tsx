@@ -3,30 +3,28 @@ import { useData } from '../../context/DataContext';
 import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { FormInput } from '../forms/FormInput';
-import { Users, Trash2, Edit, X, Save, Crown, CreditCard, Plus, Mail, User } from 'lucide-react';
+import { Users, UserCheck, Calendar, Building } from 'lucide-react';
 
 export const ClientManagement: React.FC = () => {
-  const { userProfiles, jobs, deleteClient } = useData();
-  const [editingClientId, setEditingClientId] = useState<string | null>(null);
+  const { jobs } = useData();
   
-  // Defensive programming: ensure arrays are defined
-  const safeUsers = userProfiles || [];
-  const safeJobs = jobs || [];
+  // Get unique companies from jobs
+  const companies = [...new Set(jobs.map(job => job.companyName).filter(Boolean))];
   
-  // Filter to only show client users
-  const clientUsers = safeUsers.filter(user => user.role === 'client');
-  
-  // Debug: Log client data
-  console.log('🔍 ClientManagement Debug:', {
-    totalUsers: safeUsers.length,
-    clientUsers: clientUsers.length,
-    totalJobs: safeJobs.length
+  // Group jobs by company
+  const jobsByCompany = companies.map(companyName => {
+    const companyJobs = jobs.filter(job => job.companyName === companyName);
+    return {
+      companyName,
+      totalJobs: companyJobs.length,
+      unclaimedJobs: companyJobs.filter(job => job.status === 'Unclaimed').length,
+      claimedJobs: companyJobs.filter(job => job.status === 'Claimed').length,
+      completedJobs: companyJobs.filter(job => job.status === 'Completed').length,
+      latestJob: companyJobs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+    };
   });
 
-  const [editForm, setEditForm] = useState<any>({});
-
-  const formatDate = (date: string | Date) => {
+  const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',
@@ -34,198 +32,121 @@ export const ClientManagement: React.FC = () => {
     }).format(new Date(date));
   };
 
-  const handleDeleteClient = (clientId: string) => {
-    if (window.confirm('Are you sure you want to delete this user and all associated jobs? This action cannot be undone.')) {
-      deleteClient(clientId);
-    }
-  };
-
-  const handleEditClient = (client: any) => {
-    setEditingClientId(client.id);
-    setEditForm({
-      email: client.email,
-      role: client.role
-    });
-  };
-
-  const handleFormChange = (field: string, value: string) => {
-    setEditForm((prev: any) => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleSaveEdit = () => {
-    if (editingClientId) {
-      // For now, we'll just close edit mode since updateClient functionality
-      // would need to be implemented for UserProfile updates
-      setEditingClientId(null);
-      setEditForm({});
-      // TODO: Implement user profile updates if needed
-      alert('User profile updates not yet implemented');
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingClientId(null);
-    setEditForm({});
-  };
-
   return (
-    <>
-      <Card>
-        <CardContent className="p-8">
-          <h2 className="text-2xl font-anton text-white-knight mb-8 uppercase tracking-wide">Client Users</h2>
-          
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-guardian/20">
-              <thead className="bg-shadowforce">
+    <Card>
+      <CardContent className="p-8">
+        <div className="flex items-center gap-3 mb-8">
+          <Building className="text-supernova" size={24} />
+          <h2 className="text-2xl font-anton text-white-knight uppercase tracking-wide">Company Management</h2>
+        </div>
+        
+        <div className="mb-6">
+          <p className="text-guardian font-jakarta">
+            Manage companies and their job submissions. Companies are automatically created when users submit jobs.
+          </p>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-guardian/20">
+            <thead className="bg-shadowforce">
+              <tr>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
+                  Company
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
+                  Jobs
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
+                  Status
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
+                  Latest Activity
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-shadowforce-light divide-y divide-guardian/20">
+              {companies.length === 0 ? (
                 <tr>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                    User Details
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                    Role
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                    Jobs Posted
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                    Joined
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <td colSpan={5} className="px-6 py-8 text-center text-guardian font-jakarta">
+                    No companies found. Companies will appear here when users submit jobs.
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="bg-shadowforce-light divide-y divide-guardian/20">
-                {clientUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-guardian font-jakarta">
-                      No client users found.
+              ) : (
+                jobsByCompany.map(company => (
+                  <tr key={company.companyName} className="hover:bg-shadowforce transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-jakarta font-bold text-white-knight">{company.companyName}</div>
+                      <div className="text-sm text-guardian">Active company</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-4">
+                        <div className="text-center">
+                          <div className="text-lg font-anton text-white-knight">{company.totalJobs}</div>
+                          <div className="text-xs text-guardian">Total</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-anton text-orange-400">{company.unclaimedJobs}</div>
+                          <div className="text-xs text-guardian">Unclaimed</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-anton text-purple-400">{company.claimedJobs}</div>
+                          <div className="text-xs text-guardian">In Progress</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-anton text-green-400">{company.completedJobs}</div>
+                          <div className="text-xs text-guardian">Completed</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge 
+                        variant={company.completedJobs > 0 ? 'success' : company.claimedJobs > 0 ? 'warning' : 'default'}
+                      >
+                        {company.completedJobs > 0 ? 'Active' : company.claimedJobs > 0 ? 'In Progress' : 'New'}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-guardian font-jakarta">
+                        {company.latestJob ? formatDate(company.latestJob.createdAt) : 'No activity'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // TODO: Implement company detail view
+                          alert('Company detail view coming soon!');
+                        }}
+                      >
+                        View Details
+                      </Button>
                     </td>
                   </tr>
-                ) : (
-                  clientUsers.map(user => {
-                    const userJobs = safeJobs.filter(job => job.userId === user.id);
-                    const isEditing = editingClientId === user.id;
-                    
-                    return (
-                      <tr key={user.id} className="hover:bg-shadowforce transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <User className="text-blue-400 mr-3" size={24} />
-                            <div>
-                              <div className="text-sm font-jakarta font-bold text-white-knight">
-                                User ID: {user.id.slice(0, 8)}...
-                              </div>
-                              <div className="text-sm text-guardian">
-                                Client Account
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {isEditing ? (
-                            <input
-                              type="email"
-                              value={editForm.email}
-                              onChange={(e) => handleFormChange('email', e.target.value)}
-                              className="w-full text-sm bg-shadowforce border border-guardian/30 rounded px-2 py-1 text-white-knight"
-                            />
-                          ) : (
-                            <div className="flex items-center">
-                              <Mail className="text-guardian mr-2" size={14} />
-                              <span className="text-sm text-white-knight font-jakarta">{user.email}</span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {isEditing ? (
-                            <select
-                              value={editForm.role}
-                              onChange={(e) => handleFormChange('role', e.target.value)}
-                              className="text-sm bg-shadowforce border border-guardian/30 rounded px-2 py-1 text-white-knight"
-                            >
-                              <option value="client">Client</option>
-                              <option value="sourcer">Sourcer</option>
-                              <option value="admin">Admin</option>
-                            </select>
-                          ) : (
-                            <Badge variant={user.role === 'client' ? 'success' : 'outline'}>
-                              {user.role.toUpperCase()}
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
-                          <div className="flex items-center">
-                            <Users size={14} className="mr-2" />
-                            {userJobs.length} jobs
-                          </div>
-                          <div className="text-xs text-guardian/60">
-                            Active: {userJobs.filter(job => job.status !== 'Completed').length}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
-                          {formatDate(user.created_at)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge variant="success">
-                            Active
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                          {isEditing ? (
-                            <>
-                              <Button 
-                                variant="success" 
-                                size="sm"
-                                onClick={handleSaveEdit}
-                              >
-                                <Save size={14} />
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={handleCancelEdit}
-                              >
-                                <X size={14} />
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => handleEditClient(user)}
-                              >
-                                <Edit size={14} />
-                              </Button>
-                              <Button 
-                                variant="error" 
-                                size="sm"
-                                onClick={() => handleDeleteClient(user.id)}
-                              >
-                                <Trash2 size={14} />
-                              </Button>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        
+        <div className="mt-8 p-4 bg-shadowforce rounded-lg">
+          <div className="flex items-center gap-3 mb-3">
+            <UserCheck className="text-supernova" size={20} />
+            <h3 className="text-lg font-anton text-white-knight uppercase tracking-wide">User Profile Management</h3>
           </div>
-        </CardContent>
-      </Card>
-    </>
+          <p className="text-guardian font-jakarta text-sm">
+            User profiles are managed through the authentication system. Each user can submit jobs for their company.
+          </p>
+          <div className="mt-4">
+            <Badge variant="outline" className="text-supernova border-supernova/30">
+              Coming Soon: Advanced user management features
+            </Badge>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

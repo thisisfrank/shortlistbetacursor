@@ -1,23 +1,15 @@
-export interface Client {
-  id: string;
-  companyName: string;
-  contactName: string;
-  email: string;
-  phone: string;
-  hasReceivedFreeShortlist: boolean;
-  tierId: string;
-  availableCredits: number;
-  jobsRemaining: number;
-  creditsResetDate: Date;
-  createdAt: Date;
-}
-
 export interface UserProfile {
   id: string;
   email: string;
   role: 'client' | 'sourcer' | 'admin';
-  created_at: string;
-  updated_at: string;
+  // Subscription fields moved from Client
+  tierId: string;
+  availableCredits: number;
+  jobsRemaining: number;
+  creditsResetDate: Date;
+  hasReceivedFreeShortlist: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Tier {
@@ -31,8 +23,9 @@ export interface Tier {
 
 export interface Job {
   id: string;
-  userId: string; // ✅ Changed from clientId to userId to match UserProfile system
-  companyName: string; // ✅ Added companyName to match database schema
+  userId: string; // Changed from clientId to userId
+  userEmail?: string; // Email of the user who submitted the job
+  companyName: string; // Company hiring for this specific job
   title: string;
   description: string;
   seniorityLevel: 'Junior' | 'Mid' | 'Senior' | 'Executive';
@@ -77,3 +70,14 @@ export type FormStep =
   | 'requirements' 
   | 'summary' 
   | 'confirmation';
+
+export interface UserUsageStats {
+  jobsUsed: number;
+  jobsLimit: number;
+  jobsRemaining: number;
+  candidatesUsed: number;
+  candidatesLimit: number;
+  candidatesRemaining: number;
+  creditsResetDate: Date | null;
+  tierName: string;
+}

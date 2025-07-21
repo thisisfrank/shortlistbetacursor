@@ -6,8 +6,28 @@ export interface UserProfile {
   id: string;
   email: string;
   role: 'client' | 'sourcer' | 'admin';
-  created_at: string;
-  updated_at: string;
+  tierId: string;
+  availableCredits: number;
+  jobsRemaining: number;
+  creditsResetDate: Date | null;
+  hasReceivedFreeShortlist: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+function mapDbProfileToUserProfile(profile: any): UserProfile {
+  return {
+    id: profile.id,
+    email: profile.email,
+    role: profile.role,
+    tierId: profile.tier_id || 'tier-free',
+    availableCredits: profile.available_credits ?? 0,
+    jobsRemaining: profile.jobs_remaining ?? 0,
+    creditsResetDate: profile.credits_reset_date ? new Date(profile.credits_reset_date) : null,
+    hasReceivedFreeShortlist: !!profile.has_received_free_shortlist,
+    createdAt: profile.created_at ? new Date(profile.created_at) : new Date(),
+    updatedAt: profile.updated_at ? new Date(profile.updated_at) : new Date(),
+  };
 }
 
 export const useAuth = () => {
@@ -15,231 +35,170 @@ export const useAuth = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [signOutLoading, setSignOutLoading] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-
-  // ✅ DEFENSIVE: Add retry mechanism for profile fetches
-  const fetchUserProfile = async (userId: string, retryCount = 0): Promise<UserProfile | null> => {
-    const maxRetries = 3;
-    
-    try {
-      console.log(`🔍 Fetching user profile (attempt ${retryCount + 1}/${maxRetries + 1})...`);
-      
-      // ✅ HEALTH CHECK: Test Supabase connection first
-      if (retryCount === 0) {
-        try {
-          const { data: healthCheck } = await supabase
-            .from('user_profiles')
-            .select('id')
-            .limit(1);
-          console.log('✅ Supabase connection healthy');
-        } catch (healthError) {
-          console.error('⚠️ Supabase connection issue detected:', healthError);
-          // If connection is bad, wait longer before retry
-          if (retryCount < maxRetries) {
-            const delay = 5000; // 5s delay for connection issues
-            console.log(`🔄 Connection issue detected, waiting ${delay/1000}s before retry...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            return fetchUserProfile(userId, retryCount + 1);
-          }
-        }
-      }
-      
-      const profilePromise = supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-      
-      // ✅ INCREASED: Extended timeout to handle Supabase latency
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 15000) // ✅ Increased to 15s
-      );
-      
-      const { data: profile, error } = await Promise.race([profilePromise, timeoutPromise]) as any;
-      
-      if (error) {
-        console.error('⚠️ Profile fetch error:', error);
-        if (retryCount < maxRetries) {
-          // ✅ EXPONENTIAL BACKOFF: Increase delay with each retry
-          const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
-          console.log(`🔄 Retrying profile fetch in ${delay/1000}s...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return fetchUserProfile(userId, retryCount + 1);
-        }
-        return null;
-      }
-      
-      if (profile) {
-        console.log('✅ Profile fetched successfully:', profile);
-        return {
-          id: profile.id,
-          email: profile.email,
-          role: profile.role,
-          created_at: profile.created_at,
-          updated_at: profile.updated_at
-        };
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('💥 Profile fetch failed:', error);
-      if (retryCount < maxRetries) {
-        // ✅ EXPONENTIAL BACKOFF: Increase delay with each retry
-        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
-        console.log(`🔄 Retrying profile fetch in ${delay/1000}s...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        return fetchUserProfile(userId, retryCount + 1);
-      }
-      return null;
-    }
-  };
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      console.log('🔍 Getting initial session...');
-      
+    let isMounted = true;
+    let authSubscription: any = null;
+
+    const initAuth = async () => {
       try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        console.log('🔐 Initializing auth...');
         
-        console.log('🔗 Supabase URL:', supabaseUrl);
-        console.log('🔑 Has Anon Key:', !!supabaseAnonKey);
-        
-        // Check if environment variables are missing
-        if (!supabaseUrl || !supabaseAnonKey) {
-          console.error('❌ Missing Supabase environment variables');
-          setUser(null);
-          setUserProfile(null);
-          setLoading(false);
-          return;
-        }
-        
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        console.log('📡 Session response received:', { hasSession: !!session, error: sessionError });
-        
-        if (sessionError) {
-          console.error('❌ Error getting session:', sessionError);
-          setUser(null);
-          setUserProfile(null);
-          setLoading(false);
-          return;
-        }
-        
+        const { data: { session } } = await supabase.auth.getSession();
         const currentUser = session?.user ?? null;
-        console.log('👤 Initial session user:', currentUser?.email || 'No user');
         
+        if (!isMounted) return;
+        
+        console.log('🔐 Session found:', !!currentUser);
         setUser(currentUser);
         
         if (currentUser) {
-          console.log('📋 User found, fetching profile...');
+          console.log('🔐 Loading user profile...');
+          const { data: profile, error } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
           
-          const profile = await fetchUserProfile(currentUser.id);
-          if (profile) {
-            setUserProfile(profile);
-          } else {
-            console.log('⚠️ No user profile found, waiting for trigger to create it');
+          if (!isMounted) return;
+          
+          if (error) {
+            console.error('❌ Error loading user profile:', error);
             setUserProfile(null);
+          } else {
+            console.log('✅ User profile loaded:', profile?.role);
+            setUserProfile(mapDbProfileToUserProfile(profile));
           }
         } else {
-          console.log('🚫 No user session found');
           setUserProfile(null);
         }
       } catch (error) {
-        console.error('💥 Error in getInitialSession:', error);
-        setUser(null);
-        setUserProfile(null);
+        console.error('💥 Auth initialization error:', error);
+        if (isMounted) {
+          setUser(null);
+          setUserProfile(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+          setAuthInitialized(true);
+        }
       }
-      
-      setLoading(false);
-      console.log('🏁 Auth initialization complete');
     };
 
-    getInitialSession();
-
-    // ✅ DEFENSIVE: Improved auth state change handler
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('🔄 Auth state change:', event);
+    const setupAuthListener = () => {
+      console.log('🔐 Setting up auth state listener...');
+      
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
+        console.log('🔐 Auth state change:', event, !!session?.user);
         
-        // ✅ DEFENSIVE: Handle refresh token errors gracefully
-        if (event === 'TOKEN_REFRESHED') {
-          console.log('🔄 Token refreshed successfully');
+        // Skip initial session event - we handle it in initAuth
+        if (event === 'INITIAL_SESSION') {
+          console.log('🔐 Skipping INITIAL_SESSION event');
           return;
         }
         
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
+        if (!isMounted) return;
         
-        if (currentUser) {
-          console.log('👤 Auth change - fetching profile for:', currentUser.email);
+        try {
+          const currentUser = session?.user ?? null;
+          setUser(currentUser);
           
-          const profile = await fetchUserProfile(currentUser.id);
-          if (profile) {
-            setUserProfile(profile);
-          } else {
-            console.log('⚠️ Auth change - No profile found, waiting for trigger');
-            // ✅ FALLBACK: Don't set profile to null immediately, keep previous state
-            // This prevents navigation issues during temporary network problems
-            if (!userProfile) {
+          if (currentUser) {
+            console.log('🔐 Loading profile for auth change...');
+            const { data: profile, error } = await supabase
+              .from('user_profiles')
+              .select('*')
+              .eq('id', currentUser.id)
+              .single();
+            
+            if (!isMounted) return;
+            
+            if (error) {
+              console.error('❌ Error loading profile in auth change:', error);
               setUserProfile(null);
+              // Don't set loading to false here - let the signIn function handle it
+            } else {
+              console.log('✅ Profile loaded in auth change:', profile?.role);
+              setUserProfile(mapDbProfileToUserProfile(profile));
+              // Don't set loading to false here - let the signIn function handle it
             }
+          } else {
+            console.log('🔐 User signed out, clearing profile');
+            setUserProfile(null);
+            // Don't set loading to false here - let the signIn function handle it
           }
-        } else {
-          console.log('🚫 Auth change - No user');
-          setUserProfile(null);
+        } catch (error) {
+          console.error('💥 Auth change error:', error);
+          if (isMounted) {
+            setUserProfile(null);
+            // Don't set loading to false here - let the signIn function handle it
+          }
         }
-        
-        // ✅ DEFENSIVE: Clear any previous auth errors on successful state change
-        if (event === 'SIGNED_IN') {
-          setAuthError(null);
-        }
-        
-        setLoading(false);
-      }
-    );
+      });
+      
+      authSubscription = subscription;
+    };
 
-    return () => subscription.unsubscribe();
+    // Initialize auth
+    initAuth().then(() => {
+      if (isMounted) {
+        setupAuthListener();
+      }
+    });
+
+    return () => {
+      console.log('🔐 Cleaning up auth listener...');
+      isMounted = false;
+      if (authSubscription) {
+        authSubscription.unsubscribe();
+      }
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
       console.log('🔐 Attempting sign in for:', email);
+      console.log('🔐 Current loading state before signIn:', loading);
       setLoading(true);
-      setAuthError(null);
+      console.log('🔐 Loading state set to true');
       
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Sign in timeout')), 10000); // 10 second timeout
+      });
+      
+      const signInPromise = supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
       
+      const { data, error } = await Promise.race([signInPromise, timeoutPromise]) as any;
+      
       console.log('🔐 Sign in result:', { success: !error, error: error?.message });
       
-      if (error) {
-        setAuthError(error.message);
-      }
-      
-      // Don't set loading to false here - let the auth state change handle it
-      // This prevents the flickering issue
+      // Always set loading to false after sign-in attempt
+      console.log('🔐 Setting loading to false after sign-in attempt');
+      setLoading(false);
       
       return { data, error };
     } catch (error) {
-      console.error('💥 Sign in error:', error);
-      setAuthError('Network error. Please try again.');
+      console.error('💥 Sign in catch error:', error);
+      console.log('🔐 Setting loading to false after catch error');
       setLoading(false);
       return { 
         data: null, 
-        error: { message: 'Network error. Please try again.' } 
+        error: { message: error instanceof Error ? error.message : 'Network error. Please try again.' } 
       };
     }
   };
 
   const signUp = async (email: string, password: string, role: 'client' | 'sourcer' = 'client') => {
+    console.log('📝 Attempting signup with:', { email, passwordLength: password.length, role });
+    setLoading(true);
+    
     try {
-      console.log('📝 Attempting sign up for:', email);
-      setLoading(true);
-      setAuthError(null);
-      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -273,15 +232,9 @@ export const useAuth = () => {
         }
       }
       
-      if (error) {
-        setAuthError(error.message);
-      }
-      
       return { data, error };
     } catch (error) {
       console.error('💥 Signup error:', error);
-      setAuthError('Network error. Please try again.');
-      setLoading(false);
       return { 
         data: null, 
         error: { message: 'Network error. Please try again.' } 
@@ -292,29 +245,49 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
-    console.log('🚪 Signing out...');
+    console.log('🚪 Starting sign out process...');
     
     // Set sign-out loading state
     setSignOutLoading(true);
-    setAuthError(null);
     
     try {
-      const { error } = await supabase.auth.signOut();
-      console.log('🚪 Supabase signOut result:', { error });
-      
-      // Clear local state after successful sign-out
-      setUser(null);
-      setUserProfile(null);
-      setLoading(false);
+      // Clear local storage first
       localStorage.removeItem('sourcerName');
       localStorage.removeItem('savedSourcers');
       
-      return { error };
+      console.log('🚪 Calling Supabase signOut...');
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('❌ Supabase signOut error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Supabase signOut successful');
+      
+      // Clear local state
+      setUser(null);
+      setUserProfile(null);
+      setLoading(false);
+      
+      console.log('✅ Local state cleared');
+      
+      return { error: null };
     } catch (error) {
       console.error('💥 Sign out error:', error);
-      setAuthError('Error signing out');
-      return { error: { message: 'Error signing out' } };
+      
+      // Even if Supabase fails, clear local state to prevent stuck loading
+      setUser(null);
+      setUserProfile(null);
+      setLoading(false);
+      
+      return { 
+        error: { 
+          message: error instanceof Error ? error.message : 'Error signing out' 
+        } 
+      };
     } finally {
+      console.log('🚪 Sign out process complete, clearing loading state');
       setSignOutLoading(false);
     }
   };
@@ -324,7 +297,6 @@ export const useAuth = () => {
     userProfile,
     loading,
     signOutLoading,
-    authError, // ✅ Expose auth errors for UI feedback
     signIn,
     signUp,
     signOut,

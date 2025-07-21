@@ -19,23 +19,14 @@ export const SourcerDashboard: React.FC = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Defensive programming: ensure arrays are defined
-  const safeJobs = jobs || [];
-
   // Get the selected job and its client
-  const selectedJob = selectedJobId ? safeJobs.find(job => job.id === selectedJobId) || null : null;
+  const selectedJob = selectedJobId ? jobs.find(job => job.id === selectedJobId) || null : null;
       const companyName = selectedJob?.companyName || 'Unknown Company';
 
-  // Debug modal condition
-  console.log('🔍 Modal condition debug:', {
-    selectedJob: !!selectedJob,
-    companyName: selectedJob?.companyName,
-    modalShouldShow: !!selectedJob,
-    selectedJobId
-  });
+
 
   // Filter jobs based on the filter and search
-  const filteredJobs = safeJobs.filter(job => {
+  const filteredJobs = jobs.filter(job => {
     // Filter based on status
     if (filter === 'unclaimed' && job.status !== 'Unclaimed') return false;
     if (filter === 'claimed' && job.status !== 'Claimed') return false;
@@ -61,10 +52,10 @@ export const SourcerDashboard: React.FC = () => {
   });
 
   // Get job counts for stats
-  const unclaimedCount = safeJobs.filter(job => job.status === 'Unclaimed').length;
-  const claimedCount = safeJobs.filter(job => job.status === 'Claimed').length;
-  const completedCount = safeJobs.filter(job => job.status === 'Completed').length;
-  const myJobsCount = safeJobs.filter(job => job.sourcerName === sourcerName).length;
+  const unclaimedCount = jobs.filter(job => job.status === 'Unclaimed').length;
+  const claimedCount = jobs.filter(job => job.status === 'Claimed').length;
+  const completedCount = jobs.filter(job => job.status === 'Completed').length;
+  const myJobsCount = jobs.filter(job => job.sourcerName === sourcerName).length;
 
   // Close job detail modal
   const handleCloseModal = () => {

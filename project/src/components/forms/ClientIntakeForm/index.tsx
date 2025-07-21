@@ -10,12 +10,12 @@ import { useData } from '../../../context/DataContext';
 import { useAuth } from '../../../context/AuthContext';
 
 export const ClientIntakeForm: React.FC = () => {
-  const { addJob } = useData(); // ✅ Removed addClient, updateClient - not needed
-  const { user } = useAuth();
-  
   const [currentStep, setCurrentStep] = useState<FormStep>('company-info');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const { addJob } = useData();
+  const { user } = useAuth();
   
   const [formData, setFormData] = useState({
     companyName: '',
@@ -30,32 +30,12 @@ export const ClientIntakeForm: React.FC = () => {
     salaryRangeMin: '',
     salaryRangeMax: '',
     keySellingPoints: [] as string[],
-    candidatesRequested: ''
+    candidatesRequested: '1'
   });
-  
-  // Load form data from localStorage on component mount (simplified)
-  useEffect(() => {
-    const savedFormData = localStorage.getItem('clientIntakeFormData');
-    if (savedFormData) {
-      try {
-        const parsedData = JSON.parse(savedFormData);
-        setFormData(parsedData);
-      } catch (error) {
-        console.error('Error loading saved form data:', error);
-        localStorage.removeItem('clientIntakeFormData');
-      }
-    }
-  }, []);
 
-  useEffect(() => {
-    if (Object.values(formData).some(value => 
-      Array.isArray(value) ? value.length > 0 : value.toString().trim()
-    )) {
-      localStorage.setItem('clientIntakeFormData', JSON.stringify(formData));
-    }
-  }, [formData]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
     
@@ -197,53 +177,48 @@ export const ClientIntakeForm: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    console.log('🎯 Form submission started for authenticated user...');
-    console.log('👤 Current user email:', user?.email);
-    console.log('📝 Form company:', formData.companyName);
+    console.log('🎯 REAL job submission started...');
     setIsSubmitting(true);
     
     try {
-      // ✅ No need to create/find client - user already exists from auth
-      // Just create the job directly linked to the authenticated user
-      console.log('📋 Adding job for authenticated user...');
-      
-      const job = await addJob({
-        // ✅ Use user ID directly from auth context (Job type expects clientId)
-        clientId: user?.id || '', 
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      // Create the job data to submit
+      const jobData = {
+        userId: user.id,
         companyName: formData.companyName,
         title: formData.title,
         description: formData.description,
-        seniorityLevel: formData.seniorityLevel as any,
-        workArrangement: formData.workArrangement as any,
+        seniorityLevel: formData.seniorityLevel,
+        workArrangement: formData.workArrangement,
         location: formData.location,
         salaryRangeMin: parseInt(formData.salaryRangeMin),
         salaryRangeMax: parseInt(formData.salaryRangeMax),
         keySellingPoints: formData.keySellingPoints,
         candidatesRequested: parseInt(formData.candidatesRequested)
-      });
+      };
+
+      console.log('📋 REAL job data to submit:', jobData);
       
-      console.log('✅ Job submitted successfully:', job);
+      // Use the actual DataContext addJob function
+      const newJob = await addJob(jobData);
       
-      // ✅ No need to update client credits - using user-based system now
+      console.log('✅ REAL job created successfully:', newJob);
       
       // Move to confirmation step
       setCurrentStep('confirmation');
-      
-      // Clear saved form data after successful submission
-      localStorage.removeItem('clientIntakeFormData');
     } catch (error) {
-      console.error('💥 Error submitting form:', error);
+      console.error('💥 Error submitting REAL job:', error);
       alert(`Submission failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
-      console.log('🏁 Form submission process complete');
+      console.log('🏁 REAL job submission process complete');
       setIsSubmitting(false);
     }
   };
 
   const resetForm = () => {
-    // Clear localStorage when resetting
-    localStorage.removeItem('clientIntakeFormData');
-    
     setFormData({
       companyName: '',
       contactName: '',
@@ -289,9 +264,9 @@ export const ClientIntakeForm: React.FC = () => {
           <RequirementsStep
             formData={formData}
             onChange={handleInputChange}
+            onSellingPointsChange={handleSellingPointsChange}
             onNext={goToNextStep}
             onBack={goToPreviousStep}
-            onSellingPointsChange={handleSellingPointsChange}
             errors={errors}
           />
         )}
@@ -307,12 +282,9 @@ export const ClientIntakeForm: React.FC = () => {
         )}
         
         {currentStep === 'confirmation' && (
-          <ConfirmationStep
-            onReset={resetForm}
-            companyName={formData.companyName}
-            jobTitle={formData.title}
-          />
+          <ConfirmationStep onReset={resetForm} />
         )}
+        
       </CardContent>
     </Card>
   );

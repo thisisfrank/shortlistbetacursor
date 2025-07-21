@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Card, CardContent } from '../ui/Card';
@@ -14,6 +14,15 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Check for profile missing flag and redirect to signup
+  useEffect(() => {
+    const profileMissing = localStorage.getItem('profileMissing');
+    if (profileMissing === 'true') {
+      localStorage.removeItem('profileMissing');
+      setError('Account not found. Please sign up first.');
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +42,11 @@ export const LoginPage: React.FC = () => {
 
       if (signInError) {
         console.error('❌ Sign in error:', signInError);
-        setError(signInError.message || 'Login failed. Please try again.');
+        // Provide a more user-friendly error message that suggests signing up
+        const errorMessage = signInError.message === 'Invalid login credentials' 
+          ? 'Account not found. Please sign up for a new account.'
+          : signInError.message || 'Login failed. Please try again.';
+        setError(errorMessage);
       } else if (data?.user) {
         console.log('✅ Login successful, redirecting...');
         // Check for redirect parameter
@@ -70,9 +83,24 @@ export const LoginPage: React.FC = () => {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center">
-              <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
-              <p className="text-red-400 font-jakarta text-sm">{error}</p>
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <div className="flex items-center mb-3">
+                <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
+                <p className="text-red-400 font-jakarta text-sm">{error}</p>
+              </div>
+              {error.includes('Account not found') && (
+                <div className="mt-3 pt-3 border-t border-red-500/20">
+                  <p className="text-guardian font-jakarta text-sm mb-2">
+                    New to Super Recruiter?
+                  </p>
+                  <Link
+                    to="/signup"
+                    className="inline-flex items-center px-4 py-2 bg-supernova text-white-knight rounded-lg text-sm font-semibold hover:bg-supernova-light transition-colors"
+                  >
+                    Create Account
+                  </Link>
+                </div>
+              )}
             </div>
           )}
 

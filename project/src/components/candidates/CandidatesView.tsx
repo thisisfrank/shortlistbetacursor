@@ -10,7 +10,7 @@ import { Button } from '../ui/Button';
 import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download } from 'lucide-react';
 
 export const CandidatesView: React.FC = () => {
-  const { jobs, candidates, clients, getCandidatesByJob, getClientById, getJobById } = useData();
+  const { jobs, candidates, getCandidatesByJob, getJobById } = useData();
   const { user, userProfile } = useAuth();
   const navigate = useNavigate();
   
@@ -275,7 +275,7 @@ export const CandidatesView: React.FC = () => {
   // If a job is selected, show candidates for that job
   if (selectedJobId) {
     const selectedJob = getJobById(selectedJobId);
-    const client = selectedJob ? getClientById(selectedJob.clientId) : null;
+    const companyName = selectedJob?.companyName || 'Unknown Company';
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
@@ -294,9 +294,9 @@ export const CandidatesView: React.FC = () => {
             <h2 className="text-3xl md:text-4xl font-anton text-supernova mb-4 text-center uppercase tracking-wide">
               {selectedJob?.title}
             </h2>
-            {client && (
+            {selectedJob && (
               <p className="text-xl text-guardian text-center font-jakarta">
-                {client.companyName}
+                {companyName}
               </p>
             )}
           </header>
@@ -408,17 +408,6 @@ export const CandidatesView: React.FC = () => {
                               </div>
                             )}
                           </div>
-                          
-                          {/* Selection Checkbox */}
-                          <div className="col-span-1 flex justify-center">
-                            <input
-                              type="checkbox"
-                              checked={selectedCandidates.has(candidate.id)}
-                              onChange={() => toggleCandidateSelection(candidate.id)}
-                              className="w-5 h-5 text-supernova bg-gray-700 border-gray-600 rounded focus:ring-supernova focus:ring-2"
-                            />
-                          </div>
-                          
                           {/* Name and basic info */}
                           <div className="col-span-2">
                             <h4 className="text-xl font-anton text-white-knight mb-2 uppercase tracking-wide">
@@ -427,7 +416,6 @@ export const CandidatesView: React.FC = () => {
                                 : `${candidate.firstName} ${candidate.lastName}`}
                             </h4>
                           </div>
-                          
                           {/* Actions */}
                           <div className="col-span-2 text-right">
                             <Button
@@ -448,6 +436,15 @@ export const CandidatesView: React.FC = () => {
                                 </>
                               )}
                             </Button>
+                          </div>
+                          {/* Selection Checkbox - moved to far right */}
+                          <div className="col-span-1 flex justify-end">
+                            <input
+                              type="checkbox"
+                              checked={selectedCandidates.has(candidate.id)}
+                              onChange={() => toggleCandidateSelection(candidate.id)}
+                              className="w-5 h-5 text-supernova bg-gray-700 border-gray-600 rounded focus:ring-supernova focus:ring-2"
+                            />
                           </div>
                         </div>
                         
@@ -681,23 +678,21 @@ export const CandidatesView: React.FC = () => {
   console.log('🔍 CandidatesView Debug:', {
     user: user?.email,
     totalJobs: jobs?.length || 0,
-    totalClients: clients?.length || 0,
     totalCandidates: candidates?.length || 0
   });
 
-  // Ensure we have valid data arrays
+  // Ensure we have valid data arrays with fallbacks
   const safeJobs = jobs || [];
-  const safeClients = clients || [];
   const safeCandidates = candidates || [];
 
   // Filter jobs to only show those submitted by the current authenticated user
   const userJobs = safeJobs.filter(job => {
     if (!user || !job) return false; // No user or invalid job, no jobs
     
-    const client = getClientById(job.clientId);
-    const matchesUser = client && client.email === user.email;
+    // Jobs now reference user_id directly (new architecture)
+    const matchesUser = job.userId === user.id;
     
-    console.log(`Job ${job.id}: client email ${client?.email}, user email ${user.email}, matches: ${matchesUser}`);
+    console.log(`Job ${job.id}: job userId ${job.userId}, user id ${user.id}, matches: ${matchesUser}`);
     
     return matchesUser;
   });
@@ -705,7 +700,7 @@ export const CandidatesView: React.FC = () => {
   console.log('👤 User jobs found:', userJobs.length);
   
   // Show loading state if data is still loading
-  if (!jobs || !clients || !candidates) {
+  if (!jobs || !candidates) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
         <div className="text-center">
@@ -719,10 +714,9 @@ export const CandidatesView: React.FC = () => {
   const filteredJobs = userJobs.filter(job => {
     if (search) {
       const searchLower = search.toLowerCase();
-      const client = getClientById(job.clientId);
       return (
         job.title.toLowerCase().includes(searchLower) ||
-        (client && client.companyName.toLowerCase().includes(searchLower))
+        (job.companyName && job.companyName.toLowerCase().includes(searchLower))
       );
     }
     return true;
@@ -859,7 +853,6 @@ export const CandidatesView: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {sortedJobs.map(job => {
-                  const client = getClientById(job.clientId);
                   const jobCandidates = getCandidatesByJob(job.id);
                   
                   return (
@@ -893,12 +886,10 @@ export const CandidatesView: React.FC = () => {
                           </div>
                         </div>
                         
-                        {client && (
-                          <div className="mb-4 p-3 bg-supernova/10 border border-supernova/30 rounded-lg">
-                            <p className="text-sm font-jakarta font-semibold text-supernova">Company</p>
-                            <p className="text-white-knight font-jakarta font-bold">{client.companyName}</p>
-                          </div>
-                        )}
+                        <div className="mb-4 p-3 bg-supernova/10 border border-supernova/30 rounded-lg">
+                          <p className="text-sm font-jakarta font-semibold text-supernova">Company</p>
+                          <p className="text-white-knight font-jakarta font-bold">{job.companyName}</p>
+                        </div>
                         
                         <div className="space-y-3 mb-6">
                           <div className="flex items-center text-sm text-guardian">
