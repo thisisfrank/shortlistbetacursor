@@ -70,3 +70,14 @@ export type FormStep =
   | 'requirements' 
   | 'summary' 
   | 'confirmation';
+
+export interface UserUsageStats {
+  jobsUsed: number;
+  jobsLimit: number;
+  jobsRemaining: number;
+  candidatesUsed: number;
+  candidatesLimit: number;
+  candidatesRemaining: number;
+  creditsResetDate: Date | null;
+  tierName: string;
+}

@@ -1,14 +1,19 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import { useData } from '../../../context/DataContext';
+import { getUserUsageStats } from '../../../utils/userUsageStats';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { Users, Clock, Briefcase, Calendar, CreditCard, LogOut, Crown } from 'lucide-react';
 
 export const ClientMenu: React.FC = () => {
-  const { signOut } = useAuth();
+  const { userProfile, signOut } = useAuth();
+  const { jobs, candidates, tiers } = useData();
   const navigate = useNavigate();
-  
+
+  const stats = getUserUsageStats(userProfile, jobs, candidates, tiers);
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -17,28 +22,35 @@ export const ClientMenu: React.FC = () => {
     }
   };
 
+  if (!userProfile || !stats) {
+    return (
+      <div className="p-6 text-center text-guardian">
+        Loading account stats...
+      </div>
+    );
+  }
+
   return (
     <>
-      {/* COMPLETELY STATIC USER INFO */}
+      {/* USER INFO */}
       <div className="mb-6 pb-4 border-b border-guardian/20">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-anton text-lg text-white-knight uppercase tracking-wide">
-            STATIC USER
+            {userProfile.email}
           </h3>
           <Badge variant="outline" className="text-xs">
-            FREE
+            {stats.tierName}
           </Badge>
         </div>
       </div>
-      
-      {/* STATIC SUBSCRIPTION */}
+      {/* SUBSCRIPTION */}
       <div className="mb-6">
         <div className="p-4 rounded-lg bg-orange-500/10 border border-orange-500/30">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center">
               <CreditCard className="mr-2 text-orange-400" size={16} />
               <span className="text-sm font-jakarta font-semibold text-orange-400">
-                Free Plan
+                {stats.tierName} Plan
               </span>
             </div>
           </div>
@@ -47,8 +59,7 @@ export const ClientMenu: React.FC = () => {
           </p>
         </div>
       </div>
-
-      {/* STATIC CREDITS */}
+      {/* DYNAMIC CREDITS/JOBS */}
       <div className="space-y-4 mb-6">
         <div className="bg-supernova/10 border border-supernova/30 p-4 rounded-lg">
           <div className="flex items-center justify-between mb-2">
@@ -57,23 +68,22 @@ export const ClientMenu: React.FC = () => {
               <span className="text-sm font-jakarta font-semibold text-supernova">Available Credits</span>
             </div>
             <span className="text-lg font-anton text-white-knight">
-              20
+              {stats.candidatesRemaining}
             </span>
           </div>
           <div className="w-full bg-shadowforce rounded-full h-2">
             <div 
               className="bg-supernova h-2 rounded-full transition-all duration-300"
-              style={{ width: "100%" }}
+              style={{ width: `${(stats.candidatesRemaining / stats.candidatesLimit) * 100}%` }}
             ></div>
           </div>
           <p className="text-xs text-guardian mt-1">
-            of 20 monthly credits
+            of {stats.candidatesLimit} monthly credits
           </p>
           <p className="text-xs text-guardian/60 mt-1">
-            Used: 0 candidates
+            Used: {stats.candidatesUsed} candidates
           </p>
         </div>
-        
         <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center">
@@ -81,31 +91,29 @@ export const ClientMenu: React.FC = () => {
               <span className="text-sm font-jakarta font-semibold text-blue-400">Job Submissions</span>
             </div>
             <span className="text-lg font-anton text-white-knight">
-              1
+              {stats.jobsRemaining}
             </span>
           </div>
           <div className="w-full bg-shadowforce rounded-full h-2">
             <div 
               className="bg-blue-400 h-2 rounded-full transition-all duration-300"
-              style={{ width: "100%" }}
+              style={{ width: `${(stats.jobsRemaining / stats.jobsLimit) * 100}%` }}
             ></div>
           </div>
           <p className="text-xs text-guardian mt-1">
-            of 1 monthly jobs
+            of {stats.jobsLimit} monthly jobs
           </p>
           <p className="text-xs text-guardian/60 mt-1">
-            Submitted: 0 jobs
+            Submitted: {stats.jobsUsed} jobs
           </p>
         </div>
-        
         <div className="flex items-center text-sm text-guardian">
           <Calendar className="mr-2" size={14} />
           <span className="font-jakarta">
-            Credits reset: Jan 30, 2025
+            Credits reset: {stats.creditsResetDate ? new Date(stats.creditsResetDate).toLocaleDateString() : 'N/A'}
           </span>
         </div>
       </div>
-      
       {/* ACTION BUTTONS */}
       <div className="space-y-3">
         <Button 
@@ -118,7 +126,6 @@ export const ClientMenu: React.FC = () => {
           <Crown className="mr-2" size={16} />
           UPGRADE PLAN
         </Button>
-        
         <Button 
           onClick={handleSignOut}
           variant="ghost"

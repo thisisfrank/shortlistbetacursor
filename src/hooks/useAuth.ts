@@ -6,8 +6,28 @@ export interface UserProfile {
   id: string;
   email: string;
   role: 'client' | 'sourcer' | 'admin';
-  created_at: string;
-  updated_at: string;
+  tierId: string;
+  availableCredits: number;
+  jobsRemaining: number;
+  creditsResetDate: Date | null;
+  hasReceivedFreeShortlist: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+function mapDbProfileToUserProfile(profile: any): UserProfile {
+  return {
+    id: profile.id,
+    email: profile.email,
+    role: profile.role,
+    tierId: profile.tier_id || 'tier-free',
+    availableCredits: profile.available_credits ?? 0,
+    jobsRemaining: profile.jobs_remaining ?? 0,
+    creditsResetDate: profile.credits_reset_date ? new Date(profile.credits_reset_date) : null,
+    hasReceivedFreeShortlist: !!profile.has_received_free_shortlist,
+    createdAt: profile.created_at ? new Date(profile.created_at) : new Date(),
+    updatedAt: profile.updated_at ? new Date(profile.updated_at) : new Date(),
+  };
 }
 
 export const useAuth = () => {
@@ -48,7 +68,7 @@ export const useAuth = () => {
             setUserProfile(null);
           } else {
             console.log('✅ User profile loaded:', profile?.role);
-            setUserProfile(profile);
+            setUserProfile(mapDbProfileToUserProfile(profile));
           }
         } else {
           setUserProfile(null);
@@ -101,7 +121,7 @@ export const useAuth = () => {
               // Don't set loading to false here - let the signIn function handle it
             } else {
               console.log('✅ Profile loaded in auth change:', profile?.role);
-              setUserProfile(profile);
+              setUserProfile(mapDbProfileToUserProfile(profile));
               // Don't set loading to false here - let the signIn function handle it
             }
           } else {
