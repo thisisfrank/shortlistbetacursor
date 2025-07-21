@@ -65,7 +65,7 @@ export const JobSubmissionView: React.FC = () => {
               <div className="flex items-center justify-center mb-3">
                 <Users className="text-supernova mr-3" size={24} />
                 <h3 className="font-anton text-xl text-supernova uppercase tracking-wide">
-                  Welcome, {userProfile.email.split('@')[0]}!
+                  Welcome!
                 </h3>
               </div>
               <p className="text-guardian font-jakarta">
