@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Card, CardContent } from '../ui/Card';
@@ -14,6 +14,16 @@ export const SignupPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<'client' | 'sourcer'>('client');
+
+  // Pre-select sourcer if ?role=sourcer in URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const role = params.get('role');
+    if (role === 'sourcer') {
+      setSelectedRole('sourcer');
+    }
+  }, [location.search]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -104,10 +114,12 @@ export const SignupPage: React.FC = () => {
         <CardContent className="p-8">
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
-              <div className="relative">
-                <Zap size={48} className="text-supernova fill-current" />
-                <div className="absolute inset-0 bg-supernova/30 blur-xl rounded-full"></div>
-              </div>
+              <Link to="/">
+                <div className="relative cursor-pointer">
+                  <Zap size={48} className="text-supernova fill-current" />
+                  <div className="absolute inset-0 bg-supernova/30 blur-xl rounded-full"></div>
+                </div>
+              </Link>
             </div>
             <h1 className="text-2xl font-anton text-white-knight uppercase tracking-wide mb-2">
               Create Account

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Job } from '../../types';
 import { JobCard } from './JobCard';
 import { JobDetailModal } from './JobDetailModal';
@@ -8,7 +8,7 @@ import { Search, ClipboardList, Check, Clock, Zap, Target, Users } from 'lucide-
 
 export const SourcerDashboard: React.FC = () => {
   const { jobs, updateJob } = useData();
-  const [filter, setFilter] = useState<'all' | 'unclaimed' | 'claimed' | 'completed'>('all');
+  const [filter, setFilter] = useState<'all' | 'unclaimed' | 'claimed' | 'completed'>('unclaimed');
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [sourcerName, setSourcerName] = useState(() => {
@@ -18,6 +18,39 @@ export const SourcerDashboard: React.FC = () => {
     const saved = localStorage.getItem('savedSourcers');
     return saved ? JSON.parse(saved) : [];
   });
+
+  // On mount, check for a job to open from alerts
+  useEffect(() => {
+    const jobId = localStorage.getItem('sourcerSelectedJobId');
+    if (jobId) {
+      setSelectedJobId(jobId);
+      localStorage.removeItem('sourcerSelectedJobId');
+    }
+  }, []);
+
+  // Guarantee the job modal opens as soon as the job is available
+  useEffect(() => {
+    const jobId = localStorage.getItem('sourcerSelectedJobId');
+    if (jobId && !selectedJobId && jobs.length > 0) {
+      if (jobs.some(job => job.id === jobId)) {
+        setSelectedJobId(jobId);
+        localStorage.removeItem('sourcerSelectedJobId');
+      }
+    }
+  }, [jobs, selectedJobId]);
+
+  // Listen for 'openSourcerJob' event to open modal immediately
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const jobId = (e as CustomEvent).detail;
+      if (jobId && jobs.some(job => job.id === jobId)) {
+        setSelectedJobId(jobId);
+        localStorage.removeItem('sourcerSelectedJobId');
+      }
+    };
+    window.addEventListener('openSourcerJob', handler);
+    return () => window.removeEventListener('openSourcerJob', handler);
+  }, [jobs]);
 
   // Get the selected job and its client
   const selectedJob = selectedJobId ? jobs.find(job => job.id === selectedJobId) || null : null;
@@ -69,7 +102,6 @@ export const SourcerDashboard: React.FC = () => {
     // Store sourcer name in localStorage for future use
     localStorage.setItem('sourcerName', name);
     
-    // Add to saved sourcers list if not already there
     const currentSaved = JSON.parse(localStorage.getItem('savedSourcers') || '[]');
     const updatedSourcers = [...new Set([...currentSaved, name])];
     localStorage.setItem('savedSourcers', JSON.stringify(updatedSourcers));
@@ -77,24 +109,34 @@ export const SourcerDashboard: React.FC = () => {
     setSourcerName(name);
     
     // Update job status to claimed
-    updateJob(jobId, {
-      status: 'Claimed',
-      sourcerName: name
-    }).catch(error => {
-      console.error('Error claiming job:', error);
-      alert('Error claiming job. Please try again.');
-    });
+    if (updateJob) {
+      const result = updateJob(jobId, {
+        status: 'Claimed',
+        sourcerName: name
+      });
+      if (result && typeof (result as any).catch === 'function') {
+        (result as any).catch((error: any) => {
+          console.error('Error claiming job:', error);
+          alert('Error claiming job. Please try again.');
+        });
+      }
+    }
   };
 
   // Complete a job
   const handleCompleteJob = (jobId: string) => {
-    updateJob(jobId, {
-      status: 'Completed',
-      completionLink: 'Candidates submitted via structured form'
-    }).catch(error => {
-      console.error('Error completing job:', error);
-      alert('Error completing job. Please try again.');
-    });
+    if (updateJob) {
+      const result = updateJob(jobId, {
+        status: 'Completed',
+        completionLink: 'Candidates submitted via structured form'
+      });
+      if (result && typeof (result as any).catch === 'function') {
+        (result as any).catch((error: any) => {
+          console.error('Error completing job:', error);
+          alert('Error completing job. Please try again.');
+        });
+      }
+    }
   };
 
   return (
@@ -177,15 +219,6 @@ export const SourcerDashboard: React.FC = () => {
             
             <div className="flex space-x-3">
               <Button
-                variant={filter === 'all' ? 'primary' : 'outline'}
-                size="md"
-                onClick={() => setFilter('all')}
-                className="flex items-center gap-2"
-              >
-                <ClipboardList size={18} />
-                ALL
-              </Button>
-              <Button
                 variant={filter === 'unclaimed' ? 'primary' : 'outline'}
                 size="md"
                 onClick={() => setFilter('unclaimed')}
@@ -211,6 +244,14 @@ export const SourcerDashboard: React.FC = () => {
               >
                 <Check size={18} />
                 COMPLETED
+              </Button>
+              <Button
+                variant={filter === 'all' ? 'primary' : 'outline'}
+                size="md"
+                onClick={() => setFilter('all')}
+                className="flex items-center gap-2"
+              >
+                ALL
               </Button>
             </div>
           </div>
@@ -265,13 +306,7 @@ export const SourcerDashboard: React.FC = () => {
         )}
         
         {/* Debug info */}
-        {selectedJobId && (
-          <div className="fixed bottom-4 right-4 bg-red-500 text-white p-4 rounded-lg z-50">
-            <p>Selected Job ID: {selectedJobId}</p>
-            <p>Selected Job: {selectedJob ? 'Yes' : 'No'}</p>
-            <p>Company: {selectedJob?.companyName || 'Unknown'}</p>
-          </div>
-        )}
+        {/* Removed debug box for selected job info */}
       </div>
     </div>
   );

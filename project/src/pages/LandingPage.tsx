@@ -52,7 +52,6 @@ export const LandingPage: React.FC = () => {
             <span className="block text-supernova">
               RECRUITMENT
             </span>
-            PLATFORM
           </h1>
           
           <p className="text-xl md:text-2xl text-guardian max-w-3xl mx-auto mb-12 font-jakarta leading-relaxed">
@@ -169,7 +168,7 @@ export const LandingPage: React.FC = () => {
                 </div>
                 
                 <Button 
-                  onClick={() => window.location.href = '/signup'}
+                  onClick={() => window.location.href = '/signup?role=sourcer'}
                   fullWidth
                   size="lg"
                   variant="outline"

@@ -47,7 +47,7 @@ export const JobTimer: React.FC<JobTimerProps> = ({
       case 'sm':
         return 'px-2 py-1 text-xs';
       case 'lg':
-        return 'px-4 py-3 text-lg';
+        return 'px-4 py-2 text-sm rounded-lg'; // Match badge shape/size
       default:
         return 'px-3 py-2 text-sm';
     }
@@ -57,7 +57,7 @@ export const JobTimer: React.FC<JobTimerProps> = ({
     return (
       <div className={`inline-flex items-center gap-2 rounded-lg border font-jakarta font-semibold ${getSizeClasses()} text-red-400 bg-red-500/10 border-red-500/30 ${className}`}>
         {showIcon && <AlertTriangle size={size === 'sm' ? 14 : size === 'lg' ? 20 : 16} />}
-        <span>EXPIRED</span>
+        <span>OVERDUE</span>
       </div>
     );
   }
