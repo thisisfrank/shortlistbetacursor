@@ -28,7 +28,8 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
 
   // Not authenticated - redirect to login
   if (!user) {
-    return <Navigate to="/login" replace />;
+    // Instead of redirecting to /login, render children or a fallback (e.g., landing page)
+    return <Navigate to="/" replace />;
   }
 
   // No user profile but user exists - profile might still be loading
@@ -44,7 +45,7 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
   }
 
   // Check if user's role is allowed
-  if (!allowedRoles.includes(userProfile.role)) {
+  if (userProfile && !allowedRoles.includes(userProfile.role)) {
     // Smart redirect based on user's actual role
     return <Navigate to={getRoleHomePage(userProfile.role)} replace />;
   }

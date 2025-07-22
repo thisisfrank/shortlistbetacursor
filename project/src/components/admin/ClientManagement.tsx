@@ -14,13 +14,17 @@ export const ClientManagement: React.FC = () => {
   // Group jobs by company
   const jobsByCompany = companies.map(companyName => {
     const companyJobs = jobs.filter(job => job.companyName === companyName);
+    // Find the earliest job for the company (main contact = first user)
+    const sortedByDate = [...companyJobs].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const mainContactEmail = sortedByDate[0]?.userEmail || 'N/A';
     return {
       companyName,
       totalJobs: companyJobs.length,
       unclaimedJobs: companyJobs.filter(job => job.status === 'Unclaimed').length,
       claimedJobs: companyJobs.filter(job => job.status === 'Claimed').length,
       completedJobs: companyJobs.filter(job => job.status === 'Completed').length,
-      latestJob: companyJobs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+      latestJob: companyJobs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0],
+      mainContactEmail,
     };
   });
 
@@ -54,6 +58,9 @@ export const ClientManagement: React.FC = () => {
                   Company
                 </th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
+                  Main Contact
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
                   Jobs
                 </th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
@@ -70,7 +77,7 @@ export const ClientManagement: React.FC = () => {
             <tbody className="bg-shadowforce-light divide-y divide-guardian/20">
               {companies.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-guardian font-jakarta">
+                  <td colSpan={6} className="px-6 py-8 text-center text-guardian font-jakarta">
                     No companies found. Companies will appear here when users submit jobs.
                   </td>
                 </tr>
@@ -79,7 +86,11 @@ export const ClientManagement: React.FC = () => {
                   <tr key={company.companyName} className="hover:bg-shadowforce transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-jakarta font-bold text-white-knight">{company.companyName}</div>
-                      <div className="text-sm text-guardian">Active company</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-guardian font-jakarta">
+                        {company.mainContactEmail}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-4">
@@ -132,20 +143,6 @@ export const ClientManagement: React.FC = () => {
           </table>
         </div>
         
-        <div className="mt-8 p-4 bg-shadowforce rounded-lg">
-          <div className="flex items-center gap-3 mb-3">
-            <UserCheck className="text-supernova" size={20} />
-            <h3 className="text-lg font-anton text-white-knight uppercase tracking-wide">User Profile Management</h3>
-          </div>
-          <p className="text-guardian font-jakarta text-sm">
-            User profiles are managed through the authentication system. Each user can submit jobs for their company.
-          </p>
-          <div className="mt-4">
-            <Badge variant="outline" className="text-supernova border-supernova/30">
-              Coming Soon: Advanced user management features
-            </Badge>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );

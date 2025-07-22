@@ -5,6 +5,7 @@ import { Card, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { FormInput, FormSelect } from '../forms/FormInput';
 import { Zap, AlertCircle, CheckCircle } from 'lucide-react';
+import BoltIcon from '../../assets/v2.png';
 
 export const SignupPage: React.FC = () => {
   const { signUp } = useAuth();
@@ -116,8 +117,13 @@ export const SignupPage: React.FC = () => {
             <div className="flex justify-center mb-4">
               <Link to="/">
                 <div className="relative cursor-pointer">
-                  <Zap size={48} className="text-supernova fill-current" />
-                  <div className="absolute inset-0 bg-supernova/30 blur-xl rounded-full"></div>
+                  <img
+                    src={BoltIcon}
+                    alt="Lightning Bolt"
+                    className="animate-pulse"
+                    style={{ width: '60px', height: '28px', filter: 'drop-shadow(0 0 8px #FFD600)', objectFit: 'contain' }}
+                  />
+                  <div className="absolute inset-0 bg-supernova/30 blur-xl"></div>
                 </div>
               </Link>
             </div>

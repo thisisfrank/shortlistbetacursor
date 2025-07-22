@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
-import { useData } from '../../context/DataContext';
+import React from 'react';
 import { Card, CardContent, CardHeader } from '../ui/Card';
-import { Button } from '../ui/Button';
-import { TrendingUp, Calendar, Users, Briefcase, Target, Clock, DollarSign, Award } from 'lucide-react';
+import { Users, Briefcase, Target, Clock } from 'lucide-react';
+import { Job, Candidate } from '../../types';
 
-export const AnalyticsDashboard: React.FC = () => {
-  const { jobs, candidates, getCandidatesByJob } = useData();
-  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
+interface AnalyticsDashboardProps {
+  jobs: Job[];
+  candidates: Candidate[];
+  getCandidatesByJob: (jobId: string) => Candidate[];
+  timeRange: '7d' | '30d' | '90d' | 'all';
+  setTimeRange: (range: '7d' | '30d' | '90d' | 'all') => void;
+}
 
+export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ jobs, candidates, getCandidatesByJob, timeRange, setTimeRange }) => {
   // Calculate date range
   const getDateRange = () => {
     const now = new Date();
@@ -19,7 +23,6 @@ export const AnalyticsDashboard: React.FC = () => {
     };
     return ranges[timeRange];
   };
-
   const startDate = getDateRange();
   const filteredJobs = jobs.filter(job => new Date(job.createdAt) >= startDate);
   const filteredCandidates = candidates.filter(candidate => new Date(candidate.submittedAt) >= startDate);
@@ -33,6 +36,7 @@ export const AnalyticsDashboard: React.FC = () => {
     ? Math.round(filteredCandidates.length / filteredJobs.length)
     : 0;
 
+  // Calculate average time to complete in ms
   const avgTimeToComplete = filteredJobs
     .filter(job => job.status === 'Completed')
     .reduce((acc, job) => {
@@ -41,12 +45,19 @@ export const AnalyticsDashboard: React.FC = () => {
       return acc + (updated - created);
     }, 0) / filteredJobs.filter(job => job.status === 'Completed').length;
 
-  const avgDays = avgTimeToComplete ? Math.round(avgTimeToComplete / (1000 * 60 * 60 * 24)) : 0;
+  // Convert ms to hours and minutes
+  let avgTimeDisplay = '0h 0m';
+  if (avgTimeToComplete && !isNaN(avgTimeToComplete)) {
+    const totalMinutes = Math.round(avgTimeToComplete / (1000 * 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    avgTimeDisplay = `${hours}h ${minutes}m`;
+  }
 
   // Sourcer performance
   const sourcerStats = filteredJobs
     .filter(job => job.sourcerName && job.status === 'Completed')
-    .reduce((acc, job) => {
+    .reduce((acc: Record<string, { completed: number; candidates: number }>, job) => {
       const sourcer = job.sourcerName!;
       if (!acc[sourcer]) {
         acc[sourcer] = { completed: 0, candidates: 0 };
@@ -54,7 +65,7 @@ export const AnalyticsDashboard: React.FC = () => {
       acc[sourcer].completed++;
       acc[sourcer].candidates += getCandidatesByJob(job.id).length;
       return acc;
-    }, {} as Record<string, { completed: number; candidates: number }>);
+    }, {});
 
   const topSourcers = Object.entries(sourcerStats)
     .sort(([, a], [, b]) => b.completed - a.completed)
@@ -69,8 +80,8 @@ export const AnalyticsDashboard: React.FC = () => {
 
   // Company activity (replaced client activity)
   const companyActivity = jobs
-    .filter(job => job.companyName) // Only jobs with company names
-    .reduce((acc, job) => {
+    .filter(job => job.companyName)
+    .reduce((acc: Record<string, { companyName: string; jobCount: number; candidateCount: number; completedJobs: number }>, job) => {
       const company = job.companyName!;
       if (!acc[company]) {
         acc[company] = {
@@ -86,7 +97,7 @@ export const AnalyticsDashboard: React.FC = () => {
         acc[company].completedJobs++;
       }
       return acc;
-    }, {} as Record<string, { companyName: string; jobCount: number; candidateCount: number; completedJobs: number }>);
+    }, {});
 
   const topCompanies = Object.values(companyActivity)
     .sort((a, b) => b.jobCount - a.jobCount)
@@ -94,154 +105,65 @@ export const AnalyticsDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Time Range Selector */}
-      <div className="flex justify-center">
-        <div className="bg-shadowforce rounded-lg p-2 border border-guardian/20">
-          <div className="flex space-x-1">
-            {(['7d', '30d', '90d', 'all'] as const).map(range => (
-              <Button
-                key={range}
-                variant={timeRange === range ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setTimeRange(range)}
-                className="text-xs"
-              >
-                {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : range === '90d' ? '90 Days' : 'All Time'}
-              </Button>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-br from-blue-500/20 to-blue-500/10 border-blue-500/30">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="border border-blue-500/30 col-span-2">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+            <div>
               <div>
-                <h3 className="text-sm font-anton text-blue-400 uppercase tracking-wide">Completion Rate</h3>
+                <h3 className="text-lg font-anton text-white uppercase tracking-wide">Total Job Completion Rate</h3>
                 <p className="text-3xl font-anton text-white-knight">{completionRate}%</p>
               </div>
-              <Target className="text-blue-400" size={32} />
             </div>
           </CardContent>
         </Card>
-
-        <Card className="bg-gradient-to-br from-orange-500/20 to-orange-500/10 border-orange-500/30">
+        <Card className="col-span-2">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+            <div>
               <div>
-                <h3 className="text-sm font-anton text-orange-400 uppercase tracking-wide">Avg Candidates</h3>
-                <p className="text-3xl font-anton text-white-knight">{avgCandidatesPerJob}</p>
+                <h3 className="text-lg font-anton text-white uppercase tracking-wide">Average Completion Time</h3>
+                <p className="text-3xl font-anton text-white-knight">{avgTimeDisplay}</p>
               </div>
-              <Users className="text-orange-400" size={32} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-500/20 to-purple-500/10 border-purple-500/30">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-anton text-purple-400 uppercase tracking-wide">Avg Days</h3>
-                <p className="text-3xl font-anton text-white-knight">{avgDays}</p>
-              </div>
-              <Clock className="text-purple-400" size={32} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-500/20 to-green-500/10 border-green-500/30">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-anton text-green-400 uppercase tracking-wide">Total Jobs</h3>
-                <p className="text-3xl font-anton text-white-knight">{filteredJobs.length}</p>
-              </div>
-              <Briefcase className="text-green-400" size={32} />
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Charts and Tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Job Status Distribution */}
-        <Card>
-          <CardHeader>
-            <h3 className="text-xl font-anton text-white-knight uppercase tracking-wide">Job Status Distribution</h3>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-guardian font-jakarta">Unclaimed</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-32 bg-guardian/20 rounded-full h-2">
-                    <div 
-                      className="bg-orange-400 h-2 rounded-full" 
-                      style={{ width: `${filteredJobs.length > 0 ? (statusDistribution.unclaimed / filteredJobs.length) * 100 : 0}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-white-knight font-jakarta font-semibold">{statusDistribution.unclaimed}</span>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-guardian font-jakarta">In Progress</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-32 bg-guardian/20 rounded-full h-2">
-                    <div 
-                      className="bg-purple-400 h-2 rounded-full" 
-                      style={{ width: `${filteredJobs.length > 0 ? (statusDistribution.claimed / filteredJobs.length) * 100 : 0}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-white-knight font-jakarta font-semibold">{statusDistribution.claimed}</span>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-guardian font-jakarta">Completed</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-32 bg-guardian/20 rounded-full h-2">
-                    <div 
-                      className="bg-green-400 h-2 rounded-full" 
-                      style={{ width: `${filteredJobs.length > 0 ? (statusDistribution.completed / filteredJobs.length) * 100 : 0}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-white-knight font-jakarta font-semibold">{statusDistribution.completed}</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-1 gap-8">
         {/* Top Sourcers */}
         <Card>
           <CardHeader>
             <h3 className="text-xl font-anton text-white-knight uppercase tracking-wide">Top Sourcers</h3>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {topSourcers.length === 0 ? (
-                <p className="text-guardian font-jakarta text-center">No sourcer activity in this period</p>
-              ) : (
-                topSourcers.map(([sourcer, stats], index) => (
-                  <div key={sourcer} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-supernova/20 rounded-full flex items-center justify-center">
-                        <span className="text-supernova font-anton text-sm">{index + 1}</span>
+            {topSourcers.length === 0 ? (
+              <p className="text-guardian font-jakarta">No sourcer activity found.</p>
+            ) : (
+              <div className="space-y-4">
+                {topSourcers.slice(0, 3).map(([sourcer, stats], index) => (
+                  <div key={sourcer} className="flex items-center justify-between p-4 bg-shadowforce rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        index === 0 ? 'bg-yellow-500 text-black' : 
+                        index === 1 ? 'bg-gray-400 text-black' : 
+                        'bg-orange-600 text-white'
+                      }`}>
+                        {index + 1}
                       </div>
                       <div>
-                        <p className="text-white-knight font-jakarta font-semibold">{sourcer}</p>
-                        <p className="text-guardian text-sm">{stats.candidates} candidates</p>
+                        <p className="font-jakarta font-semibold text-white-knight">{sourcer}</p>
+                        <p className="text-sm text-guardian">{stats.completed} jobs completed</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-white-knight font-anton">{stats.completed}</p>
-                      <p className="text-guardian text-xs">completed</p>
+                      <p className="text-lg font-anton text-supernova">{stats.completed}</p>
+                      <p className="text-xs text-guardian">completed</p>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -266,6 +188,9 @@ export const AnalyticsDashboard: React.FC = () => {
                     Candidates
                   </th>
                   <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
+                    Candidates/Job
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
                     Completed
                   </th>
                 </tr>
@@ -273,27 +198,33 @@ export const AnalyticsDashboard: React.FC = () => {
               <tbody className="bg-shadowforce-light divide-y divide-guardian/20">
                 {topCompanies.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-guardian font-jakarta">
+                    <td colSpan={5} className="px-6 py-8 text-center text-guardian font-jakarta">
                       No company activity in this period
                     </td>
                   </tr>
                 ) : (
-                  topCompanies.map(company => (
-                    <tr key={company.companyName} className="hover:bg-shadowforce transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-jakarta font-bold text-white-knight">{company.companyName}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
-                        {company.jobCount}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
-                        {company.candidateCount}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
-                        {company.completedJobs}
-                      </td>
-                    </tr>
-                  ))
+                  topCompanies.map((company, idx) => {
+                    const candidatesPerJob = company.jobCount > 0 ? (company.candidateCount / company.jobCount) : 0;
+                    return (
+                      <tr key={company.companyName} className="hover:bg-shadowforce transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-jakarta font-bold text-white-knight">{company.companyName}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
+                          {company.jobCount}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
+                          {company.candidateCount}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
+                          {Math.round(candidatesPerJob)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
+                          {company.completedJobs}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

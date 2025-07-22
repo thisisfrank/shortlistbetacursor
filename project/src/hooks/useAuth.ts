@@ -246,49 +246,41 @@ export const useAuth = () => {
 
   const signOut = async () => {
     console.log('🚪 Starting sign out process...');
-    
     // Set sign-out loading state
     setSignOutLoading(true);
-    
     try {
       // Clear local storage first
       localStorage.removeItem('sourcerName');
       localStorage.removeItem('savedSourcers');
-      
       console.log('🚪 Calling Supabase signOut...');
       const { error } = await supabase.auth.signOut();
-      
       if (error) {
         console.error('❌ Supabase signOut error:', error);
         throw error;
       }
-      
       console.log('✅ Supabase signOut successful');
-      
       // Clear local state
       setUser(null);
       setUserProfile(null);
       setLoading(false);
-      
       console.log('✅ Local state cleared');
-      
+      // Wait 1 second to show the spinner, then reload
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000); // 1s delay for smoother UX
       return { error: null };
     } catch (error) {
       console.error('💥 Sign out error:', error);
-      
       // Even if Supabase fails, clear local state to prevent stuck loading
       setUser(null);
       setUserProfile(null);
       setLoading(false);
-      
+      setSignOutLoading(false);
       return { 
         error: { 
           message: error instanceof Error ? error.message : 'Error signing out' 
         } 
       };
-    } finally {
-      console.log('🚪 Sign out process complete, clearing loading state');
-      setSignOutLoading(false);
     }
   };
 

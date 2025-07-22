@@ -6,7 +6,8 @@ import { testApifyResponse } from '../../services/apifyService';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { FormInput } from '../forms/FormInput';
-import { X, CheckCircle, AlertCircle, Plus, Trash2, Zap, Users, ExternalLink } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Plus, Trash2, Users, ExternalLink } from 'lucide-react';
+import BoltIcon from '../../assets/v2.png';
 
 interface JobDetailModalProps {
   job: Job;
@@ -283,6 +284,14 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
             <div>
               <h3 className="text-3xl font-anton text-white-knight mb-2 uppercase tracking-wide">{job.title}</h3>
               <p className="text-xl text-supernova font-jakarta font-semibold">{job.companyName}</p>
+              <p className="text-sm text-guardian font-jakarta mt-2">
+                <span className="font-semibold">Submitted by:</span>
+                {job.userEmail ? (
+                  <> {job.userEmail}</>
+                ) : (
+                  <span className="text-guardian/60"> Unknown</span>
+                )}
+              </p>
             </div>
             <div className="flex flex-col items-end gap-3">
               <div className="flex items-center gap-3">
@@ -607,12 +616,12 @@ https://linkedin.com/in/candidate2
                             >
                               {isTesting ? (
                                 <>
-                                  <Zap className="animate-spin" size={16} />
+                                  <BoltIcon className="animate-spin" size={16} />
                                   TESTING...
                                 </>
                               ) : (
                                 <>
-                                  <Zap size={16} />
+                                  <BoltIcon size={16} />
                                   TEST THIS URL
                                 </>
                               )}
@@ -694,12 +703,12 @@ https://linkedin.com/in/candidate2
                 >
                   {isSubmitting ? (
                     <>
-                      <Zap className="animate-spin" size={20} />
+                      <BoltIcon className="animate-spin" size={20} />
                       SUBMITTING CANDIDATES...
                     </>
                   ) : (
                     <>
-                      <Zap size={20} />
+                      <BoltIcon size={20} />
                       SUBMIT CANDIDATES
                     </>
                   )}

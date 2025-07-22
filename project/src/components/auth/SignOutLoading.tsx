@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap } from 'lucide-react';
+import BoltIcon from '../../assets/v2.png';
 
 export const SignOutLoading: React.FC = () => {
   return (
@@ -7,8 +7,13 @@ export const SignOutLoading: React.FC = () => {
       <div className="text-center">
         <div className="flex justify-center mb-8">
           <div className="relative">
-            <Zap size={64} className="text-supernova fill-current animate-pulse" />
-            <div className="absolute inset-0 bg-supernova/30 blur-xl rounded-full"></div>
+            <img
+              src={BoltIcon}
+              alt="Lightning Bolt"
+              className="animate-pulse"
+              style={{ width: '80px', height: '38px', filter: 'drop-shadow(0 0 12px #FFD600)', objectFit: 'contain' }}
+            />
+            <div className="absolute inset-0 bg-supernova/30 blur-xl"></div>
           </div>
         </div>
         

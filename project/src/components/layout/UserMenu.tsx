@@ -5,11 +5,13 @@ import { ClientMenu } from './menus/ClientMenu';
 import { SourcerMenu } from './menus/SourcerMenu';
 import { AnonymousMenu } from './menus/AnonymousMenu';
 import { User } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
 export const UserMenu: React.FC = () => {
   const { user, userProfile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+  const location = useLocation();
   
   const handleMouseEnter = () => {
     if (hoverTimeout) {
@@ -62,7 +64,7 @@ export const UserMenu: React.FC = () => {
         <div
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
-          className="absolute right-0 top-12 w-96 bg-shadowforce-light border border-guardian/20 rounded-xl shadow-2xl z-50 p-6 animate-fadeIn"
+          className={`absolute right-0 top-12 ${location.pathname === '/' ? 'w-48 p-3' : 'w-96 p-6'} bg-shadowforce-light border border-guardian/20 rounded-xl shadow-2xl z-50 animate-fadeIn`}
         >
           {getMenuContent()}
         </div>
