@@ -850,15 +850,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         if (updates.sourcerId !== undefined) dbUpdates.sourcer_name = updates.sourcerId; // Temporarily using sourcer_name to test production schema
         if (updates.completionLink !== undefined) dbUpdates.completion_link = updates.completionLink;
         
-        // DEBUG: Log everything before the database call
-        console.log('🔍 DEBUG updateJob: Job ID:', jobId);
-        console.log('🔍 DEBUG updateJob: Updates received:', updates);
-        console.log('🔍 DEBUG updateJob: Database updates to send:', dbUpdates);
-        
-        // Get current user for debugging
-        const { data: { user } } = await supabase.auth.getUser();
-        console.log('🔍 DEBUG updateJob: Current auth user:', user);
-        
         const { data: updatedJobData, error } = await supabase
           .from('jobs')
           .update(dbUpdates)
@@ -867,11 +858,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           .single();
 
         if (error) {
-          console.error('🔍 DEBUG updateJob: Supabase error:', error);
-          console.error('🔍 DEBUG updateJob: Error code:', error.code);
-          console.error('🔍 DEBUG updateJob: Error message:', error.message);
-          console.error('🔍 DEBUG updateJob: Error details:', error.details);
-          console.error('🔍 DEBUG updateJob: Error hint:', error.hint);
+          console.error('Error updating job:', error);
           throw error;
         }
 
