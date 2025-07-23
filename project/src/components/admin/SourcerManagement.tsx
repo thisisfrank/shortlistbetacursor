@@ -1,70 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { JobDetailModal } from '../sourcer/JobDetailModal';
 import { Search, Award, TrendingUp, Users, Clock, Target, Trash2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
-
-interface SourcerProfile {
-  id: string;
-  name: string;
-  email: string;
-}
 
 export const SourcerManagement: React.FC = () => {
   const { jobs, candidates, getCandidatesByJob, updateJob } = useData();
   const [search, setSearch] = useState('');
   const [selectedSourcer, setSelectedSourcer] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const [sourcerProfiles, setSourcerProfiles] = useState<Record<string, SourcerProfile>>({});
 
   const [sortBy, setSortBy] = useState<'performance' | 'speed' | 'acceptance' | 'completed'>('performance');
 
-  // Load sourcer profiles
-  useEffect(() => {
-    const loadSourcerProfiles = async () => {
-      try {
-        // Get all unique sourcer IDs from jobs
-        const sourcerIds = [...new Set(jobs.filter(job => job.sourcerId).map(job => job.sourcerId!))];
-        
-        if (sourcerIds.length === 0) return;
-
-        // Fetch user profiles for these sourcer IDs
-        const { data: profiles, error } = await supabase
-          .from('user_profiles')
-          .select('id, name, email')
-          .in('id', sourcerIds);
-
-        if (error) {
-          console.error('Error loading sourcer profiles:', error);
-          return;
-        }
-
-        // Create a lookup map
-        const profileMap: Record<string, SourcerProfile> = {};
-        profiles?.forEach((profile: any) => {
-          profileMap[profile.id] = {
-            id: profile.id,
-            name: profile.name || 'Unknown Sourcer',
-            email: profile.email || 'Unknown Email'
-          };
-        });
-
-        setSourcerProfiles(profileMap);
-      } catch (error) {
-        console.error('Error loading sourcer profiles:', error);
-      }
-    };
-
-    loadSourcerProfiles();
-  }, [jobs]);
-
-  // Get sourcer name by ID
+  // Get sourcer name by ID - simplified to use email from jobs
   const getSourcerName = (sourcerId: string): string => {
-    const profile = sourcerProfiles[sourcerId];
-    return profile?.name || `Sourcer ${sourcerId.substring(0, 8)}...`;
+    // Find a job by this sourcer to get their email
+    const sourcerJob = jobs.find(job => job.sourcerId === sourcerId);
+    if (sourcerJob && sourcerJob.userEmail) {
+      // Extract name from email (before @) and make it presentable
+      const emailName = sourcerJob.userEmail.split('@')[0];
+      return emailName.charAt(0).toUpperCase() + emailName.slice(1).replace(/[._]/g, ' ');
+    }
+    return `Sourcer ${sourcerId.substring(0, 8)}...`;
+  };
+
+  // Get sourcer email by ID
+  const getSourcerEmail = (sourcerId: string): string => {
+    const sourcerJob = jobs.find(job => job.sourcerId === sourcerId);
+    return sourcerJob?.userEmail || 'Email not available';
   };
 
   // Get all unique sourcers
@@ -399,7 +364,7 @@ export const SourcerManagement: React.FC = () => {
                                     {sourcer.totalCandidates} candidates delivered
                                   </div>
                                   <div className="text-sm text-guardian">
-                                    {sourcerProfiles[sourcer.id]?.email || 'Email not available'}
+                                    {getSourcerEmail(sourcer.id)}
                                   </div>
                                 </div>
                               </div>
