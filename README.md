@@ -1,5 +1,6 @@
-# NETLIFY TEST: This is a test change to verify Netlify auto-deploy with correct base directory
-# TEST: This is a test change to verify commit and deploy workflow
+# Super Recruiter Platform
+
+<!-- Test deployment after dashboard fix -->
 
 An AI-powered recruitment that connects clients with expert sourcers to find top-tier candidates quickly and efficiently.
 
