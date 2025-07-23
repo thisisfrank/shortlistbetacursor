@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 import BoltIcon from '../assets/v2.png';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Target, Users, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import Image2 from '../assets/image (2).png';
 import Image3 from '../assets/image (3).png';
 import Image4 from '../assets/image (4).png';
@@ -12,7 +12,6 @@ import Image5 from '../assets/image (5).png';
 
 export const LandingPage: React.FC = () => {
   const { user, userProfile, loading } = useAuth();
-  const [role, setRole] = useState<'client' | 'sourcer'>('client');
 
   // Show loading state
   if (loading) {
@@ -72,7 +71,7 @@ export const LandingPage: React.FC = () => {
                   size="lg"
                   className="glow-supernova text-xl px-12 py-6"
                 >
-                  GET STARTED FREE
+                  GET FREE CANDIDATES
                 </Button>
                 <Button 
                   onClick={() => window.location.href = '/login'}
@@ -84,81 +83,23 @@ export const LandingPage: React.FC = () => {
                 </Button>
               </div>
             </div>
-            {/* Right: Choose Your Role */}
+            {/* Right: For Clients */}
             <div className="flex-1 flex flex-col justify-center">
-              <h2 className="text-3xl md:text-4xl font-anton text-white-knight mb-8 uppercase tracking-wide text-left">
-                CHOOSE YOUR ROLE
-              </h2>
-              <div className="flex gap-4 mb-6">
-                <button
-                  className={`px-4 py-2 rounded-lg font-bold uppercase tracking-wide transition-all duration-200 ${role === 'client' ? 'bg-supernova text-shadowforce' : 'bg-shadowforce-light text-white-knight hover:bg-supernova/30'}`}
-                  onClick={() => setRole('client')}
-                >
-                  For Clients
-                </button>
-                <button
-                  className={`px-4 py-2 rounded-lg font-bold uppercase tracking-wide transition-all duration-200 ${role === 'sourcer' ? 'bg-blue-400 text-shadowforce' : 'bg-shadowforce-light text-white-knight hover:bg-blue-400/30'}`}
-                  onClick={() => setRole('sourcer')}
-                >
-                  For Sourcers
-                </button>
-              </div>
-              {role === 'client' ? (
-                <Card className="hover:shadow-2xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-br from-supernova/20 to-supernova/10 border-supernova/30">
-                  <CardContent className="p-6 md:p-8">
-                    <div className="text-left mb-4">
-                      <div className="bg-supernova/20 rounded-full w-16 h-16 flex items-center justify-center mb-3">
-                        <Target className="text-supernova" size={32} />
-                      </div>
-                      <h3 className="text-2xl md:text-3xl font-anton text-white-knight mb-2 uppercase tracking-wide">
-                        FOR CLIENTS
-                      </h3>
-                      <div className="flex flex-col gap-2 mt-4">
-                        <div className="flex items-center"><ArrowRight className="text-supernova mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Submit job requirements</span></div>
-                        <div className="flex items-center"><ArrowRight className="text-supernova mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Get AI-matched candidates</span></div>
-                        <div className="flex items-center"><ArrowRight className="text-supernova mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Receive detailed profiles</span></div>
-                        <div className="flex items-center"><ArrowRight className="text-supernova mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">24-hour delivery guarantee</span></div>
-                      </div>
+              <Card className="hover:shadow-2xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-br from-supernova/20 to-supernova/10 border-supernova/30">
+                <CardContent className="p-6 md:p-8">
+                  <div className="text-left mb-4">
+                    <h3 className="text-2xl md:text-3xl font-anton text-white-knight mb-2 uppercase tracking-wide">
+                      FOR CLIENTS
+                    </h3>
+                    <div className="flex flex-col gap-2 mt-4">
+                      <div className="flex items-center"><ArrowRight className="text-supernova mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Submit job requirements</span></div>
+                      <div className="flex items-center"><ArrowRight className="text-supernova mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Get AI-matched candidates</span></div>
+                      <div className="flex items-center"><ArrowRight className="text-supernova mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Receive detailed profiles</span></div>
+                      <div className="flex items-center"><ArrowRight className="text-supernova mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">24-hour delivery guarantee</span></div>
                     </div>
-                    <Button 
-                      onClick={() => window.location.href = '/signup'}
-                      fullWidth
-                      size="lg"
-                      className="glow-supernova mt-4"
-                    >
-                      START HIRING
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="hover:shadow-2xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-br from-blue-500/20 to-blue-500/10 border-blue-500/30">
-                  <CardContent className="p-6 md:p-8">
-                    <div className="text-left mb-4">
-                      <div className="bg-blue-500/20 rounded-full w-16 h-16 flex items-center justify-center mb-3">
-                        <Users className="text-blue-400" size={32} />
-                      </div>
-                      <h3 className="text-2xl md:text-3xl font-anton text-white-knight mb-2 uppercase tracking-wide">
-                        FOR SOURCERS
-                      </h3>
-                      <div className="flex flex-col gap-2 mt-4">
-                        <div className="flex items-center"><ArrowRight className="text-blue-400 mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Browse available jobs</span></div>
-                        <div className="flex items-center"><ArrowRight className="text-blue-400 mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Use AI-powered tools</span></div>
-                        <div className="flex items-center"><ArrowRight className="text-blue-400 mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Submit quality candidates</span></div>
-                        <div className="flex items-center"><ArrowRight className="text-blue-400 mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Earn competitive rates</span></div>
-                      </div>
-                    </div>
-                    <Button 
-                      onClick={() => window.location.href = '/signup?role=sourcer'}
-                      fullWidth
-                      size="lg"
-                      variant="outline"
-                      className="border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-shadowforce mt-4"
-                    >
-                      START SOURCING
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>

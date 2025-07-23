@@ -393,12 +393,6 @@ export const SourcerManagement: React.FC = () => {
                             <div className="text-lg font-anton text-supernova mb-1">
                               {sourcer.acceptanceRate}%
                             </div>
-                            <div className="text-xs text-guardian font-jakarta">
-                              Acceptance Rate
-                            </div>
-                            <div className="text-xs text-guardian/60 mt-1">
-                              {sourcer.avgCandidatesPerJob} avg/job
-                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">

@@ -96,3 +96,6 @@ jspm_packages/
 # Supabase
 .branches
 .temp
+
+# Local Netlify folder
+.netlify

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '../../ui/Card';
-import { CompanyInfoStep } from './CompanyInfoStep';
+import { JobTitleStep } from './JobTitleStep';
 import { JobDetailsStep } from './JobDetailsStep';
+import { CompanyInfoStep } from './CompanyInfoStep';
 import { RequirementsStep } from './RequirementsStep';
 import { SimpleSummaryStep } from './SimpleSummaryStep';
 import { ConfirmationStep } from './ConfirmationStep';
@@ -9,8 +10,15 @@ import { FormStep } from '../../../types';
 import { useData } from '../../../context/DataContext';
 import { useAuth } from '../../../context/AuthContext';
 
-export const ClientIntakeForm: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState<FormStep>('company-info');
+interface ClientIntakeFormProps {
+  currentStep: FormStep;
+  setCurrentStep: (step: FormStep) => void;
+}
+
+export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({ 
+  currentStep, 
+  setCurrentStep 
+}) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
@@ -26,7 +34,9 @@ export const ClientIntakeForm: React.FC = () => {
     description: '',
     seniorityLevel: '',
     workArrangement: '',
-    location: '',
+    city: '',
+    state: '',
+    isRemote: false,
     salaryRangeMin: '',
     salaryRangeMax: '',
     keySellingPoints: [] as string[],
@@ -36,8 +46,9 @@ export const ClientIntakeForm: React.FC = () => {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value, type, checked } = e.target as HTMLInputElement;
+    const fieldValue = type === 'checkbox' ? checked : value;
+    setFormData({ ...formData, [name]: fieldValue });
     
     // Clear error for this field if it exists
     if (errors[name]) {
@@ -83,12 +94,19 @@ export const ClientIntakeForm: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const validateJobDetails = () => {
+  const validateJobTitle = () => {
     const newErrors: Record<string, string> = {};
     
     if (!formData.title.trim()) {
       newErrors.title = 'Job title is required';
     }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateJobDetails = () => {
+    const newErrors: Record<string, string> = {};
     
     if (!formData.description.trim()) {
       newErrors.description = 'Job description is required';
@@ -109,8 +127,15 @@ export const ClientIntakeForm: React.FC = () => {
   const validateRequirements = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!formData.location.trim()) {
-      newErrors.location = 'Location is required';
+    // Only validate city and state if not remote
+    if (!formData.isRemote) {
+      if (!formData.city.trim()) {
+        newErrors.city = 'City is required';
+      }
+      
+      if (!formData.state) {
+        newErrors.state = 'State is required';
+      }
     }
     
     if (!formData.salaryRangeMin) {
@@ -120,7 +145,7 @@ export const ClientIntakeForm: React.FC = () => {
     if (!formData.salaryRangeMax) {
       newErrors.salaryRangeMax = 'Maximum salary is required';
     } else if (
-      parseInt(formData.salaryRangeMax) <= parseInt(formData.salaryRangeMin)
+      extractNumericValue(formData.salaryRangeMax) <= extractNumericValue(formData.salaryRangeMin)
     ) {
       newErrors.salaryRangeMax = 'Maximum salary must be greater than minimum salary';
     }
@@ -137,13 +162,18 @@ export const ClientIntakeForm: React.FC = () => {
     let isValid = false;
     
     switch (currentStep) {
-      case 'company-info':
-        isValid = validateCompanyInfo();
+      case 'job-title':
+        isValid = validateJobTitle();
         if (isValid) setCurrentStep('job-details');
         break;
         
       case 'job-details':
         isValid = validateJobDetails();
+        if (isValid) setCurrentStep('company-info');
+        break;
+        
+      case 'company-info':
+        isValid = validateCompanyInfo();
         if (isValid) setCurrentStep('requirements');
         break;
         
@@ -160,11 +190,15 @@ export const ClientIntakeForm: React.FC = () => {
   const goToPreviousStep = () => {
     switch (currentStep) {
       case 'job-details':
-        setCurrentStep('company-info');
+        setCurrentStep('job-title');
+        break;
+        
+      case 'company-info':
+        setCurrentStep('job-details');
         break;
         
       case 'requirements':
-        setCurrentStep('job-details');
+        setCurrentStep('company-info');
         break;
         
       case 'summary':
@@ -176,6 +210,12 @@ export const ClientIntakeForm: React.FC = () => {
     }
   };
 
+  // Helper function to extract numeric value from formatted currency
+  const extractNumericValue = (formattedValue: string): number => {
+    const numericString = formattedValue.replace(/[$,]/g, '');
+    return parseInt(numericString) || 0;
+  };
+
   const handleSubmit = async () => {
     console.log('🎯 REAL job submission started...');
     setIsSubmitting(true);
@@ -185,6 +225,9 @@ export const ClientIntakeForm: React.FC = () => {
         throw new Error('User not authenticated');
       }
 
+      // Combine city and state into location for backend
+      const location = formData.isRemote ? 'Remote' : `${formData.city}, ${formData.state}`;
+
       // Create the job data to submit
       const jobData = {
         userId: user.id,
@@ -193,9 +236,9 @@ export const ClientIntakeForm: React.FC = () => {
         description: formData.description,
         seniorityLevel: formData.seniorityLevel,
         workArrangement: formData.workArrangement,
-        location: formData.location,
-        salaryRangeMin: parseInt(formData.salaryRangeMin),
-        salaryRangeMax: parseInt(formData.salaryRangeMax),
+        location: location,
+        salaryRangeMin: extractNumericValue(formData.salaryRangeMin),
+        salaryRangeMax: extractNumericValue(formData.salaryRangeMax),
         keySellingPoints: formData.keySellingPoints,
         candidatesRequested: parseInt(formData.candidatesRequested)
       };
@@ -228,22 +271,26 @@ export const ClientIntakeForm: React.FC = () => {
       description: '',
       seniorityLevel: '',
       workArrangement: '',
-      location: '',
+      city: '',
+      state: '',
+      isRemote: false,
       salaryRangeMin: '',
       salaryRangeMax: '',
       keySellingPoints: [],
       candidatesRequested: '1'
     });
     setErrors({});
-    setCurrentStep('company-info');
+    setCurrentStep('job-title');
   };
 
   return (
     <Card className="max-w-4xl mx-auto glow-supernova">
       <CardContent className="py-12">
-        {currentStep === 'company-info' && (
-          <CompanyInfoStep
-            formData={formData}
+        {currentStep === 'job-title' && (
+          <JobTitleStep
+            formData={{
+              title: formData.title
+            }}
             onChange={handleInputChange}
             onNext={goToNextStep}
             errors={errors}
@@ -252,6 +299,20 @@ export const ClientIntakeForm: React.FC = () => {
         
         {currentStep === 'job-details' && (
           <JobDetailsStep
+            formData={{
+              description: formData.description,
+              seniorityLevel: formData.seniorityLevel,
+              workArrangement: formData.workArrangement
+            }}
+            onChange={handleInputChange}
+            onNext={goToNextStep}
+            onBack={goToPreviousStep}
+            errors={errors}
+          />
+        )}
+        
+        {currentStep === 'company-info' && (
+          <CompanyInfoStep
             formData={formData}
             onChange={handleInputChange}
             onNext={goToNextStep}
@@ -262,7 +323,15 @@ export const ClientIntakeForm: React.FC = () => {
         
         {currentStep === 'requirements' && (
           <RequirementsStep
-            formData={formData}
+            formData={{
+              city: formData.city,
+              state: formData.state,
+              isRemote: formData.isRemote,
+              salaryRangeMin: formData.salaryRangeMin,
+              salaryRangeMax: formData.salaryRangeMax,
+              keySellingPoints: formData.keySellingPoints,
+              candidatesRequested: formData.candidatesRequested
+            }}
             onChange={handleInputChange}
             onSellingPointsChange={handleSellingPointsChange}
             onNext={goToNextStep}
@@ -273,7 +342,23 @@ export const ClientIntakeForm: React.FC = () => {
         
         {currentStep === 'summary' && (
           <SimpleSummaryStep
-            formData={formData}
+            formData={{
+              companyName: formData.companyName,
+              contactName: formData.contactName,
+              email: formData.email,
+              phone: formData.phone,
+              title: formData.title,
+              description: formData.description,
+              seniorityLevel: formData.seniorityLevel,
+              workArrangement: formData.workArrangement,
+              city: formData.city,
+              state: formData.state,
+              isRemote: formData.isRemote,
+              salaryRangeMin: formData.salaryRangeMin,
+              salaryRangeMax: formData.salaryRangeMax,
+              keySellingPoints: formData.keySellingPoints,
+              candidatesRequested: formData.candidatesRequested
+            }}
             onChange={handleInputChange}
             onSubmit={handleSubmit}
             onBack={goToPreviousStep}
