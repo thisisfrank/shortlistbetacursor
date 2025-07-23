@@ -82,8 +82,8 @@ export const SubscriptionPlans: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-supernova mx-auto mb-4"></div>
-          <p className="text-guardian font-jakarta">Loading subscription plans...</p>
+          <h2 className="text-3xl font-anton text-supernova mb-2">Current Plan</h2>
+          <p className="text-guardian font-jakarta">Checking your subscription status...</p>
         </div>
       </div>
     );
@@ -233,8 +233,8 @@ export const SubscriptionPlans: React.FC = () => {
           <h1 className="text-5xl md:text-6xl font-anton text-white-knight mb-4 uppercase tracking-wide">
             CANDIDATE CREDIT PLANS
           </h1>
-          <p className="text-xl text-guardian font-jakarta max-w-2xl mx-auto">
-            Unlock more candidate credits and advanced features to scale your hiring
+          <p className="text-xl text-guardian font-jakarta max-w-xl mx-auto">
+            Unlock more credits and features to scale your hiring.
           </p>
         </header>
 
@@ -271,24 +271,24 @@ export const SubscriptionPlans: React.FC = () => {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center">
-                  <div className="bg-supernova/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                    <Users className="text-supernova" size={24} />
+                  <div className="bg-supernova/20 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-4">
+                    <Users className="text-supernova" size={18} />
                   </div>
-                  <h4 className="font-anton text-white-knight mb-2 uppercase">Full Profile Access</h4>
+                  <h4 className="font-anton text-white-knight mb-2 uppercase text-lg">Full Profile Access</h4>
                   <p className="text-guardian font-jakarta text-sm">Complete name and LinkedIn URL for direct contact</p>
                 </div>
                 <div className="text-center">
-                  <div className="bg-supernova/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                    <Briefcase className="text-supernova" size={24} />
+                  <div className="bg-supernova/20 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-4">
+                    <Briefcase className="text-supernova" size={18} />
                   </div>
-                  <h4 className="font-anton text-white-knight mb-2 uppercase">LinkedIn Info Card</h4>
+                  <h4 className="font-anton text-white-knight mb-2 uppercase text-lg">LinkedIn Info Card</h4>
                   <p className="text-guardian font-jakarta text-sm">Detailed experience, education, skills, and AI summary</p>
                 </div>
                 <div className="text-center">
-                  <div className="bg-supernova/20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                    <Mail className="text-supernova" size={24} />
+                  <div className="bg-supernova/20 rounded-full w-10 h-10 flex items-center justify-center mx-auto mb-4">
+                    <Mail className="text-supernova" size={18} />
                   </div>
-                  <h4 className="font-anton text-white-knight mb-2 uppercase">Company Emails*</h4>
+                  <h4 className="font-anton text-white-knight mb-2 uppercase text-lg">Company Emails*</h4>
                   <p className="text-guardian font-jakarta text-sm">Professional email addresses for direct outreach</p>
                   <p className="text-supernova font-jakarta text-xs mt-1">*Paid tiers only</p>
                 </div>
@@ -330,13 +330,16 @@ export const SubscriptionPlans: React.FC = () => {
                   )}
                 </div>
                 <p className="text-guardian font-jakarta text-sm">
-                  {plan.description}
+                  {plan.id === 'free' && 'Try the platform free'}
+                  {plan.id === 'basic' && 'For growing teams'}
+                  {plan.id === 'premium' && 'For scaling businesses'}
+                  {plan.id === 'topshelf' && 'Unlimited access for enterprise'}
                 </p>
               </CardHeader>
 
               <CardContent className="pt-0">
                 <div className="space-y-4 mb-8 flex-1">
-                  <div className="flex items-center">
+                  <div className="flex items-center mt-6">
                     <CheckCircle className="text-supernova mr-3 flex-shrink-0" size={16} />
                     <span className="text-white-knight font-jakarta text-sm">
                       {typeof plan.features.jobs === 'number' 
@@ -354,13 +357,13 @@ export const SubscriptionPlans: React.FC = () => {
                   <div className="flex items-center">
                     <CheckCircle className="text-supernova mr-3 flex-shrink-0" size={16} />
                     <span className="text-white-knight font-jakarta text-sm">
-                      Name + LinkedIn URL + Info Card
+                      Full LinkedIn profile card
                     </span>
                   </div>
                   <div className="flex items-center">
                     <CheckCircle className="text-supernova mr-3 flex-shrink-0" size={16} />
                     <span className="text-white-knight font-jakarta text-sm">
-                      AI-powered candidate matching
+                      AI candidate matching
                     </span>
                   </div>
                   <div className="flex items-center">
@@ -388,12 +391,12 @@ export const SubscriptionPlans: React.FC = () => {
                   <Button
                   fullWidth
                   size="lg"
-                  variant={isCurrentPlan(plan.priceId) ? 'outline' : 'primary'}
+                  variant={isCurrentPlan(plan.priceId || '') ? 'outline' : 'primary'}
                   onClick={() => handleSubscribe(plan.priceId || '')}
-                  disabled={isCurrentPlan(plan.priceId) || loadingPlan === plan.priceId}
-                  isLoading={loadingPlan === plan.priceId}
+                  disabled={isCurrentPlan(plan.priceId || '') || loadingPlan === (plan.priceId || '')}
+                  isLoading={loadingPlan === (plan.priceId || '')}
                 >
-                  UPGRADE
+                  {isCurrentPlan(plan.priceId || '') ? 'CURRENT PLAN' : 'UPGRADE'}
                   </Button>
                 </div>
               </CardContent>
@@ -403,29 +406,25 @@ export const SubscriptionPlans: React.FC = () => {
 
         {/* Billing Information */}
         <div className="mb-12">
-          <Card className="bg-gradient-to-r from-supernova/20 to-supernova/10 border-supernova/30">
-            <CardContent className="p-6">
-              <div className="text-center">
-                <h3 className="text-xl font-anton text-white-knight mb-4 uppercase tracking-wide">
-                  Flexible Billing
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="flex items-center justify-center">
-                    <CheckCircle className="text-supernova mr-2" size={16} />
-                    <span className="text-guardian font-jakarta text-sm">Cancel anytime</span>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <CheckCircle className="text-supernova mr-2" size={16} />
-                    <span className="text-guardian font-jakarta text-sm">Monthly billing</span>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <CheckCircle className="text-supernova mr-2" size={16} />
-                    <span className="text-guardian font-jakarta text-sm">Instant upgrades</span>
-                  </div>
-                </div>
+          <div className="text-center">
+            <h3 className="text-xl font-anton text-white-knight mb-4 uppercase tracking-wide">
+              Flexible Billing
+            </h3>
+            <div className="flex flex-col items-center gap-2">
+              <div className="flex items-center">
+                <CheckCircle className="text-supernova mr-2" size={16} />
+                <span className="text-guardian font-jakarta text-base">Cancel anytime</span>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex items-center">
+                <CheckCircle className="text-supernova mr-2" size={16} />
+                <span className="text-guardian font-jakarta text-base">Monthly billing</span>
+              </div>
+              <div className="flex items-center">
+                <CheckCircle className="text-supernova mr-2" size={16} />
+                <span className="text-guardian font-jakarta text-base">Instant upgrades</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Additional Info */}

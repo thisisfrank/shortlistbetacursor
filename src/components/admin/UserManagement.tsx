@@ -12,8 +12,10 @@ import {
   Search, 
   AlertCircle,
   CheckCircle,
-  Loader
+  Loader,
+  Pencil
 } from 'lucide-react';
+import { useData } from '../../context/DataContext';
 
 interface User {
   id: string;
@@ -21,15 +23,19 @@ interface User {
   role: 'client' | 'sourcer' | 'admin';
   created_at: string;
   updated_at: string;
+  tierId: string; // Assume this exists for frontend
 }
 
 export const UserManagement: React.FC = () => {
+  const { tiers } = useData();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [promotingEmail, setPromotingEmail] = useState('');
   const [demotingEmail, setDemotingEmail] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [savingTierUserId, setSavingTierUserId] = useState<string | null>(null);
+  const [editingTierUserId, setEditingTierUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadUsers();
@@ -101,6 +107,28 @@ export const UserManagement: React.FC = () => {
     }
   };
 
+  // Add handler for tier change
+  const handleTierChange = async (userId: string, newTierId: string) => {
+    setSavingTierUserId(userId);
+    try {
+      // Update in Supabase (assume tier_id column exists)
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ tier_id: newTierId })
+        .eq('id', userId);
+      if (error) {
+        setMessage({ type: 'error', text: `Failed to update tier: ${error.message}` });
+      } else {
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, tierId: newTierId } : u));
+        setMessage({ type: 'success', text: 'Tier updated successfully.' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to update tier.' });
+    } finally {
+      setSavingTierUserId(null);
+    }
+  };
+
   const filteredUsers = users.filter(user =>
     (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (user.role && user.role.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -169,11 +197,20 @@ export const UserManagement: React.FC = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-guardian" size={16} />
                 <FormInput
+                  label="Search"
                   type="text"
                   placeholder="Search users by email or role..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 sr-only"
+                />
+                <input
+                  type="text"
+                  placeholder="Search users by email or role..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 block w-full border-0 border-b-2 px-0 py-4 text-lg bg-transparent text-white-knight placeholder-guardian/60 font-jakarta focus:ring-0 focus:border-supernova transition-colors duration-200 border-guardian/40 hover:border-guardian/60"
+                  aria-label="Search users by email or role..."
                 />
               </div>
             </div>
@@ -236,15 +273,12 @@ export const UserManagement: React.FC = () => {
                 <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
                   Created
                 </th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                  Actions
-                </th>
               </tr>
             </thead>
             <tbody className="bg-shadowforce-light divide-y divide-guardian/20">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center">
+                  <td colSpan={3} className="px-6 py-8 text-center">
                     <div className="flex items-center justify-center">
                       <Loader className="animate-spin mr-2" size={20} />
                       <span className="text-guardian font-jakarta">Loading users...</span>
@@ -253,7 +287,7 @@ export const UserManagement: React.FC = () => {
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-guardian font-jakarta">
+                  <td colSpan={3} className="px-6 py-8 text-center text-guardian font-jakarta">
                     {searchTerm ? 'No users found matching your search.' : 'No users found.'}
                   </td>
                 </tr>
@@ -270,40 +304,6 @@ export const UserManagement: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-guardian font-jakarta">
                         {formatDate(user.created_at)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex gap-2">
-                        {user.role !== 'admin' ? (
-                          <Button
-                            size="sm"
-                            onClick={() => promoteToAdmin(user.email)}
-                            disabled={promotingEmail === user.email}
-                            className="flex items-center gap-1"
-                          >
-                            {promotingEmail === user.email ? (
-                              <Loader className="animate-spin" size={12} />
-                            ) : (
-                              <Crown size={12} />
-                            )}
-                            {promotingEmail === user.email ? 'PROMOTING...' : 'PROMOTE TO ADMIN'}
-                          </Button>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="warning"
-                            onClick={() => demoteFromAdmin(user.email)}
-                            disabled={demotingEmail === user.email}
-                            className="flex items-center gap-1"
-                          >
-                            {demotingEmail === user.email ? (
-                              <Loader className="animate-spin" size={12} />
-                            ) : (
-                              <UserX size={12} />
-                            )}
-                            {demotingEmail === user.email ? 'DEMOTING...' : 'DEMOTE TO CLIENT'}
-                          </Button>
-                        )}
                       </div>
                     </td>
                   </tr>

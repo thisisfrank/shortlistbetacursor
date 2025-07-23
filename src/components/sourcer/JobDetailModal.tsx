@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { Job } from '../../types';
 import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
 import { JobTimer } from '../ui/JobTimer';
 import { testApifyResponse } from '../../services/apifyService';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { FormInput } from '../forms/FormInput';
-import { X, CheckCircle, AlertCircle, Plus, Trash2, Zap, Users, ExternalLink } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Plus, Trash2, Users, ExternalLink } from 'lucide-react';
+import BoltIcon from '../../assets/v2.png';
 
 interface JobDetailModalProps {
   job: Job;
   onClose: () => void;
-  onClaim?: (jobId: string, sourcerName: string) => void;
+  onClaim?: (jobId: string) => void;
   onComplete?: (jobId: string) => void;
 }
 
@@ -22,20 +24,16 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   onComplete
 }) => {
   const { addCandidatesFromLinkedIn, getCandidatesByJob } = useData();
-  const [sourcerName, setSourcerName] = useState(() => {
-    return localStorage.getItem('sourcerName') || '';
-  });
-  const [isNewSourcer, setIsNewSourcer] = useState(false);
-  const [savedSourcers, setSavedSourcers] = useState<string[]>(() => {
-    const saved = localStorage.getItem('savedSourcers');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const { userProfile } = useAuth();
+  
+  // Use the authenticated user's name from their profile
+  const sourcerName = userProfile?.name || 'Unknown Sourcer';
   const [linkedinUrls, setLinkedinUrls] = useState(['']);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [testResult, setTestResult] = useState<any>(null);
   const [isTesting, setIsTesting] = useState(false);
-  const [submissionMethod, setSubmissionMethod] = useState<'urls' | 'csv'>('urls');
+  const [submissionMethod, setSubmissionMethod] = useState<'urls' | 'csv'>('csv');
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvError, setCsvError] = useState('');
   const [showAcceptedCandidates, setShowAcceptedCandidates] = useState(false);
@@ -54,10 +52,8 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   };
 
   const handleClaim = async () => {
-    const finalSourcerName = isNewSourcer ? sourcerName : sourcerName;
-    
-    if (!finalSourcerName.trim()) {
-      setError('Please enter your name');
+    if (!userProfile) {
+      setError('You must be logged in to claim jobs');
       return;
     }
     
@@ -65,15 +61,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Save sourcer name to localStorage and saved list
-    localStorage.setItem('sourcerName', finalSourcerName);
-    
-    // Add to saved sourcers list if not already there
-    const updatedSourcers = [...new Set([...savedSourcers, finalSourcerName])];
-    localStorage.setItem('savedSourcers', JSON.stringify(updatedSourcers));
-    setSavedSourcers(updatedSourcers);
-    
-    onClaim && onClaim(job.id, finalSourcerName);
+    onClaim && onClaim(job.id);
     setIsSubmitting(false);
     onClose();
   };
@@ -283,23 +271,33 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
             <div>
               <h3 className="text-3xl font-anton text-white-knight mb-2 uppercase tracking-wide">{job.title}</h3>
               <p className="text-xl text-supernova font-jakarta font-semibold">{job.companyName}</p>
+              <p className="text-sm text-guardian font-jakarta mt-2">
+                <span className="font-semibold">Submitted by:</span>
+                {job.userEmail ? (
+                  <> {job.userEmail}</>
+                ) : (
+                  <span className="text-guardian/60"> Unknown</span>
+                )}
+              </p>
             </div>
             <div className="flex flex-col items-end gap-3">
-              <Badge 
-                variant={
-                  job.status === 'Unclaimed' 
-                    ? 'warning' 
-                    : job.status === 'Completed' 
-                      ? 'success' 
-                      : 'default'
-                }
-                className="text-sm px-4 py-2"
-              >
-                {job.status}
-              </Badge>
-              {job.status === 'Unclaimed' && (
-                <JobTimer jobCreatedAt={job.createdAt} size="lg" />
-              )}
+              <div className="flex items-center gap-3">
+                <Badge 
+                  variant={
+                    job.status === 'Unclaimed' 
+                      ? 'warning' 
+                      : job.status === 'Completed' 
+                        ? 'success' 
+                        : 'default'
+                  }
+                  className="text-sm px-4 py-2 h-full flex items-center"
+                >
+                  {job.status}
+                </Badge>
+                {(job.status === 'Unclaimed' || job.status === 'Claimed') && (
+                  <JobTimer jobCreatedAt={job.createdAt} size="lg" />
+                )}
+              </div>
             </div>
           </div>
           
@@ -307,22 +305,28 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
             <div className="grid grid-cols-2 gap-6 mb-6">
               <div>
                 <p className="text-sm font-jakarta font-semibold text-guardian uppercase tracking-wide">Seniority Level</p>
-                <p className="text-lg text-white-knight font-jakarta font-bold">{job.seniorityLevel}</p>
+                <p className="text-lg text-supernova font-jakarta font-bold">{job.seniorityLevel}</p>
               </div>
               <div>
                 <p className="text-sm font-jakarta font-semibold text-guardian uppercase tracking-wide">Work Arrangement</p>
-                <p className="text-lg text-white-knight font-jakarta font-bold">{job.workArrangement}</p>
+                <p className="text-lg text-supernova font-jakarta font-bold">{job.workArrangement}</p>
               </div>
               <div>
                 <p className="text-sm font-jakarta font-semibold text-guardian uppercase tracking-wide">Location</p>
-                <p className="text-lg text-white-knight font-jakarta font-bold">{job.location}</p>
+                <p className="text-lg text-supernova font-jakarta font-bold">{job.location}</p>
               </div>
               <div>
                 <p className="text-sm font-jakarta font-semibold text-guardian uppercase tracking-wide">Salary Range</p>
                 <p className="text-lg text-supernova font-jakarta font-bold">${job.salaryRangeMin.toLocaleString()} - ${job.salaryRangeMax.toLocaleString()}</p>
               </div>
             </div>
-            
+
+            {/* Move Job Description above Key Selling Points and remove background */}
+            <div className="mb-6">
+              <p className="text-sm font-jakarta font-semibold text-guardian uppercase tracking-wide mb-3">Job Description</p>
+              <p className="whitespace-pre-line text-white-knight font-jakarta leading-relaxed">{job.description}</p>
+            </div>
+
             <div className="mb-6">
               <p className="text-sm font-jakarta font-semibold text-guardian uppercase tracking-wide mb-3">Key Selling Points</p>
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -335,14 +339,8 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
               </ul>
             </div>
             
-            <div className="mb-6">
-              <p className="text-sm font-jakarta font-semibold text-guardian uppercase tracking-wide mb-3">Job Description</p>
-              <div className="bg-shadowforce border border-guardian/20 p-6 rounded-lg">
-                <p className="whitespace-pre-line text-white-knight font-jakarta leading-relaxed">{job.description}</p>
-              </div>
-            </div>
-            
-            <div className="bg-supernova/10 border border-supernova/30 p-6 rounded-lg mb-6">
+            {/* Remove Company Information box and its contents */}
+            {/* <div className="bg-supernova/10 border border-supernova/30 p-6 rounded-lg mb-6">
               <p className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide mb-3">Company Information</p>
               <div className="grid grid-cols-2 gap-6">
                 <div>
@@ -362,17 +360,16 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   <p className="text-white-knight font-jakarta font-bold">{formatDate(job.createdAt)}</p>
                 </div>
               </div>
-            </div>
+            </div> */}
             
-            {job.status === 'Claimed' && job.sourcerName && (
-              <div className="bg-blue-500/10 border border-blue-500/30 p-6 rounded-lg mb-6">
-                <div className="flex items-center mb-2">
-                  <AlertCircle className="text-blue-400 mr-2" size={20} />
-                  <p className="text-sm font-jakarta font-semibold text-blue-400 uppercase tracking-wide">Assignment Info</p>
+            {job.status === 'Claimed' && job.sourcerId && (
+              <div className="bg-supernova/10 border border-supernova/30 p-6 rounded-lg mb-6">
+                <div className="flex items-center">
+                  <AlertCircle className="text-supernova mr-2" size={20} />
+                  <span className="text-white-knight font-jakarta">
+                    This job is currently claimed by <strong className="text-supernova">{job.sourcerId}</strong>
+                  </span>
                 </div>
-                <p className="text-white-knight font-jakarta">
-                  This job is currently claimed by <strong className="text-supernova">{job.sourcerName}</strong>
-                </p>
               </div>
             )}
             
@@ -383,7 +380,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   <p className="text-sm font-jakarta font-semibold text-green-400 uppercase tracking-wide">Completion Info</p>
                 </div>
                 <p className="text-white-knight font-jakarta mb-3">
-                  This job was completed by <strong className="text-supernova">{job.sourcerName}</strong>
+                  This job was completed by <strong className="text-supernova">{job.sourcerId}</strong>
                 </p>
                 <div className="bg-shadowforce border border-guardian/20 p-4 rounded-lg">
                   <p className="text-guardian font-jakarta text-sm break-all">{job.completionLink}</p>
@@ -397,64 +394,15 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 <h4 className="text-2xl font-anton text-supernova mb-6 uppercase tracking-wide">Claim This Job</h4>
                 
                 <div className="mb-6">
-                  <label className="block text-sm font-jakarta font-semibold text-guardian mb-3 uppercase tracking-wide">
-                    Sourcer Name
-                  </label>
-                  
-                  {savedSourcers.length > 0 && !isNewSourcer && (
-                    <div className="mb-4">
-                      <select
-                        value={sourcerName}
-                        onChange={(e) => {
-                          if (e.target.value === '__new__') {
-                            setIsNewSourcer(true);
-                            setSourcerName('');
-                          } else {
-                            setSourcerName(e.target.value);
-                            setError('');
-                          }
-                        }}
-                        className="block w-full border-0 border-b-2 px-0 py-4 text-lg bg-transparent text-white-knight focus:ring-0 focus:border-supernova transition-colors duration-200 border-guardian/40 hover:border-guardian/60 font-jakarta"
-                      >
-                        <option value="" className="bg-shadowforce text-guardian/60">Select your name</option>
-                        {savedSourcers.map((name) => (
-                          <option key={name} value={name} className="bg-shadowforce text-white-knight">
-                            {name}
-                          </option>
-                        ))}
-                        <option value="__new__" className="bg-shadowforce text-supernova">
-                          + Add New Sourcer Name
-                        </option>
-                      </select>
-                    </div>
-                  )}
-                  
-                  {(isNewSourcer || savedSourcers.length === 0) && (
-                    <div>
-                      <input
-                        type="text"
-                        value={sourcerName}
-                        onChange={(e) => {
-                          setSourcerName(e.target.value);
-                          setError('');
-                        }}
-                        placeholder="Enter your full name"
-                        className="block w-full border-0 border-b-2 px-0 py-4 text-lg bg-transparent text-white-knight placeholder-guardian/60 font-jakarta focus:ring-0 focus:border-supernova transition-colors duration-200 border-guardian/40 hover:border-guardian/60"
-                      />
-                      {savedSourcers.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsNewSourcer(false);
-                            setSourcerName(savedSourcers[0] || '');
-                          }}
-                          className="mt-2 text-sm text-supernova hover:text-supernova-light font-jakarta font-semibold"
-                        >
-                          ← Back to saved names
-                        </button>
-                      )}
-                    </div>
-                  )}
+                  <div className="bg-shadowforce border border-guardian/20 p-4 rounded-lg">
+                    <p className="text-sm font-jakarta font-semibold text-guardian mb-2 uppercase tracking-wide">
+                      Claiming as:
+                    </p>
+                    <p className="text-xl font-anton text-white-knight">{sourcerName}</p>
+                    <p className="text-sm text-guardian font-jakarta mt-1">
+                      {userProfile?.email}
+                    </p>
+                  </div>
                   
                   {error && (
                     <p className="mt-2 text-sm text-red-400 font-jakarta font-medium">{error}</p>
@@ -474,27 +422,277 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
             )}
             
             {/* Complete Job Section */}
-            {job.status === 'Claimed' && job.sourcerName && onComplete && (
+            {job.status === 'Claimed' && job.sourcerId && onComplete && (
               <div className="bg-green-500/10 border border-green-500/30 p-8 rounded-xl">
-                {/* Accepted Candidates Section */}
-                {acceptedCandidates.length > 0 && (
-                  <div className="mb-8">
+                {/* Submission Method and Scrape/Submit Button */}
+                <div className="space-y-6 mb-6">
+                  {/* Submission Method Toggle */}
+                  <div className="bg-shadowforce border border-guardian/20 p-6 rounded-lg">
+                    <h5 className="font-anton text-lg text-white-knight mb-4 uppercase tracking-wide">
+                      Submission Method
+                    </h5>
+                    <div className="flex gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setSubmissionMethod('csv')}
+                        className={`flex-1 p-4 rounded-lg border-2 transition-all duration-200 ${
+                          submissionMethod === 'csv'
+                            ? 'border-supernova bg-supernova/10 text-supernova'
+                            : 'border-guardian/30 text-guardian hover:border-guardian/50'
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div className="font-jakarta font-semibold text-white text-sm mb-1">CSV Upload</div>
+                          <div className="text-xs">Upload a CSV file with LinkedIn URLs</div>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSubmissionMethod('urls')}
+                        className={`flex-1 p-4 rounded-lg border-2 transition-all duration-200 ${
+                          submissionMethod === 'urls'
+                            ? 'border-supernova bg-supernova/10 text-supernova'
+                            : 'border-guardian/30 text-guardian hover:border-guardian/50'
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div className="font-jakarta font-semibold text-white text-sm mb-1">Manual Entry</div>
+                          <div className="text-xs">Enter LinkedIn URLs individually</div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {submissionMethod === 'csv' ? (
+                    /* CSV Upload Section */
+                    <div className="bg-shadowforce border border-guardian/20 p-6 rounded-lg">
+                      <h5 className="font-anton text-lg text-white-knight mb-4 uppercase tracking-wide">
+                        Upload CSV File
+                      </h5>
+                      <div className="mb-4">
+                        <input
+                          type="file"
+                          accept=".csv"
+                          onChange={handleCsvUpload}
+                          className="block w-full text-sm text-guardian
+                            file:mr-4 file:py-2 file:px-4
+                            file:rounded-lg file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-supernova file:text-shadowforce
+                            hover:file:bg-supernova-light
+                            file:cursor-pointer cursor-pointer"
+                        />
+                      </div>
+                      {csvFile && (
+                        <div className="mb-4 p-3 bg-supernova/10 border border-supernova/30 rounded-lg">
+                          <p className="text-supernova font-jakarta font-semibold text-sm">
+                            ✅ File uploaded: {csvFile.name}
+                          </p>
+                          <p className="text-guardian font-jakarta text-xs mt-1">
+                            Size: {(csvFile.size / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+                      )}
+                      {csvError && (
+                        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                          <p className="text-red-400 font-jakarta text-sm">{csvError}</p>
+                        </div>
+                      )}
+                      <div className="bg-supernova/10 border border-supernova/30 p-4 rounded-lg">
+                        <h6 className="font-jakarta font-semibold text-supernova text-sm mb-1">CSV Format Requirements:</h6>
+                        <ul className="text-guardian font-jakarta text-xs space-y-1">
+                          <li>• First column should contain LinkedIn URLs</li>
+                          <li>• Header row is optional (will be automatically detected)</li>
+                          <li>• Maximum {MAX_CANDIDATES_PER_SUBMISSION} URLs per file</li>
+                          <li>• File size limit: 5MB</li>
+                        </ul>
+                        <div className="mt-3 text-xs text-guardian/80">
+                          <div className="text-sm text-supernova font-jakarta font-semibold mb-1">Example format:</div>
+                          <code className="text-sm text-white-knight font-jakarta font-semibold block text-left">
+linkedin_url<br/>
+https://linkedin.com/in/candidate1<br/>
+https://linkedin.com/in/candidate2
+                          </code>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Manual URL Entry Section */
+                    <div>
+                      {linkedinUrls.map((url, index) => (
+                        <div key={index} className="bg-shadowforce border border-guardian/20 p-6 rounded-lg">
+                          <div className="flex justify-between items-center mb-4">
+                            <h5 className="font-anton text-lg text-white-knight uppercase tracking-wide">
+                              LinkedIn URL {index + 1}
+                            </h5>
+                            {linkedinUrls.length > 1 && (
+                              <Button
+                                variant="error"
+                                size="sm"
+                                onClick={() => removeUrl(index)}
+                                className="flex items-center gap-2"
+                              >
+                                <Trash2 size={16} />
+                                REMOVE
+                              </Button>
+                            )}
+                          </div>
+                          <FormInput
+                            label="LinkedIn URL"
+                            value={url}
+                            onChange={(e) => updateUrl(index, e.target.value)}
+                            placeholder="https://linkedin.com/in/candidate-profile"
+                            hint="Paste the full LinkedIn profile URL here"
+                          />
+                          <div className="mt-4">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleTestUrl(url)}
+                              disabled={isTesting || !url.trim()}
+                              className="flex items-center gap-2"
+                            >
+                              {isTesting ? (
+                                <>
+                                  <BoltIcon className="animate-spin" size={16} />
+                                  TESTING...
+                                </>
+                              ) : (
+                                <>
+                                  <BoltIcon size={16} />
+                                  TEST THIS URL
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {submissionMethod === 'urls' && (
+                    <Button
+                      variant="outline"
+                      onClick={addUrlField}
+                      disabled={linkedinUrls.length >= MAX_CANDIDATES_PER_SUBMISSION}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus size={18} />
+                      {linkedinUrls.length >= MAX_CANDIDATES_PER_SUBMISSION 
+                        ? `MAXIMUM ${MAX_CANDIDATES_PER_SUBMISSION} URLS REACHED`
+                        : 'ADD ANOTHER URL'
+                      }
+                    </Button>
+                  )}
+                </div>
+                {error && (
+                  <div className="mb-6 p-6 bg-red-500/10 border border-red-500/30 rounded-lg">
+                    <div className="flex items-center mb-3">
+                      <AlertCircle className="text-red-400 mr-2" size={20} />
+                      <h5 className="font-anton text-lg text-red-400 uppercase tracking-wide">Submission Results</h5>
+                    </div>
+                    <pre className="text-red-400 font-jakarta text-sm leading-relaxed whitespace-pre-wrap">{error}</pre>
+                  </div>
+                )}
+                {testResult && (
+                  <div className="mb-6 p-6 bg-shadowforce border border-guardian/20 rounded-lg">
+                    <h5 className="font-anton text-lg text-white-knight mb-4 uppercase tracking-wide">
+                      Apify Test Result
+                    </h5>
+                    {testResult.success ? (
+                      <div className="space-y-4">
+                        <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                          <p className="text-green-400 font-jakarta font-semibold mb-2">✅ Success!</p>
+                          {testResult.transformedProfile && (
+                            <div className="space-y-2 text-sm">
+                              <p><span className="text-guardian">Name:</span> <span className="text-white-knight">{testResult.transformedProfile.firstName} {testResult.transformedProfile.lastName}</span></p>
+                              <p><span className="text-guardian">Headline:</span> <span className="text-white-knight">{testResult.transformedProfile.headline}</span></p>
+                              <p><span className="text-guardian">Location:</span> <span className="text-white-knight">{testResult.transformedProfile.location}</span></p>
+                              <p><span className="text-guardian">Experience Count:</span> <span className="text-white-knight">{testResult.transformedProfile.experience?.length || 0}</span></p>
+                              <p><span className="text-guardian">Skills Count:</span> <span className="text-white-knight">{testResult.transformedProfile.skills?.length || 0}</span></p>
+                            </div>
+                          )}
+                        </div>
+                        <details className="bg-shadowforce-light border border-guardian/20 rounded-lg">
+                          <summary className="p-3 cursor-pointer text-guardian font-jakarta font-semibold">
+                            View Raw Apify Response
+                          </summary>
+                          <div className="p-3 border-t border-guardian/20">
+                            <pre className="text-xs text-guardian overflow-auto max-h-64">
+                              {JSON.stringify(testResult.rawResponse, null, 2)}
+                            </pre>
+                          </div>
+                        </details>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                        <p className="text-red-400 font-jakarta font-semibold">❌ Test Failed</p>
+                        <p className="text-guardian text-sm mt-2">{testResult.error}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <Button 
+                  onClick={handleComplete} 
+                  variant="success"
+                  fullWidth
+                  size="lg"
+                  isLoading={isSubmitting}
+                  className="flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <BoltIcon className="animate-spin" size={20} />
+                      SUBMITTING CANDIDATES...
+                    </>
+                  ) : (
+                    <>
+                      <BoltIcon size={20} />
+                      SUBMIT CANDIDATES
+                    </>
+                  )}
+                </Button>
+                {/* Accepted Candidates Section moved here */}
+                {job.status === 'Claimed' && (
+                  <div className="mb-8 mt-8">
+                    <div className="mb-8">
+                      <h6 className="text-sm text-white font-jakarta font-semibold">
+                        Submitted candidates will be analyzed and given a job match score. If they do not meet a score of a 60% they will be rejected. Please submit candidates until the required amount of candidates are accepted.
+                      </h6>
+                    </div>
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center">
                         <Users className="text-green-400 mr-3" size={24} />
                         <h5 className="text-xl font-anton text-green-400 uppercase tracking-wide">
-                          Accepted Candidates ({acceptedCandidates.length})
+                          Accepted Candidates
                         </h5>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowAcceptedCandidates(!showAcceptedCandidates)}
-                      >
-                        {showAcceptedCandidates ? 'HIDE' : 'SHOW'} CANDIDATES
-                      </Button>
                     </div>
-                    
+                    {/* Progress Bar */}
+                    <div className="w-full bg-shadowforce rounded-full h-4 mb-2 border border-green-500/30">
+                      <div
+                        className="h-4 rounded-full bg-green-400 transition-all duration-300"
+                        style={{ width: `${Math.min((acceptedCandidates.length / job.candidatesRequested) * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                    {/* Progress Text */}
+                    <div className="text-sm text-green-400 font-jakarta font-semibold mb-4">
+                      {acceptedCandidates.length} of {job.candidatesRequested} candidates submitted
+                      {acceptedCandidates.length >= job.candidatesRequested && (
+                        <span className="text-green-400 font-bold ml-2">✅ TARGET REACHED!</span>
+                      )}
+                    </div>
+                    {/* Show Candidates Button - bottom left under bar, only if there are accepted candidates */}
+                    {acceptedCandidates.length > 0 && (
+                      <div className="mb-4 flex justify-start">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowAcceptedCandidates(!showAcceptedCandidates)}
+                        >
+                          {showAcceptedCandidates ? 'HIDE' : 'SHOW'} CANDIDATES
+                        </Button>
+                      </div>
+                    )}
                     {showAcceptedCandidates && (
                       <div className="bg-shadowforce border border-guardian/20 rounded-lg p-4 max-h-64 overflow-y-auto">
                         <div className="space-y-3">
@@ -527,287 +725,8 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
                         </div>
                       </div>
                     )}
-                    
-                    <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                      <p className="text-blue-400 font-jakarta text-sm">
-                        <strong>Progress:</strong> {acceptedCandidates.length} of {job.candidatesRequested} candidates submitted
-                        {acceptedCandidates.length >= job.candidatesRequested && (
-                          <span className="text-green-400 font-bold ml-2">✅ TARGET REACHED!</span>
-                        )}
-                      </p>
-                    </div>
                   </div>
                 )}
-                
-                <div className="flex items-center mb-6">
-                  <Zap className="text-green-400 mr-3" size={32} />
-                  <h4 className="text-2xl font-anton text-green-400 uppercase tracking-wide">AI-Powered LinkedIn Scraping</h4>
-                </div>
-                
-                <div className="bg-shadowforce border border-guardian/20 p-6 rounded-lg mb-6">
-                  <p className="text-white-knight font-jakarta leading-relaxed">
-                    Simply paste LinkedIn profile URLs below. Our AI will automatically scrape and extract 
-                    comprehensive candidate information including names, headlines, experience, education, 
-                    skills, and more. No manual data entry required! 
-                    <span className="text-supernova font-bold">Maximum {MAX_CANDIDATES_PER_SUBMISSION} candidates per submission.</span>
-                  </p>
-                </div>
-                
-                <div className="bg-supernova/10 border border-supernova/30 p-4 rounded-lg mb-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-supernova font-jakarta font-semibold">
-                      LinkedIn URLs: {linkedinUrls.filter(url => url.trim()).length} / {MAX_CANDIDATES_PER_SUBMISSION}
-                    </span>
-                    <div className="w-32 bg-shadowforce rounded-full h-2">
-                      <div 
-                        className="bg-supernova h-2 rounded-full transition-all duration-300"
-                        style={{ 
-                          width: `${Math.min((linkedinUrls.filter(url => url.trim()).length / MAX_CANDIDATES_PER_SUBMISSION) * 100, 100)}%` 
-                        }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-6 mb-6">
-                  {/* Submission Method Toggle */}
-                  <div className="bg-shadowforce border border-guardian/20 p-6 rounded-lg">
-                    <h5 className="font-anton text-lg text-white-knight mb-4 uppercase tracking-wide">
-                      Submission Method
-                    </h5>
-                    <div className="flex gap-4">
-                      <button
-                        type="button"
-                        onClick={() => setSubmissionMethod('urls')}
-                        className={`flex-1 p-4 rounded-lg border-2 transition-all duration-200 ${
-                          submissionMethod === 'urls'
-                            ? 'border-supernova bg-supernova/10 text-supernova'
-                            : 'border-guardian/30 text-guardian hover:border-guardian/50'
-                        }`}
-                      >
-                        <div className="text-center">
-                          <div className="font-anton text-sm uppercase tracking-wide mb-1">Manual Entry</div>
-                          <div className="text-xs">Enter LinkedIn URLs individually</div>
-                        </div>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSubmissionMethod('csv')}
-                        className={`flex-1 p-4 rounded-lg border-2 transition-all duration-200 ${
-                          submissionMethod === 'csv'
-                            ? 'border-supernova bg-supernova/10 text-supernova'
-                            : 'border-guardian/30 text-guardian hover:border-guardian/50'
-                        }`}
-                      >
-                        <div className="text-center">
-                          <div className="font-anton text-sm uppercase tracking-wide mb-1">CSV Upload</div>
-                          <div className="text-xs">Upload a CSV file with LinkedIn URLs</div>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-
-                  {submissionMethod === 'csv' ? (
-                    /* CSV Upload Section */
-                    <div className="bg-shadowforce border border-guardian/20 p-6 rounded-lg">
-                      <h5 className="font-anton text-lg text-white-knight mb-4 uppercase tracking-wide">
-                        Upload CSV File
-                      </h5>
-                      
-                      <div className="mb-4">
-                        <input
-                          type="file"
-                          accept=".csv"
-                          onChange={handleCsvUpload}
-                          className="block w-full text-sm text-guardian
-                            file:mr-4 file:py-2 file:px-4
-                            file:rounded-lg file:border-0
-                            file:text-sm file:font-semibold
-                            file:bg-supernova file:text-shadowforce
-                            hover:file:bg-supernova-light
-                            file:cursor-pointer cursor-pointer"
-                        />
-                      </div>
-                      
-                      {csvFile && (
-                        <div className="mb-4 p-3 bg-supernova/10 border border-supernova/30 rounded-lg">
-                          <p className="text-supernova font-jakarta font-semibold text-sm">
-                            ✅ File uploaded: {csvFile.name}
-                          </p>
-                          <p className="text-guardian font-jakarta text-xs mt-1">
-                            Size: {(csvFile.size / 1024).toFixed(1)} KB
-                          </p>
-                        </div>
-                      )}
-                      
-                      {csvError && (
-                        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                          <p className="text-red-400 font-jakarta text-sm">{csvError}</p>
-                        </div>
-                      )}
-                      
-                      <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg">
-                        <h6 className="font-jakarta font-semibold text-blue-400 text-sm mb-2">CSV Format Requirements:</h6>
-                        <ul className="text-guardian font-jakarta text-xs space-y-1">
-                          <li>• First column should contain LinkedIn URLs</li>
-                          <li>• Header row is optional (will be automatically detected)</li>
-                          <li>• Maximum {MAX_CANDIDATES_PER_SUBMISSION} URLs per file</li>
-                          <li>• File size limit: 5MB</li>
-                        </ul>
-                        <div className="mt-3 text-xs text-guardian/80">
-                          <strong>Example format:</strong><br/>
-                          <code className="bg-shadowforce-light px-2 py-1 rounded">
-                            linkedin_url<br/>
-                            https://linkedin.com/in/candidate1<br/>
-                            https://linkedin.com/in/candidate2
-                          </code>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Manual URL Entry Section */
-                    <div>
-                      {linkedinUrls.map((url, index) => (
-                        <div key={index} className="bg-shadowforce border border-guardian/20 p-6 rounded-lg">
-                          <div className="flex justify-between items-center mb-4">
-                            <h5 className="font-anton text-lg text-white-knight uppercase tracking-wide">
-                              LinkedIn URL {index + 1}
-                            </h5>
-                            {linkedinUrls.length > 1 && (
-                              <Button
-                                variant="error"
-                                size="sm"
-                                onClick={() => removeUrl(index)}
-                                className="flex items-center gap-2"
-                              >
-                                <Trash2 size={16} />
-                                REMOVE
-                              </Button>
-                            )}
-                          </div>
-                          
-                          <FormInput
-                            label="LinkedIn URL"
-                            value={url}
-                            onChange={(e) => updateUrl(index, e.target.value)}
-                            placeholder="https://linkedin.com/in/candidate-profile"
-                            hint="Paste the full LinkedIn profile URL here"
-                          />
-                          
-                          <div className="mt-4">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleTestUrl(url)}
-                              disabled={isTesting || !url.trim()}
-                              className="flex items-center gap-2"
-                            >
-                              {isTesting ? (
-                                <>
-                                  <Zap className="animate-spin" size={16} />
-                                  TESTING...
-                                </>
-                              ) : (
-                                <>
-                                  <Zap size={16} />
-                                  TEST THIS URL
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {submissionMethod === 'urls' && (
-                    <Button
-                      variant="outline"
-                      onClick={addUrlField}
-                      disabled={linkedinUrls.length >= MAX_CANDIDATES_PER_SUBMISSION}
-                      className="flex items-center gap-2"
-                    >
-                      <Plus size={18} />
-                      {linkedinUrls.length >= MAX_CANDIDATES_PER_SUBMISSION 
-                        ? `MAXIMUM ${MAX_CANDIDATES_PER_SUBMISSION} URLS REACHED`
-                        : 'ADD ANOTHER URL'
-                      }
-                    </Button>
-                  )}
-                </div>
-                
-                {error && (
-                  <div className="mb-6 p-6 bg-red-500/10 border border-red-500/30 rounded-lg">
-                    <div className="flex items-center mb-3">
-                      <AlertCircle className="text-red-400 mr-2" size={20} />
-                      <h5 className="font-anton text-lg text-red-400 uppercase tracking-wide">Submission Results</h5>
-                    </div>
-                    <pre className="text-red-400 font-jakarta text-sm leading-relaxed whitespace-pre-wrap">{error}</pre>
-                  </div>
-                )}
-                
-                {testResult && (
-                  <div className="mb-6 p-6 bg-shadowforce border border-guardian/20 rounded-lg">
-                    <h5 className="font-anton text-lg text-white-knight mb-4 uppercase tracking-wide">
-                      Apify Test Result
-                    </h5>
-                    
-                    {testResult.success ? (
-                      <div className="space-y-4">
-                        <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-                          <p className="text-green-400 font-jakarta font-semibold mb-2">✅ Success!</p>
-                          
-                          {testResult.transformedProfile && (
-                            <div className="space-y-2 text-sm">
-                              <p><span className="text-guardian">Name:</span> <span className="text-white-knight">{testResult.transformedProfile.firstName} {testResult.transformedProfile.lastName}</span></p>
-                              <p><span className="text-guardian">Headline:</span> <span className="text-white-knight">{testResult.transformedProfile.headline}</span></p>
-                              <p><span className="text-guardian">Location:</span> <span className="text-white-knight">{testResult.transformedProfile.location}</span></p>
-                              <p><span className="text-guardian">Experience Count:</span> <span className="text-white-knight">{testResult.transformedProfile.experience?.length || 0}</span></p>
-                              <p><span className="text-guardian">Skills Count:</span> <span className="text-white-knight">{testResult.transformedProfile.skills?.length || 0}</span></p>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <details className="bg-shadowforce-light border border-guardian/20 rounded-lg">
-                          <summary className="p-3 cursor-pointer text-guardian font-jakarta font-semibold">
-                            View Raw Apify Response
-                          </summary>
-                          <div className="p-3 border-t border-guardian/20">
-                            <pre className="text-xs text-guardian overflow-auto max-h-64">
-                              {JSON.stringify(testResult.rawResponse, null, 2)}
-                            </pre>
-                          </div>
-                        </details>
-                      </div>
-                    ) : (
-                      <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-                        <p className="text-red-400 font-jakarta font-semibold">❌ Test Failed</p>
-                        <p className="text-guardian text-sm mt-2">{testResult.error}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                <Button 
-                  onClick={handleComplete} 
-                  variant="success"
-                  fullWidth
-                  size="lg"
-                  isLoading={isSubmitting}
-                  className="flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Zap className="animate-spin" size={20} />
-                      SCRAPING PROFILES...
-                    </>
-                  ) : (
-                    <>
-                      <Zap size={20} />
-                      SCRAPE & SUBMIT CANDIDATES
-                    </>
-                  )}
-                </Button>
               </div>
             )}
           </div>

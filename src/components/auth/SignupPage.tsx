@@ -1,19 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Card, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { FormInput, FormSelect } from '../forms/FormInput';
 import { Zap, AlertCircle, CheckCircle } from 'lucide-react';
+import BoltIcon from '../../assets/v2.png';
 
 export const SignupPage: React.FC = () => {
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<'client' | 'sourcer'>('client');
+
+  // Pre-select sourcer if ?role=sourcer in URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const role = params.get('role');
+    if (role === 'sourcer') {
+      setSelectedRole('sourcer');
+    }
+  }, [location.search]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -42,7 +54,7 @@ export const SignupPage: React.FC = () => {
     }
 
     console.log('📝 Attempting signup with role:', selectedRole);
-    const { data, error: signUpError } = await signUp(email, password, selectedRole);
+    const { data, error: signUpError } = await signUp(email, password, selectedRole, name);
 
     if (signUpError) {
       console.error('❌ Signup error:', signUpError);
@@ -104,10 +116,17 @@ export const SignupPage: React.FC = () => {
         <CardContent className="p-8">
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
-              <div className="relative">
-                <Zap size={48} className="text-supernova fill-current" />
-                <div className="absolute inset-0 bg-supernova/30 blur-xl rounded-full"></div>
-              </div>
+              <Link to="/">
+                <div className="relative cursor-pointer">
+                  <img
+                    src={BoltIcon}
+                    alt="Lightning Bolt"
+                    className="animate-pulse"
+                    style={{ width: '60px', height: '28px', filter: 'drop-shadow(0 0 8px #FFD600)', objectFit: 'contain' }}
+                  />
+                  <div className="absolute inset-0 bg-supernova/30 blur-xl"></div>
+                </div>
+              </Link>
             </div>
             <h1 className="text-2xl font-anton text-white-knight uppercase tracking-wide mb-2">
               Create Account
@@ -125,6 +144,15 @@ export const SignupPage: React.FC = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            <FormInput
+              label="Full Name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your full name"
+              required
+            />
+
             <FormInput
               label="Email"
               type="email"
@@ -166,7 +194,7 @@ export const SignupPage: React.FC = () => {
               fullWidth
               size="lg"
               isLoading={loading}
-              disabled={!email || !password || !confirmPassword}
+              disabled={!name || !email || !password || !confirmPassword}
             >
               CREATE ACCOUNT
             </Button>

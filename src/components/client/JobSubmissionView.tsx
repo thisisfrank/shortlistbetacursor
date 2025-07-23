@@ -2,7 +2,8 @@ import React from 'react';
 import { ClientIntakeForm } from '../forms/ClientIntakeForm';
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
-import { Sparkles, Target, Zap, Users } from 'lucide-react';
+import { Sparkles, Target, Users, Zap } from 'lucide-react';
+import BoltIcon from '../../assets/v2.png';
 
 export const JobSubmissionView: React.FC = () => {
   const { user, userProfile, loading } = useAuth();
@@ -43,8 +44,13 @@ export const JobSubmissionView: React.FC = () => {
         <div className="max-w-4xl mx-auto text-center">
           <div className="flex justify-center mb-8">
             <div className="relative">
-              <Zap size={80} className="text-supernova fill-current animate-pulse" />
-              <div className="absolute inset-0 bg-supernova/30 blur-2xl rounded-full"></div>
+              <img
+                src={BoltIcon}
+                alt="Lightning Bolt"
+                className="animate-pulse"
+                style={{ width: '200px', height: '94px', filter: 'drop-shadow(0 0 16px #FFD600)', objectFit: 'contain' }}
+              />
+              <div className="absolute inset-0 bg-supernova/30 blur-2xl"></div>
             </div>
           </div>
           
@@ -60,20 +66,8 @@ export const JobSubmissionView: React.FC = () => {
             <span className="text-supernova font-bold"> 24 hours or less</span>.
           </p>
           
-          {userProfile && (
-            <div className="bg-supernova/10 border border-supernova/30 p-6 rounded-xl mb-12 max-w-2xl mx-auto">
-              <div className="flex items-center justify-center mb-3">
-                <Users className="text-supernova mr-3" size={24} />
-                <h3 className="font-anton text-xl text-supernova uppercase tracking-wide">
-                  Welcome!
-                </h3>
-              </div>
-              <p className="text-guardian font-jakarta">
-                You're logged in and ready to submit job requests. Let's find your next great hire!
-              </p>
-            </div>
-          )}
           
+          {/* Features Section */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             <div className="flex flex-col items-center p-6 bg-shadowforce-light/50 rounded-xl border border-guardian/20">
               <Target className="text-supernova mb-4" size={48} />

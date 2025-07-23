@@ -9,7 +9,7 @@ export interface AdminStats {
 }
 
 export interface SourcerPerformance {
-  sourcerName: string;
+  sourcerId: string;
   completedJobs: number;
 }
 

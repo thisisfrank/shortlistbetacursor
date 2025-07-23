@@ -5,6 +5,7 @@ import { Card, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { JobDetailModal } from '../sourcer/JobDetailModal';
 import { Search, CalendarDays, Users, Filter, Trash2, Zap, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import BoltIcon from '../../assets/v2.png';
 
 export const AdminPanel: React.FC = () => {
   const { jobs, tiers, getTierById, deleteJob, updateJob } = useData();
@@ -36,7 +37,7 @@ export const AdminPanel: React.FC = () => {
         job.title.toLowerCase().includes(searchLower) ||
         job.description.toLowerCase().includes(searchLower) ||
         (job.companyName && job.companyName.toLowerCase().includes(searchLower)) ||
-        (job.sourcerName && job.sourcerName.toLowerCase().includes(searchLower))
+        (job.sourcerId && job.sourcerId.toLowerCase().includes(searchLower))
       );
     }
     
@@ -81,8 +82,13 @@ export const AdminPanel: React.FC = () => {
         <header className="mb-12">
           <div className="flex items-center justify-center mb-6">
             <div className="relative">
-              <Zap size={60} className="text-supernova fill-current animate-pulse" />
-              <div className="absolute inset-0 bg-supernova/30 blur-xl rounded-full"></div>
+              <img
+                src={BoltIcon}
+                alt="Lightning Bolt"
+                className="animate-pulse"
+                style={{ width: '120px', height: '56px', filter: 'drop-shadow(0 0 10px #FFD600)', objectFit: 'contain' }}
+              />
+              <div className="absolute inset-0 bg-supernova/30 blur-xl"></div>
             </div>
           </div>
           <h1 className="text-5xl md:text-6xl font-anton text-white-knight mb-4 text-center uppercase tracking-wide">
@@ -232,7 +238,7 @@ export const AdminPanel: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-white-knight font-jakarta">
-                              {job.sourcerName || 'Unassigned'}
+                              {job.sourcerId || 'Unassigned'}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">

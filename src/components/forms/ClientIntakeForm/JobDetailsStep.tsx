@@ -30,9 +30,10 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
   };
 
   const seniorityOptions = [
-    { value: '1-3 years', label: '1-3 years experience' },
-    { value: '4-7 years', label: '4-7 years experience' },
-    { value: '8-10+ years', label: '8-10+ years experience' }
+    { value: '1-3 years', label: '1-3 years' },
+    { value: '4-6 years', label: '4-6 years' },
+    { value: '7-10 years', label: '7-10 years' },
+    { value: '10+ years', label: '10+ years' }
   ];
 
   const workArrangementOptions = [

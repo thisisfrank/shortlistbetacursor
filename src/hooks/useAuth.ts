@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 export interface UserProfile {
   id: string;
   email: string;
+  name: string;
   role: 'client' | 'sourcer' | 'admin';
   tierId: string;
   availableCredits: number;
@@ -19,6 +20,7 @@ function mapDbProfileToUserProfile(profile: any): UserProfile {
   return {
     id: profile.id,
     email: profile.email,
+    name: profile.name || '',
     role: profile.role,
     tierId: profile.tier_id || 'tier-free',
     availableCredits: profile.available_credits ?? 0,
@@ -194,7 +196,7 @@ export const useAuth = () => {
     }
   };
 
-  const signUp = async (email: string, password: string, role: 'client' | 'sourcer' = 'client') => {
+  const signUp = async (email: string, password: string, role: 'client' | 'sourcer' = 'client', name: string = '') => {
     console.log('📝 Attempting signup with:', { email, passwordLength: password.length, role });
     setLoading(true);
     
@@ -216,10 +218,10 @@ export const useAuth = () => {
           // Wait a moment for the trigger to create the profile
           await new Promise(resolve => setTimeout(resolve, 1000));
           
-          // Update user profile with selected role (the profile is auto-created by trigger)
+          // Update user profile with selected role and name (the profile is auto-created by trigger)
           const { error: profileError } = await supabase
             .from('user_profiles')
-            .update({ role })
+            .update({ role, name })
             .eq('id', data.user.id);
           
           if (profileError) {
@@ -246,49 +248,41 @@ export const useAuth = () => {
 
   const signOut = async () => {
     console.log('🚪 Starting sign out process...');
-    
     // Set sign-out loading state
     setSignOutLoading(true);
-    
     try {
       // Clear local storage first
-      localStorage.removeItem('sourcerName');
+      localStorage.removeItem('sourcerId');
       localStorage.removeItem('savedSourcers');
-      
       console.log('🚪 Calling Supabase signOut...');
       const { error } = await supabase.auth.signOut();
-      
       if (error) {
         console.error('❌ Supabase signOut error:', error);
         throw error;
       }
-      
       console.log('✅ Supabase signOut successful');
-      
       // Clear local state
       setUser(null);
       setUserProfile(null);
       setLoading(false);
-      
       console.log('✅ Local state cleared');
-      
+      // Wait 1 second to show the spinner, then reload
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000); // 1s delay for smoother UX
       return { error: null };
     } catch (error) {
       console.error('💥 Sign out error:', error);
-      
       // Even if Supabase fails, clear local state to prevent stuck loading
       setUser(null);
       setUserProfile(null);
       setLoading(false);
-      
+      setSignOutLoading(false);
       return { 
         error: { 
           message: error instanceof Error ? error.message : 'Error signing out' 
         } 
       };
-    } finally {
-      console.log('🚪 Sign out process complete, clearing loading state');
-      setSignOutLoading(false);
     }
   };
 

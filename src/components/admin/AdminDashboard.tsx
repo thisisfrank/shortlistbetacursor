@@ -7,18 +7,34 @@ import { SourcerManagement } from './SourcerManagement';
 import { UserManagement } from './UserManagement';
 import { SystemControls } from './SystemControls';
 import { AnalyticsDashboard } from './AnalyticsDashboard';
-import { Zap, BarChart3, Users, Briefcase, Settings, TrendingUp, Shield } from 'lucide-react';
+import { BarChart3, Users, Briefcase, Settings, TrendingUp, Shield } from 'lucide-react';
 import { Button } from '../ui/Button';
+import BoltIcon from '../../assets/v2.png';
 
 export const AdminDashboard: React.FC = () => {
-  const { jobs, clients, candidates } = useData();
+  const { jobs, candidates, getCandidatesByJob } = useData();
   const [activeTab, setActiveTab] = useState<'analytics' | 'jobs' | 'clients' | 'sourcers' | 'users'>('analytics');
+  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
+
+  // Calculate date range for filtering
+  const getDateRange = () => {
+    const now = new Date();
+    const ranges = {
+      '7d': new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+      '30d': new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
+      '90d': new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000),
+      'all': new Date(0)
+    };
+    return ranges[timeRange];
+  };
+  const startDate = getDateRange();
+  const filteredJobs = jobs.filter(job => new Date(job.createdAt) >= startDate);
 
   const tabs = [
     { id: 'analytics', label: 'ANALYTICS', icon: TrendingUp },
     { id: 'jobs', label: 'JOBS', icon: Briefcase },
     { id: 'clients', label: 'CLIENTS', icon: Users },
-    { id: 'sourcers', label: 'SOURCERS', icon: Zap },
+    { id: 'sourcers', label: 'SOURCERS', icon: BarChart3 },
     { id: 'users', label: 'USERS', icon: Shield },
   ] as const;
 
@@ -29,8 +45,13 @@ export const AdminDashboard: React.FC = () => {
         <header className="mb-12">
           <div className="flex items-center justify-center mb-6">
             <div className="relative">
-              <Zap size={60} className="text-supernova fill-current animate-pulse" />
-              <div className="absolute inset-0 bg-supernova/30 blur-xl rounded-full"></div>
+              <img
+                src={BoltIcon}
+                alt="Lightning Bolt"
+                className="animate-pulse"
+                style={{ width: '120px', height: '56px', filter: 'drop-shadow(0 0 10px #FFD600)', objectFit: 'contain' }}
+              />
+              <div className="absolute inset-0 bg-supernova/30 blur-xl"></div>
             </div>
           </div>
           <h1 className="text-5xl md:text-6xl font-anton text-white-knight mb-4 text-center uppercase tracking-wide">
@@ -65,8 +86,27 @@ export const AdminDashboard: React.FC = () => {
         {/* Tab Content */}
         {activeTab === 'analytics' && (
           <div className="space-y-8">
-            <AdminStats jobs={jobs} clients={clients} />
-            <AnalyticsDashboard />
+            {/* Time Range Selector */}
+            <div className="flex justify-center">
+              <div className="bg-shadowforce rounded-lg p-2 border border-guardian/20">
+                <div className="flex space-x-1">
+                  {(['7d', '30d', '90d', 'all'] as const).map(range => (
+                    <Button
+                      key={range}
+                      variant={timeRange === range ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setTimeRange(range)}
+                      className="text-xs"
+                    >
+                      {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : range === '90d' ? '90 Days' : 'All Time'}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {/* Job Status Boxes */}
+            <AdminStats jobs={filteredJobs} />
+            <AnalyticsDashboard jobs={filteredJobs} candidates={candidates} getCandidatesByJob={getCandidatesByJob} timeRange={timeRange} setTimeRange={setTimeRange} />
           </div>
         )}
         {activeTab === 'jobs' && <JobManagement />}

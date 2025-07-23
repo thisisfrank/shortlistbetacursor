@@ -34,7 +34,7 @@ export const useJobTimer = (jobCreatedAt: Date): JobTimer => {
   const isCritical = timeRemaining <= (30 * 60 * 1000); // 30 minutes
 
   const formattedTime = isExpired 
-    ? 'EXPIRED' 
+    ? 'OVERDUE' 
     : `${hoursRemaining.toString().padStart(2, '0')}:${minutesRemaining.toString().padStart(2, '0')}:${secondsRemaining.toString().padStart(2, '0')}`;
 
   return {

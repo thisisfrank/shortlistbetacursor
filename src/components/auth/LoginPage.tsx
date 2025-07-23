@@ -5,6 +5,7 @@ import { Card, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { FormInput } from '../forms/FormInput';
 import { Zap, AlertCircle } from 'lucide-react';
+import BoltIcon from '../../assets/v2.png';
 
 export const LoginPage: React.FC = () => {
   const { signIn } = useAuth();
@@ -69,10 +70,17 @@ export const LoginPage: React.FC = () => {
         <CardContent className="p-8">
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
-              <div className="relative">
-                <Zap size={48} className="text-supernova fill-current" />
-                <div className="absolute inset-0 bg-supernova/30 blur-xl rounded-full"></div>
-              </div>
+              <Link to="/">
+                <div className="relative cursor-pointer">
+                  <img
+                    src={BoltIcon}
+                    alt="Lightning Bolt"
+                    className="animate-pulse"
+                    style={{ width: '60px', height: '28px', filter: 'drop-shadow(0 0 8px #FFD600)', objectFit: 'contain' }}
+                  />
+                  <div className="absolute inset-0 bg-supernova/30 blur-xl"></div>
+                </div>
+              </Link>
             </div>
             <h1 className="text-2xl font-anton text-white-knight uppercase tracking-wide mb-2">
               Welcome Back

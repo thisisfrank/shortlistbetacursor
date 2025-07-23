@@ -72,7 +72,7 @@ export const JobCard: React.FC<JobCardProps> = ({
             <h3 className="text-xl font-anton text-white-knight mb-2 uppercase tracking-wide line-clamp-2">{job.title}</h3>
             <div className="flex items-center gap-3 mb-3">
               <Badge variant={getStatusBadgeVariant()}>{job.status}</Badge>
-              {job.status === 'Unclaimed' && (
+              {(job.status === 'Unclaimed' || job.status === 'Claimed') && (
                 <JobTimer jobCreatedAt={job.createdAt} size="sm" />
               )}
             </div>
@@ -106,11 +106,11 @@ export const JobCard: React.FC<JobCardProps> = ({
           
           {/* Progress indicator for claimed jobs */}
           {job.status === 'Claimed' && (
-            <div className="bg-blue-500/10 border border-blue-500/30 p-3 rounded-lg">
+            <div className="bg-green-500/10 border border-green-500/30 p-3 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
-                  <Target size={14} className="mr-2 text-blue-400" />
-                  <span className="text-sm font-jakarta font-semibold text-blue-400">Progress</span>
+                  <Target size={14} className="mr-2 text-green-400" />
+                  <span className="text-sm font-jakarta font-semibold text-green-400">Accepted Candidates</span>
                 </div>
                 <span className="text-sm font-anton text-white-knight">
                   {currentCandidates.length}/{job.candidatesRequested}
@@ -118,23 +118,21 @@ export const JobCard: React.FC<JobCardProps> = ({
               </div>
               <div className="w-full bg-shadowforce rounded-full h-2 mb-1">
                 <div 
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    isComplete ? 'bg-green-400' : 'bg-blue-400'
-                  }`}
+                  className={`h-2 rounded-full transition-all duration-300 bg-green-400`}
                   style={{ width: `${Math.min(progressPercentage, 100)}%` }}
                 ></div>
               </div>
-              <div className="text-xs text-guardian font-jakarta">
+              <div className="text-xs text-green-400 font-jakarta">
                 {isComplete ? 'Ready to complete!' : `${progressPercentage}% complete`}
               </div>
             </div>
           )}
         </div>
         
-        {job.sourcerName && (
+        {job.sourcerId && (
           <div className="bg-supernova/10 border border-supernova/30 p-3 rounded-lg text-sm mb-4">
             <span className="font-jakarta font-semibold text-supernova">Sourcer:</span>{' '}
-            <span className="text-white-knight font-jakarta font-bold">{job.sourcerName}</span>
+            <span className="text-white-knight font-jakarta font-bold">{job.sourcerId}</span>
           </div>
         )}
       </CardContent>
@@ -161,7 +159,7 @@ export const JobCard: React.FC<JobCardProps> = ({
               </Button>
             )}
             
-            {job.status === 'Claimed' && job.sourcerName && onComplete && isComplete && (
+            {job.status === 'Claimed' && job.sourcerId && onComplete && isComplete && (
               <Button 
                 variant="success" 
                 size="sm" 
@@ -172,7 +170,7 @@ export const JobCard: React.FC<JobCardProps> = ({
               </Button>
             )}
             
-            {job.status === 'Claimed' && job.sourcerName && onComplete && !isComplete && (
+            {job.status === 'Claimed' && job.sourcerId && onComplete && !isComplete && (
               <Button 
                 variant="outline" 
                 size="sm" 

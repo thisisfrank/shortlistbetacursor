@@ -1,6 +1,7 @@
 export interface UserProfile {
   id: string;
   email: string;
+  name: string;
   role: 'client' | 'sourcer' | 'admin';
   // Subscription fields moved from Client
   tierId: string;
@@ -35,7 +36,7 @@ export interface Job {
   salaryRangeMax: number;
   keySellingPoints: string[];
   status: 'Unclaimed' | 'Claimed' | 'Completed';
-  sourcerName: string | null;
+  sourcerId?: string | null; // UUID of the sourcer who claimed the job (optional for client job submission)
   completionLink: string | null;
   candidatesRequested: number;
   createdAt: Date;
