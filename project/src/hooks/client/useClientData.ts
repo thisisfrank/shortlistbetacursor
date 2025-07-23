@@ -55,7 +55,7 @@ export const useClientData = () => {
   };
 
   // Actions
-  const submitJob = (jobData: Omit<Job, 'id' | 'status' | 'sourcerName' | 'completionLink' | 'createdAt' | 'updatedAt' | 'userId'>) => {
+  const submitJob = (jobData: Omit<Job, 'id' | 'status' | 'sourcerId' | 'completionLink' | 'createdAt' | 'updatedAt' | 'userId'>) => {
     if (!userProfile || userProfile.jobsRemaining <= 0) {
       throw new Error('No job submissions remaining for this billing period');
     }

@@ -11,6 +11,7 @@ export const SignupPage: React.FC = () => {
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -53,7 +54,7 @@ export const SignupPage: React.FC = () => {
     }
 
     console.log('📝 Attempting signup with role:', selectedRole);
-    const { data, error: signUpError } = await signUp(email, password, selectedRole);
+    const { data, error: signUpError } = await signUp(email, password, selectedRole, name);
 
     if (signUpError) {
       console.error('❌ Signup error:', signUpError);
@@ -144,6 +145,15 @@ export const SignupPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <FormInput
+              label="Full Name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your full name"
+              required
+            />
+
+            <FormInput
               label="Email"
               type="email"
               value={email}
@@ -184,7 +194,7 @@ export const SignupPage: React.FC = () => {
               fullWidth
               size="lg"
               isLoading={loading}
-              disabled={!email || !password || !confirmPassword}
+              disabled={!name || !email || !password || !confirmPassword}
             >
               CREATE ACCOUNT
             </Button>

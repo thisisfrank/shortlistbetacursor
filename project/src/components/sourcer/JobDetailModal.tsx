@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Job } from '../../types';
 import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
 import { JobTimer } from '../ui/JobTimer';
 import { testApifyResponse } from '../../services/apifyService';
 import { Button } from '../ui/Button';
@@ -12,7 +13,7 @@ import BoltIcon from '../../assets/v2.png';
 interface JobDetailModalProps {
   job: Job;
   onClose: () => void;
-  onClaim?: (jobId: string, sourcerName: string) => void;
+  onClaim?: (jobId: string) => void;
   onComplete?: (jobId: string) => void;
 }
 
@@ -23,14 +24,10 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   onComplete
 }) => {
   const { addCandidatesFromLinkedIn, getCandidatesByJob } = useData();
-  const [sourcerName, setSourcerName] = useState(() => {
-    return localStorage.getItem('sourcerName') || '';
-  });
-  const [isNewSourcer, setIsNewSourcer] = useState(false);
-  const [savedSourcers, setSavedSourcers] = useState<string[]>(() => {
-    const saved = localStorage.getItem('savedSourcers');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const { userProfile } = useAuth();
+  
+  // Use the authenticated user's name from their profile
+  const sourcerName = userProfile?.name || 'Unknown Sourcer';
   const [linkedinUrls, setLinkedinUrls] = useState(['']);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,10 +52,8 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   };
 
   const handleClaim = async () => {
-    const finalSourcerName = isNewSourcer ? sourcerName : sourcerName;
-    
-    if (!finalSourcerName.trim()) {
-      setError('Please enter your name');
+    if (!userProfile) {
+      setError('You must be logged in to claim jobs');
       return;
     }
     
@@ -66,15 +61,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Save sourcer name to localStorage and saved list
-    localStorage.setItem('sourcerName', finalSourcerName);
-    
-    // Add to saved sourcers list if not already there
-    const updatedSourcers = [...new Set([...savedSourcers, finalSourcerName])];
-    localStorage.setItem('savedSourcers', JSON.stringify(updatedSourcers));
-    setSavedSourcers(updatedSourcers);
-    
-    onClaim && onClaim(job.id, finalSourcerName);
+    onClaim && onClaim(job.id);
     setIsSubmitting(false);
     onClose();
   };

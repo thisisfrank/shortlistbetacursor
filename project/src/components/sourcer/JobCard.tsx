@@ -129,10 +129,10 @@ export const JobCard: React.FC<JobCardProps> = ({
           )}
         </div>
         
-        {job.sourcerName && (
+        {job.sourcerId && (
           <div className="bg-supernova/10 border border-supernova/30 p-3 rounded-lg text-sm mb-4">
             <span className="font-jakarta font-semibold text-supernova">Sourcer:</span>{' '}
-            <span className="text-white-knight font-jakarta font-bold">{job.sourcerName}</span>
+            <span className="text-white-knight font-jakarta font-bold">{job.sourcerId}</span>
           </div>
         )}
       </CardContent>
@@ -159,7 +159,7 @@ export const JobCard: React.FC<JobCardProps> = ({
               </Button>
             )}
             
-            {job.status === 'Claimed' && job.sourcerName && onComplete && isComplete && (
+            {job.status === 'Claimed' && job.sourcerId && onComplete && isComplete && (
               <Button 
                 variant="success" 
                 size="sm" 
@@ -170,7 +170,7 @@ export const JobCard: React.FC<JobCardProps> = ({
               </Button>
             )}
             
-            {job.status === 'Claimed' && job.sourcerName && onComplete && !isComplete && (
+            {job.status === 'Claimed' && job.sourcerId && onComplete && !isComplete && (
               <Button 
                 variant="outline" 
                 size="sm" 

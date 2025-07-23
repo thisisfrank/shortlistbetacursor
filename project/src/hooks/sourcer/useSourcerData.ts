@@ -22,16 +22,16 @@ export const useSourcerData = () => {
   };
 
   const getMyClaimedJobs = (): Job[] => {
-    const sourcerName = getSourcerName();
+    const sourcerId = userProfile.id;
     return dataContext.jobs.filter(job => 
-      job.status === 'Claimed' && job.sourcerName === sourcerName
+      job.status === 'Claimed' && job.sourcerId === sourcerId
     );
   };
 
   const getMyCompletedJobs = (): Job[] => {
-    const sourcerName = getSourcerName();
+    const sourcerId = userProfile.id;
     return dataContext.jobs.filter(job => 
-      job.status === 'Completed' && job.sourcerName === sourcerName
+      job.status === 'Completed' && job.sourcerId === sourcerId
     );
   };
 
@@ -47,13 +47,13 @@ export const useSourcerData = () => {
 
   const canCompleteJob = (jobId: string): boolean => {
     const job = dataContext.getJobById(jobId);
-    const sourcerName = getSourcerName();
-    return job ? (job.status === 'Claimed' && job.sourcerName === sourcerName) : false;
+    const sourcerId = userProfile.id;
+    return job ? (job.status === 'Claimed' && job.sourcerId === sourcerId) : false;
   };
 
   // Sourcer-specific computed data
   const getSourcerStats = () => {
-    const sourcerName = getSourcerName();
+    const sourcerId = userProfile.id;
     const allJobs = dataContext.jobs;
     
     return {
@@ -64,22 +64,22 @@ export const useSourcerData = () => {
       successRate: getMyCompletedJobs().length > 0 
         ? Math.round((getMyCompletedJobs().length / (getMyClaimedJobs().length + getMyCompletedJobs().length)) * 100)
         : 0,
-      sourcerName,
+      sourcerName: userProfile.email?.split('@')[0] || 'Unknown Sourcer',
     };
   };
 
   // Sourcer-specific actions (with permission checks)
-  const claimJob = (jobId: string, sourcerName: string) => {
+  const claimJob = (jobId: string) => {
     if (!canClaimJob(jobId)) {
       throw new Error('Cannot claim this job - it may already be claimed or completed');
     }
 
     // Store sourcer name for future use
-    localStorage.setItem('sourcerName', sourcerName);
+    localStorage.setItem('sourcerName', userProfile.id);
     
     return dataContext.updateJob(jobId, {
       status: 'Claimed',
-      sourcerName: sourcerName
+      sourcerId: userProfile.id
     });
   };
 
@@ -129,7 +129,7 @@ export const useSourcerData = () => {
 
   return {
     // Sourcer identity
-    sourcerName: getSourcerName(),
+    sourcerName: userProfile.email?.split('@')[0] || 'Unknown Sourcer',
     
     // Filtered data access
     availableJobs: getAvailableJobs(),

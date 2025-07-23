@@ -10,7 +10,7 @@ export interface SourcerStats {
 }
 
 export interface SourcerActions {
-  claimJob: (jobId: string, sourcerName: string) => Job | null;
+  claimJob: (jobId: string, sourcerId: string) => Job | null;
   completeJob: (jobId: string) => Job | null;
   submitCandidates: (jobId: string, linkedinUrls: string[]) => Promise<{ success: boolean; error?: string }>;
   canClaimJob: (jobId: string) => boolean;

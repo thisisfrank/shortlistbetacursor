@@ -904,10 +904,10 @@ export const CandidatesView: React.FC = () => {
                             <span className="font-jakarta">Posted {formatDate(job.createdAt)}</span>
                           </div>
                           
-                          {job.sourcerName && (
+                          {job.sourcerId && (
                             <div className="flex items-center text-sm text-guardian">
                               <User size={14} className="mr-3 text-supernova" />
-                              <span className="font-jakarta">Sourcer: {job.sourcerName}</span>
+                              <span className="font-jakarta">Sourcer: {job.sourcerId}</span>
                             </div>
                           )}
                         </div>

@@ -3,21 +3,20 @@ import { Job } from '../../types';
 import { JobCard } from './JobCard';
 import { JobDetailModal } from './JobDetailModal';
 import { useData } from '../../context/DataContext';
+import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/Button';
 import { Search, ClipboardList, Check, Clock, Zap, Target, Users } from 'lucide-react';
 
-export const SourcerDashboard: React.FC = () => {
+const SourcerDashboard: React.FC = () => {
   const { jobs, updateJob } = useData();
+  const { userProfile } = useAuth();
   const [filter, setFilter] = useState<'all' | 'unclaimed' | 'claimed' | 'completed'>('unclaimed');
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const [sourcerName, setSourcerName] = useState(() => {
-    return localStorage.getItem('sourcerName') || '';
-  });
-  const [savedSourcers] = useState<string[]>(() => {
-    const saved = localStorage.getItem('savedSourcers');
-    return saved ? JSON.parse(saved) : [];
-  });
+  
+  // Use the authenticated user's name and ID from their profile
+  const sourcerName = userProfile?.name || 'Unknown Sourcer';
+  const sourcerId = userProfile?.id || '';
 
   // On mount, check for a job to open from alerts
   useEffect(() => {
@@ -88,7 +87,7 @@ export const SourcerDashboard: React.FC = () => {
   const unclaimedCount = jobs.filter(job => job.status === 'Unclaimed').length;
   const claimedCount = jobs.filter(job => job.status === 'Claimed').length;
   const completedCount = jobs.filter(job => job.status === 'Completed').length;
-  const myJobsCount = jobs.filter(job => job.sourcerName === sourcerName).length;
+  const myJobsCount = jobs.filter(job => job.sourcerId === sourcerName).length;
 
   // Close job detail modal
   const handleCloseModal = () => {
@@ -98,21 +97,17 @@ export const SourcerDashboard: React.FC = () => {
 
 
   // Claim a job
-  const handleClaimJob = (jobId: string, name: string) => {
-    // Store sourcer name in localStorage for future use
-    localStorage.setItem('sourcerName', name);
+  const handleClaimJob = (jobId: string) => {
+    if (!userProfile) {
+      alert('You must be logged in to claim jobs.');
+      return;
+    }
     
-    const currentSaved = JSON.parse(localStorage.getItem('savedSourcers') || '[]');
-    const updatedSourcers = [...new Set([...currentSaved, name])];
-    localStorage.setItem('savedSourcers', JSON.stringify(updatedSourcers));
-    
-    setSourcerName(name);
-    
-    // Update job status to claimed
+    // Update job status to claimed using the user's actual name
     if (updateJob) {
       const result = updateJob(jobId, {
         status: 'Claimed',
-        sourcerName: name
+        sourcerId: sourcerName  // Use the user's actual name from their profile
       });
       if (result && typeof (result as any).catch === 'function') {
         (result as any).catch((error: any) => {
@@ -261,11 +256,9 @@ export const SourcerDashboard: React.FC = () => {
               <p className="text-supernova font-jakarta font-semibold">
                 Sourcing as: <span className="font-anton text-white-knight text-lg">{sourcerName.toUpperCase()}</span>
               </p>
-              {savedSourcers.length > 1 && (
-                <p className="text-guardian font-jakarta text-sm mt-1">
-                  {savedSourcers.length - 1} other saved sourcer name{savedSourcers.length > 2 ? 's' : ''} available
-                </p>
-              )}
+              <p className="text-guardian font-jakarta text-sm mt-1">
+                Logged in as {userProfile?.email}
+              </p>
             </div>
           )}
           
@@ -286,7 +279,7 @@ export const SourcerDashboard: React.FC = () => {
                   onView={(jobId) => setSelectedJobId(jobId)}
                   onClaim={job.status === 'Unclaimed' ? (jobId) => setSelectedJobId(jobId) : undefined}
                   onComplete={
-                    job.status === 'Claimed' && job.sourcerName === sourcerName 
+                    job.status === 'Claimed' && job.sourcerId === sourcerName 
                       ? (jobId) => setSelectedJobId(jobId) 
                       : undefined
                   }
@@ -311,3 +304,5 @@ export const SourcerDashboard: React.FC = () => {
     </div>
   );
 };
+
+export default SourcerDashboard;

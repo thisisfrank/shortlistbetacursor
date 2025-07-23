@@ -37,7 +37,7 @@ export const AdminPanel: React.FC = () => {
         job.title.toLowerCase().includes(searchLower) ||
         job.description.toLowerCase().includes(searchLower) ||
         (job.companyName && job.companyName.toLowerCase().includes(searchLower)) ||
-        (job.sourcerName && job.sourcerName.toLowerCase().includes(searchLower))
+        (job.sourcerId && job.sourcerId.toLowerCase().includes(searchLower))
       );
     }
     
@@ -238,7 +238,7 @@ export const AdminPanel: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-white-knight font-jakarta">
-                              {job.sourcerName || 'Unassigned'}
+                              {job.sourcerId || 'Unassigned'}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">

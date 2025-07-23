@@ -112,6 +112,27 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   }, [user]);
 
+  // Load real tiers from Supabase
+  useEffect(() => {
+    const loadTiers = async () => {
+      const { data: tiers, error } = await supabase.from('tiers').select('*');
+      if (tiers && !error) {
+        setData(prev => ({
+          ...prev,
+          tiers: tiers.map((t: any) => ({
+            id: t.id || '',
+            name: t.name || '',
+            monthlyJobAllotment: t.monthly_job_allotment,
+            monthlyCandidateAllotment: t.monthly_candidate_allotment,
+            includesCompanyEmails: t.includes_company_emails,
+            createdAt: t.created_at ? new Date(t.created_at) : new Date(),
+          })),
+        }));
+      }
+    };
+    loadTiers();
+  }, [user]);
+
   const loadUserData = async (userEmail: string) => {
     try {
       console.log('📥 Loading user data from Supabase for:', userEmail);
@@ -199,30 +220,30 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
 
       // Update state with loaded data
-      const loadedJobs = jobsData.map(j => ({
-        id: j.id,
-        userId: j.user_id, // Map database user_id to frontend userId
-        userEmail: j.user_email, // Add user_email to the mapping
-        companyName: j.company_name,
-        title: j.title,
-        description: j.description,
-        seniorityLevel: j.seniority_level,
-        workArrangement: j.work_arrangement,
-        location: j.location,
-        salaryRangeMin: j.salary_range_min,
-        salaryRangeMax: j.salary_range_max,
-        keySellingPoints: j.key_selling_points,
-        status: j.status,
-        sourcerName: j.sourcer_name,
-        completionLink: j.completion_link,
-        candidatesRequested: j.candidates_requested,
+      const loadedJobs = jobsData.map((j: any) => ({
+        id: j.id || '',
+        userId: j.user_id || '',
+        userEmail: j.user_email || '',
+        companyName: j.company_name || '',
+        title: j.title || '',
+        description: j.description || '',
+        seniorityLevel: j.seniority_level || '',
+        workArrangement: j.work_arrangement || '',
+        location: j.location || '',
+        salaryRangeMin: j.salary_range_min ?? 0,
+        salaryRangeMax: j.salary_range_max ?? 0,
+        keySellingPoints: j.key_selling_points || [],
+        status: j.status || '',
+        sourcerId: j.sourcer_name || null,
+        completionLink: j.completion_link || null,
+        candidatesRequested: j.candidates_requested ?? 0,
         createdAt: j.created_at ? new Date(j.created_at) : new Date(),
-        updatedAt: j.updated_at ? new Date(j.updated_at) : new Date()
+        updatedAt: j.updated_at ? new Date(j.updated_at) : new Date(),
       }));
 
-      const loadedCandidates = candidatesData.map(c => ({
+      const loadedCandidates = candidatesData.map((c: any) => ({
         id: c.id,
-        jobId: c.job_id,
+        jobId: c.job_id || '',
         firstName: c.first_name,
         lastName: c.last_name,
         headline: c.headline,
@@ -265,19 +286,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             id: crypto.randomUUID(),
             userId: user?.id || null,
             userEmail: user?.email || null, // Add userEmail for local storage
-            companyName: jobData.companyName,
-            title: jobData.title,
-            description: jobData.description,
-            seniorityLevel: jobData.seniorityLevel,
-            workArrangement: jobData.workArrangement,
-            location: jobData.location,
-            salaryRangeMin: jobData.salaryRangeMin,
-            salaryRangeMax: jobData.salaryRangeMax,
-            keySellingPoints: jobData.keySellingPoints,
+            companyName: jobData.companyName || '',
+            title: jobData.title || '',
+            description: jobData.description || '',
+            seniorityLevel: jobData.seniorityLevel || '',
+            workArrangement: jobData.workArrangement || '',
+            location: jobData.location || '',
+            salaryRangeMin: jobData.salaryRangeMin ?? 0,
+            salaryRangeMax: jobData.salaryRangeMax ?? 0,
+            keySellingPoints: jobData.keySellingPoints || [],
             status: 'Unclaimed',
-            sourcerName: null,
+            sourcerId: null,
             completionLink: null,
-            candidatesRequested: jobData.candidatesRequested,
+            candidatesRequested: jobData.candidatesRequested ?? 0,
             createdAt: new Date(),
             updatedAt: new Date()
           };
@@ -299,15 +320,15 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           const jobInsert: any = {
             user_id: user?.id || null,
             user_email: user?.email || null,
-            title: jobData.title,
-            description: jobData.description,
-            seniority_level: jobData.seniorityLevel,
-            work_arrangement: jobData.workArrangement,
-            location: jobData.location,
-            salary_range_min: jobData.salaryRangeMin,
-            salary_range_max: jobData.salaryRangeMax,
-            key_selling_points: jobData.keySellingPoints,
-            candidates_requested: jobData.candidatesRequested,
+            title: jobData.title || '',
+            description: jobData.description || '',
+            seniority_level: jobData.seniorityLevel || '',
+            work_arrangement: jobData.workArrangement || '',
+            location: jobData.location || '',
+            salary_range_min: jobData.salaryRangeMin ?? 0,
+            salary_range_max: jobData.salaryRangeMax ?? 0,
+            key_selling_points: jobData.keySellingPoints || [],
+            candidates_requested: jobData.candidatesRequested ?? 0,
             status: 'Unclaimed'
           };
 
@@ -338,22 +359,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           console.log('✅ Job inserted successfully:', insertedJob);
 
           const newJob: Job = {
-            id: insertedJob.id,
-            userId: insertedJob.user_id,
-            userEmail: insertedJob.user_email,
-            companyName: insertedJob.company_name || jobData.companyName,
-            title: insertedJob.title,
-            description: insertedJob.description,
-            seniorityLevel: insertedJob.seniority_level,
-            workArrangement: insertedJob.work_arrangement,
-            location: insertedJob.location,
-            salaryRangeMin: insertedJob.salary_range_min,
-            salaryRangeMax: insertedJob.salary_range_max,
-            keySellingPoints: insertedJob.key_selling_points,
-            status: insertedJob.status,
-            sourcerName: insertedJob.sourcer_name,
-            completionLink: insertedJob.completion_link,
-            candidatesRequested: insertedJob.candidates_requested,
+            id: insertedJob.id || '',
+            userId: insertedJob.user_id || '',
+            userEmail: insertedJob.user_email || '',
+            companyName: insertedJob.company_name || jobData.companyName || '',
+            title: insertedJob.title || '',
+            description: insertedJob.description || '',
+            seniorityLevel: insertedJob.seniority_level || '',
+            workArrangement: insertedJob.work_arrangement || '',
+            location: insertedJob.location || '',
+            salaryRangeMin: insertedJob.salary_range_min ?? 0,
+            salaryRangeMax: insertedJob.salary_range_max ?? 0,
+            keySellingPoints: insertedJob.key_selling_points || [],
+            status: insertedJob.status || '',
+            sourcerId: insertedJob.sourcer_name || null,
+            completionLink: insertedJob.completion_link || null,
+            candidatesRequested: insertedJob.candidates_requested ?? 0,
             createdAt: new Date(insertedJob.created_at),
             updatedAt: new Date(insertedJob.updated_at)
           };
@@ -373,19 +394,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             id: crypto.randomUUID(),
             userId: user?.id || null,
             userEmail: user?.email || null, // Add userEmail for local storage
-            companyName: jobData.companyName,
-            title: jobData.title,
-            description: jobData.description,
-            seniorityLevel: jobData.seniorityLevel,
-            workArrangement: jobData.workArrangement,
-            location: jobData.location,
-            salaryRangeMin: jobData.salaryRangeMin,
-            salaryRangeMax: jobData.salaryRangeMax,
-            keySellingPoints: jobData.keySellingPoints,
+            companyName: jobData.companyName || '',
+            title: jobData.title || '',
+            description: jobData.description || '',
+            seniorityLevel: jobData.seniorityLevel || '',
+            workArrangement: jobData.workArrangement || '',
+            location: jobData.location || '',
+            salaryRangeMin: jobData.salaryRangeMin ?? 0,
+            salaryRangeMax: jobData.salaryRangeMax ?? 0,
+            keySellingPoints: jobData.keySellingPoints || [],
             status: 'Unclaimed',
-            sourcerName: null,
+            sourcerId: null,
             completionLink: null,
-            candidatesRequested: jobData.candidatesRequested,
+            candidatesRequested: jobData.candidatesRequested ?? 0,
             createdAt: new Date(),
             updatedAt: new Date()
           };
@@ -410,16 +431,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return new Promise<Candidate>(async (resolve, reject) => {
       try {
         const candidateInsert = {
-          job_id: candidateData.jobId,
-          first_name: candidateData.firstName,
-          last_name: candidateData.lastName,
-          linkedin_url: candidateData.linkedinUrl,
-          headline: candidateData.headline,
-          location: candidateData.location,
-          experience: candidateData.experience,
-          education: candidateData.education,
-          skills: candidateData.skills,
-          summary: candidateData.summary
+          job_id: candidateData.jobId || '',
+          first_name: candidateData.firstName || '',
+          last_name: candidateData.lastName || '',
+          linkedin_url: candidateData.linkedinUrl || '',
+          headline: candidateData.headline || '',
+          location: candidateData.location || '',
+          experience: candidateData.experience || [],
+          education: candidateData.education || [],
+          skills: candidateData.skills || [],
+          summary: candidateData.summary || ''
         };
 
         const { data: insertedCandidate, error } = await supabase
@@ -434,17 +455,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         }
 
         const newCandidate: Candidate = {
-          id: insertedCandidate.id,
-          jobId: insertedCandidate.job_id,
-          firstName: insertedCandidate.first_name,
-          lastName: insertedCandidate.last_name,
-          linkedinUrl: insertedCandidate.linkedin_url,
-          headline: insertedCandidate.headline,
-          location: insertedCandidate.location,
-          experience: insertedCandidate.experience,
-          education: insertedCandidate.education,
-          skills: insertedCandidate.skills,
-          summary: insertedCandidate.summary,
+          id: insertedCandidate.id || '',
+          jobId: insertedCandidate.job_id || '',
+          firstName: insertedCandidate.first_name || '',
+          lastName: insertedCandidate.last_name || '',
+          linkedinUrl: insertedCandidate.linkedin_url || '',
+          headline: insertedCandidate.headline || '',
+          location: insertedCandidate.location || '',
+          experience: insertedCandidate.experience || [],
+          education: insertedCandidate.education || [],
+          skills: insertedCandidate.skills || [],
+          summary: insertedCandidate.summary || '',
           submittedAt: new Date(insertedCandidate.submitted_at)
         };
         
@@ -563,10 +584,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         
         // Generate AI match score
         const matchData = {
-          jobTitle: job.title,
-          jobDescription: job.description,
-          seniorityLevel: job.seniorityLevel,
-          keySkills: job.keySellingPoints, // Using selling points as key skills
+          jobTitle: job.title || '',
+          jobDescription: job.description || '',
+          seniorityLevel: job.seniorityLevel || '',
+          keySkills: job.keySellingPoints || [], // Using selling points as key skills
           candidateData
         };
         
@@ -616,16 +637,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           
           // Prepare candidates for database insertion
           const candidatesToInsert = acceptedCandidates.map(candidate => ({
-            job_id: candidate.jobId,
-            first_name: candidate.firstName,
-            last_name: candidate.lastName,
-            linkedin_url: candidate.linkedinUrl,
-            headline: candidate.headline,
-            location: candidate.location,
-            experience: candidate.experience,
-            education: candidate.education,
-            skills: candidate.skills,
-            summary: candidate.summary
+            job_id: candidate.jobId || '',
+            first_name: candidate.firstName || '',
+            last_name: candidate.lastName || '',
+            linkedin_url: candidate.linkedinUrl || '',
+            headline: candidate.headline || '',
+            location: candidate.location || '',
+            experience: candidate.experience || [],
+            education: candidate.education || [],
+            skills: candidate.skills || [],
+            summary: candidate.summary || ''
           }));
           
           console.log('📤 Inserting candidates to Supabase:', candidatesToInsert.length);
@@ -652,17 +673,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           
           // Update local state with the actual database records
           const savedCandidates = insertedCandidates.map(c => ({
-            id: c.id,
-            jobId: c.job_id,
-            firstName: c.first_name,
-            lastName: c.last_name,
-            linkedinUrl: c.linkedin_url,
-            headline: c.headline,
-            location: c.location,
-            experience: c.experience,
-            education: c.education,
-            skills: c.skills,
-            summary: c.summary,
+            id: c.id || '',
+            jobId: c.job_id || '',
+            firstName: c.first_name || '',
+            lastName: c.last_name || '',
+            linkedinUrl: c.linkedin_url || '',
+            headline: c.headline || '',
+            location: c.location || '',
+            experience: c.experience || [],
+            education: c.education || [],
+            skills: c.skills || [],
+            summary: c.summary || '',
             submittedAt: new Date(c.submitted_at)
           }));
           
@@ -826,7 +847,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         const dbUpdates: any = {};
         
         if (updates.status) dbUpdates.status = updates.status;
-        if (updates.sourcerName !== undefined) dbUpdates.sourcer_name = updates.sourcerName;
+        if (updates.sourcerId !== undefined) dbUpdates.sourcer_name = updates.sourcerId;
         if (updates.completionLink !== undefined) dbUpdates.completion_link = updates.completionLink;
         
         const { data: updatedJobData, error } = await supabase
@@ -842,23 +863,24 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         }
 
         const updatedJob: Job = {
-          id: updatedJobData.id,
-          userId: updatedJobData.user_id, // Map database user_id to frontend userId
-          userEmail: updatedJobData.user_email, // Map database user_email to frontend userEmail
-          title: updatedJobData.title,
-          description: updatedJobData.description,
-          seniorityLevel: updatedJobData.seniority_level,
-          workArrangement: updatedJobData.work_arrangement,
-          location: updatedJobData.location,
-          salaryRangeMin: updatedJobData.salary_range_min,
-          salaryRangeMax: updatedJobData.salary_range_max,
-          keySellingPoints: updatedJobData.key_selling_points,
-          status: updatedJobData.status,
-          sourcerName: updatedJobData.sourcer_name,
-          completionLink: updatedJobData.completion_link,
-          candidatesRequested: updatedJobData.candidates_requested,
-          createdAt: new Date(updatedJobData.created_at),
-          updatedAt: new Date(updatedJobData.updated_at)
+          id: updatedJobData.id || '',
+          userId: updatedJobData.user_id || '',
+          userEmail: updatedJobData.user_email || '',
+          companyName: updatedJobData.company_name || '',
+          title: updatedJobData.title || '',
+          description: updatedJobData.description || '',
+          seniorityLevel: updatedJobData.seniority_level || '',
+          workArrangement: updatedJobData.work_arrangement || '',
+          location: updatedJobData.location || '',
+          salaryRangeMin: updatedJobData.salary_range_min ?? 0,
+          salaryRangeMax: updatedJobData.salary_range_max ?? 0,
+          keySellingPoints: updatedJobData.key_selling_points || [],
+          status: updatedJobData.status || '',
+          sourcerId: updatedJobData.sourcer_id || null,
+          completionLink: updatedJobData.completion_link || null,
+          candidatesRequested: updatedJobData.candidates_requested ?? 0,
+          createdAt: updatedJobData.created_at ? new Date(updatedJobData.created_at) : new Date(),
+          updatedAt: updatedJobData.updated_at ? new Date(updatedJobData.updated_at) : new Date(),
         };
         
         setData(prev => ({

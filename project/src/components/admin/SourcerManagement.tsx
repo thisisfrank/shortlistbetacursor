@@ -3,20 +3,21 @@ import { useData } from '../../context/DataContext';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { Search, Award, TrendingUp, Users, Clock, Target, Edit, Trash2, Save, X } from 'lucide-react';
+import { JobDetailModal } from '../sourcer/JobDetailModal';
+import { Search, Award, TrendingUp, Users, Clock, Target, Trash2 } from 'lucide-react';
 
 export const SourcerManagement: React.FC = () => {
   const { jobs, candidates, getCandidatesByJob, updateJob } = useData();
   const [search, setSearch] = useState('');
   const [selectedSourcer, setSelectedSourcer] = useState<string | null>(null);
-  const [editingSourcer, setEditingSourcer] = useState<string | null>(null);
-  const [newSourcerName, setNewSourcerName] = useState('');
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+
   const [sortBy, setSortBy] = useState<'performance' | 'speed' | 'acceptance' | 'completed'>('performance');
 
   // Get all unique sourcers
-  const sourcers = [...new Set(jobs.filter(job => job.sourcerName).map(job => job.sourcerName!))]
-    .map(sourcerName => {
-      const sourcerJobs = jobs.filter(job => job.sourcerName === sourcerName);
+  const sourcers = [...new Set(jobs.filter(job => job.sourcerId).map(job => job.sourcerId!))]
+    .map(sourcerId => {
+      const sourcerJobs = jobs.filter(job => job.sourcerId === sourcerId);
       const completedJobs = sourcerJobs.filter(job => job.status === 'Completed');
       const claimedJobs = sourcerJobs.filter(job => job.status === 'Claimed');
       
@@ -63,7 +64,7 @@ export const SourcerManagement: React.FC = () => {
 
 
       return {
-        name: sourcerName,
+        name: sourcerId, // Display UUID for now
         totalJobs: sourcerJobs.length,
         completedJobs: completedJobs.length,
         claimedJobs: claimedJobs.length,
@@ -103,34 +104,34 @@ export const SourcerManagement: React.FC = () => {
     }
   });
 
-  const handleReassignJobs = (sourcerName: string) => {
-    const sourcerJobs = jobs.filter(job => job.sourcerName === sourcerName && job.status === 'Claimed');
+  const handleReassignJobs = (sourcerId: string) => {
+    const sourcerJobs = jobs.filter(job => job.sourcerId === sourcerId && job.status === 'Claimed');
     
     if (sourcerJobs.length === 0) {
       alert('No active jobs to reassign for this sourcer.');
       return;
     }
 
-    if (window.confirm(`Reassign ${sourcerJobs.length} active job(s) from ${sourcerName} back to unclaimed status?`)) {
+    if (window.confirm(`Reassign ${sourcerJobs.length} active job(s) from ${sourcerId} back to unclaimed status?`)) {
       sourcerJobs.forEach(job => {
         updateJob(job.id, {
           status: 'Unclaimed',
-          sourcerName: null
+          sourcerId: null
         });
       });
       alert(`Successfully reassigned ${sourcerJobs.length} job(s).`);
     }
   };
 
-  const handleForceComplete = (sourcerName: string) => {
-    const sourcerJobs = jobs.filter(job => job.sourcerName === sourcerName && job.status === 'Claimed');
+  const handleForceComplete = (sourcerId: string) => {
+    const sourcerJobs = jobs.filter(job => job.sourcerId === sourcerId && job.status === 'Claimed');
     
     if (sourcerJobs.length === 0) {
       alert('No active jobs to complete for this sourcer.');
       return;
     }
 
-    if (window.confirm(`Force complete ${sourcerJobs.length} active job(s) for ${sourcerName}?`)) {
+    if (window.confirm(`Force complete ${sourcerJobs.length} active job(s) for ${sourcerId}?`)) {
       sourcerJobs.forEach(job => {
         updateJob(job.id, {
           status: 'Completed',
@@ -141,36 +142,7 @@ export const SourcerManagement: React.FC = () => {
     }
   };
 
-  const handleEditSourcer = (oldName: string) => {
-    setEditingSourcer(oldName);
-    setNewSourcerName(oldName);
-  };
 
-  const handleSaveSourcerName = () => {
-    if (!editingSourcer || !newSourcerName.trim()) return;
-    
-    if (window.confirm(`Update all jobs from "${editingSourcer}" to "${newSourcerName}"?`)) {
-      // Update all jobs with this sourcer name
-      jobs
-        .filter(job => job.sourcerName === editingSourcer)
-        .forEach(job => {
-          updateJob(job.id, { sourcerName: newSourcerName.trim() });
-        });
-      
-      // Update localStorage if this is the current sourcer
-      if (localStorage.getItem('sourcerName') === editingSourcer) {
-        localStorage.setItem('sourcerName', newSourcerName.trim());
-      }
-      
-      setEditingSourcer(null);
-      setNewSourcerName('');
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingSourcer(null);
-    setNewSourcerName('');
-  };
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -360,51 +332,31 @@ export const SourcerManagement: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div>
-                              {editingSourcer === sourcer.name ? (
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="text"
-                                    value={newSourcerName}
-                                    onChange={(e) => setNewSourcerName(e.target.value)}
-                                    className="text-sm bg-shadowforce border border-guardian/30 rounded px-2 py-1 text-white-knight"
-                                  />
-                                  <Button variant="success" size="sm" onClick={handleSaveSourcerName}>
-                                    <Save size={12} />
-                                  </Button>
-                                  <Button variant="outline" size="sm" onClick={handleCancelEdit}>
-                                    <X size={12} />
-                                  </Button>
+                              <div className="flex items-center">
+                                <div className="w-10 h-10 bg-supernova rounded-full flex items-center justify-center mr-3">
+                                  <span className="text-shadowforce font-anton text-sm">
+                                    {sourcer.name.charAt(0).toUpperCase()}
+                                  </span>
                                 </div>
-                              ) : (
-                                <div className="flex items-center">
-                                  <div className="w-10 h-10 bg-supernova rounded-full flex items-center justify-center mr-3">
-                                    <span className="text-shadowforce font-anton text-sm">
-                                      {sourcer.name.charAt(0).toUpperCase()}
-                                    </span>
+                                <div>
+                                  <div className="text-sm font-jakarta font-bold text-white-knight">
+                                    {sourcer.name}
                                   </div>
-                                  <div>
-                                    <div className="text-sm font-jakarta font-bold text-white-knight">
-                                      {sourcer.name}
-                                    </div>
-                                    <div className="text-sm text-guardian">
-                                      {sourcer.totalCandidates} candidates delivered
-                                    </div>
-                                    <div className="text-sm text-guardian">
-                                      {sourcer.avgCompletionHours}h avg completion
-                                    </div>
+                                  <div className="text-sm text-guardian">
+                                    {sourcer.totalCandidates} candidates delivered
+                                  </div>
+                                  <div className="text-sm text-guardian">
+                                    {sourcer.avgCompletionHours}h avg completion
                                   </div>
                                 </div>
-                              )}
+                              </div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-8 py-4 whitespace-nowrap min-w-[120px]">
                           <div className="text-center">
-                            <div className={`text-2xl font-anton mb-1 ${getPerformanceScoreColor(sourcer.performanceScore)}`}>
+                            <div className={`text-2xl font-anton ${getPerformanceScoreColor(sourcer.performanceScore)}`}>
                               {sourcer.performanceScore}
-                            </div>
-                            <div className="text-xs text-guardian font-jakarta">
-                              Performance Score
                             </div>
                           </div>
                         </td>
@@ -452,7 +404,7 @@ export const SourcerManagement: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-guardian font-jakarta">
                           {formatDate(sourcer.lastActive)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <Button
                             variant="outline"
                             size="sm"
@@ -460,15 +412,6 @@ export const SourcerManagement: React.FC = () => {
                           >
                             VIEW
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditSourcer(sourcer.name)}
-                            disabled={editingSourcer === sourcer.name}
-                          >
-                            <Edit size={14} />
-                          </Button>
-
                         </td>
                       </tr>
                     );
@@ -626,7 +569,7 @@ export const SourcerManagement: React.FC = () => {
                   </h4>
                   <div className="space-y-3">
                     {jobs
-                      .filter(job => job.sourcerName === selectedSourcer)
+                      .filter(job => job.sourcerId === selectedSourcer)
                       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
                       .map(job => {
                         const completionTime = job.status === 'Completed' 
@@ -634,7 +577,11 @@ export const SourcerManagement: React.FC = () => {
                           : null;
                         
                         return (
-                          <div key={job.id} className="bg-shadowforce p-4 rounded-lg">
+                          <div 
+                            key={job.id} 
+                            className="bg-shadowforce p-4 rounded-lg cursor-pointer hover:bg-shadowforce/80 transition-colors"
+                            onClick={() => setSelectedJobId(job.id)}
+                          >
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
                                 <h5 className="text-white-knight font-jakarta font-semibold">{job.title}</h5>
@@ -674,6 +621,18 @@ export const SourcerManagement: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Job Detail Modal */}
+      {selectedJobId && (
+        <JobDetailModal
+          job={jobs.find(job => job.id === selectedJobId)!}
+          onClose={() => setSelectedJobId(null)}
+          onClaim={() => {
+            // Handle claim logic here if needed
+            setSelectedJobId(null);
+          }}
+        />
       )}
     </div>
   );
