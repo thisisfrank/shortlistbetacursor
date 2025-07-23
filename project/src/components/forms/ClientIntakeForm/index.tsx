@@ -33,7 +33,6 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
     title: '',
     description: '',
     seniorityLevel: '',
-    workArrangement: '',
     city: '',
     state: '',
     isRemote: false,
@@ -43,12 +42,37 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
     candidatesRequested: '1'
   });
 
+  // Debug step changes
+  useEffect(() => {
+    // console.log('🔍 Step changed to:', currentStep);
+    // console.log('🔍 formData.title when step changed:', formData.title);
+  }, [currentStep, formData.title]);
+  
+  // Debug component mounting
+  useEffect(() => {
+    // console.log('🔍 ClientIntakeForm mounted');
+    return () => {
+      // console.log('🔍 ClientIntakeForm unmounted');
+    };
+  }, []);
+  
+  // Wrap setFormData with debugging
+  const setFormDataWithDebug = (newData: any) => {
+    // console.log('🔍 setFormData called with:', newData);
+    // console.log('🔍 Previous title:', formData.title);
+    // console.log('🔍 New title:', newData.title);
+    setFormData(newData);
+  };
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value, type, checked } = e.target as HTMLInputElement;
     const fieldValue = type === 'checkbox' ? checked : value;
-    setFormData({ ...formData, [name]: fieldValue });
+    
+    // console.log('🔍 Form input change:', { name, value: fieldValue, currentTitle: formData.title });
+    
+    setFormDataWithDebug({ ...formData, [name]: fieldValue });
     
     // Clear error for this field if it exists
     if (errors[name]) {
@@ -59,7 +83,7 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
   };
 
   const handleSellingPointsChange = (points: string[]) => {
-    setFormData({ ...formData, keySellingPoints: points });
+    setFormDataWithDebug({ ...formData, keySellingPoints: points });
     
     // Clear error for this field if it exists
     if (errors.keySellingPoints) {
@@ -116,10 +140,6 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
       newErrors.seniorityLevel = 'Seniority level is required';
     }
     
-    if (!formData.workArrangement) {
-      newErrors.workArrangement = 'Work arrangement is required';
-    }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -159,26 +179,31 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
   };
 
   const goToNextStep = () => {
+    // console.log('🔍 Before validation - current title:', formData.title);
     let isValid = false;
     
     switch (currentStep) {
       case 'job-title':
         isValid = validateJobTitle();
+        // console.log('🔍 After job-title validation - title:', formData.title);
         if (isValid) setCurrentStep('job-details');
         break;
         
       case 'job-details':
         isValid = validateJobDetails();
+        // console.log('🔍 After job-details validation - title:', formData.title);
         if (isValid) setCurrentStep('company-info');
         break;
         
       case 'company-info':
         isValid = validateCompanyInfo();
+        // console.log('🔍 After company-info validation - title:', formData.title);
         if (isValid) setCurrentStep('requirements');
         break;
         
       case 'requirements':
         isValid = validateRequirements();
+        // console.log('🔍 After requirements validation - title:', formData.title);
         if (isValid) setCurrentStep('summary');
         break;
         
@@ -217,7 +242,8 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
   };
 
   const handleSubmit = async () => {
-    console.log('🎯 REAL job submission started...');
+    // console.log('🎯 REAL job submission started...');
+    // console.log('🔍 Complete form data at submission:', formData);
     setIsSubmitting(true);
     
     try {
@@ -235,7 +261,6 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
         title: formData.title,
         description: formData.description,
         seniorityLevel: formData.seniorityLevel,
-        workArrangement: formData.workArrangement,
         location: location,
         salaryRangeMin: extractNumericValue(formData.salaryRangeMin),
         salaryRangeMax: extractNumericValue(formData.salaryRangeMax),
@@ -243,26 +268,27 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
         candidatesRequested: parseInt(formData.candidatesRequested)
       };
 
-      console.log('📋 REAL job data to submit:', jobData);
+      // console.log('🔍 Form data title before job creation:', formData.title);
+      // console.log('📋 REAL job data to submit:', jobData);
       
       // Use the actual DataContext addJob function
       const newJob = await addJob(jobData);
       
-      console.log('✅ REAL job created successfully:', newJob);
+      // console.log('✅ REAL job created successfully:', newJob);
       
       // Move to confirmation step
       setCurrentStep('confirmation');
     } catch (error) {
-      console.error('💥 Error submitting REAL job:', error);
+      // console.error('💥 Error submitting REAL job:', error);
       alert(`Submission failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
-      console.log('🏁 REAL job submission process complete');
+      // console.log('🏁 REAL job submission process complete');
       setIsSubmitting(false);
     }
   };
 
   const resetForm = () => {
-    setFormData({
+    setFormDataWithDebug({
       companyName: '',
       contactName: '',
       email: '',
@@ -270,7 +296,6 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
       title: '',
       description: '',
       seniorityLevel: '',
-      workArrangement: '',
       city: '',
       state: '',
       isRemote: false,
@@ -286,6 +311,11 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
   return (
     <Card className="max-w-4xl mx-auto glow-supernova">
       <CardContent className="py-12">
+        {(() => {
+          // console.log(`🔍 Rendering step: ${currentStep}, formData.title: "${formData.title}"`);
+          return null;
+        })()}
+        
         {currentStep === 'job-title' && (
           <JobTitleStep
             formData={{
@@ -300,9 +330,9 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
         {currentStep === 'job-details' && (
           <JobDetailsStep
             formData={{
+              title: formData.title,
               description: formData.description,
-              seniorityLevel: formData.seniorityLevel,
-              workArrangement: formData.workArrangement
+              seniorityLevel: formData.seniorityLevel
             }}
             onChange={handleInputChange}
             onNext={goToNextStep}
@@ -313,7 +343,13 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
         
         {currentStep === 'company-info' && (
           <CompanyInfoStep
-            formData={formData}
+            formData={{
+              title: formData.title,
+              companyName: formData.companyName,
+              contactName: formData.contactName,
+              email: formData.email,
+              phone: formData.phone
+            }}
             onChange={handleInputChange}
             onNext={goToNextStep}
             onBack={goToPreviousStep}
@@ -324,6 +360,7 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
         {currentStep === 'requirements' && (
           <RequirementsStep
             formData={{
+              title: formData.title,
               city: formData.city,
               state: formData.state,
               isRemote: formData.isRemote,
@@ -350,7 +387,6 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
               title: formData.title,
               description: formData.description,
               seniorityLevel: formData.seniorityLevel,
-              workArrangement: formData.workArrangement,
               city: formData.city,
               state: formData.state,
               isRemote: formData.isRemote,

@@ -19,6 +19,8 @@ export const JobTitleStep: React.FC<JobTitleStepProps> = ({
   onNext,
   errors
 }) => {
+  // console.log('🔍 JobTitleStep - received formData:', formData);
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onNext();

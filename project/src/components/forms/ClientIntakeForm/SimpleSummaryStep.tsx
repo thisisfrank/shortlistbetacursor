@@ -14,7 +14,6 @@ interface SimpleSummaryStepProps {
     title: string;
     description: string;
     seniorityLevel: string;
-    workArrangement: string;
     city: string;
     state: string;
     isRemote: boolean;
@@ -125,7 +124,6 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
           
           <div className="flex gap-3">
             <Badge>{formData.seniorityLevel}</Badge>
-            <Badge>{formData.workArrangement}</Badge>
             <Badge>{formData.isRemote ? 'Remote' : `${formData.city}, ${formData.state}`}</Badge>
           </div>
           

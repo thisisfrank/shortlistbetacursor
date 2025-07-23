@@ -228,7 +228,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         title: j.title || '',
         description: j.description || '',
         seniorityLevel: j.seniority_level || '',
-        workArrangement: j.work_arrangement || '',
         location: j.location || '',
         salaryRangeMin: j.salary_range_min ?? 0,
         salaryRangeMax: j.salary_range_max ?? 0,
@@ -240,6 +239,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         createdAt: j.created_at ? new Date(j.created_at) : new Date(),
         updatedAt: j.updated_at ? new Date(j.updated_at) : new Date(),
       }));
+
+      // console.log('🔍 Debug: Raw job data from database:', jobsData);
+      // console.log('🔍 Debug: Processed jobs with titles:', loadedJobs.map(job => ({ id: job.id, title: job.title, hasTitle: !!job.title })));
 
       const loadedCandidates = candidatesData.map((c: any) => ({
         id: c.id,
@@ -290,7 +292,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             title: jobData.title || '',
             description: jobData.description || '',
             seniorityLevel: jobData.seniorityLevel || '',
-            workArrangement: jobData.workArrangement || '',
             location: jobData.location || '',
             salaryRangeMin: jobData.salaryRangeMin ?? 0,
             salaryRangeMax: jobData.salaryRangeMax ?? 0,
@@ -323,7 +324,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             title: jobData.title || '',
             description: jobData.description || '',
             seniority_level: jobData.seniorityLevel || '',
-            work_arrangement: jobData.workArrangement || '',
+            work_arrangement: jobData.location === 'Remote' ? 'Remote' : 'On-site', // Derive from location
             location: jobData.location || '',
             salary_range_min: jobData.salaryRangeMin ?? 0,
             salary_range_max: jobData.salaryRangeMax ?? 0,
@@ -366,7 +367,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             title: insertedJob.title || '',
             description: insertedJob.description || '',
             seniorityLevel: insertedJob.seniority_level || '',
-            workArrangement: insertedJob.work_arrangement || '',
             location: insertedJob.location || '',
             salaryRangeMin: insertedJob.salary_range_min ?? 0,
             salaryRangeMax: insertedJob.salary_range_max ?? 0,
@@ -398,7 +398,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             title: jobData.title || '',
             description: jobData.description || '',
             seniorityLevel: jobData.seniorityLevel || '',
-            workArrangement: jobData.workArrangement || '',
             location: jobData.location || '',
             salaryRangeMin: jobData.salaryRangeMin ?? 0,
             salaryRangeMax: jobData.salaryRangeMax ?? 0,

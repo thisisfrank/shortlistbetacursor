@@ -1,35 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { JobDetailModal } from '../sourcer/JobDetailModal';
 import { Search, Award, TrendingUp, Users, Clock, Target, Trash2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 export const SourcerManagement: React.FC = () => {
   const { jobs, candidates, getCandidatesByJob, updateJob } = useData();
   const [search, setSearch] = useState('');
   const [selectedSourcer, setSelectedSourcer] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [sourcerNames, setSourcerNames] = useState<Record<string, string>>({});
 
   const [sortBy, setSortBy] = useState<'performance' | 'speed' | 'acceptance' | 'completed'>('performance');
 
-  // Get sourcer name by ID - simplified to use email from jobs
-  const getSourcerName = (sourcerId: string): string => {
-    // Find a job by this sourcer to get their email
-    const sourcerJob = jobs.find(job => job.sourcerId === sourcerId);
-    if (sourcerJob && sourcerJob.userEmail) {
-      // Extract name from email (before @) and make it presentable
-      const emailName = sourcerJob.userEmail.split('@')[0];
-      return emailName.charAt(0).toUpperCase() + emailName.slice(1).replace(/[._]/g, ' ');
-    }
-    return `Sourcer ${sourcerId.substring(0, 8)}...`;
-  };
+  // Load sourcer names from user_profiles
+  useEffect(() => {
+    const loadSourcerNames = async () => {
+      try {
+        const sourcerIds = [...new Set(jobs.filter(job => job.sourcerId).map(job => job.sourcerId!))];
+        if (sourcerIds.length === 0) return;
 
-  // Get sourcer email by ID
-  const getSourcerEmail = (sourcerId: string): string => {
-    const sourcerJob = jobs.find(job => job.sourcerId === sourcerId);
-    return sourcerJob?.userEmail || 'Email not available';
+        const { data: profiles, error } = await supabase
+          .from('user_profiles')
+          .select('id, name, role')
+          .eq('role', 'sourcer');
+
+        if (!error && profiles) {
+          const nameMap: Record<string, string> = {};
+          profiles.forEach((profile: any) => {
+            nameMap[profile.id] = profile.name || 'Unknown Sourcer';
+          });
+          setSourcerNames(nameMap);
+        }
+      } catch (error) {
+        console.error('Error loading sourcer names:', error);
+        // Don't throw - just continue with IDs if names fail to load
+      }
+    };
+
+    if (jobs.length > 0) {
+      loadSourcerNames();
+    }
+  }, [jobs]);
+
+  // Get sourcer name by ID
+  const getSourcerName = (sourcerId: string): string => {
+    return sourcerNames[sourcerId] || `Sourcer ${sourcerId.substring(0, 8)}...`;
   };
 
   // Get all unique sourcers
@@ -364,7 +383,7 @@ export const SourcerManagement: React.FC = () => {
                                     {sourcer.totalCandidates} candidates delivered
                                   </div>
                                   <div className="text-sm text-guardian">
-                                    {getSourcerEmail(sourcer.id)}
+                                    Sourcer: {getSourcerName(sourcer.id)}
                                   </div>
                                 </div>
                               </div>
