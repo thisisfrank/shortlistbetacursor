@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 interface RoleBasedRouteProps {
@@ -102,22 +102,11 @@ export const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   }
 
-  // If user is authenticated and has a profile, redirect to their role-specific home
-  if (user && userProfile) {
+  // Only redirect if we have both user AND complete profile (prevents redirects during login attempts)
+  if (user && userProfile && userProfile.role) {
     return <Navigate to={getRoleHomePage(userProfile.role)} replace />;
   }
 
-  // If user is authenticated but no profile yet, wait for profile to load
-  if (user && !userProfile) {
-    return (
-      <div className="min-h-screen bg-shadowforce flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-supernova mx-auto mb-4"></div>
-          <p className="text-guardian font-jakarta">Setting up your profile...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Always render children for unauthenticated or incomplete authentication states
   return <>{children}</>;
 };

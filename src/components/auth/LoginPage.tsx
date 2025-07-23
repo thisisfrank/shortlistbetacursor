@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Card, CardContent } from '../ui/Card';
@@ -14,14 +14,34 @@ export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => {
+    // Get error from sessionStorage on component mount
+    return sessionStorage.getItem('loginError') || '';
+  });
+
+  // Simple function to set error and persist it
+  const setErrorPersistent = (message: string) => {
+    sessionStorage.setItem('loginError', message);
+    setError(message);
+  };
+
+  // Clear error from storage when component mounts (fresh page load)
+  useEffect(() => {
+    const clearError = () => {
+      sessionStorage.removeItem('loginError');
+      setError('');
+    };
+    // Clear error after 30 seconds or on successful operations
+    const timer = setTimeout(clearError, 30000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Check for profile missing flag and redirect to signup
   useEffect(() => {
     const profileMissing = localStorage.getItem('profileMissing');
     if (profileMissing === 'true') {
       localStorage.removeItem('profileMissing');
-      setError('Account not found. Please sign up first.');
+      setErrorPersistent('Account not found. Please sign up first.');
     }
   }, []);
 
@@ -29,12 +49,13 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     
     if (!email.trim() || !password.trim()) {
-      setError('Please enter both email and password');
+      setErrorPersistent('Please enter both email and password');
       return;
     }
     
-    setLoading(true);
-    setError('');
+          setLoading(true);
+      sessionStorage.removeItem('loginError'); // Clear persistent error
+      setError(''); // Clear temporary error
 
     try {
       const { data, error: signInError } = await signIn(email, password);
@@ -43,22 +64,37 @@ export const LoginPage: React.FC = () => {
 
       if (signInError) {
         console.error('❌ Sign in error:', signInError);
-        // Provide a more user-friendly error message that suggests signing up
-        const errorMessage = signInError.message === 'Invalid login credentials' 
-          ? 'Account not found. Please sign up for a new account.'
-          : signInError.message || 'Login failed. Please try again.';
-        setError(errorMessage);
+        
+        // Enhanced error handling with more specific messages
+        let errorMessage = 'Login failed. Please try again.';
+        
+        if (signInError.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password.\nPlease check your credentials and try again.';
+        } else if (signInError.message.includes('Email not confirmed')) {
+          errorMessage = 'Please check your email and click the confirmation link before signing in.';
+        } else if (signInError.message.includes('Too many requests')) {
+          errorMessage = 'Too many login attempts. Please wait a few minutes before trying again.';
+        } else if (signInError.message.includes('timeout')) {
+          errorMessage = 'Connection timeout. Please check your internet connection and try again.';
+        } else if (signInError.message.includes('Network error')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (signInError.message) {
+          // Use the actual error message if it's user-friendly
+          errorMessage = signInError.message;
+        }
+        
+        setErrorPersistent(errorMessage);
       } else if (data?.user) {
         console.log('✅ Login successful, redirecting...');
         // Check for redirect parameter
         const redirectTo = new URLSearchParams(location.search).get('redirect_to');
         navigate(redirectTo || '/');
       } else {
-        setError('Login failed. Please check your credentials.');
+        setErrorPersistent('Login failed. Please check your email and password.');
       }
     } catch (error) {
       console.error('💥 Unexpected login error:', error);
-      setError('An unexpected error occurred. Please try again.');
+      setErrorPersistent('An unexpected error occurred. Please try again in a few moments.');
     } finally {
       setLoading(false);
     }
@@ -91,27 +127,14 @@ export const LoginPage: React.FC = () => {
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-              <div className="flex items-center mb-3">
-                <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
-                <p className="text-red-400 font-jakarta text-sm">{error}</p>
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
+              <div className="flex flex-col items-center justify-center mb-3">
+                <AlertCircle className="text-red-400 mb-3 flex-shrink-0" size={20} />
+                <p className="text-red-400 font-jakarta text-sm whitespace-pre-line">{error}</p>
               </div>
-              {error.includes('Account not found') && (
-                <div className="mt-3 pt-3 border-t border-red-500/20">
-                  <p className="text-guardian font-jakarta text-sm mb-2">
-                    New to Super Recruiter?
-                  </p>
-                  <Link
-                    to="/signup"
-                    className="inline-flex items-center px-4 py-2 bg-supernova text-white-knight rounded-lg text-sm font-semibold hover:bg-supernova-light transition-colors"
-                  >
-                    Create Account
-                  </Link>
-                </div>
-              )}
             </div>
           )}
-
+          
           <form onSubmit={handleSubmit} className="space-y-6">
             <FormInput
               label="Email"
@@ -130,6 +153,8 @@ export const LoginPage: React.FC = () => {
               placeholder="Enter your password"
               required
             />
+
+            <div className="mb-4"></div>
 
             <Button
               type="submit"
