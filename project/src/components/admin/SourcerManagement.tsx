@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { JobDetailModal } from '../sourcer/JobDetailModal';
-import { Search, Award, TrendingUp, Users, Clock, Target, Trash2 } from 'lucide-react';
+import { Search, Award, TrendingUp, Users, Clock, Target } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export const SourcerManagement: React.FC = () => {

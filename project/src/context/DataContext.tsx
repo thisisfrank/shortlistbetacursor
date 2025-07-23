@@ -18,7 +18,6 @@ interface DataContextType {
     error?: string 
   }>;
   updateJob: (jobId: string, updates: Partial<Job>) => Job | null;
-  deleteJob: (jobId: string) => void;
   getCandidatesByJob: (jobId: string) => Candidate[];
   getCandidatesByUser: (userId: string) => Candidate[];
   getJobsByStatus: (status: Job['status']) => Job[];
@@ -894,12 +893,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
   };
 
-  const deleteJob = (jobId: string) => {
-    setData(prev => ({
-      ...prev,
-      jobs: prev.jobs.filter(job => job.id !== jobId)
-    }));
-  };
+
 
   const getCandidatesByJob = (jobId: string) => {
     return data.candidates.filter(candidate => candidate.jobId === jobId);
@@ -994,9 +988,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     addJob,
     addCandidate,
     addCandidatesFromLinkedIn,
-    updateJob,
-    deleteJob,
-    getCandidatesByJob,
+          updateJob,
+      getCandidatesByJob,
     getCandidatesByUser,
     getJobsByStatus,
     getJobById,
