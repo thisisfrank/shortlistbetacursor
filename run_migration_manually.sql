@@ -87,9 +87,24 @@ SELECT id, email, name, role FROM user_profiles ORDER BY created_at;
 -- This resolves the client_id/user_id mismatch causing foreign key constraint violations
 
 -- Step 9: Fix jobs table schema to use user_id instead of client_id
-ALTER TABLE jobs DROP CONSTRAINT IF EXISTS jobs_client_id_fkey;
-ALTER TABLE jobs RENAME COLUMN client_id TO user_id;
-ALTER TABLE jobs ADD CONSTRAINT jobs_user_id_fkey FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
+-- Handle case where client_id might already be renamed to user_id
+DO $$
+BEGIN
+    -- Drop old constraint if it exists
+    ALTER TABLE jobs DROP CONSTRAINT IF EXISTS jobs_client_id_fkey;
+    
+    -- Only rename if client_id column still exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'jobs' AND column_name = 'client_id') THEN
+        ALTER TABLE jobs RENAME COLUMN client_id TO user_id;
+    END IF;
+    
+    -- Drop existing user_id constraint if it exists
+    ALTER TABLE jobs DROP CONSTRAINT IF EXISTS jobs_user_id_fkey;
+    
+    -- Add/re-add the proper foreign key constraint
+    ALTER TABLE jobs ADD CONSTRAINT jobs_user_id_fkey 
+        FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
+END $$;
 
 -- Manual migration to make work_arrangement nullable
 -- Run this in Supabase SQL editor if needed
