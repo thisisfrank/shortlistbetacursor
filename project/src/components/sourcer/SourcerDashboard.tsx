@@ -103,6 +103,18 @@ const SourcerDashboard: React.FC = () => {
       return;
     }
     
+    // DEBUG: Log everything before attempting the update
+    console.log('🔍 DEBUG: Attempting to claim job');
+    console.log('🔍 User Profile:', userProfile);
+    console.log('🔍 User ID:', userProfile.id);
+    console.log('🔍 User Role:', userProfile.role);
+    console.log('🔍 User Email:', userProfile.email);
+    console.log('🔍 Job ID:', jobId);
+    console.log('🔍 Update data will be:', {
+      status: 'Claimed',
+      sourcerId: userProfile.id
+    });
+    
     // Update job status to claimed using the user's UUID
     if (updateJob) {
       const result = updateJob(jobId, {
@@ -111,7 +123,8 @@ const SourcerDashboard: React.FC = () => {
       });
       if (result && typeof (result as any).catch === 'function') {
         (result as any).catch((error: any) => {
-          console.error('Error claiming job:', error);
+          console.error('🔍 DEBUG: Error claiming job:', error);
+          console.error('🔍 DEBUG: Error details:', JSON.stringify(error, null, 2));
           alert('Error claiming job. Please try again.');
         });
       }
