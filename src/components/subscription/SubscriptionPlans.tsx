@@ -71,14 +71,14 @@ const subscriptionPlans = [
 ];
 
 export const SubscriptionPlans: React.FC = () => {
-  const { user, loading } = useAuth();
-  const { subscription, getSubscriptionPlan, isActive } = useSubscription();
+  const { user, loading: authLoading } = useAuth();
+  const { subscription, getSubscriptionPlan, isActive, loading: subscriptionLoading } = useSubscription();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const currentPlan = getSubscriptionPlan();
 
   // Add loading state to prevent flickering
-  if (loading) {
+  if (authLoading || subscriptionLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
         <div className="text-center">
