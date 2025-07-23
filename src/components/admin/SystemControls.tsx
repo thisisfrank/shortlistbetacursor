@@ -21,7 +21,6 @@ export const SystemControls: React.FC = () => {
     jobs, 
     candidates, 
     resetData, 
-    deleteJob, 
     updateJob 
   } = useData();
   
@@ -210,31 +209,6 @@ export const SystemControls: React.FC = () => {
           </CardHeader>
           <CardContent className="p-8">
             <div className="space-y-6">
-              <div className="bg-orange-500/10 border border-orange-500/30 p-6 rounded-lg">
-                <h4 className="text-lg font-anton text-orange-400 mb-3 uppercase tracking-wide">
-                  Bulk Operations
-                </h4>
-                <p className="text-guardian font-jakarta mb-4">
-                  Perform bulk operations on system data. Use with caution.
-                </p>
-                <div className="flex gap-3">
-                  <Button
-                    variant="warning"
-                    size="md"
-                    onClick={() => {
-                      if (window.confirm('Delete all completed jobs? This cannot be undone.')) {
-                        jobs.filter(job => job.status === 'Completed').forEach(job => deleteJob(job.id));
-                        alert('All completed jobs deleted.');
-                      }
-                    }}
-                    className="flex items-center gap-2"
-                  >
-                    <Briefcase size={16} />
-                    DELETE ALL COMPLETED JOBS
-                  </Button>
-                </div>
-              </div>
-
               <div className="bg-red-500/10 border border-red-500/30 p-6 rounded-lg">
                 <h4 className="text-lg font-anton text-red-400 mb-3 uppercase tracking-wide">
                   System Reset

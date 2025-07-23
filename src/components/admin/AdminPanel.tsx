@@ -4,11 +4,11 @@ import { Badge } from '../ui/Badge';
 import { Card, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { JobDetailModal } from '../sourcer/JobDetailModal';
-import { Search, CalendarDays, Users, Filter, Trash2, Zap, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import { Search, CalendarDays, Users, Filter, Zap, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 import BoltIcon from '../../assets/v2.png';
 
 export const AdminPanel: React.FC = () => {
-  const { jobs, tiers, getTierById, deleteJob, updateJob } = useData();
+  const { jobs, tiers, getTierById, updateJob } = useData();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -56,12 +56,6 @@ export const AdminPanel: React.FC = () => {
       day: 'numeric',
       year: 'numeric'
     }).format(new Date(date));
-  };
-
-  const handleDeleteJob = (jobId: string) => {
-    if (window.confirm('Are you sure you want to delete this job? This action cannot be undone.')) {
-      deleteJob(jobId);
-    }
   };
 
   const handleCompleteJob = async (jobId: string) => {
@@ -265,14 +259,6 @@ export const AdminPanel: React.FC = () => {
                                   Complete
                                 </Button>
                               )}
-                              <Button
-                                onClick={() => handleDeleteJob(job.id)}
-                                variant="outline"
-                                size="sm"
-                                className="text-red-400 border-red-400/30 hover:bg-red-400/10"
-                              >
-                                <Trash2 size={16} />
-                              </Button>
                             </div>
                           </td>
                         </tr>

@@ -4,6 +4,7 @@ import { Button } from '../../ui/Button';
 
 interface CompanyInfoStepProps {
   formData: {
+    title: string;
     companyName: string;
     contactName: string;
     email: string;

@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   title text NOT NULL,
   description text NOT NULL,
   seniority_level text NOT NULL,
-  work_arrangement text NOT NULL,
+  work_arrangement text,
   location text NOT NULL,
   salary_range_min integer NOT NULL,
   salary_range_max integer NOT NULL,

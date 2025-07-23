@@ -6,6 +6,7 @@ import { X, Plus } from 'lucide-react';
 
 interface RequirementsStepProps {
   formData: {
+    title: string;
     city: string;
     state: string;
     isRemote: boolean;

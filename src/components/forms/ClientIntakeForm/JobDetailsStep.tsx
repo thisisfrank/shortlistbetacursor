@@ -4,6 +4,7 @@ import { Button } from '../../ui/Button';
 
 interface JobDetailsStepProps {
   formData: {
+    title: string;
     description: string;
     seniorityLevel: string;
   };
@@ -22,6 +23,9 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
   onBack,
   errors
 }) => {
+  // console.log('🔍 JobDetailsStep - received formData:', formData);
+  // console.log('🔍 JobDetailsStep - title specifically:', formData.title);
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onNext();

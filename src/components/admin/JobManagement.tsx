@@ -6,10 +6,10 @@ import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { FormInput, FormTextarea, FormSelect } from '../forms/FormInput';
-import { Search, CalendarDays, Filter, Trash2, Edit, X, Save } from 'lucide-react';
+import { Search, CalendarDays, Filter, Edit, X, Save } from 'lucide-react';
 
 export const JobManagement: React.FC = () => {
-  const { jobs, deleteJob, updateJob } = useData();
+  const { jobs, updateJob } = useData();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export const JobManagement: React.FC = () => {
         job.title.toLowerCase().includes(searchLower) ||
         job.description.toLowerCase().includes(searchLower) ||
         (job.companyName && job.companyName.toLowerCase().includes(searchLower)) ||
-        (job.sourcerName && job.sourcerName.toLowerCase().includes(searchLower))
+        (job.sourcerId && job.sourcerId.toLowerCase().includes(searchLower))
       );
     }
     
@@ -68,12 +68,6 @@ export const JobManagement: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit'
     }).format(new Date(date));
-  };
-
-  const handleDeleteJob = (jobId: string) => {
-    if (window.confirm('Are you sure you want to delete this job? This action cannot be undone.')) {
-      deleteJob(jobId);
-    }
   };
 
   const handleEditJob = (job: any) => {
@@ -233,9 +227,9 @@ export const JobManagement: React.FC = () => {
                           </Badge>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-white-knight font-jakarta">
-                            {job.sourcerName || 'Unassigned'}
-                          </div>
+                                                      <div className="text-sm text-white-knight font-jakarta">
+                              {job.sourcerId || 'Unassigned'}
+                            </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-guardian font-jakarta">
@@ -256,14 +250,6 @@ export const JobManagement: React.FC = () => {
                               className="text-blue-400 border-blue-400/30 hover:bg-blue-400/10"
                             >
                               <Edit size={16} />
-                            </Button>
-                            <Button
-                              onClick={() => handleDeleteJob(job.id)}
-                              variant="outline"
-                              size="sm"
-                              className="text-red-400 border-red-400/30 hover:bg-red-400/10"
-                            >
-                              <Trash2 size={16} />
                             </Button>
                           </div>
                         </td>

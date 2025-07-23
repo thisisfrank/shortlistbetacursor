@@ -21,7 +21,7 @@ export const SourcerMenu: React.FC = () => {
 
   return (
     <>
-      <div className="mb-6 pb-4 border-b border-guardian/20">
+      <div className="mb-6 pb-4 border-b border-guardian/20 text-center">
         <h3 className="font-anton text-lg text-white-knight uppercase tracking-wide">
           Sourcer Portal
         </h3>
@@ -36,7 +36,7 @@ export const SourcerMenu: React.FC = () => {
           variant="ghost"
           size="lg"
           fullWidth
-          className="flex items-center gap-2"
+          className="flex items-center justify-center gap-2"
         >
           <LogOut className="mr-2" size={16} />
           SIGN OUT

@@ -75,3 +75,8 @@ WHERE NOT EXISTS (
 -- Step 7: Verify the fix
 SELECT 'User profiles after fix:' as info;
 SELECT id, email, role FROM user_profiles ORDER BY created_at; 
+
+-- Manual migration to make work_arrangement nullable
+-- Run this in Supabase SQL editor if needed
+
+ALTER TABLE jobs ALTER COLUMN work_arrangement DROP NOT NULL; 

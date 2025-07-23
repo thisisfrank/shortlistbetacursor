@@ -129,12 +129,7 @@ export const JobCard: React.FC<JobCardProps> = ({
           )}
         </div>
         
-        {job.sourcerId && (
-          <div className="bg-supernova/10 border border-supernova/30 p-3 rounded-lg text-sm mb-4">
-            <span className="font-jakarta font-semibold text-supernova">Sourcer:</span>{' '}
-            <span className="text-white-knight font-jakarta font-bold">{job.sourcerId}</span>
-          </div>
-        )}
+
       </CardContent>
       
       {showActions && (

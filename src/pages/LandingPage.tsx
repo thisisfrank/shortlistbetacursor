@@ -9,6 +9,7 @@ import Image2 from '../assets/image (2).png';
 import Image3 from '../assets/image (3).png';
 import Image4 from '../assets/image (4).png';
 import Image5 from '../assets/image (5).png';
+import Illustration18 from '../assets/18 ILLUSTRATION (1) (1).png';
 
 export const LandingPage: React.FC = () => {
   const { user, userProfile, loading } = useAuth();
@@ -83,15 +84,19 @@ export const LandingPage: React.FC = () => {
                 </Button>
               </div>
             </div>
-            {/* Right: For Clients */}
-            <div className="flex-1 flex flex-col justify-center">
+            {/* Right: Features */}
+            <div className="flex-1 flex flex-col justify-center max-w-md mx-auto">
               <Card className="hover:shadow-2xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-br from-supernova/20 to-supernova/10 border-supernova/30">
                 <CardContent className="p-6 md:p-8">
-                  <div className="text-left mb-4">
-                    <h3 className="text-2xl md:text-3xl font-anton text-white-knight mb-2 uppercase tracking-wide">
-                      FOR CLIENTS
-                    </h3>
-                    <div className="flex flex-col gap-2 mt-4">
+                  <div className="text-center mb-4">
+                    <div className="flex justify-center mb-6">
+                      <img
+                        src={Illustration18}
+                        alt="AI Recruitment Illustration"
+                        className="max-w-full h-48 object-contain"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2 mt-4 items-center">
                       <div className="flex items-center"><ArrowRight className="text-supernova mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Submit job requirements</span></div>
                       <div className="flex items-center"><ArrowRight className="text-supernova mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Get AI-matched candidates</span></div>
                       <div className="flex items-center"><ArrowRight className="text-supernova mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Receive detailed profiles</span></div>

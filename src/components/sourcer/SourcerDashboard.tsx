@@ -59,6 +59,16 @@ const SourcerDashboard: React.FC = () => {
 
   // Filter jobs based on the filter and search
   const filteredJobs = jobs.filter(job => {
+    // POLICY: Sourcers can only see unclaimed jobs and their own claimed/completed jobs
+    if (job.status === 'Unclaimed') {
+      // All sourcers can see unclaimed jobs
+    } else if (job.status === 'Claimed' || job.status === 'Completed') {
+      // Only show claimed/completed jobs if this sourcer claimed them
+      if (job.sourcerId !== userProfile?.id) {
+        return false;
+      }
+    }
+    
     // Filter based on status
     if (filter === 'unclaimed' && job.status !== 'Unclaimed') return false;
     if (filter === 'claimed' && job.status !== 'Claimed') return false;
@@ -83,10 +93,10 @@ const SourcerDashboard: React.FC = () => {
     return statusOrder[a.status] - statusOrder[b.status];
   });
 
-  // Get job counts for stats
+  // Get job counts for stats (applying same visibility policy)
   const unclaimedCount = jobs.filter(job => job.status === 'Unclaimed').length;
-  const claimedCount = jobs.filter(job => job.status === 'Claimed').length;
-  const completedCount = jobs.filter(job => job.status === 'Completed').length;
+  const claimedCount = jobs.filter(job => job.status === 'Claimed' && job.sourcerId === userProfile?.id).length;
+  const completedCount = jobs.filter(job => job.status === 'Completed' && job.sourcerId === userProfile?.id).length;
   const myJobsCount = jobs.filter(job => job.sourcerId === userProfile?.id).length;
 
   // Close job detail modal

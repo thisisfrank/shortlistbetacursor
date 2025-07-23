@@ -30,7 +30,7 @@ export interface Job {
   title: string;
   description: string;
   seniorityLevel: 'Junior' | 'Mid' | 'Senior' | 'Executive';
-  workArrangement: 'Remote' | 'On-site' | 'Hybrid';
+  workArrangement?: 'Remote' | 'On-site' | 'Hybrid'; // Made optional
   location: string;
   salaryRangeMin: number;
   salaryRangeMax: number;

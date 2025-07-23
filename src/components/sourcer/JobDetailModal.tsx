@@ -7,8 +7,7 @@ import { testApifyResponse } from '../../services/apifyService';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { FormInput } from '../forms/FormInput';
-import { X, CheckCircle, AlertCircle, Plus, Trash2, Users, ExternalLink } from 'lucide-react';
-import BoltIcon from '../../assets/v2.png';
+import { X, CheckCircle, AlertCircle, Plus, Trash2, Users, ExternalLink, Loader, Zap } from 'lucide-react';
 
 interface JobDetailModalProps {
   job: Job;
@@ -362,16 +361,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
               </div>
             </div> */}
             
-            {job.status === 'Claimed' && job.sourcerId && (
-              <div className="bg-supernova/10 border border-supernova/30 p-6 rounded-lg mb-6">
-                <div className="flex items-center">
-                  <AlertCircle className="text-supernova mr-2" size={20} />
-                  <span className="text-white-knight font-jakarta">
-                    This job is currently claimed by <strong className="text-supernova">{job.sourcerId}</strong>
-                  </span>
-                </div>
-              </div>
-            )}
+
             
             {job.status === 'Completed' && job.completionLink && (
               <div className="bg-green-500/10 border border-green-500/30 p-6 rounded-lg mb-6">
@@ -422,7 +412,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
             )}
             
             {/* Complete Job Section */}
-            {job.status === 'Claimed' && job.sourcerId && onComplete && (
+            {job.status === 'Claimed' && job.sourcerId === userProfile?.id && onComplete && (
               <div className="bg-green-500/10 border border-green-500/30 p-8 rounded-xl">
                 {/* Submission Method and Scrape/Submit Button */}
                 <div className="space-y-6 mb-6">
@@ -554,12 +544,12 @@ https://linkedin.com/in/candidate2
                             >
                               {isTesting ? (
                                 <>
-                                  <BoltIcon className="animate-spin" size={16} />
+                                  <Loader className="animate-spin" size={16} />
                                   TESTING...
                                 </>
                               ) : (
                                 <>
-                                  <BoltIcon size={16} />
+                                  <Zap size={16} />
                                   TEST THIS URL
                                 </>
                               )}
@@ -641,12 +631,12 @@ https://linkedin.com/in/candidate2
                 >
                   {isSubmitting ? (
                     <>
-                      <BoltIcon className="animate-spin" size={20} />
+                      <Loader className="animate-spin" size={20} />
                       SUBMITTING CANDIDATES...
                     </>
                   ) : (
                     <>
-                      <BoltIcon size={20} />
+                      <Zap size={20} />
                       SUBMIT CANDIDATES
                     </>
                   )}
