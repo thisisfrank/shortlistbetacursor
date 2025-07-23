@@ -20,6 +20,7 @@ import { useData } from '../../context/DataContext';
 interface User {
   id: string;
   email: string;
+  name: string;
   role: 'client' | 'sourcer' | 'admin';
   created_at: string;
   updated_at: string;
@@ -129,10 +130,20 @@ export const UserManagement: React.FC = () => {
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (user.role && user.role.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredUsers = users
+    .filter(user =>
+      (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (user.role && user.role.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (user.name && user.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    )
+    .sort((a, b) => {
+      // Sort by role: admin first, then sourcer, then client
+      const roleOrder = { admin: 0, sourcer: 1, client: 2 };
+      const roleComparison = (roleOrder[a.role] || 3) - (roleOrder[b.role] || 3);
+      if (roleComparison !== 0) return roleComparison;
+      // If roles are the same, sort by email
+      return a.email.localeCompare(b.email);
+    });
 
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -199,18 +210,18 @@ export const UserManagement: React.FC = () => {
                 <FormInput
                   label="Search"
                   type="text"
-                  placeholder="Search users by email or role..."
+                  placeholder="Search users by email, name, or role..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 sr-only"
                 />
                 <input
                   type="text"
-                  placeholder="Search users by email or role..."
+                  placeholder="Search users by email, name, or role..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 block w-full border-0 border-b-2 px-0 py-4 text-lg bg-transparent text-white-knight placeholder-guardian/60 font-jakarta focus:ring-0 focus:border-supernova transition-colors duration-200 border-guardian/40 hover:border-guardian/60"
-                  aria-label="Search users by email or role..."
+                  aria-label="Search users by email, name, or role..."
                 />
               </div>
             </div>
@@ -268,6 +279,9 @@ export const UserManagement: React.FC = () => {
                   User
                 </th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
+                  Name
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
                   Role
                 </th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
@@ -278,7 +292,7 @@ export const UserManagement: React.FC = () => {
             <tbody className="bg-shadowforce-light divide-y divide-guardian/20">
               {loading ? (
                 <tr>
-                  <td colSpan={3} className="px-6 py-8 text-center">
+                  <td colSpan={4} className="px-6 py-8 text-center">
                     <div className="flex items-center justify-center">
                       <Loader className="animate-spin mr-2" size={20} />
                       <span className="text-guardian font-jakarta">Loading users...</span>
@@ -287,7 +301,7 @@ export const UserManagement: React.FC = () => {
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={3} className="px-6 py-8 text-center text-guardian font-jakarta">
+                  <td colSpan={4} className="px-6 py-8 text-center text-guardian font-jakarta">
                     {searchTerm ? 'No users found matching your search.' : 'No users found.'}
                   </td>
                 </tr>
@@ -296,7 +310,9 @@ export const UserManagement: React.FC = () => {
                   <tr key={user.id} className="hover:bg-shadowforce transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-jakarta font-bold text-white-knight">{user.email}</div>
-                      <div className="text-xs text-guardian">ID: {user.id.slice(0, 8)}...</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-jakarta text-white-knight">{user.name || 'No name set'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getRoleBadge(user.role)}

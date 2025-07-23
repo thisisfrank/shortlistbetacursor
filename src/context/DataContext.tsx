@@ -9,15 +9,15 @@ interface DataContextType {
   jobs: Job[];
   candidates: Candidate[];
   tiers: Tier[];
-  addJob: (job: Omit<Job, 'id' | 'status' | 'sourcerName' | 'completionLink' | 'createdAt' | 'updatedAt'>) => Job;
-  addCandidate: (candidate: Omit<Candidate, 'id' | 'submittedAt'>) => Candidate;
+  addJob: (job: Omit<Job, 'id' | 'status' | 'sourcerName' | 'completionLink' | 'createdAt' | 'updatedAt'>) => Promise<Job>;
+  addCandidate: (candidate: Omit<Candidate, 'id' | 'submittedAt'>) => Promise<Candidate>;
   addCandidatesFromLinkedIn: (jobId: string, linkedinUrls: string[]) => Promise<{ 
     success: boolean; 
     acceptedCount: number; 
     rejectedCount: number; 
     error?: string 
   }>;
-  updateJob: (jobId: string, updates: Partial<Job>) => Job | null;
+  updateJob: (jobId: string, updates: Partial<Job>) => Promise<Job | null>;
   getCandidatesByJob: (jobId: string) => Candidate[];
   getCandidatesByUser: (userId: string) => Candidate[];
   getJobsByStatus: (status: Job['status']) => Job[];
@@ -279,8 +279,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       try {
         console.log('💼 Adding job to database/storage...');
         
+        // Add timeout to prevent hanging
+        const timeoutId = setTimeout(() => {
+          reject(new Error('Job submission timed out after 30 seconds. Please check your internet connection and try again.'));
+        }, 30000);
+        
         // Check if Supabase is properly configured
         if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+          clearTimeout(timeoutId);
           console.log('💾 Creating job in local storage (Supabase not configured)...');
           
           const newJob: Job = {
@@ -345,6 +351,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             .select()
             .single();
 
+          console.log('🔍 Supabase response:', { data: insertedJob, error });
+
           if (error) {
             console.error('❌ Error inserting job into Supabase:', error);
             console.error('❌ Error details:', {
@@ -353,10 +361,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               details: error.details,
               hint: error.hint
             });
+            clearTimeout(timeoutId);
             throw error;
           }
 
           console.log('✅ Job inserted successfully:', insertedJob);
+          clearTimeout(timeoutId);
 
           const newJob: Job = {
             id: insertedJob.id || '',
@@ -387,6 +397,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           resolve(newJob);
         } catch (supabaseError) {
           console.error('💥 Supabase job creation failed, falling back to local storage:', supabaseError);
+          clearTimeout(timeoutId);
           
           // Fallback to local storage
           const newJob: Job = {

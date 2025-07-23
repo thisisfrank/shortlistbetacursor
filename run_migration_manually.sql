@@ -76,7 +76,41 @@ WHERE NOT EXISTS (
 SELECT 'User profiles after fix:' as info;
 SELECT id, email, role FROM user_profiles ORDER BY created_at; 
 
+-- JOBS TABLE SCHEMA FIX - Fixes timeout issue during job submission
+-- This resolves the client_id/user_id mismatch causing foreign key constraint violations
+
+-- Step 8: Fix jobs table schema to use user_id instead of client_id
+ALTER TABLE jobs DROP CONSTRAINT IF EXISTS jobs_client_id_fkey;
+ALTER TABLE jobs RENAME COLUMN client_id TO user_id;
+ALTER TABLE jobs ADD CONSTRAINT jobs_user_id_fkey FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
+
 -- Manual migration to make work_arrangement nullable
 -- Run this in Supabase SQL editor if needed
 
 ALTER TABLE jobs ALTER COLUMN work_arrangement DROP NOT NULL; 
+
+-- Update get_all_users function to include name field from user_profiles
+CREATE OR REPLACE FUNCTION get_all_users()
+RETURNS TABLE (
+  id uuid,
+  email text,
+  name text,
+  role text,
+  created_at timestamptz,
+  updated_at timestamptz,
+  tier_id uuid
+) AS $$
+BEGIN
+  RETURN QUERY
+    SELECT up.id, up.email, up.name, up.role, up.created_at, up.updated_at, up.tier_id
+    FROM user_profiles up
+    ORDER BY 
+      CASE up.role 
+        WHEN 'admin' THEN 1
+        WHEN 'sourcer' THEN 2
+        WHEN 'client' THEN 3
+        ELSE 4
+      END,
+      up.created_at DESC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER; 
