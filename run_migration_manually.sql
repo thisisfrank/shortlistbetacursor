@@ -27,7 +27,7 @@ GRANT ALL ON user_profiles TO service_role;
 CREATE OR REPLACE FUNCTION create_user_profile()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.user_profiles (id, email, role)
+  INSERT INTO public.user_profiles (id, email, role, name)
   VALUES (
     NEW.id,
     NEW.email,
@@ -37,7 +37,8 @@ BEGIN
       WHEN NEW.email = 'client@test.com' THEN 'client'::user_role
       WHEN NEW.email = 'client2@test.com' THEN 'client'::user_role
       ELSE 'client'::user_role
-    END
+    END,
+    SPLIT_PART(NEW.email, '@', 1) -- Use email prefix as default name
   );
   RETURN NEW;
 EXCEPTION
@@ -55,8 +56,13 @@ CREATE TRIGGER create_user_profile_trigger
   FOR EACH ROW
   EXECUTE FUNCTION create_user_profile();
 
--- Step 6: Create missing profiles for any existing users
-INSERT INTO user_profiles (id, email, role)
+-- Step 6: Fix existing user profiles with null names
+UPDATE user_profiles 
+SET name = COALESCE(name, SPLIT_PART(email, '@', 1)) 
+WHERE name IS NULL;
+
+-- Step 7: Create missing profiles for any existing users
+INSERT INTO user_profiles (id, email, role, name)
 SELECT 
   au.id,
   au.email,
@@ -66,20 +72,21 @@ SELECT
     WHEN au.email = 'client@test.com' THEN 'client'::user_role
     WHEN au.email = 'client2@test.com' THEN 'client'::user_role
     ELSE 'client'::user_role
-  END
+  END,
+  SPLIT_PART(au.email, '@', 1) -- Use email prefix as default name
 FROM auth.users au
 WHERE NOT EXISTS (
   SELECT 1 FROM user_profiles up WHERE up.id = au.id
 );
 
--- Step 7: Verify the fix
+-- Step 8: Verify the fix
 SELECT 'User profiles after fix:' as info;
-SELECT id, email, role FROM user_profiles ORDER BY created_at; 
+SELECT id, email, name, role FROM user_profiles ORDER BY created_at; 
 
 -- JOBS TABLE SCHEMA FIX - Fixes timeout issue during job submission
 -- This resolves the client_id/user_id mismatch causing foreign key constraint violations
 
--- Step 8: Fix jobs table schema to use user_id instead of client_id
+-- Step 9: Fix jobs table schema to use user_id instead of client_id
 ALTER TABLE jobs DROP CONSTRAINT IF EXISTS jobs_client_id_fkey;
 ALTER TABLE jobs RENAME COLUMN client_id TO user_id;
 ALTER TABLE jobs ADD CONSTRAINT jobs_user_id_fkey FOREIGN KEY (user_id) REFERENCES user_profiles(id) ON DELETE CASCADE;
