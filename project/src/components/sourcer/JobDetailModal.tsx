@@ -362,12 +362,12 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
               </div>
             </div> */}
             
-            {job.status === 'Claimed' && job.sourcerName && (
+            {job.status === 'Claimed' && job.sourcerId && (
               <div className="bg-supernova/10 border border-supernova/30 p-6 rounded-lg mb-6">
                 <div className="flex items-center">
                   <AlertCircle className="text-supernova mr-2" size={20} />
                   <span className="text-white-knight font-jakarta">
-                    This job is currently claimed by <strong className="text-supernova">{job.sourcerName}</strong>
+                    This job is currently claimed by <strong className="text-supernova">{job.sourcerId}</strong>
                   </span>
                 </div>
               </div>
@@ -380,7 +380,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
                   <p className="text-sm font-jakarta font-semibold text-green-400 uppercase tracking-wide">Completion Info</p>
                 </div>
                 <p className="text-white-knight font-jakarta mb-3">
-                  This job was completed by <strong className="text-supernova">{job.sourcerName}</strong>
+                  This job was completed by <strong className="text-supernova">{job.sourcerId}</strong>
                 </p>
                 <div className="bg-shadowforce border border-guardian/20 p-4 rounded-lg">
                   <p className="text-guardian font-jakarta text-sm break-all">{job.completionLink}</p>
@@ -394,64 +394,15 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 <h4 className="text-2xl font-anton text-supernova mb-6 uppercase tracking-wide">Claim This Job</h4>
                 
                 <div className="mb-6">
-                  <label className="block text-sm font-jakarta font-semibold text-guardian mb-3 uppercase tracking-wide">
-                    Sourcer Name
-                  </label>
-                  
-                  {savedSourcers.length > 0 && !isNewSourcer && (
-                    <div className="mb-4">
-                      <select
-                        value={sourcerName}
-                        onChange={(e) => {
-                          if (e.target.value === '__new__') {
-                            setIsNewSourcer(true);
-                            setSourcerName('');
-                          } else {
-                            setSourcerName(e.target.value);
-                            setError('');
-                          }
-                        }}
-                        className="block w-full border-0 border-b-2 px-0 py-4 text-lg bg-transparent text-white-knight focus:ring-0 focus:border-supernova transition-colors duration-200 border-guardian/40 hover:border-guardian/60 font-jakarta"
-                      >
-                        <option value="" className="bg-shadowforce text-guardian/60">Select your name</option>
-                        {savedSourcers.map((name) => (
-                          <option key={name} value={name} className="bg-shadowforce text-white-knight">
-                            {name}
-                          </option>
-                        ))}
-                        <option value="__new__" className="bg-shadowforce text-supernova">
-                          + Add New Sourcer Name
-                        </option>
-                      </select>
-                    </div>
-                  )}
-                  
-                  {(isNewSourcer || savedSourcers.length === 0) && (
-                    <div>
-                      <input
-                        type="text"
-                        value={sourcerName}
-                        onChange={(e) => {
-                          setSourcerName(e.target.value);
-                          setError('');
-                        }}
-                        placeholder="Enter your full name"
-                        className="block w-full border-0 border-b-2 px-0 py-4 text-lg bg-transparent text-white-knight placeholder-guardian/60 font-jakarta focus:ring-0 focus:border-supernova transition-colors duration-200 border-guardian/40 hover:border-guardian/60"
-                      />
-                      {savedSourcers.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsNewSourcer(false);
-                            setSourcerName(savedSourcers[0] || '');
-                          }}
-                          className="mt-2 text-sm text-supernova hover:text-supernova-light font-jakarta font-semibold"
-                        >
-                          ← Back to saved names
-                        </button>
-                      )}
-                    </div>
-                  )}
+                  <div className="bg-shadowforce border border-guardian/20 p-4 rounded-lg">
+                    <p className="text-sm font-jakarta font-semibold text-guardian mb-2 uppercase tracking-wide">
+                      Claiming as:
+                    </p>
+                    <p className="text-xl font-anton text-white-knight">{sourcerName}</p>
+                    <p className="text-sm text-guardian font-jakarta mt-1">
+                      {userProfile?.email}
+                    </p>
+                  </div>
                   
                   {error && (
                     <p className="mt-2 text-sm text-red-400 font-jakarta font-medium">{error}</p>
@@ -471,7 +422,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
             )}
             
             {/* Complete Job Section */}
-            {job.status === 'Claimed' && job.sourcerName && onComplete && (
+            {job.status === 'Claimed' && job.sourcerId && onComplete && (
               <div className="bg-green-500/10 border border-green-500/30 p-8 rounded-xl">
                 {/* Submission Method and Scrape/Submit Button */}
                 <div className="space-y-6 mb-6">

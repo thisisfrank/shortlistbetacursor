@@ -87,7 +87,7 @@ const SourcerDashboard: React.FC = () => {
   const unclaimedCount = jobs.filter(job => job.status === 'Unclaimed').length;
   const claimedCount = jobs.filter(job => job.status === 'Claimed').length;
   const completedCount = jobs.filter(job => job.status === 'Completed').length;
-  const myJobsCount = jobs.filter(job => job.sourcerId === sourcerName).length;
+  const myJobsCount = jobs.filter(job => job.sourcerId === userProfile?.id).length;
 
   // Close job detail modal
   const handleCloseModal = () => {
@@ -103,11 +103,11 @@ const SourcerDashboard: React.FC = () => {
       return;
     }
     
-    // Update job status to claimed using the user's actual name
+    // Update job status to claimed using the user's UUID
     if (updateJob) {
       const result = updateJob(jobId, {
         status: 'Claimed',
-        sourcerId: sourcerName  // Use the user's actual name from their profile
+        sourcerId: userProfile.id  // Use the user's UUID for the sourcer_id column
       });
       if (result && typeof (result as any).catch === 'function') {
         (result as any).catch((error: any) => {
@@ -279,7 +279,7 @@ const SourcerDashboard: React.FC = () => {
                   onView={(jobId) => setSelectedJobId(jobId)}
                   onClaim={job.status === 'Unclaimed' ? (jobId) => setSelectedJobId(jobId) : undefined}
                   onComplete={
-                    job.status === 'Claimed' && job.sourcerId === sourcerName 
+                    job.status === 'Claimed' && job.sourcerId === userProfile?.id 
                       ? (jobId) => setSelectedJobId(jobId) 
                       : undefined
                   }
