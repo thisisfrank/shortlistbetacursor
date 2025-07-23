@@ -232,7 +232,7 @@ export const SourcerManagement: React.FC = () => {
       </div>
 
       {/* Performance Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="bg-gradient-to-br from-supernova/20 to-supernova/10 border-supernova/30">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -245,27 +245,11 @@ export const SourcerManagement: React.FC = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-500/20 to-green-500/10 border-green-500/30">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-anton text-lg text-green-400 uppercase tracking-wide">Avg Success Rate</h3>
-                <p className="text-3xl font-anton text-white-knight">
-                  {sourcers.length > 0 
-                    ? Math.round(sourcers.reduce((acc, s) => acc + s.successRate, 0) / sourcers.length)
-                    : 0}%
-                </p>
-              </div>
-              <Target className="text-green-400" size={32} />
-            </div>
-          </CardContent>
-        </Card>
-
         <Card className="bg-gradient-to-br from-blue-500/20 to-blue-500/10 border-blue-500/30">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-anton text-lg text-blue-400 uppercase tracking-wide">Total Completed</h3>
+                <h3 className="font-anton text-lg text-blue-400 uppercase tracking-wide">Total Jobs Completed</h3>
                 <p className="text-3xl font-anton text-white-knight">
                   {sourcers.reduce((acc, s) => acc + s.completedJobs, 0)}
                 </p>
@@ -277,17 +261,17 @@ export const SourcerManagement: React.FC = () => {
 
         <Card className="bg-gradient-to-br from-purple-500/20 to-purple-500/10 border-purple-500/30">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-anton text-lg text-purple-400 uppercase tracking-wide">Avg Speed</h3>
-                <p className="text-3xl font-anton text-white-knight">
-                  {sourcers.length > 0 
-                    ? Math.round(sourcers.reduce((acc, s) => acc + s.avgCompletionHours, 0) / sourcers.length)
-                    : 0}h
-                </p>
+                          <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-anton text-lg text-purple-400 uppercase tracking-wide">Average Completion Time</h3>
+                  <p className="text-3xl font-anton text-white-knight">
+                    {sourcers.length > 0 
+                      ? Math.round(sourcers.reduce((acc, s) => acc + s.avgCompletionHours, 0) / sourcers.length)
+                      : 0}h
+                  </p>
+                </div>
+                <Clock className="text-purple-400" size={32} />
               </div>
-              <Clock className="text-purple-400" size={32} />
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -371,13 +355,6 @@ export const SourcerManagement: React.FC = () => {
                             }`}>
                               #{index + 1}
                             </div>
-                            {index < 3 && (
-                              <div className="ml-2">
-                                {index === 0 && <span className="text-supernova text-xs">🏆</span>}
-                                {index === 1 && <span className="text-gray-400 text-xs">🥈</span>}
-                                {index === 2 && <span className="text-orange-400 text-xs">🥉</span>}
-                              </div>
-                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -491,24 +468,7 @@ export const SourcerManagement: React.FC = () => {
                           >
                             <Edit size={14} />
                           </Button>
-                          {sourcer.claimedJobs > 0 && (
-                            <>
-                              <Button
-                                variant="warning"
-                                size="sm"
-                                onClick={() => handleReassignJobs(sourcer.name)}
-                              >
-                                REASSIGN
-                              </Button>
-                              <Button
-                                variant="success"
-                                size="sm"
-                                onClick={() => handleForceComplete(sourcer.name)}
-                              >
-                                COMPLETE
-                              </Button>
-                            </>
-                          )}
+
                         </td>
                       </tr>
                     );
@@ -562,7 +522,7 @@ export const SourcerManagement: React.FC = () => {
                 <h4 className="font-anton text-blue-400 uppercase tracking-wide">Volume (30%)</h4>
               </div>
               <p className="text-guardian font-jakarta text-sm">
-                Number of successfully completed jobs and overall contribution.
+                Number of successfully completed jobs.
               </p>
               <div className="mt-2 text-xs text-guardian/80">
                 Consistent delivery builds reputation
