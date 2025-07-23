@@ -1,18 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { JobDetailModal } from '../sourcer/JobDetailModal';
 import { Search, Award, TrendingUp, Users, Clock, Target, Trash2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+
+interface SourcerProfile {
+  id: string;
+  name: string;
+  email: string;
+}
 
 export const SourcerManagement: React.FC = () => {
   const { jobs, candidates, getCandidatesByJob, updateJob } = useData();
   const [search, setSearch] = useState('');
   const [selectedSourcer, setSelectedSourcer] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [sourcerProfiles, setSourcerProfiles] = useState<Record<string, SourcerProfile>>({});
 
   const [sortBy, setSortBy] = useState<'performance' | 'speed' | 'acceptance' | 'completed'>('performance');
+
+  // Load sourcer profiles
+  useEffect(() => {
+    const loadSourcerProfiles = async () => {
+      try {
+        // Get all unique sourcer IDs from jobs
+        const sourcerIds = [...new Set(jobs.filter(job => job.sourcerId).map(job => job.sourcerId!))];
+        
+        if (sourcerIds.length === 0) return;
+
+        // Fetch user profiles for these sourcer IDs
+        const { data: profiles, error } = await supabase
+          .from('user_profiles')
+          .select('id, name, email')
+          .in('id', sourcerIds);
+
+        if (error) {
+          console.error('Error loading sourcer profiles:', error);
+          return;
+        }
+
+        // Create a lookup map
+        const profileMap: Record<string, SourcerProfile> = {};
+        profiles?.forEach((profile: any) => {
+          profileMap[profile.id] = {
+            id: profile.id,
+            name: profile.name || 'Unknown Sourcer',
+            email: profile.email || 'Unknown Email'
+          };
+        });
+
+        setSourcerProfiles(profileMap);
+      } catch (error) {
+        console.error('Error loading sourcer profiles:', error);
+      }
+    };
+
+    loadSourcerProfiles();
+  }, [jobs]);
+
+  // Get sourcer name by ID
+  const getSourcerName = (sourcerId: string): string => {
+    const profile = sourcerProfiles[sourcerId];
+    return profile?.name || `Sourcer ${sourcerId.substring(0, 8)}...`;
+  };
 
   // Get all unique sourcers
   const sourcers = [...new Set(jobs.filter(job => job.sourcerId).map(job => job.sourcerId!))]
@@ -52,7 +105,7 @@ export const SourcerManagement: React.FC = () => {
       
       // Calculate speed score (faster = higher score, max 24 hours)
       const speedScore = avgCompletionHours > 0 
-        ? Math.max(0, Math.min(100, 100 - (avgCompletionHours / 24) * 100))
+        ? Math.max(0, Math.min(100, (24 - avgCompletionHours) * 4.17)) // 24 hours = 0 points, 0 hours = 100 points
         : 0;
       
       // Calculate overall performance score
@@ -62,9 +115,9 @@ export const SourcerManagement: React.FC = () => {
         (Math.min(completedJobs.length * 10, 30) * 1) // 30% weight on volume (max 30 points)
       );
 
-
       return {
-        name: sourcerId, // Display UUID for now
+        id: sourcerId,
+        name: getSourcerName(sourcerId), // Display actual sourcer name
         totalJobs: sourcerJobs.length,
         completedJobs: completedJobs.length,
         claimedJobs: claimedJobs.length,
@@ -112,7 +165,8 @@ export const SourcerManagement: React.FC = () => {
       return;
     }
 
-    if (window.confirm(`Reassign ${sourcerJobs.length} active job(s) from ${sourcerId} back to unclaimed status?`)) {
+    const sourcerName = getSourcerName(sourcerId);
+    if (window.confirm(`Reassign ${sourcerJobs.length} active job(s) from ${sourcerName} back to unclaimed status?`)) {
       sourcerJobs.forEach(job => {
         updateJob(job.id, {
           status: 'Unclaimed',
@@ -131,7 +185,8 @@ export const SourcerManagement: React.FC = () => {
       return;
     }
 
-    if (window.confirm(`Force complete ${sourcerJobs.length} active job(s) for ${sourcerId}?`)) {
+    const sourcerName = getSourcerName(sourcerId);
+    if (window.confirm(`Force complete ${sourcerJobs.length} active job(s) for ${sourcerName}?`)) {
       sourcerJobs.forEach(job => {
         updateJob(job.id, {
           status: 'Completed',
@@ -141,8 +196,6 @@ export const SourcerManagement: React.FC = () => {
       alert(`Successfully completed ${sourcerJobs.length} job(s).`);
     }
   };
-
-
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -233,17 +286,17 @@ export const SourcerManagement: React.FC = () => {
 
         <Card className="bg-gradient-to-br from-purple-500/20 to-purple-500/10 border-purple-500/30">
           <CardContent className="p-6">
-                          <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-anton text-lg text-purple-400 uppercase tracking-wide">Average Completion Time</h3>
-                  <p className="text-3xl font-anton text-white-knight">
-                    {sourcers.length > 0 
-                      ? Math.round(sourcers.reduce((acc, s) => acc + s.avgCompletionHours, 0) / sourcers.length)
-                      : 0}h
-                  </p>
-                </div>
-                <Clock className="text-purple-400" size={32} />
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-anton text-lg text-purple-400 uppercase tracking-wide">Average Completion Time</h3>
+                <p className="text-3xl font-anton text-white-knight">
+                  {sourcers.length > 0 
+                    ? Math.round(sourcers.reduce((acc, s) => acc + s.avgCompletionHours, 0) / sourcers.length)
+                    : 0}h
+                </p>
               </div>
+              <Clock className="text-purple-400" size={32} />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -264,17 +317,17 @@ export const SourcerManagement: React.FC = () => {
                 <option value="performance">Overall Performance</option>
                 <option value="speed">Delivery Speed</option>
                 <option value="acceptance">Acceptance Rate</option>
-                <option value="completed">Completed Jobs</option>
+                <option value="completed">Jobs Completed</option>
               </select>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {sortedSourcers.length === 0 ? (
-            <div className="text-center py-16">
-              <Users size={64} className="text-guardian/40 mx-auto mb-4" />
-              <h3 className="font-anton text-2xl text-guardian mb-2">NO SOURCERS FOUND</h3>
-              <p className="text-guardian/80 font-jakarta">No sourcers match your search criteria.</p>
+            <div className="text-center py-12">
+              <Users className="mx-auto h-12 w-12 text-guardian/50 mb-4" />
+              <h3 className="text-lg font-anton text-guardian mb-2">No Sourcers Found</h3>
+              <p className="text-guardian/70 font-jakarta">Sourcers will appear here once they claim and complete jobs</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -291,7 +344,7 @@ export const SourcerManagement: React.FC = () => {
                       Performance Score
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                      Speed Metrics
+                      Speed
                     </th>
                     <th className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
                       Jobs
@@ -314,7 +367,7 @@ export const SourcerManagement: React.FC = () => {
                     const isTopPerformer = index < 3; // Top 3 get special styling
                     
                     return (
-                      <tr key={sourcer.name} className={`hover:bg-shadowforce transition-colors ${
+                      <tr key={sourcer.id} className={`hover:bg-shadowforce transition-colors ${
                         isTopPerformer ? 'bg-gradient-to-r from-supernova/5 to-transparent' : ''
                       }`}>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -346,7 +399,7 @@ export const SourcerManagement: React.FC = () => {
                                     {sourcer.totalCandidates} candidates delivered
                                   </div>
                                   <div className="text-sm text-guardian">
-                                    {sourcer.avgCompletionHours}h avg completion
+                                    {sourcerProfiles[sourcer.id]?.email || 'Email not available'}
                                   </div>
                                 </div>
                               </div>
@@ -402,7 +455,7 @@ export const SourcerManagement: React.FC = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setSelectedSourcer(sourcer.name)}
+                            onClick={() => setSelectedSourcer(sourcer.id)}
                           >
                             VIEW
                           </Button>
@@ -469,12 +522,11 @@ export const SourcerManagement: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Top Performers Highlight */}
+      {/* Top Performers */}
       {sortedSourcers.length > 0 && (
-        <Card className="bg-gradient-to-r from-supernova/20 to-supernova/10 border-supernova/30">
+        <Card>
           <CardHeader>
-            <div className="flex items-center">
-              <Award className="text-supernova mr-3" size={24} />
+            <div className="flex items-center justify-between">
               <h3 className="text-xl font-anton text-white-knight uppercase tracking-wide">Top Performers This Period</h3>
             </div>
           </CardHeader>
@@ -485,7 +537,7 @@ export const SourcerManagement: React.FC = () => {
                 const colors = ['text-supernova', 'text-gray-400', 'text-orange-400'];
                 
                 return (
-                  <div key={sourcer.name} className="text-center p-4 bg-shadowforce rounded-lg">
+                  <div key={sourcer.id} className="text-center p-4 bg-shadowforce rounded-lg">
                     <div className="text-2xl mb-2">{medals[index]}</div>
                     <h4 className={`font-anton text-lg ${colors[index]} uppercase tracking-wide mb-2`}>
                       {sourcer.name}
@@ -514,7 +566,7 @@ export const SourcerManagement: React.FC = () => {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <h3 className="text-2xl font-anton text-white-knight uppercase tracking-wide">
-                  {selectedSourcer} - Detailed Performance
+                  {getSourcerName(selectedSourcer)} - Detailed Performance
                 </h3>
                 <Button
                   variant="ghost"
@@ -530,7 +582,7 @@ export const SourcerManagement: React.FC = () => {
                 {/* Performance Metrics */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   {(() => {
-                    const sourcer = sortedSourcers.find(s => s.name === selectedSourcer);
+                    const sourcer = sortedSourcers.find(s => s.id === selectedSourcer);
                     if (!sourcer) return null;
                     
                     return (
@@ -555,25 +607,40 @@ export const SourcerManagement: React.FC = () => {
                     );
                   })()}
                 </div>
-                
-                {/* Sourcer's Jobs */}
+
+                {/* Action Buttons */}
+                <div className="flex gap-4">
+                  <Button
+                    onClick={() => handleReassignJobs(selectedSourcer)}
+                    variant="outline"
+                    className="text-orange-400 border-orange-400/30 hover:bg-orange-400/10"
+                  >
+                    Reassign Jobs
+                  </Button>
+                  <Button
+                    onClick={() => handleForceComplete(selectedSourcer)}
+                    variant="outline"
+                    className="text-green-400 border-green-400/30 hover:bg-green-400/10"
+                  >
+                    Force Complete
+                  </Button>
+                </div>
+
+                {/* Job History */}
                 <div>
-                  <h4 className="text-lg font-anton text-supernova mb-4 uppercase tracking-wide">
-                    Job History
-                  </h4>
+                  <h4 className="text-lg font-anton text-white-knight mb-4 uppercase tracking-wide">Job History</h4>
                   <div className="space-y-3">
                     {jobs
                       .filter(job => job.sourcerId === selectedSourcer)
                       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
                       .map(job => {
-                        const completionTime = job.status === 'Completed' 
-                          ? Math.round(((new Date(job.updatedAt).getTime() - new Date(job.createdAt).getTime()) / (1000 * 60 * 60)) * 10) / 10
-                          : null;
+                        const completionTime = job.status === 'Completed' ? 
+                          Math.round((new Date(job.updatedAt).getTime() - new Date(job.createdAt).getTime()) / (1000 * 60 * 60)) : null;
                         
                         return (
                           <div 
                             key={job.id} 
-                            className="bg-shadowforce p-4 rounded-lg cursor-pointer hover:bg-shadowforce/80 transition-colors"
+                            className="p-4 bg-shadowforce rounded-lg border border-guardian/20 cursor-pointer hover:border-supernova/30 transition-colors"
                             onClick={() => setSelectedJobId(job.id)}
                           >
                             <div className="flex justify-between items-start">
