@@ -13,6 +13,7 @@ export const SourcerManagement: React.FC = () => {
   const [selectedSourcer, setSelectedSourcer] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [sourcerNames, setSourcerNames] = useState<Record<string, string>>({});
+  const [timePeriod, setTimePeriod] = useState<'7days' | '30days' | '90days' | 'alltime'>('30days');
 
   const [sortBy, setSortBy] = useState<'performance' | 'speed' | 'acceptance' | 'completed'>('performance');
 
@@ -23,10 +24,11 @@ export const SourcerManagement: React.FC = () => {
         const sourcerIds = [...new Set(jobs.filter(job => job.sourcerId).map(job => job.sourcerId!))];
         if (sourcerIds.length === 0) return;
 
+        // Query for specific sourcer IDs instead of filtering by role
         const { data: profiles, error } = await supabase
           .from('user_profiles')
-          .select('id, name, role')
-          .eq('role', 'sourcer');
+          .select('id, name')
+          .in('id', sourcerIds);
 
         if (!error && profiles) {
           const nameMap: Record<string, string> = {};
@@ -34,6 +36,9 @@ export const SourcerManagement: React.FC = () => {
             nameMap[profile.id] = profile.name || 'Unknown Sourcer';
           });
           setSourcerNames(nameMap);
+          console.log('Loaded sourcer names:', nameMap); // Debug log
+        } else {
+          console.error('Error loading sourcer profiles:', error);
         }
       } catch (error) {
         console.error('Error loading sourcer names:', error);
@@ -49,6 +54,30 @@ export const SourcerManagement: React.FC = () => {
   // Get sourcer name by ID
   const getSourcerName = (sourcerId: string): string => {
     return sourcerNames[sourcerId] || `Sourcer ${sourcerId.substring(0, 8)}...`;
+  };
+
+  // Filter jobs based on time period
+  const getJobsInTimePeriod = (jobs: any[], period: string) => {
+    if (period === 'alltime') return jobs;
+    
+    const now = new Date();
+    const cutoffDate = new Date();
+    
+    switch (period) {
+      case '7days':
+        cutoffDate.setDate(now.getDate() - 7);
+        break;
+      case '30days':
+        cutoffDate.setDate(now.getDate() - 30);
+        break;
+      case '90days':
+        cutoffDate.setDate(now.getDate() - 90);
+        break;
+      default:
+        return jobs;
+    }
+    
+    return jobs.filter(job => new Date(job.updatedAt) >= cutoffDate);
   };
 
   // Get all unique sourcers
@@ -118,6 +147,60 @@ export const SourcerManagement: React.FC = () => {
           : new Date()
       };
     });
+
+  // Filter top performers based on selected time period using original sourcers data
+  const topPerformersSourcers = timePeriod === 'alltime' 
+    ? [...sourcers].sort((a, b) => b.performanceScore - a.performanceScore)
+    : sourcers.map(sourcer => {
+        // Get jobs for this sourcer in the selected time period
+        const periodJobs = getJobsInTimePeriod(jobs.filter(job => job.sourcerId === sourcer.id), timePeriod);
+        const completedJobs = periodJobs.filter(job => job.status === 'Completed');
+        
+        if (completedJobs.length === 0) return null; // Filter out sourcers with no completed jobs in period
+        
+        const totalCandidates = periodJobs.reduce((acc, job) => {
+          return acc + getCandidatesByJob(job.id).length;
+        }, 0);
+
+        // Calculate delivery speed metrics for the period
+        const completionTimes = completedJobs.map(job => {
+          const created = new Date(job.createdAt).getTime();
+          const updated = new Date(job.updatedAt).getTime();
+          return (updated - created) / (1000 * 60 * 60); // Convert to hours
+        });
+        
+        const avgCompletionHours = completionTimes.length > 0 
+          ? completionTimes.reduce((acc, time) => acc + time, 0) / completionTimes.length
+          : 0;
+        
+        // Calculate candidate acceptance rate
+        const acceptanceRate = totalCandidates > 0 ? 100 : 0; // Simplified for demo
+        
+        // Calculate speed score (faster = higher score, max 24 hours)
+        const speedScore = avgCompletionHours > 0 
+          ? Math.max(0, Math.min(100, (24 - avgCompletionHours) * 4.17))
+          : 0;
+        
+        // Calculate overall performance score for the period
+        const performanceScore = Math.round(
+          (speedScore * 0.4) + // 40% weight on speed
+          (acceptanceRate * 0.3) + // 30% weight on acceptance rate
+          (Math.min(completedJobs.length * 10, 30) * 1) // 30% weight on volume (max 30 points)
+        );
+
+        return {
+          ...sourcer, // Keep original sourcer data including proper name
+          // Override with period-specific metrics
+          completedJobs: completedJobs.length,
+          totalCandidates,
+          avgCompletionHours: Math.round(avgCompletionHours * 10) / 10,
+          acceptanceRate,
+          performanceScore,
+          successRate: periodJobs.length > 0 ? Math.round((completedJobs.length / periodJobs.length) * 100) : 0
+        };
+      })
+      .filter(sourcer => sourcer !== null) // Remove sourcers with no completed jobs in period
+      .sort((a, b) => b.performanceScore - a.performanceScore);
 
   // Filter sourcers based on search
   const filteredSourcers = sourcers.filter(sourcer =>
@@ -382,9 +465,6 @@ export const SourcerManagement: React.FC = () => {
                                   <div className="text-sm text-guardian">
                                     {sourcer.totalCandidates} candidates delivered
                                   </div>
-                                  <div className="text-sm text-guardian">
-                                    Sourcer: {getSourcerName(sourcer.id)}
-                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -507,38 +587,59 @@ export const SourcerManagement: React.FC = () => {
       </Card>
 
       {/* Top Performers */}
-      {sortedSourcers.length > 0 && (
+      {sourcers.length > 0 && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <h3 className="text-xl font-anton text-white-knight uppercase tracking-wide">Top Performers This Period</h3>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-jakarta text-guardian">Time Period:</span>
+                <select
+                  value={timePeriod}
+                  onChange={(e) => setTimePeriod(e.target.value as any)}
+                  className="rounded-lg border-guardian/30 bg-shadowforce text-white-knight focus:ring-supernova focus:border-supernova font-jakarta text-sm"
+                >
+                  <option value="7days">Past 7 Days</option>
+                  <option value="30days">Past 30 Days</option>
+                  <option value="90days">Past 90 Days</option>
+                  <option value="alltime">All Time</option>
+                </select>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {sortedSourcers.slice(0, 3).map((sourcer, index) => {
-                const medals = ['🏆', '🥈', '🥉'];
-                const colors = ['text-supernova', 'text-gray-400', 'text-orange-400'];
-                
-                return (
-                  <div key={sourcer.id} className="text-center p-4 bg-shadowforce rounded-lg">
-                    <div className="text-2xl mb-2">{medals[index]}</div>
-                    <h4 className={`font-anton text-lg ${colors[index]} uppercase tracking-wide mb-2`}>
-                      {sourcer.name}
-                    </h4>
-                    <div className={`text-3xl font-anton ${colors[index]} mb-1`}>
-                      {sourcer.performanceScore}
+            {topPerformersSourcers.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-guardian/50 text-sm font-jakarta">
+                  No completed jobs found for the selected time period.
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {topPerformersSourcers.slice(0, 3).map((sourcer, index) => {
+                  const medals = ['🏆', '🥈', '🥉'];
+                  const colors = ['text-supernova', 'text-gray-400', 'text-orange-400'];
+                  
+                  return (
+                    <div key={sourcer.id} className="text-center p-4 bg-shadowforce rounded-lg">
+                      <div className="text-2xl mb-2">{medals[index]}</div>
+                      <h4 className={`font-anton text-lg ${colors[index]} uppercase tracking-wide mb-2`}>
+                        {sourcer.name}
+                      </h4>
+                      <div className={`text-3xl font-anton ${colors[index]} mb-1`}>
+                        {sourcer.performanceScore}
+                      </div>
+                      <div className="text-xs text-guardian font-jakarta mb-3">Performance Score</div>
+                      <div className="space-y-1 text-xs text-guardian">
+                        <div>⚡ {sourcer.avgCompletionHours}h avg delivery</div>
+                        <div>✅ {sourcer.acceptanceRate}% acceptance</div>
+                        <div>📋 {sourcer.completedJobs} jobs completed</div>
+                      </div>
                     </div>
-                    <div className="text-xs text-guardian font-jakarta mb-3">Performance Score</div>
-                    <div className="space-y-1 text-xs text-guardian">
-                      <div>⚡ {sourcer.avgCompletionHours}h avg delivery</div>
-                      <div>✅ {sourcer.acceptanceRate}% acceptance</div>
-                      <div>📋 {sourcer.completedJobs} jobs completed</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
