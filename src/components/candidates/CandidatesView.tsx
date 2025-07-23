@@ -277,6 +277,12 @@ export const CandidatesView: React.FC = () => {
     const selectedJob = getJobById(selectedJobId);
     const companyName = selectedJob?.companyName || 'Unknown Company';
     
+    // Only show candidates if job is completed
+    if (selectedJob?.status !== 'Completed') {
+      setSelectedJobId(null);
+      return null;
+    }
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
         <div className="max-w-7xl mx-auto px-4 py-12">
@@ -739,58 +745,110 @@ export const CandidatesView: React.FC = () => {
             </div>
           </div>
           <h1 className="text-5xl md:text-6xl font-anton text-white-knight mb-4 text-center uppercase tracking-wide">
-            JOB SUBMISSIONS
+            MY OPEN JOBS
           </h1>
           <p className="text-xl text-guardian text-center font-jakarta max-w-2xl mx-auto">
-            Select a job to view submitted candidates from our expert sourcing team
+            Select a job to view your verified candidates
           </p>
         </header>
         
-        {/* Stats Dashboard */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <Card className="bg-gradient-to-br from-supernova/20 to-supernova/10 border-supernova/30 hover:border-supernova/50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-anton text-lg text-supernova uppercase tracking-wide">Total Jobs</h3>
-                  <p className="text-3xl font-anton text-white-knight">{userJobs.length}</p>
+
+        
+        {/* Search and Job List */}
+        <Card className="mb-12">
+          <CardContent className="p-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+              <h2 className="text-2xl font-anton text-white-knight uppercase tracking-wide">Select Job to View Candidates</h2>
+              
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search size={18} className="text-guardian" />
                 </div>
-                <Briefcase className="text-supernova" size={32} />
+                <input
+                  type="text"
+                  placeholder=""
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10 block w-full rounded-lg border-guardian/30 bg-shadowforce text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta"
+                />
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-blue-500/20 to-blue-500/10 border-blue-500/30 hover:border-blue-500/50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-anton text-lg text-blue-400 uppercase tracking-wide">Total Candidates</h3>
-                  <p className="text-3xl font-anton text-white-knight">
-                    {userJobs.reduce((total, job) => total + getCandidatesByJob(job.id).length, 0)}
-                  </p>
+            </div>
+            
+            {sortedJobs.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="mb-6">
+                  <Briefcase size={64} className="text-guardian/40 mx-auto" />
                 </div>
-                <Users className="text-blue-400" size={32} />
+                <h3 className="font-anton text-2xl text-guardian mb-2">NO JOBS FOUND</h3>
+                <p className="text-guardian/80 font-jakarta">No jobs match your current search criteria.</p>
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-green-500/20 to-green-500/10 border-green-500/30 hover:border-green-500/50">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-anton text-lg text-green-400 uppercase tracking-wide">Completed Jobs</h3>
-                  <p className="text-3xl font-anton text-white-knight">
-                    {userJobs.filter(job => job.status === 'Completed').length}
-                  </p>
-                </div>
-                <Zap className="text-green-400" size={32} />
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                {sortedJobs.map(job => {
+                  const jobCandidates = getCandidatesByJob(job.id);
+                  const isCompleted = job.status === 'Completed';
+                  const clientStatus = isCompleted ? 'COMPLETED' : 'IN PROGRESS';
+                  
+                  return (
+                    <Card 
+                      key={job.id} 
+                      className={`hover:shadow-2xl transition-all duration-300 transform hover:scale-105 ${isCompleted ? 'cursor-pointer' : 'cursor-default opacity-75'}`}
+                    >
+                      <div onClick={() => isCompleted ? setSelectedJobId(job.id) : null}>
+                        <CardContent className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <h3 className="text-xl font-anton text-white-knight mb-2 uppercase tracking-wide line-clamp-2">
+                              {job.title}
+                            </h3>
+                            <Badge 
+                              variant={isCompleted ? 'success' : 'warning'}
+                              className="mb-3"
+                            >
+                              {clientStatus}
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        <div className="mb-4 p-3 bg-supernova/10 border border-supernova/30 rounded-lg">
+                          <p className="text-sm font-jakarta font-semibold text-supernova">Company</p>
+                          <p className="text-white-knight font-jakarta font-bold">{job.companyName}</p>
+                        </div>
+                        
+                        <div className="space-y-3 mb-6">
+                          <div className="flex items-center text-sm text-guardian">
+                            <Calendar size={14} className="mr-3 text-supernova" />
+                            <span className="font-jakarta">Posted {formatDate(job.createdAt)}</span>
+                          </div>
+                        </div>
+                        
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          fullWidth
+                          disabled={!isCompleted}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isCompleted) {
+                              setSelectedJobId(job.id);
+                            }
+                          }}
+                          className="flex items-center justify-center gap-2"
+                        >
+                          {isCompleted ? 'SEE CANDIDATES' : 'PENDING COMPLETION'}
+                        </Button>
+                        </CardContent>
+                      </div>
+                    </Card>
+                  );
+                })}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
         
         {/* Upgrade CTA */}
-        <div className="mb-12">
+        <div className="mt-12">
           <Card className="bg-gradient-to-r from-supernova/20 via-supernova/10 to-transparent border-supernova/30 hover:border-supernova/50 transition-all duration-300">
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -821,117 +879,6 @@ export const CandidatesView: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-        
-        {/* Search and Job List */}
-        <Card className="mb-12">
-          <CardContent className="p-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-              <h2 className="text-2xl font-anton text-white-knight uppercase tracking-wide">Select Job to View Candidates</h2>
-              
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search size={18} className="text-guardian" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search jobs or companies"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10 block w-full rounded-lg border-guardian/30 bg-shadowforce text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta"
-                />
-              </div>
-            </div>
-            
-            {sortedJobs.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="mb-6">
-                  <Briefcase size={64} className="text-guardian/40 mx-auto" />
-                </div>
-                <h3 className="font-anton text-2xl text-guardian mb-2">NO JOBS FOUND</h3>
-                <p className="text-guardian/80 font-jakarta">No jobs match your current search criteria.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {sortedJobs.map(job => {
-                  const jobCandidates = getCandidatesByJob(job.id);
-                  
-                  return (
-                    <Card 
-                      key={job.id} 
-                      className="hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer"
-                      onClick={() => setSelectedJobId(job.id)}
-                    >
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <h3 className="text-xl font-anton text-white-knight mb-2 uppercase tracking-wide line-clamp-2">
-                              {job.title}
-                            </h3>
-                            <Badge 
-                              variant={
-                                job.status === 'Unclaimed' 
-                                  ? 'warning' 
-                                  : job.status === 'In Progress'
-                                    ? 'info'
-                                    : job.status === 'Completed' 
-                                    ? 'success' 
-                                    : 'default'
-                              }
-                              className="mb-3"
-                            >
-                              {job.status === 'Unclaimed' ? 'AWAITING SOURCER' : 
-                               job.status === 'In Progress' ? 'IN PROGRESS' :
-                               job.status}
-                            </Badge>
-                          </div>
-                        </div>
-                        
-                        <div className="mb-4 p-3 bg-supernova/10 border border-supernova/30 rounded-lg">
-                          <p className="text-sm font-jakarta font-semibold text-supernova">Company</p>
-                          <p className="text-white-knight font-jakarta font-bold">{job.companyName}</p>
-                        </div>
-                        
-                        <div className="space-y-3 mb-6">
-                          <div className="flex items-center text-sm text-guardian">
-                            <Users size={14} className="mr-3 text-supernova" />
-                            <span className="font-jakarta font-bold text-supernova">
-                              {jobCandidates.length} Candidate{jobCandidates.length !== 1 ? 's' : ''}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center text-sm text-guardian">
-                            <Calendar size={14} className="mr-3 text-supernova" />
-                            <span className="font-jakarta">Posted {formatDate(job.createdAt)}</span>
-                          </div>
-                          
-                          {job.sourcerId && (
-                            <div className="flex items-center text-sm text-guardian">
-                              <User size={14} className="mr-3 text-supernova" />
-                              <span className="font-jakarta">Sourcer: {job.sourcerId}</span>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          fullWidth
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedJobId(job.id);
-                          }}
-                          className="flex items-center justify-center gap-2"
-                        >
-                          SEE CANDIDATES
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

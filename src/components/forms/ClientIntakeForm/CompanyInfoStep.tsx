@@ -11,6 +11,7 @@ interface CompanyInfoStepProps {
   };
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onNext: () => void;
+  onBack?: () => void;
   errors: Record<string, string>;
 }
 
@@ -18,6 +19,7 @@ export const CompanyInfoStep: React.FC<CompanyInfoStepProps> = ({
   formData,
   onChange,
   onNext,
+  onBack,
   errors
 }) => {
 
@@ -71,9 +73,14 @@ export const CompanyInfoStep: React.FC<CompanyInfoStepProps> = ({
         placeholder="Enter your phone number"
       />
 
-      <div className="pt-8">
-        <Button type="submit" fullWidth size="lg">
-          CONTINUE TO JOB DETAILS
+      <div className="pt-8 flex gap-4">
+        {onBack && (
+          <Button type="button" variant="outline" size="lg" onClick={onBack} className="flex-1">
+            BACK TO JOB DETAILS
+          </Button>
+        )}
+        <Button type="submit" size="lg" className="flex-1">
+          CONTINUE TO REQUIREMENTS
         </Button>
       </div>
     </form>

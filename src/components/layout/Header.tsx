@@ -2,7 +2,6 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { UserMenu } from './UserMenu';
-import BoltIcon from '../../assets/v2.png';
 
 export const Header: React.FC = () => {
   const location = useLocation();
@@ -64,7 +63,7 @@ export const Header: React.FC = () => {
       case 'client':
         return [
           { path: '/client', label: 'GET CANDIDATES', key: 'submit' },
-          { path: '/candidates', label: 'MY CANDIDATES', key: 'candidates' }
+          { path: '/candidates', label: 'MY OPEN JOBS', key: 'candidates' }
         ];
       case 'sourcer':
         return [
@@ -126,14 +125,6 @@ export const Header: React.FC = () => {
           {/* Logo - positioned absolutely to the left */}
           <div className="absolute left-0 flex items-center">
             <Link to="/" className="flex items-center text-supernova hover:text-supernova-light transition-colors">
-              <div className="relative">
-                <img
-                  src={BoltIcon}
-                  alt="Lightning Bolt"
-                  className="mr-3 animate-pulse"
-                  style={{ width: '40px', height: '19px', filter: 'drop-shadow(0 0 6px #FFD600)', objectFit: 'contain' }}
-                />
-              </div>
               <div className="sr-logo">
                 <span className="text-supernova">SUPER</span>
                 <span className="text-white-knight ml-1">RECRUITER</span>

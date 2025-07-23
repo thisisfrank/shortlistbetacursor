@@ -234,7 +234,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         salaryRangeMax: j.salary_range_max ?? 0,
         keySellingPoints: j.key_selling_points || [],
         status: j.status || '',
-        sourcerId: j.sourcer_id || null,
+        sourcerId: j.sourcer_name || null, // Temporarily using sourcer_name to test production schema
         completionLink: j.completion_link || null,
         candidatesRequested: j.candidates_requested ?? 0,
         createdAt: j.created_at ? new Date(j.created_at) : new Date(),
@@ -847,7 +847,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         const dbUpdates: any = {};
         
         if (updates.status) dbUpdates.status = updates.status;
-        if (updates.sourcerId !== undefined) dbUpdates.sourcer_id = updates.sourcerId; // Fixed: sourcer_name -> sourcer_id
+        if (updates.sourcerId !== undefined) dbUpdates.sourcer_name = updates.sourcerId; // Temporarily using sourcer_name to test production schema
         if (updates.completionLink !== undefined) dbUpdates.completion_link = updates.completionLink;
         
         const { data: updatedJobData, error } = await supabase
@@ -876,7 +876,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           salaryRangeMax: updatedJobData.salary_range_max ?? 0,
           keySellingPoints: updatedJobData.key_selling_points || [],
           status: updatedJobData.status || '',
-          sourcerId: updatedJobData.sourcer_id || null, // Fixed: sourcer_name -> sourcer_id
+          sourcerId: updatedJobData.sourcer_name || null, // Temporarily using sourcer_name to test production schema
           completionLink: updatedJobData.completion_link || null,
           candidatesRequested: updatedJobData.candidates_requested ?? 0,
           createdAt: updatedJobData.created_at ? new Date(updatedJobData.created_at) : new Date(),

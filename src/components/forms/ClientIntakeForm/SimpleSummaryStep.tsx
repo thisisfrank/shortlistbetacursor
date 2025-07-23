@@ -3,7 +3,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useData } from '../../../context/DataContext';
 import { Button } from '../../ui/Button';
 import { Badge } from '../../ui/Badge';
-import { Users, User } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 interface SimpleSummaryStepProps {
   formData: {
@@ -15,7 +15,9 @@ interface SimpleSummaryStepProps {
     description: string;
     seniorityLevel: string;
     workArrangement: string;
-    location: string;
+    city: string;
+    state: string;
+    isRemote: boolean;
     salaryRangeMin: string;
     salaryRangeMax: string;
     keySellingPoints: string[];
@@ -37,6 +39,12 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
   const { user } = useAuth();
   const { tiers } = useData();
   
+  // Helper function to extract numeric value from formatted currency
+  const extractNumericValue = (formattedValue: string): number => {
+    const numericString = formattedValue.replace(/[$,]/g, '');
+    return parseInt(numericString) || 0;
+  };
+  
   // Get free tier for displaying limits
   const freeTier = tiers.find(tier => tier.name === 'Free');
   const maxCandidates = freeTier?.monthlyCandidateAllotment || 20;
@@ -47,7 +55,34 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
   
   return (
     <div className="space-y-8 animate-fadeIn">
-      <h2 className="text-3xl font-anton text-guardian mb-12 uppercase tracking-wide">Review Your Job Request</h2>
+      <h2 className="text-3xl font-anton text-guardian mb-8 uppercase tracking-wide">Review Your Job Request</h2>
+      
+      {/* Top Navigation Buttons */}
+      <div className="flex pt-4 gap-6 mb-8">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onBack}
+          className="flex-1"
+          disabled={isSubmitting}
+          size="lg"
+        >
+          EDIT JOB
+        </Button>
+        
+        <Button 
+          type="button"
+          onClick={onSubmit}
+          disabled={exceedsCredits}
+          className="flex-1"
+          isLoading={isSubmitting}
+          size="lg"
+        >
+          {isSubmitting ? 'PROCESSING...' : 
+           exceedsCredits ? 'INSUFFICIENT CREDITS' : 
+           'SUBMIT JOB REQUEST'}
+        </Button>
+      </div>
       
       <div className="bg-shadowforce border border-guardian/30 p-8 rounded-xl">
         <h3 className="text-xl font-anton text-supernova mb-6 uppercase tracking-wide">Company Information</h3>
@@ -91,13 +126,13 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
           <div className="flex gap-3">
             <Badge>{formData.seniorityLevel}</Badge>
             <Badge>{formData.workArrangement}</Badge>
-            <Badge>{formData.location}</Badge>
+            <Badge>{formData.isRemote ? 'Remote' : `${formData.city}, ${formData.state}`}</Badge>
           </div>
           
           <div>
             <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Salary Range</p>
             <p className="text-xl font-jakarta font-bold text-supernova">
-              ${parseInt(formData.salaryRangeMin).toLocaleString()} - ${parseInt(formData.salaryRangeMax).toLocaleString()} USD
+              ${extractNumericValue(formData.salaryRangeMin).toLocaleString()} - ${extractNumericValue(formData.salaryRangeMax).toLocaleString()} USD
             </p>
           </div>
         </div>
@@ -178,27 +213,9 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
         </div>
       </div>
       
-      {/* User Info */}
-      {user && (
-        <div className="bg-supernova/10 border border-supernova/30 p-8 rounded-xl">
-          <div className="flex items-center mb-4">
-            <User className="text-supernova mr-3" size={32} />
-            <h3 className="text-2xl font-anton text-supernova uppercase tracking-wide">
-              Submitting As
-            </h3>
-          </div>
-          <div className="bg-shadowforce border border-guardian/20 p-6 rounded-lg">
-            <p className="text-supernova font-jakarta font-semibold mb-2">
-              Logged in as: <span className="font-anton text-white-knight text-lg">{user.email}</span>
-            </p>
-            <p className="text-guardian font-jakarta text-sm">
-              This job request will be linked to your account for easy tracking and candidate delivery.
-            </p>
-          </div>
-        </div>
-      )}
+
       
-      <div className="flex pt-8 gap-6">
+              <div className="flex pt-8 gap-6">
         <Button 
           type="button" 
           variant="outline" 
@@ -207,7 +224,7 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
           disabled={isSubmitting}
           size="lg"
         >
-          BACK
+          EDIT JOB
         </Button>
         
         <Button 

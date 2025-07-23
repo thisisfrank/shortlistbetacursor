@@ -1,13 +1,11 @@
 import React from 'react';
-import { FormInput, FormTextarea, FormSelect } from '../FormInput';
+import { FormTextarea } from '../FormInput';
 import { Button } from '../../ui/Button';
 
 interface JobDetailsStepProps {
   formData: {
-    title: string;
     description: string;
     seniorityLevel: string;
-    workArrangement: string;
   };
   onChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -29,32 +27,28 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
     onNext();
   };
 
+  const handleRadioChange = (name: string, value: string) => {
+    const syntheticEvent = {
+      target: {
+        name,
+        value
+      }
+    } as React.ChangeEvent<HTMLInputElement>;
+    onChange(syntheticEvent);
+  };
+
   const seniorityOptions = [
-    { value: '1-3 years', label: '1-3 years' },
-    { value: '4-6 years', label: '4-6 years' },
-    { value: '7-10 years', label: '7-10 years' },
-    { value: '10+ years', label: '10+ years' }
+    { value: 'Junior', label: 'Junior (1-3 years)' },
+    { value: 'Mid', label: 'Mid (4-6 years)' },
+    { value: 'Senior', label: 'Senior (7-10 years)' },
+    { value: 'Executive', label: 'Executive (10+ years)' }
   ];
 
-  const workArrangementOptions = [
-    { value: 'Remote', label: 'Remote' },
-    { value: 'On-site', label: 'On-site' },
-    { value: 'Hybrid', label: 'Hybrid' }
-  ];
+
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 animate-fadeIn">
       <h2 className="text-3xl font-anton text-guardian mb-12 uppercase tracking-wide">Job Details</h2>
-      
-      <FormInput
-        label="Job Title"
-        name="title"
-        value={formData.title}
-        onChange={onChange}
-        error={errors.title}
-        required
-        placeholder="Enter the job title"
-      />
       
       <FormTextarea
         label="Job Description"
@@ -67,25 +61,44 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
         rows={6}
       />
       
-      <FormSelect
-        label="Experience Required"
-        name="seniorityLevel"
-        value={formData.seniorityLevel}
-        onChange={onChange}
-        options={seniorityOptions}
-        error={errors.seniorityLevel}
-        required
-      />
+      {/* Experience Required */}
+      <div className="space-y-3">
+        <label className="block text-sm font-jakarta font-semibold text-guardian mb-3 uppercase tracking-wide">
+          Experience Required <span className="text-red-400">*</span>
+        </label>
+        <div className="space-y-3">
+          {seniorityOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleRadioChange('seniorityLevel', option.value)}
+              className={`w-full p-4 rounded-xl border-2 transition-all duration-200 text-left ${
+                formData.seniorityLevel === option.value
+                  ? 'border-supernova bg-supernova/10 text-white-knight'
+                  : 'border-guardian/30 bg-shadowforce/50 text-guardian hover:border-guardian/50'
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  formData.seniorityLevel === option.value
+                    ? 'border-supernova'
+                    : 'border-guardian/50'
+                }`}>
+                  {formData.seniorityLevel === option.value && (
+                    <div className="w-3 h-3 rounded-full bg-supernova"></div>
+                  )}
+                </div>
+                <span className="font-jakarta font-medium">{option.label}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+        {errors.seniorityLevel && (
+          <p className="text-red-400 text-sm mt-2">{errors.seniorityLevel}</p>
+        )}
+      </div>
       
-      <FormSelect
-        label="Work Arrangement"
-        name="workArrangement"
-        value={formData.workArrangement}
-        onChange={onChange}
-        options={workArrangementOptions}
-        error={errors.workArrangement}
-        required
-      />
+
 
       <div className="flex pt-8 gap-6">
         <Button 
@@ -95,14 +108,14 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
           className="flex-1"
           size="lg"
         >
-          BACK
+          BACK TO JOB TITLE
         </Button>
         <Button 
           type="submit"
           className="flex-1"
           size="lg"
         >
-          CONTINUE
+          CONTINUE TO COMPANY INFO
         </Button>
       </div>
     </form>
