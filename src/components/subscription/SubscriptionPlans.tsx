@@ -393,47 +393,6 @@ export const SubscriptionPlans: React.FC = () => {
             </Card>
           ))}
         </div>
-
-        {/* Billing Information */}
-        <div className="mb-12">
-          <div className="text-center">
-            <h3 className="text-xl font-anton text-white-knight mb-4 uppercase tracking-wide">
-              Flexible Billing
-            </h3>
-            <div className="flex flex-col items-center gap-2">
-              <div className="flex items-center">
-                <CheckCircle className="text-supernova mr-2" size={16} />
-                <span className="text-guardian font-jakarta text-base">Cancel anytime</span>
-              </div>
-              <div className="flex items-center">
-                <CheckCircle className="text-supernova mr-2" size={16} />
-                <span className="text-guardian font-jakarta text-base">Monthly billing</span>
-              </div>
-              <div className="flex items-center">
-                <CheckCircle className="text-supernova mr-2" size={16} />
-                <span className="text-guardian font-jakarta text-base">Instant upgrades</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Additional Info */}
-        <div className="text-center">
-          <Card className="max-w-2xl mx-auto">
-            <CardContent className="p-8">
-              <h3 className="text-xl font-anton text-white-knight mb-4 uppercase tracking-wide">
-                Questions About Plans?
-              </h3>
-              <p className="text-guardian font-jakarta mb-6">
-                All paid plans include company email addresses and enhanced support. 
-                Credits refresh monthly and unused credits don't roll over.
-              </p>
-              <Button variant="outline" size="md">
-                CONTACT SALES
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   );
