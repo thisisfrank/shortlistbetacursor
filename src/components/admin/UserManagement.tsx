@@ -45,18 +45,68 @@ export const UserManagement: React.FC = () => {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.rpc('get_all_users');
       
-      if (error) {
-        console.error('Error loading users:', error);
-        setMessage({ type: 'error', text: 'Failed to load users' });
+      console.log('🔍 UserManagement: Starting user load process...');
+      console.log('🔍 UserManagement: Supabase config check:', {
+        hasUrl: !!import.meta.env.VITE_SUPABASE_URL,
+        hasKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY
+      });
+      
+      // Check if user is authenticated and has admin role
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('🔍 UserManagement: Current user:', user?.email, user?.role);
+      
+      if (!user) {
+        setMessage({ type: 'error', text: 'Not authenticated' });
         return;
       }
       
+      // Check user profile
+      const { data: userProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+        
+      console.log('🔍 UserManagement: User profile:', userProfile, 'Error:', profileError);
+      
+      if (profileError) {
+        console.error('❌ UserManagement: Error loading user profile:', profileError);
+        setMessage({ type: 'error', text: `Failed to load user profile: ${profileError.message}` });
+        return;
+      }
+      
+      if (userProfile?.role !== 'admin') {
+        setMessage({ type: 'error', text: 'Admin access required' });
+        return;
+      }
+      
+      console.log('🔍 UserManagement: Calling get_all_users RPC...');
+      const { data, error } = await supabase.rpc('get_all_users');
+      
+      console.log('🔍 UserManagement: RPC response:', { data, error });
+      
+      if (error) {
+        console.error('❌ UserManagement: Error loading users:', error);
+        console.error('❌ UserManagement: Error details:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
+        setMessage({ type: 'error', text: `Failed to load users: ${error.message}` });
+        return;
+      }
+      
+      console.log('✅ UserManagement: Successfully loaded users:', data?.length || 0);
       setUsers(data || []);
+      
+      if (data && data.length === 0) {
+        setMessage({ type: 'error', text: 'No users found in the database' });
+      }
     } catch (error) {
-      console.error('Error loading users:', error);
-      setMessage({ type: 'error', text: 'Failed to load users' });
+      console.error('💥 UserManagement: Unexpected error loading users:', error);
+      setMessage({ type: 'error', text: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}` });
     } finally {
       setLoading(false);
     }
