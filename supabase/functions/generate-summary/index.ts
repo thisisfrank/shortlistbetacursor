@@ -53,14 +53,29 @@ serve(async (req) => {
   try {
     const { candidateData }: { candidateData: CandidateData } = await req.json()
 
-    // Get Supabase URL for calling the anthropic-proxy function
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    // Debug environment variables to understand what's available
+    console.log('Summary function - Available env vars:', {
+      SUPABASE_URL: Deno.env.get('SUPABASE_URL'),
+      SUPABASE_ANON_KEY: Deno.env.get('SUPABASE_ANON_KEY') ? 'Present' : 'Missing',
+    })
+
+    // Try multiple approaches to get the correct Supabase URL
+    let supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('SUPABASE_PROJECT_URL')
+    
+    // If no env var, construct from request URL (edge functions run on the same domain)
     if (!supabaseUrl) {
-      throw new Error('Supabase URL not configured')
+      const requestUrl = new URL(req.url)
+      supabaseUrl = `${requestUrl.protocol}//${requestUrl.host}`
+      console.log('Summary - Constructed Supabase URL from request:', supabaseUrl)
     }
 
+    console.log('Summary - Using Supabase URL:', supabaseUrl)
+
     // Use the anthropic-proxy function instead of direct API calls
-    const response = await fetchWithTimeout(`${supabaseUrl}/functions/v1/anthropic-proxy`, {
+    const proxyUrl = `${supabaseUrl}/functions/v1/anthropic-proxy`
+    console.log('Summary - Calling anthropic-proxy at:', proxyUrl)
+
+    const response = await fetchWithTimeout(proxyUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -103,13 +118,16 @@ ${candidateData.about || 'No about section available'}`
       })
     }, 15000) // 15 second timeout
 
+    console.log('Summary - Anthropic proxy response status:', response.status)
+
     if (!response.ok) {
       const errorText = await response.text()
-      console.error(`Anthropic proxy error: ${response.status} - ${errorText}`)
+      console.error(`Summary - Anthropic proxy error: ${response.status} - ${errorText}`)
       throw new Error(`Anthropic proxy error: ${response.status} - ${errorText}`)
     }
 
     const data = await response.json()
+    console.log('Summary - Anthropic proxy response data:', data)
     
     let summary = 'Professional candidate with relevant experience and skills.'
     

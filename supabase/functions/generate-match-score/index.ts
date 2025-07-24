@@ -59,14 +59,30 @@ serve(async (req) => {
   try {
     const { matchData }: { matchData: JobMatchData } = await req.json()
 
-    // Get Supabase URL for calling the anthropic-proxy function
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    // Debug environment variables to understand what's available
+    console.log('Available env vars:', {
+      SUPABASE_URL: Deno.env.get('SUPABASE_URL'),
+      SUPABASE_ANON_KEY: Deno.env.get('SUPABASE_ANON_KEY') ? 'Present' : 'Missing',
+      // In edge functions, we might need to construct the URL differently
+    })
+
+    // Try multiple approaches to get the correct Supabase URL
+    let supabaseUrl = Deno.env.get('SUPABASE_URL') || Deno.env.get('SUPABASE_PROJECT_URL')
+    
+    // If no env var, construct from request URL (edge functions run on the same domain)
     if (!supabaseUrl) {
-      throw new Error('Supabase URL not configured')
+      const requestUrl = new URL(req.url)
+      supabaseUrl = `${requestUrl.protocol}//${requestUrl.host}`
+      console.log('Constructed Supabase URL from request:', supabaseUrl)
     }
 
+    console.log('Using Supabase URL:', supabaseUrl)
+
     // Use the anthropic-proxy function instead of direct API calls
-    const response = await fetchWithTimeout(`${supabaseUrl}/functions/v1/anthropic-proxy`, {
+    const proxyUrl = `${supabaseUrl}/functions/v1/anthropic-proxy`
+    console.log('Calling anthropic-proxy at:', proxyUrl)
+
+    const response = await fetchWithTimeout(proxyUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -119,6 +135,8 @@ Respond with ONLY a JSON object in this exact format:
       })
     }, 15000) // 15 second timeout
 
+    console.log('Anthropic proxy response status:', response.status)
+
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`Anthropic proxy error: ${response.status} - ${errorText}`)
@@ -126,6 +144,7 @@ Respond with ONLY a JSON object in this exact format:
     }
 
     const data = await response.json()
+    console.log('Anthropic proxy response data:', data)
     
     let result = { score: 50, reasoning: 'Unable to generate detailed match score' }
     
