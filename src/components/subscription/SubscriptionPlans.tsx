@@ -393,6 +393,102 @@ export const SubscriptionPlans: React.FC = () => {
             </Card>
           ))}
         </div>
+
+        {/* Premium Service Offering */}
+        <div className="mb-12">
+          <Card className="max-w-4xl mx-auto bg-gradient-to-r from-purple-500/20 to-purple-500/10 border-purple-500/30">
+            <CardContent className="p-8">
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="relative">
+                    <Crown size={48} className="text-purple-400 fill-current" />
+                    <div className="absolute inset-0 bg-purple-400/30 blur-xl rounded-full"></div>
+                  </div>
+                </div>
+                <h3 className="text-3xl font-anton text-white-knight mb-4 uppercase tracking-wide">
+                  PREMIUM CONCIERGE SERVICE
+                </h3>
+                <p className="text-xl text-purple-300 font-jakarta mb-6">
+                  Let our expert team handle candidate outreach and scheduling for you
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div className="space-y-4">
+                  <h4 className="text-xl font-anton text-white-knight uppercase tracking-wide">
+                    What's Included:
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <CheckCircle className="text-purple-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                      <span className="text-guardian font-jakarta">
+                        <strong className="text-white-knight">Personalized Outreach:</strong> Our team reaches out to candidates on your behalf with customized messages
+                      </span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="text-purple-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                      <span className="text-guardian font-jakarta">
+                        <strong className="text-white-knight">Calendar Coordination:</strong> We schedule qualified candidates directly on your calendar
+                      </span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="text-purple-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                      <span className="text-guardian font-jakarta">
+                        <strong className="text-white-knight">Quality Screening:</strong> Pre-qualification calls to ensure candidate fit before scheduling
+                      </span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="text-purple-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                      <span className="text-guardian font-jakarta">
+                        <strong className="text-white-knight">Dedicated Support:</strong> Personal account manager for seamless communication
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="text-xl font-anton text-white-knight uppercase tracking-wide">
+                    Investment:
+                  </h4>
+                  <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-6">
+                    <div className="text-center">
+                      <div className="text-3xl font-anton text-purple-300 mb-2">
+                        $999<span className="text-lg">/month</span>
+                      </div>
+                      <div className="text-purple-400 font-jakarta mb-4">
+                        + 5% service fee per successful placement
+                      </div>
+                      <p className="text-guardian font-jakarta text-sm">
+                        Minimum 3-month commitment. Cancel with 30-day notice.
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="text-center pt-4">
+                    <Button 
+                      onClick={() => window.open('CALENDLY_LINK_PLACEHOLDER', '_blank')}
+                      variant="primary"
+                      size="lg"
+                      className="bg-purple-500 hover:bg-purple-600 text-white font-anton uppercase tracking-wide px-8 py-4"
+                    >
+                      BOOK DISCOVERY CALL
+                    </Button>
+                    <p className="text-guardian font-jakarta text-sm mt-2">
+                      15-minute consultation to discuss your hiring needs
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center border-t border-purple-500/20 pt-6">
+                <p className="text-guardian font-jakarta">
+                  <strong className="text-white-knight">Perfect for:</strong> Busy executives, HR leaders, and hiring managers who want qualified candidates 
+                  delivered directly to their calendar without the hassle of sourcing and initial outreach.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
