@@ -43,7 +43,7 @@ const subscriptionPlans = [
     id: 'premium',
     name: 'Premium',
     price: 50,
-    priceId: 'price_premium_placeholder', // TODO: Replace with actual Stripe price ID
+    priceId: 'price_1Rl1N5FPYYAarock0dFT7x9Q', // Real Stripe price ID
     description: 'Advanced features for scaling businesses',
     features: {
       jobs: 3,
@@ -58,7 +58,7 @@ const subscriptionPlans = [
     id: 'topshelf',
     name: 'Top Shelf',
     price: 120,
-    priceId: 'price_topshelf_placeholder', // TODO: Replace with actual Stripe price ID
+    priceId: 'price_1Rl1NJFPYYAarockbgLtNiKk', // Real Stripe price ID
     description: 'Unlimited access for enterprise teams',
     features: {
       jobs: 10,
