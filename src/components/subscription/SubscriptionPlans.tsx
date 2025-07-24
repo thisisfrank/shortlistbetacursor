@@ -466,7 +466,7 @@ export const SubscriptionPlans: React.FC = () => {
                   
                   <div className="text-center pt-4">
                     <Button 
-                      onClick={() => window.open('CALENDLY_LINK_PLACEHOLDER', '_blank')}
+                      onClick={() => window.open('https://calendly.com/superrecruiter/outboundcandidatepipelines', '_blank')}
                       variant="primary"
                       size="lg"
                       className="bg-purple-500 hover:bg-purple-600 text-white font-anton uppercase tracking-wide px-8 py-4"
