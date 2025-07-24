@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { CheckCircle } from 'lucide-react';
@@ -7,15 +7,19 @@ import { Button } from '../ui/Button';
 export const SubscriptionSuccess: React.FC = () => {
   const navigate = useNavigate();
   const { refreshProfile } = useAuth();
+  const [hasRefreshed, setHasRefreshed] = useState(false);
 
   useEffect(() => {
-    // Refresh user profile after successful payment to get updated tier
-    const timer = setTimeout(() => {
-      refreshProfile();
-    }, 2000); // 2 second delay to ensure webhook has processed
+    // Only refresh once to avoid infinite loop
+    if (!hasRefreshed) {
+      const timer = setTimeout(() => {
+        refreshProfile();
+        setHasRefreshed(true);
+      }, 3000); // 3 second delay to ensure webhook has processed
 
-    return () => clearTimeout(timer);
-  }, [refreshProfile]);
+      return () => clearTimeout(timer);
+    }
+  }, [refreshProfile, hasRefreshed]);
 
   return (
     <div className="min-h-screen bg-shadowforce flex items-center justify-center p-4">
@@ -25,7 +29,7 @@ export const SubscriptionSuccess: React.FC = () => {
           Subscription Activated!
         </h1>
         <p className="text-guardian mb-6 font-jakarta">
-          Your subscription has been successfully activated. You now have access to premium features.
+          Your subscription has been successfully activated. We're updating your account - this may take a few moments.
         </p>
         <Button
           onClick={() => navigate('/client')}
