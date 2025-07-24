@@ -86,7 +86,7 @@ export const ClientMenu: React.FC = () => {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center">
               <Briefcase className="text-blue-400 mr-2" size={16} />
-              <span className="text-sm font-jakarta font-semibold text-blue-400">Job Submissions</span>
+              <span className="text-sm font-jakarta font-semibold text-blue-400">Available Job Submissions</span>
             </div>
             <span className="text-lg font-anton text-white-knight">
               {stats.jobsRemaining}
@@ -102,10 +102,10 @@ export const ClientMenu: React.FC = () => {
             of {stats.jobsLimit} monthly jobs
           </p>
         </div>
-        <div className="flex items-center text-sm text-guardian">
+        <div className="flex items-center justify-center text-sm text-guardian">
           <Calendar className="mr-2" size={14} />
           <span className="font-jakarta">
-            Credits reset: {stats.creditsResetDate ? new Date(stats.creditsResetDate).toLocaleDateString() : 'N/A'}
+            Credit & Jobs Replenished: {stats.creditsResetDate ? new Date(stats.creditsResetDate).toLocaleDateString() : 'N/A'}
           </span>
         </div>
       </div>
