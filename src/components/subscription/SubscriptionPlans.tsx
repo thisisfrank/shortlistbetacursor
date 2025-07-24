@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { CheckCircle, Zap, Crown, Star, Mail, Users, Briefcase, X, AlertTriangle } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 // Updated subscription plans based on requirements
 const subscriptionPlans = [
@@ -82,22 +83,6 @@ export const SubscriptionPlans: React.FC = () => {
   const hasSubscriptionError = subscriptionError && !subscriptionLoading;
 
   const handleSubscribe = async (priceId: string) => {
-    // Handle direct Stripe checkout URLs
-    if (priceId === 'direct_basic') {
-      window.open('https://buy.stripe.com/test_28E7sL3JJg4O0lo6p7aVa02', '_blank');
-      return;
-    }
-    
-    if (priceId === 'direct_premium') {
-      window.open('https://buy.stripe.com/test_8x2cN50xx8Cmc4600JaVa03', '_blank');
-      return;
-    }
-    
-    if (priceId === 'direct_topshelf') {
-      window.open('https://buy.stripe.com/test_eVqdR94NNaKu1psaFnaVa04', '_blank');
-      return;
-    }
-    
     if (!priceId) {
       // Handle free tier - no Stripe checkout needed
       alert('You are already on the Free Tier. Choose a paid plan to upgrade.');
@@ -117,10 +102,19 @@ export const SubscriptionPlans: React.FC = () => {
       return;
     }
 
+    // Get user session for authentication
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !sessionData.session) {
+      console.error('No active session:', sessionError);
+      alert('Please log in to upgrade your subscription.');
+      return;
+    }
+
     setLoadingPlan(priceId);
 
     try {
-      // Get the current user session
+      // Call our stripe-checkout function instead of direct links
       const functionUrl = `${supabaseUrl}/functions/v1/stripe-checkout`;
       console.log('Calling Supabase Edge Function:', functionUrl);
       
@@ -128,7 +122,7 @@ export const SubscriptionPlans: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Authorization': `Bearer ${sessionData.session.access_token}`,
         },
         body: JSON.stringify({
           price_id: priceId,
