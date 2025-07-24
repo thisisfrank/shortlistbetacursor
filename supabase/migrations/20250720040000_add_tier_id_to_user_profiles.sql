@@ -14,6 +14,7 @@ CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS trigger AS $$
 DECLARE
   user_role text;
+  user_name text;
 BEGIN
   -- Determine role (default to client, but allow for special emails)
   IF NEW.email = 'thisisfrankgonzalez@gmail.com' THEN
@@ -24,21 +25,25 @@ BEGIN
     user_role := 'client';
   END IF;
 
+  user_name := SPLIT_PART(NEW.email, '@', 1);
+
   IF user_role = 'client' THEN
-    INSERT INTO user_profiles (id, email, role, tier_id)
+    INSERT INTO user_profiles (id, email, role, tier_id, name)
     VALUES (
       NEW.id,
       NEW.email,
       user_role,
-      '5841d1d6-20d7-4360-96f8-0444305fac5b'
+      '5841d1d6-20d7-4360-96f8-0444305fac5b',
+      user_name
     );
   ELSE
-    INSERT INTO user_profiles (id, email, role, tier_id)
+    INSERT INTO user_profiles (id, email, role, tier_id, name)
     VALUES (
       NEW.id,
       NEW.email,
       user_role,
-      NULL
+      NULL,
+      user_name
     );
   END IF;
   RETURN NEW;

@@ -424,7 +424,7 @@ export const CandidatesView: React.FC = () => {
                         {/* Main candidate info row - always visible */}
                         <div className="grid grid-cols-7 gap-6 items-center mb-6">
                           {/* AI Match Score */}
-                          <div className="col-span-1 text-center">
+                          <div className="col-span-1 flex items-center justify-center h-full">
                             {matchScores[candidate.id]?.loading ? (
                               <div className="flex items-center justify-center">
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-supernova mr-2"></div>
@@ -443,15 +443,17 @@ export const CandidatesView: React.FC = () => {
                             )}
                           </div>
                           {/* Name and basic info */}
-                          <div className="col-span-2">
-                            <h4 className="text-xl font-anton text-white-knight mb-2 uppercase tracking-wide">
+                          <div className="col-span-2 flex items-center h-full">
+                            <h4 className="text-3xl font-anton text-white-knight mb-0 uppercase tracking-wide">
                               {candidate.firstName === 'N/A' && candidate.lastName === 'N/A' 
                                 ? 'N/A' 
                                 : `${candidate.firstName} ${candidate.lastName}`}
                             </h4>
                           </div>
-                          {/* Actions */}
-                          <div className="col-span-2 text-right">
+                          {/* Spacer to push controls to the right */}
+                          <div className="col-span-3"></div>
+                          {/* Actions and Selection Checkbox - right edge */}
+                          <div className="col-span-1 flex justify-end items-center gap-4 w-full h-full">
                             <Button
                               variant="outline"
                               size="sm"
@@ -470,9 +472,6 @@ export const CandidatesView: React.FC = () => {
                                 </>
                               )}
                             </Button>
-                          </div>
-                          {/* Selection Checkbox - moved to far right */}
-                          <div className="col-span-1 flex justify-end">
                             <input
                               type="checkbox"
                               checked={selectedCandidates.has(candidate.id)}
@@ -486,7 +485,6 @@ export const CandidatesView: React.FC = () => {
                         {matchScores[candidate.id] && !matchScores[candidate.id].loading && (
                           <div className="mb-6 p-4 bg-supernova/10 border border-supernova/30 rounded-lg">
                             <div className="flex items-center mb-1">
-                              <Target className="text-supernova mr-2" size={14} />
                               <span className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Match Analysis</span>
                             </div>
                             <p className="text-white-knight font-jakarta text-sm">{matchScores[candidate.id].reasoning}</p>
@@ -652,7 +650,7 @@ export const CandidatesView: React.FC = () => {
                                           key={index}
                                           className="px-3 py-1 bg-gradient-to-r from-orange-500/20 to-orange-500/10 border border-orange-500/30 text-orange-300 text-xs rounded-full font-jakarta font-medium"
                                         >
-                                          {typeof skill === 'string' ? skill : (skill?.title || String(skill))}
+                                          {skill}
                                         </span>
                                       ))}
                                       {candidate.skills.length > 8 && (
@@ -786,7 +784,14 @@ export const CandidatesView: React.FC = () => {
         <Card className="mb-12">
           <CardContent className="p-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-              <h2 className="text-2xl font-anton text-white-knight uppercase tracking-wide">Select Job to View Candidates</h2>
+              <h2 className="text-2xl font-anton text-white-knight uppercase tracking-wide">
+                Select Job to View Candidates
+                {jobs && jobs.length > 0 && (
+                  <span className="block text-base font-jakarta text-supernova mt-2 md:mt-0 md:ml-4 normal-case font-normal">
+                    requested candidates: {jobs.reduce((sum, job) => sum + (job.candidatesRequested || 0), 0)}
+                  </span>
+                )}
+              </h2>
               
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -847,6 +852,10 @@ export const CandidatesView: React.FC = () => {
                           <div className="flex items-center text-sm text-guardian">
                             <Calendar size={14} className="mr-3 text-supernova" />
                             <span className="font-jakarta">Posted {formatDate(job.createdAt)}</span>
+                          </div>
+                          <div className="flex items-center text-sm font-jakarta text-supernova">
+                            <Users size={16} className="mr-2" />
+                            <span>Requested Candidates: {job.candidatesRequested}</span>
                           </div>
                         </div>
                         

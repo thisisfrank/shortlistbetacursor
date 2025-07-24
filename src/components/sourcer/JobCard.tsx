@@ -103,6 +103,10 @@ export const JobCard: React.FC<JobCardProps> = ({
             <Calendar size={16} className="mr-3 text-supernova" />
             <span className="font-jakarta">Posted {formatDate(job.createdAt)}</span>
           </div>
+          <div className="flex items-center text-sm font-jakarta text-supernova">
+            <Users size={16} className="mr-2" />
+            <span>Requested Candidates: {job.candidatesRequested}</span>
+          </div>
           
           {/* Progress indicator for claimed jobs */}
           {job.status === 'Claimed' && (

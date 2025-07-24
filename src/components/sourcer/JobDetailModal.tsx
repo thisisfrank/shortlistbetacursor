@@ -285,6 +285,10 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
             <div>
               <h3 className="text-3xl font-anton text-white-knight mb-2 uppercase tracking-wide">{job.title}</h3>
               <p className="text-xl text-supernova font-jakarta font-semibold">{job.companyName}</p>
+              <p className="flex items-center text-base font-jakarta text-supernova mt-2">
+                <Users size={18} className="mr-2" />
+                <span>Requested Candidates: {job.candidatesRequested}</span>
+              </p>
               <p className="text-sm text-guardian font-jakarta mt-2">
                 <span className="font-semibold">Submitted by:</span>
                 {job.userEmail ? (
@@ -707,7 +711,7 @@ https://linkedin.com/in/candidate2
                                 <div className="flex items-center">
                                   <span className="text-supernova font-anton text-sm mr-3">#{index + 1}</span>
                                   <div>
-                                    <p className="text-white-knight font-jakarta font-semibold">
+                                    <p className="text-white-knight font-jakarta font-semibold text-2xl">
                                       {candidate.firstName} {candidate.lastName}
                                     </p>
                                     <p className="text-guardian font-jakarta text-sm">
