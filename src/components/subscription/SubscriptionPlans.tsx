@@ -17,7 +17,7 @@ const subscriptionPlans = [
     description: 'Perfect for trying out our platform',
     features: {
       jobs: 1,
-      credits: 10,
+      credits: 20,
       companyEmails: false,
       unlimited: false
     },
@@ -28,7 +28,7 @@ const subscriptionPlans = [
     id: 'basic',
     name: 'Basic',
     price: 30,
-    priceId: 'direct_basic', // Direct Stripe checkout URL
+    priceId: 'price_basic_placeholder', // TODO: Replace with actual Stripe price ID
     description: 'Enhanced features for growing teams',
     features: {
       jobs: 1,
@@ -43,7 +43,7 @@ const subscriptionPlans = [
     id: 'premium',
     name: 'Premium',
     price: 50,
-    priceId: 'direct_premium', // Direct Stripe checkout URL
+    priceId: 'price_premium_placeholder', // TODO: Replace with actual Stripe price ID
     description: 'Advanced features for scaling businesses',
     features: {
       jobs: 3,
@@ -58,11 +58,11 @@ const subscriptionPlans = [
     id: 'topshelf',
     name: 'Top Shelf',
     price: 120,
-    priceId: 'direct_topshelf', // Direct Stripe checkout URL
+    priceId: 'price_topshelf_placeholder', // TODO: Replace with actual Stripe price ID
     description: 'Unlimited access for enterprise teams',
     features: {
-      jobs: 'unlimited',
-      credits: 500,
+      jobs: 10,
+      credits: 400,
       companyEmails: true,
       unlimited: true
     },
