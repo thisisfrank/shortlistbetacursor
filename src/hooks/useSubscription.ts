@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
 import { getProductByPriceId } from '../stripe-config';
@@ -20,43 +20,76 @@ export const useSubscription = () => {
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const currentFetchRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!user) {
+    if (!user?.id) {
       setSubscription(null);
       setLoading(false);
+      setError(null);
+      currentFetchRef.current = null;
       return;
     }
 
     const fetchSubscription = async () => {
+      const fetchId = user.id + '-' + Date.now();
+      currentFetchRef.current = fetchId;
+      
       try {
         setLoading(true);
         setError(null);
+        
+        console.log('🎫 Fetching subscription for user:', user.id);
 
-        const { data, error: fetchError } = await supabase
+        // Add timeout to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Subscription fetch timeout')), 10000);
+        });
+        
+        const fetchPromise = supabase
           .from('stripe_user_subscriptions')
           .select('*')
           .eq('customer_id', user.id)
           .maybeSingle();
 
-        if (fetchError) {
-          console.error('Error fetching subscription:', fetchError);
-          // Don't set error for missing subscription - user might not have one
-          setSubscription(null);
+        const { data, error: fetchError } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+
+        // Check if this fetch is still current (not superseded by a newer one)
+        if (currentFetchRef.current !== fetchId) {
+          console.log('🎫 Fetch superseded, ignoring result');
           return;
         }
 
-        setSubscription(data);
+        if (fetchError) {
+          console.error('❌ Error fetching subscription:', fetchError);
+          // Don't set error for missing subscription - user might not have one
+          setSubscription(null);
+        } else {
+          console.log('✅ Subscription fetched:', data ? 'found' : 'none');
+          setSubscription(data);
+        }
       } catch (err) {
-        console.error('Unexpected error:', err);
+        // Check if this fetch is still current
+        if (currentFetchRef.current !== fetchId) {
+          console.log('🎫 Fetch superseded during error, ignoring');
+          return;
+        }
+        
+        console.error('💥 Subscription fetch error:', err);
         setSubscription(null);
+        if (err instanceof Error && err.message.includes('timeout')) {
+          setError('Unable to load subscription status. Please refresh the page.');
+        }
       } finally {
-        setLoading(false);
+        // Only update loading if this is still the current fetch
+        if (currentFetchRef.current === fetchId) {
+          setLoading(false);
+        }
       }
     };
 
     fetchSubscription();
-  }, [user]);
+  }, [user?.id]); // Use user?.id instead of user to avoid unnecessary re-renders
 
   const getSubscriptionPlan = () => {
     if (!subscription?.price_id) return null;

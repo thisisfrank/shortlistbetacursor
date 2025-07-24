@@ -42,12 +42,27 @@ export const useAuth = () => {
   useEffect(() => {
     let isMounted = true;
     let authSubscription: any = null;
+    let authTimeout: NodeJS.Timeout;
 
     const initAuth = async () => {
       try {
         console.log('🔐 Initializing auth...');
         
-        const { data: { session } } = await supabase.auth.getSession();
+        // Set a timeout to prevent infinite loading
+        authTimeout = setTimeout(() => {
+          if (isMounted) {
+            console.warn('⚠️ Auth initialization timeout - setting loading to false');
+            setLoading(false);
+            setAuthInitialized(true);
+          }
+        }, 15000); // 15 second timeout
+        
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Auth session timeout')), 10000);
+        });
+        
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
         const currentUser = session?.user ?? null;
         
         if (!isMounted) return;
@@ -57,11 +72,18 @@ export const useAuth = () => {
         
         if (currentUser) {
           console.log('🔐 Loading user profile...');
-          const { data: profile, error } = await supabase
+          
+          const profilePromise = supabase
             .from('user_profiles')
             .select('*')
             .eq('id', currentUser.id)
             .single();
+            
+          const profileTimeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Profile fetch timeout')), 8000);
+          });
+          
+          const { data: profile, error } = await Promise.race([profilePromise, profileTimeoutPromise]) as any;
           
           if (!isMounted) return;
           
@@ -82,6 +104,9 @@ export const useAuth = () => {
           setUserProfile(null);
         }
       } finally {
+        if (authTimeout) {
+          clearTimeout(authTimeout);
+        }
         if (isMounted) {
           setLoading(false);
           setAuthInitialized(true);
@@ -153,6 +178,9 @@ export const useAuth = () => {
     return () => {
       console.log('🔐 Cleaning up auth listener...');
       isMounted = false;
+      if (authTimeout) {
+        clearTimeout(authTimeout);
+      }
       if (authSubscription) {
         authSubscription.unsubscribe();
       }

@@ -72,8 +72,9 @@ const subscriptionPlans = [
 
 export const SubscriptionPlans: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
-  const { subscription, getSubscriptionPlan, isActive, loading: subscriptionLoading } = useSubscription();
+  const { subscription, getSubscriptionPlan, isActive, loading: subscriptionLoading, error: subscriptionError } = useSubscription();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   const currentPlan = getSubscriptionPlan();
 
@@ -83,7 +84,21 @@ export const SubscriptionPlans: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-3xl font-anton text-supernova mb-2">Current Plan</h2>
-          <p className="text-guardian font-jakarta">Checking your subscription status...</p>
+          <p className="text-guardian font-jakarta mb-4">Checking your subscription status...</p>
+          {subscriptionError && (
+            <div className="max-w-md mx-auto">
+              <p className="text-red-400 font-jakarta mb-4">{subscriptionError}</p>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setRetryKey(prev => prev + 1);
+                  window.location.reload();
+                }}
+              >
+                Retry
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     );
