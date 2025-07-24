@@ -583,6 +583,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
   };
 
+  // Step 1: Add a bypass flag at the top of the file
+  const BYPASS_AI_SCORING = true; // TODO: Set to false in production or make configurable
+
   const addCandidatesFromLinkedIn = async (jobId: string, linkedinUrls: string[]): Promise<{ 
     success: boolean; 
     acceptedCount: number; 
@@ -668,37 +671,76 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         };
       }
       
-      // Filter candidates based on AI score threshold (60%)
+      // Step 1 & 2: Bypass AI scoring if flag is set, or fallback to always accept on error
       const acceptedCandidates: Candidate[] = [];
       const rejectedCandidates: any[] = [];
-      
       for (const profile of scrapingResult.profiles) {
-        // Prepare candidate data for AI scoring
+        // Fix for string | undefined and string | null issues in candidate mapping and job mapping
         const candidateData = {
-          firstName: profile.firstName || 'N/A',
-          lastName: profile.lastName || 'N/A',
-          headline: profile.headline,
-          location: profile.location,
-          experience: profile.experience && profile.experience.length > 0 ? profile.experience : undefined,
-          education: profile.education && profile.education.length > 0 ? profile.education : undefined,
-          skills: profile.skills && profile.skills.length > 0 ? profile.skills : undefined,
-          about: profile.summary
+          firstName: profile.firstName || '',
+          lastName: profile.lastName || '',
+          headline: profile.headline || '',
+          location: profile.location || '',
+          experience: (profile.experience && profile.experience.length > 0 ? profile.experience : undefined),
+          education: (profile.education && profile.education.length > 0 ? profile.education : undefined),
+          skills: (profile.skills && profile.skills.length > 0 ? profile.skills : undefined),
+          about: profile.summary || ''
         };
-        
-        // Generate AI match score
-        const matchData = {
-          jobTitle: job.title || '',
-          jobDescription: job.description || '',
-          seniorityLevel: job.seniorityLevel || '',
-          keySkills: job.keySellingPoints || [], // Using selling points as key skills
-          candidateData
-        };
-        
-        try {
-          const scoreResult = await generateJobMatchScore(matchData);
-          
-          if (scoreResult.score >= 50) {
-            // Accept candidate - meets threshold
+        if (BYPASS_AI_SCORING) {
+          // Accept all candidates, skip AI
+          const candidate: Candidate = {
+            id: crypto.randomUUID(),
+            jobId,
+            firstName: candidateData.firstName,
+            lastName: candidateData.lastName,
+            linkedinUrl: profile.profileUrl || linkedinUrls[scrapingResult.profiles.indexOf(profile)] || '',
+            headline: candidateData.headline,
+            location: candidateData.location,
+            experience: candidateData.experience,
+            education: candidateData.education,
+            skills: candidateData.skills,
+            summary: profile.summary,
+            submittedAt: new Date()
+          };
+          acceptedCandidates.push(candidate);
+        } else {
+          try {
+            const matchData = {
+              jobTitle: job.title || '',
+              jobDescription: job.description || '',
+              seniorityLevel: job.seniorityLevel || '',
+              keySkills: job.keySellingPoints || [],
+              candidateData
+            };
+            const scoreResult = await generateJobMatchScore(matchData);
+            if (scoreResult.score >= 50) {
+              // Accept candidate - meets threshold
+              const candidate: Candidate = {
+                id: crypto.randomUUID(),
+                jobId,
+                firstName: candidateData.firstName,
+                lastName: candidateData.lastName,
+                linkedinUrl: profile.profileUrl || linkedinUrls[scrapingResult.profiles.indexOf(profile)] || '',
+                headline: candidateData.headline,
+                location: candidateData.location,
+                experience: candidateData.experience,
+                education: candidateData.education,
+                skills: candidateData.skills,
+                summary: profile.summary,
+                submittedAt: new Date()
+              };
+              acceptedCandidates.push(candidate);
+            } else {
+              // Reject candidate - below threshold
+              rejectedCandidates.push({
+                name: `${candidateData.firstName} ${candidateData.lastName}`,
+                score: scoreResult.score,
+                reasoning: scoreResult.reasoning
+              });
+            }
+          } catch (error) {
+            // Step 2: On AI scoring error, accept candidate and log warning
+            console.warn('AI scoring failed, auto-accepting candidate:', error);
             const candidate: Candidate = {
               id: crypto.randomUUID(),
               jobId,
@@ -714,22 +756,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               submittedAt: new Date()
             };
             acceptedCandidates.push(candidate);
-          } else {
-            // Reject candidate - below threshold
-            rejectedCandidates.push({
-              name: `${candidateData.firstName} ${candidateData.lastName}`,
-              score: scoreResult.score,
-              reasoning: scoreResult.reasoning
-            });
           }
-        } catch (error) {
-          console.error('Error calculating match score for candidate:', error);
-          // On scoring error, reject the candidate to be safe
-          rejectedCandidates.push({
-            name: `${candidateData.firstName} ${candidateData.lastName}`,
-            score: 0,
-            reasoning: 'Unable to calculate match score'
-          });
         }
       }
 
@@ -752,13 +779,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             summary: candidate.summary || ''
           }));
           
-          console.log('📤 Inserting candidates to Supabase:', candidatesToInsert.length);
-          console.log('📋 Candidate data to insert:', candidatesToInsert);
-          
+          // DEBUG LOG: Before insert
+          console.log('About to insert candidates to Supabase:', candidatesToInsert);
           const { data: insertedCandidates, error: insertError } = await supabase
             .from('candidates')
             .insert(candidatesToInsert)
             .select();
+          // DEBUG LOG: After insert
+          console.log('Insert result:', { insertedCandidates, insertError });
           
           if (insertError) {
             console.error('❌ Error inserting candidates to Supabase:', insertError);
@@ -775,19 +803,19 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           console.log('📊 Inserted candidates data:', insertedCandidates);
           
           // Update local state with the actual database records
-          const savedCandidates = insertedCandidates.map(c => ({
-            id: c.id || '',
-            jobId: c.job_id || '',
-            firstName: c.first_name || '',
-            lastName: c.last_name || '',
-            linkedinUrl: c.linkedin_url || '',
-            headline: c.headline || '',
-            location: c.location || '',
-            experience: c.experience || [],
-            education: c.education || [],
-            skills: c.skills || [],
-            summary: c.summary || '',
-            submittedAt: new Date(c.submitted_at)
+          const savedCandidates = (insertedCandidates || []).map((c: any) => ({
+            id: (c.id || ''),
+            jobId: (c.job_id || ''),
+            firstName: (c.first_name || ''),
+            lastName: (c.last_name || ''),
+            linkedinUrl: (c.linkedin_url || ''),
+            headline: (c.headline || ''),
+            location: (c.location || ''),
+            experience: (c.experience || []),
+            education: (c.education || []),
+            skills: (c.skills || []),
+            summary: (c.summary || ''),
+            submittedAt: new Date(c.submitted_at || '')
           }));
           
           console.log('🔄 Updating local state with saved candidates...');
@@ -1001,8 +1029,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
 
 
-  const getCandidatesByJob = (jobId: string) => {
-    return data.candidates.filter(candidate => candidate.jobId === jobId);
+  const getCandidatesByJob = (jobId: string): Candidate[] => {
+    return data.candidates.filter((c: Candidate) => (c.jobId || '') === jobId);
   };
 
   const getCandidatesByUser = (userId: string) => {
@@ -1013,16 +1041,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return data.jobs.filter(job => job.status === status);
   };
 
-  const getJobById = (jobId: string) => {
-    return data.jobs.find(job => job.id === jobId) || null;
+  const getJobById = (jobId: string): Job | null => {
+    return data.jobs.find((j: Job) => (j.id || '') === jobId) || null;
   };
 
-  const getJobsByUser = (userId: string) => {
-    return data.jobs.filter(job => job.user_id === userId);
+  const getJobsByUser = (userId: string): Job[] => {
+    return data.jobs.filter((j: Job) => (j.userId || '') === userId);
   };
 
-  const getTierById = (tierId: string) => {
-    return data.tiers.find(tier => tier.id === tierId) || null;
+  const getTierById = (tierId: string): Tier | null => {
+    return data.tiers.find((t: Tier) => (t.id || '') === tierId) || null;
   };
 
   const resetData = () => {
