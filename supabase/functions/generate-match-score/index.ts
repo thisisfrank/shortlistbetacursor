@@ -5,6 +5,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Add timeout helper function
+const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs = 15000): Promise<Response> => {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    })
+    clearTimeout(timeoutId)
+    return response
+  } catch (error) {
+    clearTimeout(timeoutId)
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout - Anthropic API took too long to respond')
+    }
+    throw error
+  }
+}
+
 interface JobMatchData {
   jobTitle: string;
   jobDescription: string;
@@ -42,7 +63,8 @@ serve(async (req) => {
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
     console.log('API Key status:', apiKey ? `Present (${apiKey.substring(0, 8)}...)` : 'Missing')
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Use fetchWithTimeout instead of regular fetch
+    const response = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -94,7 +116,7 @@ Respond with ONLY a JSON object in this exact format:
           }
         ]
       })
-    })
+    }, 15000) // 15 second timeout
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -139,10 +161,12 @@ Respond with ONLY a JSON object in this exact format:
       error: error
     })
     
-    // Return fallback score on error
+    // Return fallback score on error - this ensures submission continues even if Anthropic fails
     const fallbackResult = { 
       score: 50, 
-      reasoning: 'Match score generated using basic profile analysis due to AI service unavailability' 
+      reasoning: error instanceof Error && error.message.includes('timeout') 
+        ? 'Match score generated using fallback due to API timeout - candidate will be processed with basic scoring'
+        : 'Match score generated using basic profile analysis due to AI service unavailability' 
     }
     
     return new Response(

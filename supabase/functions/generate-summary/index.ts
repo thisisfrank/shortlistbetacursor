@@ -5,6 +5,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Add timeout helper function
+const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs = 15000): Promise<Response> => {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    })
+    clearTimeout(timeoutId)
+    return response
+  } catch (error) {
+    clearTimeout(timeoutId)
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout - Anthropic API took too long to respond')
+    }
+    throw error
+  }
+}
+
 interface CandidateData {
   firstName: string;
   lastName: string;
@@ -36,7 +57,8 @@ serve(async (req) => {
     const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
     console.log('API Key status:', apiKey ? `Present (${apiKey.substring(0, 8)}...)` : 'Missing')
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Use fetchWithTimeout instead of regular fetch
+    const response = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -78,7 +100,7 @@ ${candidateData.about || 'No about section available'}`
           }
         ]
       })
-    })
+    }, 15000) // 15 second timeout
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -108,8 +130,10 @@ ${candidateData.about || 'No about section available'}`
       error: error
     })
     
-    // Return fallback summary on error
-    const fallbackSummary = 'Experienced professional with a strong background in their field and relevant skills for the position.'
+    // Return fallback summary on error - this ensures submission continues even if Anthropic fails
+    const fallbackSummary = error instanceof Error && error.message.includes('timeout') 
+      ? 'Experienced professional - summary generated with fallback due to API timeout'
+      : 'Experienced professional with a strong background in their field and relevant skills for the position.'
     
     return new Response(
       JSON.stringify({ summary: fallbackSummary }),
