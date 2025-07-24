@@ -30,6 +30,7 @@ async function updateUserTier(customerId: string, priceId: string | null, subscr
     // TEMPORARY: Log price ID for mapping purposes
     if (priceId) {
       console.log(`🔍 PRICE ID DETECTED: ${priceId} - Add this to PRICE_TO_TIER_MAPPING`);
+      console.log(`🗺️ Current mapping:`, JSON.stringify(PRICE_TO_TIER_MAPPING, null, 2));
     }
     
     // Get user ID from stripe_customers table
@@ -50,6 +51,8 @@ async function updateUserTier(customerId: string, priceId: string | null, subscr
     }
 
     const userId = customerData.user_id;
+    console.log(`👤 Found user ID: ${userId} for customer: ${customerId}`);
+    
     let targetTierId: string;
 
     // Determine target tier based on subscription status and price
@@ -59,25 +62,35 @@ async function updateUserTier(customerId: string, priceId: string | null, subscr
       
       if (priceId && !PRICE_TO_TIER_MAPPING[priceId]) {
         console.warn(`⚠️ Unknown price ID: ${priceId}, defaulting to Free tier`);
+      } else if (priceId) {
+        console.log(`✅ Mapped price ${priceId} to tier ${targetTierId}`);
       }
     } else {
       // Inactive subscription - downgrade to Free
       targetTierId = FREE_TIER_ID;
+      console.log(`⬇️ Inactive subscription, downgrading to Free tier: ${targetTierId}`);
     }
 
+    console.log(`🎯 Target tier ID: ${targetTierId} for user: ${userId}`);
+
     // Update user tier
-    const { error: tierUpdateError } = await supabase
+    const { data: updateData, error: tierUpdateError } = await supabase
       .from('user_profiles')
       .update({ tier_id: targetTierId })
       .eq('id', userId)
-      .eq('role', 'client'); // Only update client users
+      .eq('role', 'client') // Only update client users
+      .select('id, tier_id, email');
 
     if (tierUpdateError) {
       console.error('❌ Error updating user tier:', tierUpdateError);
       throw new Error(`Failed to update user tier: ${tierUpdateError.message}`);
     }
 
-    console.log(`✅ Successfully updated user ${userId} to tier ${targetTierId}`);
+    if (updateData && updateData.length > 0) {
+      console.log(`✅ Successfully updated user ${userId} to tier ${targetTierId}. Updated data:`, updateData[0]);
+    } else {
+      console.warn(`⚠️ No rows were updated for user ${userId}. User might not be a client or doesn't exist.`);
+    }
   } catch (error) {
     console.error(`💥 Error in updateUserTier:`, error);
     throw error;
@@ -125,13 +138,18 @@ Deno.serve(async (req) => {
 });
 
 async function handleEvent(event: Stripe.Event) {
+  console.log(`🎉 WEBHOOK RECEIVED: ${event.type} at ${new Date().toISOString()}`);
+  console.log(`📝 Event data:`, JSON.stringify(event.data.object, null, 2));
+  
   const stripeData = event?.data?.object ?? {};
 
   if (!stripeData) {
+    console.log(`❌ No stripe data in event`);
     return;
   }
 
   if (!('customer' in stripeData)) {
+    console.log(`❌ No customer in stripe data`);
     return;
   }
 
