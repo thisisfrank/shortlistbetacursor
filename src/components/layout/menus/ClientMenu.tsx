@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useData } from '../../../context/DataContext';
 import { getUserUsageStats } from '../../../utils/userUsageStats';
+import { UserProfile } from '../../../types';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { Users, Clock, Briefcase, Calendar, CreditCard, LogOut, Crown } from 'lucide-react';
@@ -12,7 +13,7 @@ export const ClientMenu: React.FC = () => {
   const { jobs, candidates, tiers } = useData();
   const navigate = useNavigate();
 
-  const stats = getUserUsageStats(userProfile, jobs, candidates, tiers);
+  const stats = getUserUsageStats(userProfile as any, jobs, candidates, tiers);
 
   const handleSignOut = async () => {
     try {
@@ -80,9 +81,6 @@ export const ClientMenu: React.FC = () => {
           <p className="text-xs text-guardian mt-1">
             of {stats.candidatesLimit} monthly credits
           </p>
-          <p className="text-xs text-guardian/60 mt-1">
-            Used: {stats.candidatesUsed} candidates
-          </p>
         </div>
         <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-lg">
           <div className="flex items-center justify-between mb-2">
@@ -102,9 +100,6 @@ export const ClientMenu: React.FC = () => {
           </div>
           <p className="text-xs text-guardian mt-1">
             of {stats.jobsLimit} monthly jobs
-          </p>
-          <p className="text-xs text-guardian/60 mt-1">
-            Submitted: {stats.jobsUsed} jobs
           </p>
         </div>
         <div className="flex items-center text-sm text-guardian">
