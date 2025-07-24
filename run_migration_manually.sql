@@ -120,11 +120,11 @@ RETURNS TABLE (
   role text,
   created_at timestamptz,
   updated_at timestamptz,
-  tier_id uuid
+  tier_id text
 ) AS $$
 BEGIN
   RETURN QUERY
-    SELECT up.id, up.email, up.name, up.role, up.created_at, up.updated_at, up.tier_id
+    SELECT up.id, up.email, up.name, up.role::text, up.created_at, up.updated_at, up.tier_id
     FROM user_profiles up
     ORDER BY 
       CASE up.role 

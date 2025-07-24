@@ -17,10 +17,10 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-shadowforce flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-supernova mx-auto mb-4"></div>
-          <p className="text-guardian font-jakarta">Loading...</p>
+          <p className="text-guardian font-jakarta">Authenticating...</p>
         </div>
       </div>
     );
@@ -35,7 +35,7 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
   // No user profile but user exists - profile might still be loading
   if (!userProfile && user) {
     return (
-      <div className="min-h-screen bg-shadowforce flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-supernova mx-auto mb-4"></div>
           <p className="text-guardian font-jakarta">Loading your profile...</p>

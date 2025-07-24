@@ -5,7 +5,6 @@ import BoltIcon from '../assets/v2.png';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { ArrowRight } from 'lucide-react';
-import Image2 from '../assets/image (2).png';
 import Image3 from '../assets/image (3).png';
 import Image4 from '../assets/image (4).png';
 import Image5 from '../assets/image (5).png';
@@ -114,11 +113,10 @@ export const LandingPage: React.FC = () => {
             <h2 className="text-3xl md:text-4xl font-anton text-white-knight mb-10 uppercase tracking-wide">
               Trusted by professionals
             </h2>
-            <div className="flex flex-col sm:flex-row gap-8 justify-center items-center">
-              <img src={Image2} alt="Testimonial 1" className="flex-grow max-w-xs object-contain shadow-lg rounded-lg" />
-              <img src={Image3} alt="Testimonial 2" className="flex-grow max-w-xs object-contain shadow-lg rounded-lg" />
-              <img src={Image4} alt="Testimonial 3" className="flex-grow max-w-xs object-contain shadow-lg rounded-lg" />
-              <img src={Image5} alt="Testimonial 4" className="flex-grow max-w-xs object-contain shadow-lg rounded-lg" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-items-center">
+              <img src={Image3} alt="Testimonial 1" className="max-w-xs object-contain shadow-lg rounded-lg" />
+              <img src={Image4} alt="Testimonial 2" className="max-w-xs object-contain shadow-lg rounded-lg" />
+              <img src={Image5} alt="Testimonial 3" className="max-w-xs object-contain shadow-lg rounded-lg" />
             </div>
           </div>
         </div>

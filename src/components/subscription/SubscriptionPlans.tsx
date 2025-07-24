@@ -4,7 +4,7 @@ import { useSubscription } from '../../hooks/useSubscription';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { CheckCircle, Zap, Crown, Star, Mail, Users, Briefcase, X } from 'lucide-react';
+import { CheckCircle, Zap, Crown, Star, Mail, Users, Briefcase, X, AlertTriangle } from 'lucide-react';
 
 // Updated subscription plans based on requirements
 const subscriptionPlans = [
@@ -71,38 +71,15 @@ const subscriptionPlans = [
 ];
 
 export const SubscriptionPlans: React.FC = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const { subscription, getSubscriptionPlan, isActive, loading: subscriptionLoading, error: subscriptionError } = useSubscription();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
 
   const currentPlan = getSubscriptionPlan();
 
-  // Add loading state to prevent flickering
-  if (authLoading || subscriptionLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-3xl font-anton text-supernova mb-2">Current Plan</h2>
-          <p className="text-guardian font-jakarta mb-4">Checking your subscription status...</p>
-          {subscriptionError && (
-            <div className="max-w-md mx-auto">
-              <p className="text-red-400 font-jakarta mb-4">{subscriptionError}</p>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setRetryKey(prev => prev + 1);
-                  window.location.reload();
-                }}
-              >
-                Retry
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+  // Show error state inline instead of full screen loading
+  const hasSubscriptionError = subscriptionError && !subscriptionLoading;
 
   const handleSubscribe = async (priceId: string) => {
     // Handle direct Stripe checkout URLs
@@ -254,7 +231,7 @@ export const SubscriptionPlans: React.FC = () => {
         </header>
 
         {/* Current Subscription Status */}
-        {currentPlan && (
+        {currentPlan ? (
           <div className="mb-12">
             <Card className="bg-gradient-to-r from-supernova/20 to-supernova/10 border-supernova/30">
               <CardContent className="p-6">
@@ -275,7 +252,37 @@ export const SubscriptionPlans: React.FC = () => {
               </CardContent>
             </Card>
           </div>
-        )}
+        ) : hasSubscriptionError ? (
+          <div className="mb-12">
+            <Card className="bg-gradient-to-r from-red-500/20 to-red-500/10 border-red-500/30">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <AlertTriangle className="text-red-400 mr-3" size={24} />
+                    <div>
+                      <h3 className="font-anton text-lg text-red-400 uppercase tracking-wide">
+                        Error Loading Subscription
+                      </h3>
+                      <p className="text-guardian font-jakarta">
+                        {subscriptionError}
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setRetryKey(prev => prev + 1);
+                      window.location.reload();
+                    }}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : null}
 
         {/* What You Get Section */}
         <div className="mb-12">

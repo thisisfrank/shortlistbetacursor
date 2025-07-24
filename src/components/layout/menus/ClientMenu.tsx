@@ -10,10 +10,10 @@ import { Users, Clock, Briefcase, Calendar, CreditCard, LogOut, Crown } from 'lu
 
 export const ClientMenu: React.FC = () => {
   const { userProfile, signOut } = useAuth();
-  const { jobs, candidates, tiers } = useData();
+  const { jobs, candidates, tiers, creditTransactions } = useData();
   const navigate = useNavigate();
 
-  const stats = getUserUsageStats(userProfile as any, jobs, candidates, tiers);
+  const stats = getUserUsageStats(userProfile as any, jobs, candidates, tiers, creditTransactions);
 
   const handleSignOut = async () => {
     try {
@@ -35,13 +35,10 @@ export const ClientMenu: React.FC = () => {
     <>
       {/* USER INFO */}
       <div className="mb-6 pb-4 border-b border-guardian/20">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-center mb-2">
           <h3 className="font-anton text-lg text-white-knight uppercase tracking-wide">
             {userProfile.email}
           </h3>
-          <Badge variant="outline" className="text-xs">
-            {stats.tierName}
-          </Badge>
         </div>
       </div>
       {/* SUBSCRIPTION */}
@@ -103,9 +100,8 @@ export const ClientMenu: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center justify-center text-sm text-guardian">
-          <Calendar className="mr-2" size={14} />
           <span className="font-jakarta">
-            Credit & Jobs Replenished: {stats.creditsResetDate ? new Date(stats.creditsResetDate).toLocaleDateString() : 'N/A'}
+            Credits & Jobs Replenish: {stats.creditsResetDate ? new Date(stats.creditsResetDate).toLocaleDateString() : 'N/A'}
           </span>
         </div>
       </div>

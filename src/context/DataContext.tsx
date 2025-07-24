@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
-import { Job, Candidate, Tier } from '../types';
+import { Job, Candidate, Tier, CreditTransaction } from '../types';
 import { scrapeLinkedInProfiles } from '../services/apifyService';
 import { generateJobMatchScore } from '../services/anthropicService';
 import { useAuth } from './AuthContext';
@@ -9,6 +9,7 @@ interface DataContextType {
   jobs: Job[];
   candidates: Candidate[];
   tiers: Tier[];
+  creditTransactions: CreditTransaction[];
   addJob: (job: Omit<Job, 'id' | 'status' | 'sourcerName' | 'completionLink' | 'createdAt' | 'updatedAt'>) => Promise<Job>;
   addCandidate: (candidate: Omit<Candidate, 'id' | 'submittedAt'>) => Promise<Candidate>;
   addCandidatesFromLinkedIn: (jobId: string, linkedinUrls: string[]) => Promise<{ 
@@ -26,6 +27,7 @@ interface DataContextType {
   getTierById: (tierId: string) => Tier | null;
   resetData: () => void;
   testInsertCandidate: () => Promise<{ success: boolean; data: any; error: any }>;
+  recordCreditTransaction: (userId: string | null | undefined, type: 'job' | 'candidate', amount: number, jobId?: string) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -44,6 +46,7 @@ interface DataProviderProps {
 
 // Create empty data for fresh platform
 const createEmptyData = () => {
+  const emptyCreditTransactions: CreditTransaction[] = [];
   const emptyTiers: Tier[] = [
     {
       id: 'tier-free',
@@ -85,7 +88,8 @@ const createEmptyData = () => {
   return {
     tiers: emptyTiers,
     jobs: emptyJobs,
-    candidates: emptyCandidates
+    candidates: emptyCandidates,
+    creditTransactions: emptyCreditTransactions
   };
 };
 
@@ -98,7 +102,51 @@ const loadInitialData = () => {
 
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [data, setData] = useState(() => loadInitialData());
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
+
+  // Helper function to record credit transactions
+  const recordCreditTransaction = async (
+    userId: string | null | undefined, 
+    type: 'job' | 'candidate', 
+    amount: number, 
+    jobId?: string
+  ) => {
+    // Early return if no valid userId
+    if (!userId) {
+      console.warn('⚠️ Cannot record credit transaction: no valid user ID');
+      return;
+    }
+
+    try {
+      // Check if Supabase is configured
+      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        console.log(`💾 Credit transaction (${type}, -${amount}) recorded locally for user ${userId}`);
+        return;
+      }
+
+      const description = type === 'job' 
+        ? 'Job submission deduction' 
+        : `Candidate credit deduction (${amount} candidates requested)`;
+
+      const { error } = await supabase
+        .from('credit_transactions')
+        .insert({
+          user_id: userId,
+          transaction_type: 'deduction',
+          amount: -amount, // Negative for deductions
+          description,
+          job_id: jobId || null
+        });
+
+      if (error) {
+        console.error('❌ Error recording credit transaction:', error);
+      } else {
+        console.log(`✅ Credit transaction recorded: ${type} -${amount} for user ${userId}`);
+      }
+    } catch (error) {
+      console.error('💥 Failed to record credit transaction:', error);
+    }
+  };
 
   // SIMPLE: One effect, one purpose - load data when user changes
   useEffect(() => {
@@ -262,10 +310,31 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         candidatesCount: loadedCandidates.length
       });
 
+      // Load credit transactions for the user
+      const { data: creditTransactionsData, error: creditTransactionsError } = await supabase
+        .from('credit_transactions')
+        .select('*')
+        .eq('user_id', userProfile.id);
+
+      const loadedCreditTransactions: CreditTransaction[] = creditTransactionsData?.map(ct => ({
+        id: ct.id,
+        userId: ct.user_id,
+        transactionType: ct.transaction_type,
+        amount: ct.amount,
+        description: ct.description,
+        jobId: ct.job_id,
+        createdAt: new Date(ct.created_at)
+      })) || [];
+
+      if (creditTransactionsError) {
+        console.warn('⚠️ Error loading credit transactions:', creditTransactionsError);
+      }
+
       setData(prev => ({
         ...prev,
         jobs: loadedJobs,
-        candidates: loadedCandidates
+        candidates: loadedCandidates,
+        creditTransactions: loadedCreditTransactions
       }));
 
       console.log('✅ User data loaded successfully for role:', userRole);
@@ -315,6 +384,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           }));
           
           console.log('✅ Job created in local storage:', newJob);
+          
+          // Record job credit deduction (non-blocking)
+          recordCreditTransaction(user?.id, 'job', 1, newJob.id).catch(error => 
+            console.warn('⚠️ Job credit transaction failed but job was created:', error)
+          );
+
+          // Record candidate credit deduction for requested candidates (non-blocking)
+          const requestedCandidates = jobData.candidatesRequested || 1;
+          recordCreditTransaction(user?.id, 'candidate', requestedCandidates, newJob.id).catch(error => 
+            console.warn('⚠️ Candidate credit transaction failed but job was created:', error)
+          );
+          
           resolve(newJob);
           return;
         }
@@ -394,6 +475,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           }));
           
           console.log('✅ Job created in Supabase:', newJob);
+          
+          // Record job credit deduction (non-blocking)
+          recordCreditTransaction(user?.id, 'job', 1, newJob.id).catch(error => 
+            console.warn('⚠️ Job credit transaction failed but job was created:', error)
+          );
+
+          // Record candidate credit deduction for requested candidates (non-blocking)
+          const requestedCandidates = insertedJob.candidates_requested || 1;
+          recordCreditTransaction(user?.id, 'candidate', requestedCandidates, newJob.id).catch(error => 
+            console.warn('⚠️ Candidate credit transaction failed but job was created:', error)
+          );
+          
           resolve(newJob);
         } catch (supabaseError) {
           console.error('💥 Supabase job creation failed, falling back to local storage:', supabaseError);
@@ -494,6 +587,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     success: boolean; 
     acceptedCount: number; 
     rejectedCount: number; 
+    isJobCompleted?: boolean;
     error?: string 
   }> => {
     try {
@@ -603,7 +697,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         try {
           const scoreResult = await generateJobMatchScore(matchData);
           
-          if (scoreResult.score >= 60) {
+          if (scoreResult.score >= 50) {
             // Accept candidate - meets threshold
             const candidate: Candidate = {
               id: crypto.randomUUID(),
@@ -833,9 +927,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       
       // Return results with detailed information
       return {
-        success: isJobComplete,
+        success: true,
         acceptedCount: acceptedCandidates.length,
         rejectedCount: rejectedCandidates.length + duplicateUrls.length,
+        isJobCompleted: isJobComplete,
         error: resultMessage
       };
     } catch (error) {
@@ -996,6 +1091,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     jobs: data.jobs,
     candidates: data.candidates,
     tiers: data.tiers,
+    creditTransactions: data.creditTransactions,
     addJob,
     addCandidate,
     addCandidatesFromLinkedIn,
@@ -1007,7 +1103,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     getJobsByUser,
     getTierById,
     resetData,
-    testInsertCandidate
+    testInsertCandidate,
+    recordCreditTransaction
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

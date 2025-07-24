@@ -24,7 +24,7 @@ interface User {
   role: 'client' | 'sourcer' | 'admin';
   created_at: string;
   updated_at: string;
-  tierId: string; // Assume this exists for frontend
+  tierId: string; // Changed to string to match database
 }
 
 export const UserManagement: React.FC = () => {
@@ -282,6 +282,26 @@ export const UserManagement: React.FC = () => {
             >
               {loading ? <Loader className="animate-spin" size={16} /> : <Users size={16} />}
               {loading ? 'LOADING...' : 'REFRESH'}
+            </Button>
+            <Button
+              onClick={async () => {
+                console.log('🧪 Testing get_all_users function...');
+                try {
+                  const { data, error } = await supabase.rpc('get_all_users');
+                  console.log('🧪 Test result:', { data, error });
+                  setMessage({ 
+                    type: error ? 'error' : 'success', 
+                    text: error ? `Function test failed: ${error.message}` : `Function exists! Found ${data?.length || 0} users.`
+                  });
+                } catch (err) {
+                  console.error('🧪 Test error:', err);
+                  setMessage({ type: 'error', text: `Test failed: ${err instanceof Error ? err.message : 'Unknown error'}` });
+                }
+              }}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              🧪 TEST FUNCTION
             </Button>
           </div>
 

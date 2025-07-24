@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
+import { AlertModal } from '../ui/AlertModal';
 import { generateJobMatchScore } from '../../services/anthropicService';
 import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
@@ -48,6 +49,18 @@ export const CandidatesView: React.FC = () => {
   const [expandedCandidates, setExpandedCandidates] = useState<Set<string>>(new Set());
   const [matchScores, setMatchScores] = useState<Record<string, { score: number; reasoning: string; loading: boolean }>>({});
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type?: 'warning' | 'error' | 'upgrade';
+    actionLabel?: string;
+    onAction?: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: ''
+  });
   const matchScoresRef = useRef(matchScores);
   const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
@@ -157,7 +170,12 @@ export const CandidatesView: React.FC = () => {
       console.log('Navigate called from candidates view');
     } catch (error) {
       console.error('Checkout error:', error);
-      alert(`Error: ${error instanceof Error ? error.message : 'Failed to navigate to subscription page'}`);
+      setAlertModal({
+        isOpen: true,
+        title: 'Navigation Error',
+        message: error instanceof Error ? error.message : 'Failed to navigate to subscription page',
+        type: 'error'
+      });
     } finally {
       setIsCreatingCheckout(false);
     }
@@ -184,7 +202,12 @@ export const CandidatesView: React.FC = () => {
 
   const exportSelectedCandidates = async () => {
     if (selectedCandidates.size === 0) {
-      alert('Please select at least one candidate to export');
+      setAlertModal({
+        isOpen: true,
+        title: 'No Candidates Selected',
+        message: 'Please select at least one candidate to export',
+        type: 'warning'
+      });
       return;
     }
 
@@ -266,7 +289,12 @@ export const CandidatesView: React.FC = () => {
       
     } catch (error) {
       console.error('Export error:', error);
-      alert('Error exporting candidates. Please try again.');
+      setAlertModal({
+        isOpen: true,
+        title: 'Export Error',
+        message: 'Error exporting candidates. Please try again.',
+        type: 'error'
+      });
     } finally {
       setIsExporting(false);
     }
@@ -880,6 +908,16 @@ export const CandidatesView: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+        actionLabel={alertModal.actionLabel}
+        onAction={alertModal.onAction}
+      />
     </div>
   );
 };

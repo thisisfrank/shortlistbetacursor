@@ -32,6 +32,10 @@ serve(async (req) => {
   try {
     const { candidateData }: { candidateData: CandidateData } = await req.json()
 
+    // Debug API key
+    const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
+    console.log('API Key status:', apiKey ? `Present (${apiKey.substring(0, 8)}...)` : 'Missing')
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -40,7 +44,7 @@ serve(async (req) => {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 150,
         messages: [
           {
@@ -77,7 +81,9 @@ ${candidateData.about || 'No about section available'}`
     })
 
     if (!response.ok) {
-      throw new Error(`Anthropic API error: ${response.status}`)
+      const errorText = await response.text()
+      console.error(`Anthropic API error: ${response.status} - ${errorText}`)
+      throw new Error(`Anthropic API error: ${response.status} - ${errorText}`)
     }
 
     const data = await response.json()
@@ -96,7 +102,11 @@ ${candidateData.about || 'No about section available'}`
       },
     )
   } catch (error) {
-    console.error('Error generating summary:', error)
+    console.error('Detailed error generating summary:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error: error
+    })
     
     // Return fallback summary on error
     const fallbackSummary = 'Experienced professional with a strong background in their field and relevant skills for the position.'

@@ -1,10 +1,11 @@
-import { UserProfile, Job, Candidate, Tier, UserUsageStats } from '../types';
+import { UserProfile, Job, Candidate, Tier, UserUsageStats, CreditTransaction } from '../types';
 
 export function getUserUsageStats(
   userProfile: UserProfile | null,
   jobs: Job[],
   candidates: Candidate[],
-  tiers: Tier[]
+  tiers: Tier[],
+  creditTransactions: CreditTransaction[] = []
 ): UserUsageStats | null {
   if (!userProfile) return null;
 
@@ -22,13 +23,16 @@ export function getUserUsageStats(
   ).length;
   const jobsRemaining = Math.max(0, jobsLimit - jobsUsed);
 
-  // Candidates submitted for this user's jobs (in the current month)
-  const userJobIds = jobs
-    .filter(job => job.userId === userProfile.id && job.createdAt >= startOfMonth)
-    .map(job => job.id);
-  const candidatesUsed = candidates.filter(
-    c => userJobIds.includes(c.jobId)
-  ).length;
+  // Calculate candidate credits used from credit transactions (in the current month)
+  const candidateTransactions = creditTransactions.filter(
+    ct => ct.userId === userProfile.id && 
+          ct.transactionType === 'deduction' &&
+          ct.description.includes('candidate') &&
+          ct.createdAt >= startOfMonth
+  );
+  
+  // Sum up all candidate credit deductions (amounts are negative, so we negate them)
+  const candidatesUsed = candidateTransactions.reduce((total, ct) => total + Math.abs(ct.amount), 0);
   const candidatesRemaining = Math.max(0, candidatesLimit - candidatesUsed);
 
   // Credits reset date

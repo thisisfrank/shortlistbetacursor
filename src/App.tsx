@@ -76,7 +76,7 @@ function App() {
                     <Route path="/client" element={<ClientRoute><ClientPage /></ClientRoute>} />
                     <Route path="/candidates" element={<ClientRoute><CandidatesPage /></ClientRoute>} />
                     
-                    {/* Subscription Routes - Client Only */}
+                    {/* Subscription Routes - All Authenticated Users */}
                     <Route path="/subscription" element={
                       <ClientRoute><SubscriptionPlans /></ClientRoute>
                     } />

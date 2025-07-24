@@ -36,6 +36,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvError, setCsvError] = useState('');
   const [showAcceptedCandidates, setShowAcceptedCandidates] = useState(false);
+  const [showJobCompletionConfirmation, setShowJobCompletionConfirmation] = useState(false);
   
   const MAX_CANDIDATES_PER_SUBMISSION = 50;
   
@@ -172,9 +173,23 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
       
       console.log(`Candidates submitted successfully for job: ${job.id}. Accepted: ${result.acceptedCount}, Rejected: ${result.rejectedCount}`);
       
-      // Mark job as complete - the DataContext now handles completion logic
-      onComplete && onComplete(job.id);
-      onClose();
+      // Check if job was completed by this submission
+      if ((result as any).isJobCompleted) {
+        // Show completion confirmation for 1 second before navigating
+        setShowJobCompletionConfirmation(true);
+        setIsSubmitting(false);
+        
+        setTimeout(() => {
+          onComplete && onComplete(job.id);
+          onClose();
+          // Navigate to sourcer dashboard
+          window.location.href = '/sourcer';
+        }, 1000);
+      } else {
+        // Job not completed yet, continue normally
+        onComplete && onComplete(job.id);
+        onClose();
+      }
     } catch (error) {
       console.error('Error submitting candidates:', error);
       setError('Failed to process LinkedIn profiles. Please try again.');
@@ -722,6 +737,25 @@ https://linkedin.com/in/candidate2
           </div>
         </div>
       </div>
+      
+      {/* Job Completion Confirmation Overlay */}
+      {showJobCompletionConfirmation && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 text-center max-w-md mx-4 animate-pulse">
+            <div className="mb-4">
+              <CheckCircle className="text-green-500 w-16 h-16 mx-auto" />
+            </div>
+            <h3 className="text-2xl font-anton text-gray-900 mb-2">
+              🎉 JOB COMPLETED!
+            </h3>
+            <p className="text-gray-600 font-jakarta">
+              All required candidates have been successfully submitted.
+              <br />
+              Redirecting to dashboard...
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -9,6 +9,9 @@ import { ConfirmationStep } from './ConfirmationStep';
 import { FormStep } from '../../../types';
 import { useData } from '../../../context/DataContext';
 import { useAuth } from '../../../context/AuthContext';
+import { getUserUsageStats } from '../../../utils/userUsageStats';
+import { AlertModal } from '../../ui/AlertModal';
+import { useNavigate } from 'react-router-dom';
 
 interface ClientIntakeFormProps {
   currentStep: FormStep;
@@ -21,9 +24,22 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type?: 'warning' | 'error' | 'upgrade';
+    actionLabel?: string;
+    onAction?: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: ''
+  });
   
-  const { addJob } = useData();
-  const { user } = useAuth();
+  const { addJob, jobs, candidates, tiers, creditTransactions } = useData();
+  const { user, userProfile } = useAuth();
+  const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
     companyName: '',
@@ -251,6 +267,40 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
         throw new Error('User not authenticated');
       }
 
+      // Check tier limits before submission
+      const stats = getUserUsageStats(userProfile as any, jobs, candidates, tiers, creditTransactions);
+      const requestedCandidates = parseInt(formData.candidatesRequested) || 1;
+      
+      // Check if either limit is reached and block submission
+      const jobLimitReached = stats && stats.jobsRemaining <= 0;
+      const candidateLimitReached = stats && stats.candidatesRemaining < requestedCandidates;
+      
+      if (jobLimitReached || candidateLimitReached) {
+        let title = '';
+        let message = '';
+        
+        if (jobLimitReached && candidateLimitReached) {
+          title = 'Credit Limits Reached';
+          message = `You have reached both your job limit (${stats.jobsLimit}) and don't have enough candidate credits (need ${requestedCandidates}, have ${stats.candidatesRemaining}). Upgrade your plan to continue submitting jobs.`;
+        } else if (jobLimitReached) {
+          title = 'Job Limit Reached';
+          message = `You have reached your monthly limit of ${stats.jobsLimit} job${stats.jobsLimit > 1 ? 's' : ''}. Upgrade your plan to submit more jobs and unlock premium features.`;
+        } else {
+          title = 'Insufficient Candidate Credits';
+          message = `You need ${requestedCandidates} candidate credit${requestedCandidates > 1 ? 's' : ''} but only have ${stats.candidatesRemaining} remaining. Upgrade your plan to get more candidate credits.`;
+        }
+        
+        setAlertModal({
+          isOpen: true,
+          title,
+          message,
+          type: 'upgrade',
+          actionLabel: 'Upgrade Plan',
+          onAction: () => navigate('/subscription')
+        });
+        return;
+      }
+
       // Combine city and state into location for backend
       const location = formData.isRemote ? 'Remote' : `${formData.city}, ${formData.state}`;
 
@@ -280,7 +330,12 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
       setCurrentStep('confirmation');
     } catch (error) {
       // console.error('💥 Error submitting REAL job:', error);
-      alert(`Submission failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setAlertModal({
+        isOpen: true,
+        title: 'Submission Failed',
+        message: error instanceof Error ? error.message : 'An unknown error occurred. Please try again.',
+        type: 'error'
+      });
     } finally {
       // console.log('🏁 REAL job submission process complete');
       setIsSubmitting(false);
@@ -309,6 +364,7 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
   };
 
   return (
+    <>
     <Card className="max-w-4xl mx-auto glow-supernova">
       <CardContent className="py-12">
         {(() => {
@@ -408,5 +464,16 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
         
       </CardContent>
     </Card>
+
+    <AlertModal
+      isOpen={alertModal.isOpen}
+      onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+      title={alertModal.title}
+      message={alertModal.message}
+      type={alertModal.type}
+      actionLabel={alertModal.actionLabel}
+      onAction={alertModal.onAction}
+    />
+  </>
   );
 };

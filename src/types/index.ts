@@ -13,6 +13,16 @@ export interface UserProfile {
   updatedAt: Date;
 }
 
+export interface CreditTransaction {
+  id: string;
+  userId: string;
+  transactionType: 'deduction' | 'addition' | 'reset';
+  amount: number;
+  description: string;
+  jobId?: string | null;
+  createdAt: Date;
+}
+
 export interface Tier {
   id: string;
   name: string;

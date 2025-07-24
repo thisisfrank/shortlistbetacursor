@@ -18,7 +18,7 @@ export interface UserSubscription {
 export const useSubscription = () => {
   const { user } = useAuth();
   const [subscription, setSubscription] = useState<UserSubscription | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start false to prevent flicker
   const [error, setError] = useState<string | null>(null);
   const currentFetchRef = useRef<string | null>(null);
 
