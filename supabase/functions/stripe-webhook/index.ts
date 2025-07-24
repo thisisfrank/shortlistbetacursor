@@ -29,6 +29,11 @@ async function updateUserTier(customerId: string, priceId: string | null, subscr
   try {
     console.log(`🎯 Updating user tier for customer: ${customerId}, price: ${priceId}, status: ${subscriptionStatus}`);
     
+    // TEMPORARY: Log price ID for mapping purposes
+    if (priceId) {
+      console.log(`🔍 PRICE ID DETECTED: ${priceId} - Add this to PRICE_TO_TIER_MAPPING`);
+    }
+    
     // Get user ID from stripe_customers table
     const { data: customerData, error: customerError } = await supabase
       .from('stripe_customers')
