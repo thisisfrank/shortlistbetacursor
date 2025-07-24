@@ -14,10 +14,8 @@ const stripe = new Stripe(stripeSecret, {
 const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
 // Map Stripe price IDs to database tier IDs
-// These will need to be updated with actual Stripe price IDs when we get them
 const PRICE_TO_TIER_MAPPING: Record<string, string> = {
-  // TODO: Replace with actual Basic Stripe price ID
-  'price_basic_placeholder': '88c433cf-0a8d-44de-82fa-71c7dcbe31ff',    // Tier 1 (Basic)
+  'price_1Rl1MuFPYYAarocke0oZgczA': '88c433cf-0a8d-44de-82fa-71c7dcbe31ff',    // Tier 1 (Basic)
   'price_1Rl1N5FPYYAarock0dFT7x9Q': 'f871eb1b-6756-447d-a1c0-20a373d1d5a2',  // Tier 2 (Premium) 
   'price_1Rl1NJFPYYAarockbgLtNiKk': 'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd', // Tier 3 (Top Shelf)
 };

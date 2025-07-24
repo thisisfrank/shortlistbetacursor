@@ -28,12 +28,12 @@ const subscriptionPlans = [
     id: 'basic',
     name: 'Basic',
     price: 30,
-    priceId: 'price_basic_placeholder', // TODO: Replace with actual Stripe price ID
-    description: 'Enhanced features for growing teams',
+    priceId: 'price_1Rl1MuFPYYAarocke0oZgczA', // Real Stripe price ID
+    description: 'Perfect for getting started',
     features: {
-      jobs: 1,
-      credits: 50,
-      companyEmails: true,
+      jobs: 3,
+      credits: 200,
+      companyEmails: false,
       unlimited: false
     },
     popular: false,
