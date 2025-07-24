@@ -25,25 +25,82 @@ export const generateCandidateSummary = async (candidateData: CandidateData): Pr
       throw new Error('Supabase URL not configured');
     }
 
-    const response = await fetch(`${supabaseUrl}/functions/v1/generate-summary`, {
+    // Try calling anthropic-proxy directly first
+    const response = await fetch(`${supabaseUrl}/functions/v1/anthropic-proxy`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
-      body: JSON.stringify({ candidateData })
+      body: JSON.stringify({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 150,
+        messages: [
+          {
+            role: 'user',
+            content: `Based on the following candidate information, write a professional summary in exactly 2 sentences maximum that highlights their key qualifications, experience, and value proposition:
+
+Name: ${candidateData.firstName} ${candidateData.lastName}
+Current Role: ${candidateData.headline || 'N/A'}
+Location: ${candidateData.location || 'N/A'}
+
+Experience:
+${candidateData.experience && candidateData.experience.length > 0 
+  ? candidateData.experience.map(exp => `- ${exp.title} at ${exp.company} (${exp.duration})`).join('\n')
+  : 'No experience data available'
+}
+
+Education:
+${candidateData.education && candidateData.education.length > 0
+  ? candidateData.education.map(edu => `- ${edu.degree} from ${edu.school}`).join('\n')
+  : 'No education data available'
+}
+
+Skills:
+${candidateData.skills && candidateData.skills.length > 0
+  ? candidateData.skills.join(', ')
+  : 'No skills data available'
+}
+
+About:
+${candidateData.about || 'No about section available'}`
+          }
+        ]
+      })
     });
 
     if (!response.ok) {
-      throw new Error(`Edge function error: ${response.status}`);
+      console.warn(`Direct anthropic-proxy call failed: ${response.status}, falling back to edge function`);
+      // Fall back to the existing edge function approach
+      const fallbackResponse = await fetch(`${supabaseUrl}/functions/v1/generate-summary`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ candidateData })
+      });
+
+      if (!fallbackResponse.ok) {
+        throw new Error(`Both direct and edge function calls failed: ${fallbackResponse.status}`);
+      }
+
+      const fallbackData = await fallbackResponse.json();
+      
+      if (fallbackData.summary) {
+        return fallbackData.summary;
+      } else {
+        throw new Error('Invalid response format from edge function');
+      }
     }
 
     const data = await response.json();
     
-    if (data.summary) {
-      return data.summary;
+    // Parse direct anthropic-proxy response
+    if (data.content && data.content.length > 0 && data.content[0].text) {
+      return data.content[0].text.trim();
     } else {
-      throw new Error('Invalid response format from edge function');
+      throw new Error('Invalid response format from anthropic-proxy');
     }
   } catch (error) {
     console.warn('AI summary generation failed, using fallback:', error);
@@ -69,29 +126,110 @@ export const generateJobMatchScore = async (matchData: JobMatchData): Promise<{ 
       throw new Error('Supabase URL not configured');
     }
 
-    const response = await fetch(`${supabaseUrl}/functions/v1/generate-match-score`, {
+    // Try calling anthropic-proxy directly first
+    const response = await fetch(`${supabaseUrl}/functions/v1/anthropic-proxy`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
-      body: JSON.stringify({ matchData })
+      body: JSON.stringify({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 200,
+        messages: [
+          {
+            role: 'user',
+            content: `You are an expert recruiter. Analyze how well this candidate matches the job requirements and provide a match score from 0-100 and brief reasoning.
+
+JOB REQUIREMENTS:
+Title: ${matchData.jobTitle}
+Seniority: ${matchData.seniorityLevel}
+Key Skills: ${matchData.keySkills.join(', ')}
+Description: ${matchData.jobDescription.substring(0, 500)}...
+
+CANDIDATE PROFILE:
+Name: ${matchData.candidateData.firstName} ${matchData.candidateData.lastName}
+Current Role: ${matchData.candidateData.headline || 'N/A'}
+Location: ${matchData.candidateData.location || 'N/A'}
+
+Experience:
+${matchData.candidateData.experience && matchData.candidateData.experience.length > 0 
+  ? matchData.candidateData.experience.slice(0, 3).map(exp => `- ${exp.title} at ${exp.company}`).join('\n')
+  : 'No experience data available'
+}
+
+Skills:
+${matchData.candidateData.skills && matchData.candidateData.skills.length > 0
+  ? matchData.candidateData.skills.slice(0, 10).join(', ')
+  : 'No skills data available'
+}
+
+Education:
+${matchData.candidateData.education && matchData.candidateData.education.length > 0
+  ? matchData.candidateData.education.slice(0, 2).map(edu => `- ${edu.degree} from ${edu.school}`).join('\n')
+  : 'No education data available'
+}
+
+Respond with ONLY a JSON object in this exact format:
+{
+  "score": 85,
+  "reasoning": "Strong match due to relevant experience in similar role, 80% skill overlap, and appropriate seniority level"
+}`
+          }
+        ]
+      })
     });
 
     if (!response.ok) {
-      throw new Error(`Edge function error: ${response.status}`);
+      console.warn(`Direct anthropic-proxy call failed: ${response.status}, falling back to edge function`);
+      // Fall back to the existing edge function approach
+      const fallbackResponse = await fetch(`${supabaseUrl}/functions/v1/generate-match-score`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ matchData })
+      });
+
+      if (!fallbackResponse.ok) {
+        throw new Error(`Both direct and edge function calls failed: ${fallbackResponse.status}`);
+      }
+
+      const fallbackData = await fallbackResponse.json();
+      
+      if (fallbackData.score !== undefined && fallbackData.reasoning) {
+        return {
+          score: Math.max(0, Math.min(100, fallbackData.score)),
+          reasoning: fallbackData.reasoning
+        };
+      } else {
+        throw new Error('Invalid response format from edge function');
+      }
     }
 
     const data = await response.json();
     
-    if (data.score !== undefined && data.reasoning) {
-      return {
-        score: Math.max(0, Math.min(100, data.score)), // Ensure score is between 0-100
-        reasoning: data.reasoning
-      };
-    } else {
-      throw new Error('Invalid response format from edge function');
+    // Parse direct anthropic-proxy response
+    if (data.content && data.content.length > 0 && data.content[0].text) {
+      try {
+        const aiResponse = data.content[0].text.trim();
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.score !== undefined && parsed.reasoning) {
+            return {
+              score: Math.max(0, Math.min(100, parsed.score)),
+              reasoning: parsed.reasoning
+            };
+          }
+        }
+      } catch (parseError) {
+        console.error('Error parsing AI response:', parseError);
+      }
     }
+    
+    throw new Error('Invalid response format from anthropic-proxy');
   } catch (error) {
     console.warn('AI match score generation failed, using fallback:', error);
     
@@ -196,8 +334,8 @@ const generateFallbackSummary = (candidateData: CandidateData): string => {
     summary += ` They hold a ${latestEducation.degree} from ${latestEducation.school}.`;
   }
   
-  // Add value proposition
-  summary += ` ${firstName} would be a valuable addition to teams seeking experienced talent in their field.`;
+  // Add positive value proposition instead of noting it's fallback
+  summary += ` ${firstName} brings valuable experience and would be a strong addition to the right team.`;
   
   return summary;
 };
