@@ -81,6 +81,23 @@ export const SubscriptionPlans: React.FC = () => {
 
   const currentPlan = getSubscriptionPlan();
 
+  // Map tier IDs to plan IDs for accurate current plan detection
+  const tierIdToPlanId: Record<string, string> = {
+    '5841d1d6-20d7-4360-96f8-0444305fac5b': 'free',     // Free tier
+    '88c433cf-0a8d-44de-82fa-71c7dcbe31ff': 'basic',    // Basic tier  
+    'f871eb1b-6756-447d-a1c0-20a373d1d5a2': 'premium',  // Premium tier
+    'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd': 'topshelf'  // Top Shelf tier
+  };
+
+  // Get current plan based on user's actual tier_id
+  const getCurrentPlanFromTier = () => {
+    if (!userProfile?.tierId) return null;
+    const planId = tierIdToPlanId[userProfile.tierId];
+    return subscriptionPlans.find(plan => plan.id === planId) || null;
+  };
+
+  const currentTierPlan = getCurrentPlanFromTier();
+
   // Show error state inline instead of full screen loading
   const hasSubscriptionError = subscriptionError && !subscriptionLoading;
 
@@ -211,12 +228,9 @@ export const SubscriptionPlans: React.FC = () => {
     }
   };
 
-  const isCurrentPlan = (priceId: string) => {
-    if (!priceId) {
-      // Free tier - check if user has no active subscription
-      return !currentPlan || !isActive();
-    }
-    return currentPlan?.priceId === priceId && isActive();
+  const isCurrentPlan = (planId: string) => {
+    // Use user's actual tier from database instead of Stripe subscription
+    return currentTierPlan?.id === planId;
   };
 
   return (
@@ -239,7 +253,7 @@ export const SubscriptionPlans: React.FC = () => {
         </header>
 
         {/* Current Subscription Status */}
-        {currentPlan ? (
+        {currentTierPlan && currentTierPlan.id !== 'free' ? (
           <div className="mb-12">
             <Card className="bg-gradient-to-r from-supernova/20 to-supernova/10 border-supernova/30">
               <CardContent className="p-6">
@@ -248,7 +262,7 @@ export const SubscriptionPlans: React.FC = () => {
                     <CheckCircle className="text-supernova mr-3" size={24} />
                     <div>
                       <h3 className="font-anton text-lg text-supernova uppercase tracking-wide">
-                        Current Plan: {currentPlan.name}
+                        Current Plan: {currentTierPlan.name}
                       </h3>
                       <p className="text-guardian font-jakarta">
                         Your subscription is active and ready to use
@@ -433,12 +447,12 @@ export const SubscriptionPlans: React.FC = () => {
                   <Button
                   fullWidth
                   size="lg"
-                  variant={isCurrentPlan(plan.priceId || '') ? 'outline' : 'primary'}
+                  variant={isCurrentPlan(plan.id) ? 'outline' : 'primary'}
                   onClick={() => handleSubscribe(plan.priceId || '')}
-                  disabled={isCurrentPlan(plan.priceId || '') || loadingPlan === (plan.priceId || '')}
+                  disabled={isCurrentPlan(plan.id) || loadingPlan === (plan.priceId || '') || !plan.priceId}
                   isLoading={loadingPlan === (plan.priceId || '')}
                 >
-                  {isCurrentPlan(plan.priceId || '') ? 'CURRENT PLAN' : 'UPGRADE'}
+                  {isCurrentPlan(plan.id) ? 'CURRENT PLAN' : 'UPGRADE'}
                   </Button>
                 </div>
               </CardContent>
