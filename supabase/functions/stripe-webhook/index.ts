@@ -104,6 +104,35 @@ Deno.serve(async (req) => {
       return new Response(null, { status: 204 });
     }
 
+    // Simple test endpoint
+    if (req.method === 'GET') {
+      console.log('🧪 Test endpoint called');
+      try {
+        const { data: testQuery } = await supabase
+          .from('tiers')
+          .select('count')
+          .limit(1);
+        
+        return Response.json({ 
+          status: 'webhook_online', 
+          database_connected: true,
+          environment_vars: {
+            has_stripe_secret: !!Deno.env.get('STRIPE_SECRET_KEY'),
+            has_webhook_secret: !!Deno.env.get('STRIPE_WEBHOOK_SECRET'),
+            has_supabase_url: !!Deno.env.get('SUPABASE_URL'),
+            has_service_role: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+          }
+        });
+      } catch (dbError) {
+        console.error('❌ Database test failed:', dbError);
+        return Response.json({ 
+          status: 'webhook_online', 
+          database_connected: false, 
+          error: dbError.message 
+        });
+      }
+    }
+
     if (req.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 });
     }
@@ -112,6 +141,7 @@ Deno.serve(async (req) => {
     const signature = req.headers.get('stripe-signature');
 
     if (!signature) {
+      console.log('❌ No signature found in webhook request');
       return new Response('No signature found', { status: 400 });
     }
 
@@ -123,8 +153,9 @@ Deno.serve(async (req) => {
 
     try {
       event = await stripe.webhooks.constructEventAsync(body, signature, stripeWebhookSecret);
+      console.log('✅ Webhook signature verified successfully');
     } catch (error: any) {
-      console.error(`Webhook signature verification failed: ${error.message}`);
+      console.error(`❌ Webhook signature verification failed: ${error.message}`);
       return new Response(`Webhook signature verification failed: ${error.message}`, { status: 400 });
     }
 
@@ -132,7 +163,7 @@ Deno.serve(async (req) => {
 
     return Response.json({ received: true });
   } catch (error: any) {
-    console.error('Error processing webhook:', error);
+    console.error('💥 Error processing webhook:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
