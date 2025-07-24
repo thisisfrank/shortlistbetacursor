@@ -8,7 +8,7 @@ import { Button } from '../ui/Button';
 import { Search, ClipboardList, Check, Clock, Zap, Target, Users } from 'lucide-react';
 
 const SourcerDashboard: React.FC = () => {
-  const { jobs, updateJob } = useData();
+  const { jobs, updateJob, loading, loadUserData, loadError } = useData();
   const { userProfile } = useAuth();
   const [filter, setFilter] = useState<'all' | 'unclaimed' | 'claimed' | 'completed'>('unclaimed');
   const [search, setSearch] = useState('');
@@ -50,6 +50,15 @@ const SourcerDashboard: React.FC = () => {
     window.addEventListener('openSourcerJob', handler);
     return () => window.removeEventListener('openSourcerJob', handler);
   }, [jobs]);
+
+  // Reload user data if modal opens and jobs are empty or loading
+  useEffect(() => {
+    if (selectedJobId && (jobs.length === 0 || loading) && userProfile?.email) {
+      loadUserData(userProfile.email);
+    }
+    // Only run when modal opens
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedJobId]);
 
   // Get the selected job and its client
   const selectedJob = selectedJobId ? jobs.find(job => job.id === selectedJobId) || null : null;
@@ -299,13 +308,36 @@ const SourcerDashboard: React.FC = () => {
           )}
         </div>
         
-        {selectedJob && (
+        {/* Job Detail Modal - only show if jobs are loaded and selectedJob is valid */}
+        {selectedJob && !loading && (
           <JobDetailModal
             job={selectedJob}
             onClose={handleCloseModal}
             onClaim={handleClaimJob}
             onComplete={handleCompleteJob}
           />
+        )}
+        {/* Show a loading overlay if a job is selected but jobs are still loading */}
+        {selectedJobId && loading && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
+            <div className="text-white text-xl">Loading job details...</div>
+          </div>
+        )}
+        
+        {/* Show a user-friendly error overlay if loading fails */}
+        {loadError && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black/80 z-50">
+            <div className="bg-white rounded-2xl p-8 text-center max-w-md mx-4 shadow-2xl">
+              <h3 className="text-2xl font-anton text-red-600 mb-4">Session Error</h3>
+              <p className="text-gray-800 font-jakarta mb-6">{loadError}</p>
+              <button
+                className="bg-supernova text-white px-6 py-2 rounded-lg font-bold hover:bg-yellow-400 transition"
+                onClick={() => window.location.reload()}
+              >
+                Refresh Page
+              </button>
+            </div>
+          </div>
         )}
         
         {/* Debug info */}

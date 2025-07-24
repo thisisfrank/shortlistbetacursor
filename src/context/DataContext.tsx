@@ -28,6 +28,9 @@ interface DataContextType {
   resetData: () => void;
   testInsertCandidate: () => Promise<{ success: boolean; data: any; error: any }>;
   recordCreditTransaction: (userId: string | null | undefined, type: 'job' | 'candidate', amount: number, jobId?: string) => Promise<void>;
+  loading: boolean;
+  loadUserData: (userEmail: string) => Promise<void>;
+  loadError: string | null;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -93,15 +96,77 @@ const createEmptyData = () => {
   };
 };
 
+// --- Local Storage Fallback Helpers ---
+const LOCAL_STORAGE_KEY = 'bolt_data_cache_v1';
+
+function saveDataToCache(data: any) {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({
+      jobs: data.jobs,
+      candidates: data.candidates,
+      userProfile: data.userProfile || null,
+      creditTransactions: data.creditTransactions || [],
+      timestamp: Date.now(),
+    }));
+  } catch (e) {
+    console.warn('Failed to save data to localStorage', e);
+  }
+}
+
+function loadDataFromCache() {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed;
+  } catch (e) {
+    console.warn('Failed to load data from localStorage', e);
+    return null;
+  }
+}
+
 // Load data from localStorage if available, otherwise use empty data
 const loadInitialData = () => {
-  // Start with empty data for initial load
-  // Real data will be loaded from Supabase in useEffect
+  const cached = loadDataFromCache();
+  if (cached) {
+    return {
+      jobs: cached.jobs || [],
+      candidates: cached.candidates || [],
+      tiers: createEmptyData().tiers, // Always use fresh tiers
+      creditTransactions: cached.creditTransactions || [],
+      userProfile: cached.userProfile || null,
+    };
+  }
   return createEmptyData();
 };
 
+// Helper to add a timeout to async operations
+function withTimeout(promise: Promise<any>, ms = 10000) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out. Please try again.')), ms))
+  ]);
+}
+
+// Helper to retry supabase.auth.getUser() a few times if user is undefined, with a true hard timeout
+async function getUserWithRetry(retries = 5, delay = 200, hardTimeoutMs = 5000): Promise<any> {
+  return Promise.race([
+    (async () => {
+      for (let i = 0; i < retries; i++) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) return user;
+        await new Promise(res => setTimeout(res, delay));
+      }
+      return null;
+    })(),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('User load timeout')), hardTimeoutMs))
+  ]);
+}
+
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [data, setData] = useState(() => loadInitialData());
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { user, userProfile } = useAuth();
 
   // Helper function to record credit transactions
@@ -153,11 +218,51 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     if (!user) {
       console.log('🔄 DataContext: User logged out, resetting state');
       setData(createEmptyData());
+      setLoading(false);
     } else {
       console.log('✅ DataContext: User logged in, loading data for:', user.email);
-      loadUserData(user.email);
+      setLoading(true);
+      if (typeof user.email === 'string') {
+        loadUserData(user.email).finally(() => setLoading(false));
+      } else {
+        setLoading(false);
+      }
     }
   }, [user]);
+
+  // Removed window storage reload effect to prevent unnecessary reloads and hanging after tab switches
+  // useEffect(() => {
+  //   const handleStorage = async (event: StorageEvent) => {
+  //     // Supabase uses 'supabase.auth.token' as the key for session
+  //     if (event.key && event.key.includes('supabase.auth.token')) {
+  //       // Rehydrate session from localStorage
+  //       const { data: { session } } = await supabase.auth.getSession();
+  //       // If session exists, reload user data
+  //       if (session && session.user && session.user.email) {
+  //         await loadUserData(session.user.email);
+  //       } else {
+  //         // If no session, reset data
+  //         setData(createEmptyData());
+  //       }
+  //     }
+  //   };
+  //   window.addEventListener('storage', handleStorage);
+  //   return () => window.removeEventListener('storage', handleStorage);
+  // }, []);
+
+  // Removed window focus reload effect to prevent data loss in modals
+  // useEffect(() => {
+  //   const handleFocus = async () => {
+  //     const { data: { session } } = await supabase.auth.getSession();
+  //     if (session && session.user && session.user.email) {
+  //       await loadUserData(session.user.email);
+  //     } else {
+  //       setData(createEmptyData());
+  //     }
+  //   };
+  //   window.addEventListener('focus', handleFocus);
+  //   return () => window.removeEventListener('focus', handleFocus);
+  // }, []);
 
   // Load real tiers from Supabase
   useEffect(() => {
@@ -182,6 +287,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   const loadUserData = async (userEmail: string) => {
     try {
+      setLoadError(null);
       console.log('📥 Loading user data from Supabase for:', userEmail);
       
       // Check if Supabase is configured
@@ -191,10 +297,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
 
       console.log('🔍 Step 1: Getting current user...');
-      // Get current user profile to determine role
-      const { data: { user } } = await supabase.auth.getUser();
+      // Use retry logic here
+      let user: any = null;
+      try {
+        user = await getUserWithRetry();
+      } catch (timeoutError) {
+        console.log('❌ User load timeout:', timeoutError);
+        setLoading(false);
+        setLoadError('Could not load your session (timeout). Please refresh or sign in again.');
+        return;
+      }
       if (!user) {
-        console.log('❌ No authenticated user found');
+        console.log('❌ No authenticated user found after retry');
+        setLoading(false);
+        setLoadError('Could not load your session. Please refresh or sign in again.');
         return;
       }
       console.log('✅ Step 1 complete: User found:', user.email);
@@ -204,7 +320,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       const { data: userProfile, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', user.id || '')
         .single();
 
       if (profileError) {
@@ -218,14 +334,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       console.log('🎭 Detected user role:', userRole);
 
       // Load jobs based on user role
-      let jobsData = [];
+      let jobsData: any[] = [];
       if (userRole === 'client') {
         // For clients, only load jobs for their clients
         if (user?.id) {
           const { data: clientJobs, error: jobsError } = await supabase
             .from('jobs')
             .select('*')
-            .eq('user_id', user.id);
+            .eq('user_id', user.id || '');
 
           if (jobsError) {
             console.error('❌ Error loading client jobs:', jobsError);
@@ -249,14 +365,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
 
       // Load candidates for these jobs
-      let candidatesData = [];
+      let candidatesData: any[] = [];
       if (jobsData.length > 0) {
-        const jobIds = jobsData.map(j => j.id);
+        const jobIds = jobsData.map((j: any) => j.id);
         
         const { data: jobCandidates, error: candidatesError } = await supabase
           .from('candidates')
           .select('*')
-          .in('job_id', jobIds);
+          .in('job_id', jobIds as string[]);
 
         if (candidatesError) {
           console.error('❌ Error loading candidates:', candidatesError);
@@ -314,9 +430,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       const { data: creditTransactionsData, error: creditTransactionsError } = await supabase
         .from('credit_transactions')
         .select('*')
-        .eq('user_id', userProfile.id);
+        .eq('user_id', userProfile.id || '');
 
-      const loadedCreditTransactions: CreditTransaction[] = creditTransactionsData?.map(ct => ({
+      const loadedCreditTransactions: CreditTransaction[] = creditTransactionsData?.map((ct: any) => ({
         id: ct.id,
         userId: ct.user_id,
         transactionType: ct.transaction_type,
@@ -334,12 +450,33 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         ...prev,
         jobs: loadedJobs,
         candidates: loadedCandidates,
-        creditTransactions: loadedCreditTransactions
+        creditTransactions: loadedCreditTransactions,
+        userProfile: userProfile || null,
       }));
+      // Save to cache
+      saveDataToCache({
+        jobs: loadedJobs,
+        candidates: loadedCandidates,
+        creditTransactions: loadedCreditTransactions,
+        userProfile: userProfile || null,
+      });
 
       console.log('✅ User data loaded successfully for role:', userRole);
     } catch (error) {
       console.error('💥 Error loading user data:', error);
+      setLoading(false);
+      setLoadError('An unexpected error occurred while loading your data. Please try again.');
+      // On error, optionally load from cache if available
+      const cached = loadDataFromCache();
+      if (cached) {
+        setData(prev => ({
+          ...prev,
+          jobs: cached.jobs || [],
+          candidates: cached.candidates || [],
+          creditTransactions: cached.creditTransactions || [],
+          userProfile: cached.userProfile || null,
+        }));
+      }
     }
   };
 
@@ -360,8 +497,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           
           const newJob: Job = {
             id: crypto.randomUUID(),
-            userId: user?.id || null,
-            userEmail: user?.email || null, // Add userEmail for local storage
+            userId: user?.id || '',
+            userEmail: user?.email || '',
             companyName: jobData.companyName || '',
             title: jobData.title || '',
             description: jobData.description || '',
@@ -378,10 +515,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             updatedAt: new Date()
           };
           
-          setData(prev => ({
-            ...prev,
-            jobs: [...prev.jobs, newJob]
-          }));
+          setData(prev => {
+            const newData = { ...prev, jobs: [...prev.jobs, newJob] };
+            saveDataToCache(newData);
+            return newData;
+          });
           
           console.log('✅ Job created in local storage:', newJob);
           
@@ -405,8 +543,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         try {
           // Create the job insert object with only the fields we know exist
           const jobInsert: any = {
-            user_id: user?.id || null,
-            user_email: user?.email || null,
+            user_id: user?.id || '',
+            user_email: user?.email || '',
             title: jobData.title || '',
             description: jobData.description || '',
             seniority_level: jobData.seniorityLevel || '',
@@ -469,10 +607,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             updatedAt: new Date(insertedJob.updated_at)
           };
           
-          setData(prev => ({
-            ...prev,
-            jobs: [...prev.jobs, newJob]
-          }));
+          setData(prev => {
+            const newData = { ...prev, jobs: [...prev.jobs, newJob] };
+            saveDataToCache(newData);
+            return newData;
+          });
           
           console.log('✅ Job created in Supabase:', newJob);
           
@@ -495,8 +634,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           // Fallback to local storage
           const newJob: Job = {
             id: crypto.randomUUID(),
-            userId: user?.id || null,
-            userEmail: user?.email || null, // Add userEmail for local storage
+            userId: user?.id || '',
+            userEmail: user?.email || '',
             companyName: jobData.companyName || '',
             title: jobData.title || '',
             description: jobData.description || '',
@@ -513,10 +652,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             updatedAt: new Date()
           };
           
-          setData(prev => ({
-            ...prev,
-            jobs: [...prev.jobs, newJob]
-          }));
+          setData(prev => {
+            const newData = { ...prev, jobs: [...prev.jobs, newJob] };
+            saveDataToCache(newData);
+            return newData;
+          });
           
           console.log('✅ Job created in local storage (fallback):', newJob);
           resolve(newJob);
@@ -571,10 +711,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           submittedAt: new Date(insertedCandidate.submitted_at)
         };
         
-        setData(prev => ({
-          ...prev,
-          candidates: [...prev.candidates, newCandidate]
-        }));
+        setData(prev => {
+          const newData = { ...prev, candidates: [...prev.candidates, newCandidate] };
+          saveDataToCache(newData);
+          return newData;
+        });
         
         resolve(newCandidate);
       } catch (error) {
@@ -605,7 +746,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
 
       // Get the job and client to check available credits
-      const job = data.jobs.find(j => j.id === jobId);
+      const job = data.jobs.find((j: Job) => j.id === jobId);
       if (!job) {
         return {
           success: false,
@@ -629,12 +770,12 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       // For now, we'll allow any number of candidates to be submitted.
 
       // Get current accepted candidates for this job to calculate progress
-      const currentCandidates = data.candidates.filter(c => c.jobId === jobId);
+      const currentCandidates = data.candidates.filter((c: Candidate) => c.jobId === jobId);
       const currentAcceptedCount = currentCandidates.length;
       
       // Check for duplicates across all existing candidates
       const existingLinkedInUrls = new Set(
-        data.candidates.map(c => c.linkedinUrl.toLowerCase().trim())
+        data.candidates.map((c: Candidate) => c.linkedinUrl.toLowerCase().trim())
       );
       
       const duplicateUrls: string[] = [];
@@ -781,10 +922,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           
           // DEBUG LOG: Before insert
           console.log('About to insert candidates to Supabase:', candidatesToInsert);
-          const { data: insertedCandidates, error: insertError } = await supabase
-            .from('candidates')
-            .insert(candidatesToInsert)
-            .select();
+          const { data: insertedCandidates, error: insertError } = await withTimeout(
+            supabase.from('candidates').insert(candidatesToInsert).select(),
+            10000
+          );
           // DEBUG LOG: After insert
           console.log('Insert result:', { insertedCandidates, insertError });
           
@@ -819,10 +960,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           }));
           
           console.log('🔄 Updating local state with saved candidates...');
-          setData(prev => ({
-            ...prev,
-            candidates: [...prev.candidates, ...savedCandidates]
-          }));
+          setData(prev => {
+            const newData = { ...prev, candidates: [...prev.candidates, ...savedCandidates] };
+            saveDataToCache(newData);
+            return newData;
+          });
           console.log('✅ Local state updated successfully');
           
         } catch (error) {
@@ -847,7 +989,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       const progressPercentage = Math.round((newTotalAccepted / job.candidatesRequested) * 100);
 
       // Check if job is now complete
-      const isJobComplete = newTotalAccepted >= job.candidatesRequested;
+      // const isJobComplete = newTotalAccepted >= job.candidatesRequested;
 
       // Build detailed results message
       let resultMessage = `SUBMISSION RESULTS:\n✅ ${acceptedCandidates.length} candidates ACCEPTED this submission\n`;
@@ -867,24 +1009,22 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       }
       
       resultMessage += `\n📊 JOB PROGRESS: ${newTotalAccepted}/${job.candidatesRequested} candidates (${progressPercentage}% complete)\n\n`;
-      resultMessage += isJobComplete 
-        ? '🎉 JOB COMPLETED! All required candidates have been submitted.' 
-        : `🎯 NEXT STEPS: Submit ${stillNeeded} more quality candidate${stillNeeded !== 1 ? 's' : ''} to complete this job.`;
-      
-      // AUTO-COMPLETE: Mark job as completed if requirements are met
-      if (isJobComplete) {
-        try {
-          console.log('🎯 Auto-completing job:', jobId);
-          await updateJob(jobId, {
-            status: 'Completed',
-            completionLink: `Auto-completed with ${acceptedCandidates.length} candidates submitted`
-          });
-          console.log('✅ Job auto-completed successfully');
-        } catch (completionError) {
-          console.error('❌ Error auto-completing job:', completionError);
-          // Don't fail the entire operation if auto-completion fails
-        }
-      }
+      resultMessage += `🎯 NEXT STEPS: Submit ${stillNeeded} more quality candidate${stillNeeded !== 1 ? 's' : ''} to complete this job.`;
+
+      // REMOVE AUTO-COMPLETE: Do not mark job as completed automatically here
+      // if (isJobComplete) {
+      //   try {
+      //     console.log('🎯 Auto-completing job:', jobId);
+      //     await updateJob(jobId, {
+      //       status: 'Completed',
+      //       completionLink: `Auto-completed with ${acceptedCandidates.length} candidates submitted`
+      //     });
+      //     console.log('✅ Job auto-completed successfully');
+      //   } catch (completionError) {
+      //     console.error('❌ Error auto-completing job:', completionError);
+      //     // Don't fail the entire operation if auto-completion fails
+      //   }
+      // }
       
       // CREDIT DEDUCTION: Deduct credits for accepted candidates
       if (acceptedCandidates.length > 0) {
@@ -900,7 +1040,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             const { data: userProfile, error: profileError } = await supabase
               .from('user_profiles')
               .select('available_credits')
-              .eq('id', currentUser.id)
+              .eq('id', currentUser.id || '')
               .single();
             
             if (profileError) {
@@ -914,7 +1054,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               const { error: updateError } = await supabase
                 .from('user_profiles')
                 .update({ available_credits: newCredits })
-                .eq('id', currentUser.id);
+                .eq('id', currentUser.id || '');
               
               if (updateError) {
                 console.error('❌ Error updating credits:', updateError);
@@ -926,7 +1066,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
                   const { error: auditError } = await supabase
                     .from('credit_transactions')
                     .insert({
-                      user_id: currentUser.id,
+                      user_id: currentUser.id || '',
                       transaction_type: 'deduction',
                       amount: creditsToDeduct,
                       description: `Candidate submission for job ${jobId}: ${acceptedCandidates.length} candidates accepted`,
@@ -958,7 +1098,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         success: true,
         acceptedCount: acceptedCandidates.length,
         rejectedCount: rejectedCandidates.length + duplicateUrls.length,
-        isJobCompleted: isJobComplete,
+        isJobCompleted: false, // Always false here as auto-completion is removed
         error: resultMessage
       };
     } catch (error) {
@@ -1015,10 +1155,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           updatedAt: updatedJobData.updated_at ? new Date(updatedJobData.updated_at) : new Date(),
         };
         
-        setData(prev => ({
-          ...prev,
-          jobs: prev.jobs.map(job => job.id === jobId ? updatedJob : job)
-        }));
+        setData(prev => {
+          const newData = { ...prev, jobs: prev.jobs.map((job: Job) => job.id === jobId ? updatedJob : job) };
+          saveDataToCache(newData);
+          return newData;
+        });
         
         resolve(updatedJob);
       } catch (error) {
@@ -1034,11 +1175,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   const getCandidatesByUser = (userId: string) => {
-    return data.candidates.filter(candidate => candidate.jobId && data.jobs.find(job => job.id === candidate.jobId)?.user_id === userId);
+    return data.candidates.filter((candidate: Candidate) => candidate.jobId && data.jobs.find((job: Job) => job.id === candidate.jobId)?.user_id === userId);
   };
 
   const getJobsByStatus = (status: Job['status']) => {
-    return data.jobs.filter(job => job.status === status);
+    return data.jobs.filter((job: Job) => job.status === status);
   };
 
   const getJobById = (jobId: string): Job | null => {
@@ -1120,11 +1261,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     candidates: data.candidates,
     tiers: data.tiers,
     creditTransactions: data.creditTransactions,
+    loading,
+    loadError,
     addJob,
     addCandidate,
     addCandidatesFromLinkedIn,
-          updateJob,
-      getCandidatesByJob,
+    updateJob,
+    getCandidatesByJob,
     getCandidatesByUser,
     getJobsByStatus,
     getJobById,
@@ -1132,7 +1275,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     getTierById,
     resetData,
     testInsertCandidate,
-    recordCreditTransaction
+    recordCreditTransaction,
+    loadUserData,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

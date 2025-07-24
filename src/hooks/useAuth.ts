@@ -41,13 +41,14 @@ export const useAuth = () => {
 
   useEffect(() => {
     let isMounted = true;
-    let authSubscription: any = null;
     let authTimeout: NodeJS.Timeout;
+    // REMOVE Supabase onAuthStateChange event listener for true sticky session
+    // Only update user/session on explicit login/logout/signup
+    // No event listeners for tab switch, focus, or session events
 
     const initAuth = async () => {
       try {
         console.log('🔐 Initializing auth...');
-        
         // Set a timeout to prevent infinite loading
         authTimeout = setTimeout(() => {
           if (isMounted) {
@@ -56,37 +57,27 @@ export const useAuth = () => {
             setAuthInitialized(true);
           }
         }, 15000); // 15 second timeout
-        
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error('Auth session timeout')), 20000);
         });
-        
         const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
         const currentUser = session?.user ?? null;
-        
         if (!isMounted) return;
-        
         console.log('🔐 Session found:', !!currentUser);
         setUser(currentUser);
-        
         if (currentUser) {
           console.log('🔐 Loading user profile...');
-          
           const profilePromise = supabase
             .from('user_profiles')
             .select('*')
             .eq('id', currentUser.id)
             .single();
-            
           const profileTimeoutPromise = new Promise((_, reject) => {
             setTimeout(() => reject(new Error('Profile fetch timeout')), 8000);
           });
-          
           const { data: profile, error } = await Promise.race([profilePromise, profileTimeoutPromise]) as any;
-          
           if (!isMounted) return;
-          
           if (error) {
             console.error('❌ Error loading user profile:', error);
             setUserProfile(null);
@@ -114,228 +105,137 @@ export const useAuth = () => {
       }
     };
 
-    const setupAuthListener = () => {
-      console.log('🔐 Setting up auth state listener...');
-      
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
-        console.log('🔐 Auth state change:', event, !!session?.user);
-        
-        // Skip initial session event - we handle it in initAuth
-        if (event === 'INITIAL_SESSION') {
-          console.log('🔐 Skipping INITIAL_SESSION event');
-          return;
-        }
-        
-        if (!isMounted) return;
-        
-        try {
-          const currentUser = session?.user ?? null;
-          setUser(currentUser);
-          
-          if (currentUser) {
-            console.log('🔐 Loading profile for auth change...');
-            const { data: profile, error } = await supabase
-              .from('user_profiles')
-              .select('*')
-              .eq('id', currentUser.id)
-              .single();
-            
-            if (!isMounted) return;
-            
-            if (error) {
-              console.error('❌ Error loading profile in auth change:', error);
-              setUserProfile(null);
-              // Don't set loading to false here - let the signIn function handle it
-            } else {
-              console.log('✅ Profile loaded in auth change:', profile?.role);
-              setUserProfile(mapDbProfileToUserProfile(profile));
-              // Don't set loading to false here - let the signIn function handle it
-            }
-          } else {
-            console.log('🔐 User signed out, clearing profile');
-            setUserProfile(null);
-            // Don't set loading to false here - let the signIn function handle it
-          }
-        } catch (error) {
-          console.error('💥 Auth change error:', error);
-          if (isMounted) {
-            setUserProfile(null);
-            // Don't set loading to false here - let the signIn function handle it
-          }
-        }
-      });
-      
-      authSubscription = subscription;
-    };
-
-    // Initialize auth
-    initAuth().then(() => {
-      if (isMounted) {
-        setupAuthListener();
-      }
-    });
+    // Initialize auth (only on mount)
+    initAuth();
 
     return () => {
-      console.log('🔐 Cleaning up auth listener...');
+      console.log('🔐 Cleaning up auth (sticky session mode)...');
       isMounted = false;
       if (authTimeout) {
         clearTimeout(authTimeout);
       }
-      if (authSubscription) {
-        authSubscription.unsubscribe();
-      }
     };
   }, []);
 
+  // EXPLICIT signIn, signUp, signOut, refreshProfile only update user/session/profile
   const signIn = async (email: string, password: string) => {
     try {
       console.log('🔐 Attempting sign in for:', email);
       console.log('🔐 Current loading state before signIn:', loading);
       setLoading(true);
       console.log('🔐 Loading state set to true');
-      
       // Add timeout to prevent infinite loading
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Sign in timeout')), 10000); // 10 second timeout
       });
-      
-      const signInPromise = supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      
-      const { data, error } = await Promise.race([signInPromise, timeoutPromise]) as any;
-      
-      console.log('🔐 Sign in result:', { success: !error, error: error?.message });
-      
-      // Always set loading to false after sign-in attempt
-      console.log('🔐 Setting loading to false after sign-in attempt');
+      const { data, error } = await Promise.race([
+        supabase.auth.signInWithPassword({ email, password }),
+        timeoutPromise
+      ]) as any;
+      if (error) {
+        setLoading(false);
+        return { data: null, error };
+      }
+      // Set user and profile after sign in
+      const currentUser = data.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        const { data: profile, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+        if (profileError) {
+          setUserProfile(null);
+        } else {
+          setUserProfile(mapDbProfileToUserProfile(profile));
+        }
+      } else {
+        setUserProfile(null);
+      }
       setLoading(false);
-      
-      return { data, error };
+      return { data, error: null };
     } catch (error) {
-      console.error('💥 Sign in catch error:', error);
-      console.log('🔐 Setting loading to false after catch error');
+      console.log('?? Sign in catch error:', error);
       setLoading(false);
-      return { 
-        data: null, 
-        error: { message: error instanceof Error ? error.message : 'Network error. Please try again.' } 
-      };
+      return { data: null, error };
     }
   };
 
   const signUp = async (email: string, password: string, role: 'client' | 'sourcer' = 'client', name: string = '') => {
-    console.log('📝 Attempting signup with:', { email, passwordLength: password.length, role });
     setLoading(true);
-    
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: undefined
-        },
-      });
-      
-      console.log('📝 Signup result:', { success: !error, error: error?.message, hasUser: !!data.user });
-      
-      if (!error && data.user) {
-        console.log('👤 User created, updating profile role...');
-        
-        try {
-          // Wait a moment for the trigger to create the profile
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Update user profile with selected role and name (the profile is auto-created by trigger)
-          const { error: profileError } = await supabase
-            .from('user_profiles')
-            .update({ role, name })
-            .eq('id', data.user.id);
-          
-          if (profileError) {
-            console.error('⚠️ Error updating user profile:', profileError);
-          } else {
-            console.log('✅ User profile role updated successfully');
-          }
-        } catch (profileUpdateError) {
-          console.error('💥 Error in profile update:', profileUpdateError);
-        }
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        setLoading(false);
+        return { data: null, error };
       }
-      
-      return { data, error };
-    } catch (error) {
-      console.error('💥 Signup error:', error);
-      return { 
-        data: null, 
-        error: { message: 'Network error. Please try again.' } 
-      };
-    } finally {
+      // Insert user profile after sign up
+      if (data.user) {
+        await supabase.from('user_profiles').insert({
+          id: data.user.id,
+          email,
+          name,
+          role,
+          tier_id: 'tier-free',
+          available_credits: 0,
+          jobs_remaining: 0,
+          credits_reset_date: null,
+          has_received_free_shortlist: false,
+        });
+        setUser(data.user);
+        setUserProfile({
+          id: data.user.id,
+          email,
+          name,
+          role,
+          tierId: 'tier-free',
+          availableCredits: 0,
+          jobsRemaining: 0,
+          creditsResetDate: null,
+          hasReceivedFreeShortlist: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
       setLoading(false);
+      return { data, error: null };
+    } catch (error) {
+      setLoading(false);
+      return { data: null, error };
     }
   };
 
   const signOut = async () => {
-    console.log('🚪 Starting sign out process...');
-    // Set sign-out loading state
     setSignOutLoading(true);
     try {
-      // Clear local storage first
-      localStorage.removeItem('sourcerId');
-      localStorage.removeItem('savedSourcers');
-      console.log('🚪 Calling Supabase signOut...');
       const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('❌ Supabase signOut error:', error);
-        throw error;
-      }
-      console.log('✅ Supabase signOut successful');
-      // Clear local state
       setUser(null);
       setUserProfile(null);
-      setLoading(false);
-      console.log('✅ Local state cleared');
-      // Wait 1 second to show the spinner, then reload
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 1000); // 1s delay for smoother UX
-      return { error: null };
-    } catch (error) {
-      console.error('💥 Sign out error:', error);
-      // Even if Supabase fails, clear local state to prevent stuck loading
-      setUser(null);
-      setUserProfile(null);
-      setLoading(false);
       setSignOutLoading(false);
-      return { 
-        error: { 
-          message: error instanceof Error ? error.message : 'Error signing out' 
-        } 
-      };
+      return { error };
+    } catch (error) {
+      setSignOutLoading(false);
+      return { error };
     }
   };
 
   const refreshProfile = async () => {
-    if (!user) {
-      console.log('🔄 No user to refresh profile for');
-      return;
-    }
-
+    if (!user) return;
+    setLoading(true);
     try {
-      console.log('🔄 Refreshing user profile...');
       const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', user.id)
         .single();
-
       if (error) {
-        console.error('❌ Error refreshing profile:', error);
+        setUserProfile(null);
       } else {
-        console.log('✅ Profile refreshed successfully, tier:', profile.tier_id);
         setUserProfile(mapDbProfileToUserProfile(profile));
       }
-    } catch (error) {
-      console.error('💥 Profile refresh error:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
