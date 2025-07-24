@@ -13,6 +13,74 @@ const stripe = new Stripe(stripeSecret, {
 
 const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
+// Map Stripe price IDs to database tier IDs
+// These will need to be updated with actual Stripe price IDs when we get them
+const PRICE_TO_TIER_MAPPING: Record<string, string> = {
+  // TODO: Replace with actual Stripe price IDs from checkout links
+  'price_basic_placeholder': '88c433cf-0a8d-44de-82fa-71c7dcbe31ff',    // Tier 1 (Basic)
+  'price_premium_placeholder': 'f871eb1b-6756-447d-a1c0-20a373d1d5a2',  // Tier 2 (Premium) 
+  'price_topshelf_placeholder': 'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd', // Tier 3 (Top Shelf)
+};
+
+const FREE_TIER_ID = '5841d1d6-20d7-4360-96f8-0444305fac5b';
+
+// Function to update user tier based on subscription
+async function updateUserTier(customerId: string, priceId: string | null, subscriptionStatus: string) {
+  try {
+    console.log(`🎯 Updating user tier for customer: ${customerId}, price: ${priceId}, status: ${subscriptionStatus}`);
+    
+    // Get user ID from stripe_customers table
+    const { data: customerData, error: customerError } = await supabase
+      .from('stripe_customers')
+      .select('user_id')
+      .eq('customer_id', customerId)
+      .single();
+
+    if (customerError) {
+      console.error('❌ Error finding user for customer:', customerId, customerError);
+      return;
+    }
+
+    if (!customerData) {
+      console.warn(`⚠️ No user found for Stripe customer: ${customerId}`);
+      return;
+    }
+
+    const userId = customerData.user_id;
+    let targetTierId: string;
+
+    // Determine target tier based on subscription status and price
+    if (subscriptionStatus === 'active' || subscriptionStatus === 'trialing') {
+      // Active subscription - map price to tier
+      targetTierId = priceId ? PRICE_TO_TIER_MAPPING[priceId] || FREE_TIER_ID : FREE_TIER_ID;
+      
+      if (priceId && !PRICE_TO_TIER_MAPPING[priceId]) {
+        console.warn(`⚠️ Unknown price ID: ${priceId}, defaulting to Free tier`);
+      }
+    } else {
+      // Inactive subscription - downgrade to Free
+      targetTierId = FREE_TIER_ID;
+    }
+
+    // Update user tier
+    const { error: tierUpdateError } = await supabase
+      .from('user_profiles')
+      .update({ tier_id: targetTierId })
+      .eq('id', userId)
+      .eq('role', 'client'); // Only update client users
+
+    if (tierUpdateError) {
+      console.error('❌ Error updating user tier:', tierUpdateError);
+      throw new Error(`Failed to update user tier: ${tierUpdateError.message}`);
+    }
+
+    console.log(`✅ Successfully updated user ${userId} to tier ${targetTierId}`);
+  } catch (error) {
+    console.error(`💥 Error in updateUserTier:`, error);
+    throw error;
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     // Handle OPTIONS request for CORS preflight
@@ -183,6 +251,11 @@ async function syncCustomerFromStripe(customerId: string) {
       console.error('Error syncing subscription:', subError);
       throw new Error('Failed to sync subscription in database');
     }
+
+    // Update user tier based on the subscription
+    const priceId = subscription.items.data[0].price.id;
+    await updateUserTier(customerId, priceId, subscription.status);
+    
     console.info(`Successfully synced subscription for customer: ${customerId}`);
   } catch (error) {
     console.error(`Failed to sync subscription for customer ${customerId}:`, error);
