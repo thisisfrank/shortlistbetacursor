@@ -4,7 +4,7 @@ import { useSubscription } from '../../hooks/useSubscription';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { CheckCircle, Zap, Crown, Star, Mail, Users, Briefcase, X, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Zap, Crown, Star, Mail, Users, Briefcase, X, AlertTriangle, RefreshCw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 // Updated subscription plans based on requirements
@@ -72,10 +72,12 @@ const subscriptionPlans = [
 ];
 
 export const SubscriptionPlans: React.FC = () => {
-  const { user } = useAuth();
+  const { userProfile } = useAuth();
   const { subscription, getSubscriptionPlan, isActive, loading: subscriptionLoading, error: subscriptionError } = useSubscription();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
+  const [refreshingProfile, setRefreshingProfile] = useState(false);
+  const { refreshProfile } = useAuth();
 
   const currentPlan = getSubscriptionPlan();
 
@@ -184,6 +186,18 @@ export const SubscriptionPlans: React.FC = () => {
     }
   };
 
+  const handleRefreshProfile = async () => {
+    setRefreshingProfile(true);
+    try {
+      await refreshProfile();
+      console.log('✅ Profile refreshed manually');
+    } catch (error) {
+      console.error('❌ Error refreshing profile:', error);
+    } finally {
+      setRefreshingProfile(false);
+    }
+  };
+
   const getPlanIcon = (planName: string) => {
     switch (planName) {
       case 'Top Shelf':
@@ -241,7 +255,19 @@ export const SubscriptionPlans: React.FC = () => {
                       </p>
                     </div>
                   </div>
-                  <Badge variant="success">ACTIVE</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="success">ACTIVE</Badge>
+                    <Button
+                      onClick={handleRefreshProfile}
+                      variant="ghost"
+                      size="sm"
+                      disabled={refreshingProfile}
+                      className="text-supernova hover:text-supernova/80"
+                    >
+                      <RefreshCw className={`mr-1 ${refreshingProfile ? 'animate-spin' : ''}`} size={14} />
+                      {refreshingProfile ? 'Refreshing...' : 'Refresh'}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

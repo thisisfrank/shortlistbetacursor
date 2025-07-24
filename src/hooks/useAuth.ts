@@ -314,6 +314,31 @@ export const useAuth = () => {
     }
   };
 
+  const refreshProfile = async () => {
+    if (!user) {
+      console.log('🔄 No user to refresh profile for');
+      return;
+    }
+
+    try {
+      console.log('🔄 Refreshing user profile...');
+      const { data: profile, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('❌ Error refreshing profile:', error);
+      } else {
+        console.log('✅ Profile refreshed successfully, tier:', profile.tier_id);
+        setUserProfile(mapDbProfileToUserProfile(profile));
+      }
+    } catch (error) {
+      console.error('💥 Profile refresh error:', error);
+    }
+  };
+
   return {
     user,
     userProfile,
@@ -322,5 +347,6 @@ export const useAuth = () => {
     signIn,
     signUp,
     signOut,
+    refreshProfile,
   };
 };
