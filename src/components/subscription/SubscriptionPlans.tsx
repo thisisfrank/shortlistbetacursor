@@ -383,10 +383,15 @@ export const SubscriptionPlans: React.FC = () => {
                   size="lg"
                   variant={isCurrentPlan(plan.id) ? 'outline' : 'primary'}
                   onClick={() => handleSubscribe(plan.priceId || '')}
-                  disabled={isCurrentPlan(plan.id) || loadingPlan === (plan.priceId || '') || !plan.priceId}
+                  disabled={
+                    // Disable all except Free plan
+                    plan.id !== 'free' || isCurrentPlan(plan.id) || loadingPlan === (plan.priceId || '') || !plan.priceId
+                  }
                   isLoading={loadingPlan === (plan.priceId || '')}
                 >
-                  {isCurrentPlan(plan.id) ? 'CURRENT PLAN' : 'UPGRADE'}
+                  {plan.id === 'free'
+                    ? (isCurrentPlan(plan.id) ? 'CURRENT PLAN' : 'UPGRADE')
+                    : 'OUT OF STOCK'}
                   </Button>
                 </div>
               </CardContent>
