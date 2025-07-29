@@ -30,8 +30,20 @@ export const ResetPasswordPage: React.FC = () => {
         search: window.location.search
       });
 
-      // Check for recovery tokens in URL
-      const urlParams = new URLSearchParams(window.location.search);
+      // Check for recovery tokens in URL hash (Supabase sends them there)
+      const hash = window.location.hash;
+      let urlParams: URLSearchParams;
+      
+      if (hash && hash.includes('access_token')) {
+        // Recovery tokens are in the hash
+        urlParams = new URLSearchParams(hash.substring(1));
+        console.log('🔑 Reading recovery tokens from hash:', hash);
+      } else {
+        // Fallback to query parameters
+        urlParams = new URLSearchParams(window.location.search);
+        console.log('🔑 Reading recovery tokens from query params:', window.location.search);
+      }
+      
       const accessToken = urlParams.get('access_token');
       const refreshToken = urlParams.get('refresh_token');
       const type = urlParams.get('type');

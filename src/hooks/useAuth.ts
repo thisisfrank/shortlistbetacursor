@@ -49,20 +49,21 @@ export const useAuth = () => {
     const checkForPasswordRecovery = () => {
       const hash = window.location.hash;
       const fullUrl = window.location.href;
+      const pathname = window.location.pathname;
       const hasTypeRecovery = hash.includes('type=recovery');
       
       console.log('🔍 Checking URL for password recovery:', { 
         hash, 
         fullUrl,
         hasTypeRecovery,
-        pathname: window.location.pathname,
+        pathname,
         search: window.location.search,
         hashLength: hash.length,
         rawHash: hash
       });
       
       if (hash && hash.includes('type=recovery')) {
-        console.log('🔑 Password recovery detected in URL, redirecting...');
+        console.log('🔑 Password recovery detected in URL');
         // Extract parameters
         const params = new URLSearchParams(hash.substring(1));
         const type = params.get('type');
@@ -71,10 +72,16 @@ export const useAuth = () => {
         console.log('🔑 Recovery parameters:', { type, hasAccessToken: !!accessToken });
         
         if (type === 'recovery' && accessToken) {
-          console.log('🔑 Valid recovery link detected, redirecting to /reset-password');
-          // Redirect to reset password page immediately
-          window.location.href = '/reset-password';
-          return true; // Indicates we found recovery
+          // Only redirect if we're NOT already on the reset-password page
+          if (pathname !== '/reset-password') {
+            console.log('🔑 Valid recovery link detected, redirecting to /reset-password with tokens preserved');
+            // Preserve the entire hash when redirecting
+            window.location.href = `/reset-password${hash}`;
+            return true; // Indicates we found recovery and are redirecting
+          } else {
+            console.log('🔑 Already on reset-password page with valid recovery tokens');
+            return false; // Don't exit early, let auth initialize normally
+          }
         }
       }
       return false;

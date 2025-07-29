@@ -155,14 +155,7 @@ export const LoginPage: React.FC = () => {
               required
             />
 
-            <div className="text-center mb-4">
-              <Link
-                to="/forgot-password"
-                className="text-supernova hover:text-supernova-light font-semibold transition-colors text-sm font-jakarta"
-              >
-                Forgot your password?
-              </Link>
-            </div>
+
 
             <Button
               type="submit"
