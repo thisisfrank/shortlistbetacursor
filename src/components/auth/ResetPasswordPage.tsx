@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { FormInput } from '../forms/FormInput';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import BoltIcon from '../../assets/v2.png';
+import { supabase } from '../../lib/supabase';
 
 export const ResetPasswordPage: React.FC = () => {
   const { updatePassword, user, loading: authLoading } = useAuth();
@@ -16,28 +17,72 @@ export const ResetPasswordPage: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [waitingForAuth, setWaitingForAuth] = useState(true);
+  const [isValidSession, setIsValidSession] = useState(false);
 
   useEffect(() => {
-    console.log('🔑 ResetPasswordPage mounted, checking user auth state:', {
-      hasUser: !!user,
-      userEmail: user?.email,
-      authLoading,
-      pathname: window.location.pathname,
-      hash: window.location.hash
-    });
-    
-    // Wait a bit for auth to initialize
-    const authTimer = setTimeout(() => {
-      setWaitingForAuth(false);
+    const handlePasswordRecovery = async () => {
+      console.log('🔑 ResetPasswordPage mounted, checking URL and auth state:', {
+        hasUser: !!user,
+        userEmail: user?.email,
+        authLoading,
+        pathname: window.location.pathname,
+        hash: window.location.hash,
+        search: window.location.search
+      });
+
+      // Check for recovery tokens in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const accessToken = urlParams.get('access_token');
+      const refreshToken = urlParams.get('refresh_token');
+      const type = urlParams.get('type');
+
+      // Check for error in URL
+      const error = urlParams.get('error');
+      const errorDescription = urlParams.get('error_description');
       
-      if (!user && !authLoading) {
-        console.warn('⚠️ User not authenticated on reset password page');
-        setError('Invalid reset session. Please request a new password reset.');
+      if (error) {
+        console.error('❌ URL contains error:', error, errorDescription);
+        setError(`Reset link error: ${errorDescription || error}`);
+        setWaitingForAuth(false);
+        return;
+      }
+
+      if (accessToken && refreshToken && type === 'recovery') {
+        console.log('🔑 Found recovery tokens in URL, setting session...');
+        try {
+          const { data, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (sessionError) {
+            console.error('❌ Error setting session:', sessionError);
+            setError('Invalid or expired reset link. Please request a new password reset.');
+          } else {
+            console.log('✅ Session set successfully for password recovery');
+            setIsValidSession(true);
+            setError(''); // Clear any errors
+          }
+        } catch (err) {
+          console.error('❌ Exception setting session:', err);
+          setError('Failed to authenticate reset link. Please request a new password reset.');
+        }
+      } else if (!user && !authLoading) {
+        console.warn('⚠️ No recovery tokens found and user not authenticated');
+        setError('Invalid reset link. Please request a new password reset from the login page.');
       } else if (user) {
-        console.log('✅ User authenticated for password reset:', user.email);
+        console.log('✅ User already authenticated for password reset:', user.email);
+        setIsValidSession(true);
         setError(''); // Clear any previous errors
       }
-    }, 2000); // Wait 2 seconds for auth to settle
+
+      setWaitingForAuth(false);
+    };
+
+    // Wait a bit for auth to initialize, then handle recovery
+    const authTimer = setTimeout(() => {
+      handlePasswordRecovery();
+    }, 1000);
 
     return () => clearTimeout(authTimer);
   }, [user, authLoading]);
@@ -48,15 +93,46 @@ export const ResetPasswordPage: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center px-4">
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
+            <div className="animate-spin mx-auto mb-4 w-8 h-8 border-4 border-supernova border-t-transparent rounded-full"></div>
+            <p className="text-guardian font-jakarta">Verifying reset link...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error state if session is invalid
+  if (error && !isValidSession) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center px-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center">
             <div className="flex justify-center mb-6">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-supernova"></div>
+              <div className="relative">
+                <AlertCircle size={64} className="text-red-400" />
+                <div className="absolute inset-0 bg-red-400/30 blur-xl rounded-full"></div>
+              </div>
             </div>
-            <h1 className="text-xl font-anton text-white-knight uppercase tracking-wide mb-2">
-              Authenticating...
+            <h1 className="text-2xl font-anton text-white-knight uppercase tracking-wide mb-4">
+              Invalid Reset Link
             </h1>
-            <p className="text-guardian font-jakarta">
-              Please wait while we verify your reset session
+            <p className="text-guardian font-jakarta mb-6">
+              {error}
             </p>
+            <Link
+              to="/forgot-password"
+              className="inline-block px-6 py-3 bg-supernova text-shadowforce font-jakarta font-semibold rounded-lg hover:bg-supernova-light transition-colors"
+            >
+              Request New Reset Link
+            </Link>
+            <div className="mt-4">
+              <Link
+                to="/login"
+                className="text-supernova hover:text-supernova-light font-semibold transition-colors font-jakarta"
+              >
+                Back to Sign In
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
