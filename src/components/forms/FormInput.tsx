@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   error?: string;
   hint?: string;
+  showPasswordToggle?: boolean;
+  isPasswordMatch?: boolean;
+  showPasswordMatch?: boolean;
 }
 
 export const FormInput: React.FC<FormInputProps> = ({
@@ -12,9 +16,22 @@ export const FormInput: React.FC<FormInputProps> = ({
   hint,
   id,
   className = '',
+  showPasswordToggle = false,
+  isPasswordMatch,
+  showPasswordMatch = false,
+  type,
   ...props
 }) => {
+  const [showPassword, setShowPassword] = useState(false);
   const inputId = id || (label || '').toLowerCase().replace(/\s+/g, '-');
+  
+  const inputType = showPasswordToggle && type === 'password' 
+    ? (showPassword ? 'text' : 'password')
+    : type;
+
+  const togglePassword = () => {
+    setShowPassword(!showPassword);
+  };
 
   return (
     <div className="mb-8">
@@ -24,18 +41,50 @@ export const FormInput: React.FC<FormInputProps> = ({
       >
         {label}
       </label>
-      <input
-        id={inputId}
-        className={`
-          block w-full border-0 border-b-2 px-0 py-4 text-lg
-          bg-transparent text-white-knight placeholder-guardian/60 font-jakarta
-          focus:ring-0 focus:border-supernova transition-colors duration-200
-          ${error ? 'border-red-500' : 'border-guardian/40 hover:border-guardian/60'}
-          ${className}
-        `}
-        {...props}
-      />
-      {hint && !error && (
+      <div className="relative">
+        <input
+          id={inputId}
+          type={inputType}
+          className={`
+            block w-full border-0 border-b-2 px-0 py-4 text-lg
+            bg-transparent text-white-knight placeholder-guardian/60 font-jakarta
+            focus:ring-0 focus:border-supernova transition-colors duration-200
+            ${error ? 'border-red-500' : 'border-guardian/40 hover:border-guardian/60'}
+            ${showPasswordToggle ? 'pr-12' : ''}
+            ${className}
+          `}
+          {...props}
+        />
+        
+        {/* Password Toggle Button */}
+        {showPasswordToggle && type === 'password' && (
+          <button
+            type="button"
+            onClick={togglePassword}
+            className="absolute right-0 top-1/2 transform -translate-y-1/2 p-2 text-guardian hover:text-supernova transition-colors"
+            tabIndex={-1}
+          >
+            {showPassword ? (
+              <EyeOff size={20} />
+            ) : (
+              <Eye size={20} />
+            )}
+          </button>
+        )}
+        
+
+      </div>
+      
+      {/* Password Match Message */}
+      {showPasswordMatch && isPasswordMatch !== undefined && props.value && (
+        <p className={`mt-2 text-sm font-jakarta font-medium ${
+          isPasswordMatch ? 'text-green-400' : 'text-red-400'
+        }`}>
+          {isPasswordMatch ? 'Passwords match' : 'Passwords do not match'}
+        </p>
+      )}
+      
+      {hint && !error && !showPasswordMatch && (
         <p className="mt-2 text-sm text-guardian/80 font-jakarta">{hint}</p>
       )}
       {error && (

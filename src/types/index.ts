@@ -3,19 +3,9 @@ export interface UserProfile {
   email: string;
   name: string;
   role: 'client' | 'sourcer' | 'admin';
-  // Subscription fields moved from Client
   tierId: string;
-  availableCredits: number;
-  jobsRemaining: number;
-  creditsResetDate: Date;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface Company {
-  id: string;
-  name: string;
-  createdAt: Date;
 }
 
 export interface CreditTransaction {
@@ -41,8 +31,7 @@ export interface Job {
   id: string;
   userId: string; // Changed from clientId to userId
   userEmail?: string; // Email of the user who submitted the job
-  companyId: string; // Reference to companies table
-  company?: Company; // Optional company data when joined
+  companyName: string; // Production uses company_name (string field)
   title: string;
   description: string;
   seniorityLevel: 'Junior' | 'Mid' | 'Senior' | 'Executive';

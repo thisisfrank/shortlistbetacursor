@@ -11,7 +11,9 @@ interface AuthContextType {
   signUp: (email: string, password: string, role?: 'client' | 'sourcer', name?: string) => Promise<{ data: any; error: any }>;
   signOut: () => Promise<{ error: any }>;
   refreshProfile: () => Promise<void>;
-  clearAllAuth: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
+  updatePassword: (newPassword: string) => Promise<{ error: any }>;
+  clearAllAuth: () => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

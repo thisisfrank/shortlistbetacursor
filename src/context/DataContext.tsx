@@ -167,7 +167,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [data, setData] = useState(() => loadInitialData());
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const { user, userProfile, refreshProfile } = useAuth();
+  const { user, userProfile } = useAuth();
 
   // Helper function to record credit transactions
   const recordCreditTransaction = async (
@@ -193,8 +193,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         ? 'Job submission deduction' 
         : `Candidate credit deduction (${amount} candidates requested)`;
 
-      // Record the transaction
-      const { error: transactionError } = await supabase
+      const { error } = await supabase
         .from('credit_transactions')
         .insert({
           user_id: userId,
@@ -204,45 +203,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           job_id: jobId || null
         });
 
-      if (transactionError) {
-        console.error('❌ Error recording credit transaction:', transactionError);
-        return;
-      }
-
-      // Update the user's actual credit counts
-      // First get current values to calculate new values
-      const { data: currentProfile, error: fetchError } = await supabase
-        .from('user_profiles')
-        .select('jobs_remaining, available_credits')
-        .eq('id', userId)
-        .single();
-
-      if (fetchError) {
-        console.error('❌ Error fetching current credits:', fetchError);
-        return;
-      }
-
-      // Calculate new values
-      let updateFields: any = {};
-      if (type === 'job') {
-        updateFields.jobs_remaining = Math.max(0, (currentProfile.jobs_remaining || 0) - amount);
-      } else if (type === 'candidate') {
-        updateFields.available_credits = Math.max(0, (currentProfile.available_credits || 0) - amount);
-      }
-
-      const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update(updateFields)
-        .eq('id', userId);
-
-      if (updateError) {
-        console.error('❌ Error updating user credits:', updateError);
+      if (error) {
+        console.error('❌ Error recording credit transaction:', error);
       } else {
         console.log(`✅ Credit transaction recorded: ${type} -${amount} for user ${userId}`);
-        console.log(`✅ User credits updated: ${type} deduction applied`);
-        
-        // Refresh the user profile to reflect the changes in the UI
-        await refreshProfile();
       }
     } catch (error) {
       console.error('💥 Failed to record credit transaction:', error);
@@ -432,7 +396,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         salaryRangeMax: j.salary_range_max ?? 0,
         keySellingPoints: j.key_selling_points || [],
         status: j.status || '',
-        sourcerId: j.sourcer_id || null, // Temporarily using sourcer_name to test production schema
+        sourcerId: j.sourcer_name || null, // Temporarily using sourcer_name to test production schema
         completionLink: j.completion_link || null,
         candidatesRequested: j.candidates_requested ?? 0,
         createdAt: j.created_at ? new Date(j.created_at) : new Date(),
@@ -516,39 +480,71 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
-  const addJob = (jobData: Omit<Job, 'id' | 'status' | 'sourcerId' | 'completionLink' | 'createdAt' | 'updatedAt'> & { companyName?: string }) => {
-    return new Promise<Job>((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        console.error('⏰ Job creation timeout');
-        reject(new Error('Job creation timeout'));
-      }, 15000);
+  const addJob = (jobData: Omit<Job, 'id' | 'status' | 'sourcerName' | 'completionLink' | 'createdAt' | 'updatedAt'>) => {
+    return new Promise<Job>(async (resolve, reject) => {
+      try {
+        console.log('💼 Adding job to database/storage...');
+        
+        // Add timeout to prevent hanging
+        const timeoutId = setTimeout(() => {
+          reject(new Error('Job submission timed out after 30 seconds. Please check your internet connection and try again.'));
+        }, 30000);
+        
+        // Check if Supabase is properly configured
+        if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+          clearTimeout(timeoutId);
+          console.log('💾 Creating job in local storage (Supabase not configured)...');
+          
+          const newJob: Job = {
+            id: crypto.randomUUID(),
+            userId: user?.id || '',
+            userEmail: user?.email || '',
+            companyName: jobData.companyName || '',
+            title: jobData.title || '',
+            description: jobData.description || '',
+            seniorityLevel: jobData.seniorityLevel || '',
+            location: jobData.location || '',
+            salaryRangeMin: jobData.salaryRangeMin ?? 0,
+            salaryRangeMax: jobData.salaryRangeMax ?? 0,
+            keySellingPoints: jobData.keySellingPoints || [],
+            status: 'Unclaimed',
+            sourcerId: null,
+            completionLink: null,
+            candidatesRequested: jobData.candidatesRequested ?? 0,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          
+          setData(prev => {
+            const newData = { ...prev, jobs: [...prev.jobs, newJob] };
+            saveDataToCache(newData);
+            return newData;
+          });
+          
+          console.log('✅ Job created in local storage:', newJob);
+          
+          // Record job credit deduction (non-blocking)
+          recordCreditTransaction(user?.id, 'job', 1, newJob.id).catch(error => 
+            console.warn('⚠️ Job credit transaction failed but job was created:', error)
+          );
 
-      console.log('💼 Adding job to database/storage...');
-      
-      // Check if we have user data
-      if (!user?.id) {
-        console.error('❌ No user ID available for job creation');
-        clearTimeout(timeoutId);
-        reject(new Error('No user ID available'));
-        return;
-      }
+          // Record candidate credit deduction for requested candidates (non-blocking)
+          const requestedCandidates = jobData.candidatesRequested || 1;
+          recordCreditTransaction(user?.id, 'candidate', requestedCandidates, newJob.id).catch(error => 
+            console.warn('⚠️ Candidate credit transaction failed but job was created:', error)
+          );
+          
+          resolve(newJob);
+          return;
+        }
 
-      // Check if user has enough job credits (using the userProfile from component scope)
-      if (userProfile && userProfile.jobsRemaining <= 0) {
-        console.error('❌ User has no job credits remaining');
-        clearTimeout(timeoutId);
-        reject(new Error('No job credits remaining'));
-        return;
-      }
-
-      console.log('🗄️ Using Supabase database for job...');
-
-      (async () => {
+        console.log('🗄️ Using Supabase database for job...');
+        
         try {
           // Create the job insert object with only the fields we know exist
           const jobInsert: any = {
-            user_id: user?.id,
-            user_email: user?.email,
+            user_id: user?.id || '',
+            user_email: user?.email || '',
             title: jobData.title || '',
             description: jobData.description || '',
             seniority_level: jobData.seniorityLevel || '',
@@ -561,47 +557,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             status: 'Unclaimed'
           };
 
-          // Handle company creation/lookup
-          let companyId: string | null = null;
-          if (jobData.companyId) {
-            companyId = jobData.companyId;
-          } else if (jobData.companyName) {
-            try {
-              // First, try to find existing company
-              const { data: existingCompany, error: findError } = await supabase
-                .from('companies')
-                .select('id')
-                .eq('name', jobData.companyName)
-                .single();
-
-              if (existingCompany) {
-                companyId = existingCompany.id;
-                console.log('✅ Found existing company:', existingCompany.id);
-              } else {
-                // Create new company
-                const { data: newCompany, error: createError } = await supabase
-                  .from('companies')
-                  .insert({ name: jobData.companyName })
-                  .select('id')
-                  .single();
-
-                if (createError) {
-                  console.error('❌ Error creating company:', createError);
-                  throw createError;
-                }
-
-                companyId = newCompany.id;
-                console.log('✅ Created new company:', newCompany.id);
-              }
-            } catch (companyError) {
-              console.error('❌ Error handling company:', companyError);
-              throw companyError;
-            }
-          }
-
-          // Add company_id to job insert
-          if (companyId) {
-            jobInsert.company_id = companyId;
+          // Add company_name if it exists in the schema
+          if (jobData.companyName) {
+            jobInsert.company_name = jobData.companyName;
           }
         
           console.log('📤 Inserting job with data:', jobInsert);
@@ -609,10 +567,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           const { data: insertedJob, error } = await supabase
             .from('jobs')
             .insert(jobInsert)
-            .select(`
-              *,
-              companies(name)
-            `)
+            .select()
             .single();
 
           console.log('🔍 Supabase response:', { data: insertedJob, error });
@@ -636,12 +591,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             id: insertedJob.id || '',
             userId: insertedJob.user_id || '',
             userEmail: insertedJob.user_email || '',
-            companyId: insertedJob.company_id || '',
-            company: insertedJob.companies ? {
-              id: insertedJob.company_id,
-              name: insertedJob.companies.name,
-              createdAt: new Date()
-            } : undefined,
+            companyName: insertedJob.company_name || jobData.companyName || '',
             title: insertedJob.title || '',
             description: insertedJob.description || '',
             seniorityLevel: insertedJob.seniority_level || '',
@@ -650,7 +600,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             salaryRangeMax: insertedJob.salary_range_max ?? 0,
             keySellingPoints: insertedJob.key_selling_points || [],
             status: insertedJob.status || '',
-            sourcerId: insertedJob.sourcer_id || null,
+            sourcerId: insertedJob.sourcer_name || null,
             completionLink: insertedJob.completion_link || null,
             candidatesRequested: insertedJob.candidates_requested ?? 0,
             createdAt: new Date(insertedJob.created_at),
@@ -686,8 +636,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             id: crypto.randomUUID(),
             userId: user?.id || '',
             userEmail: user?.email || '',
-            companyId: jobData.companyId || '',
-            company: jobData.company,
+            companyName: jobData.companyName || '',
             title: jobData.title || '',
             description: jobData.description || '',
             seniorityLevel: jobData.seniorityLevel || '',
@@ -713,7 +662,10 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           resolve(newJob);
         }
         
-      })();
+      } catch (error) {
+        console.error('💥 Job submission failed:', error);
+        reject(error);
+      }
     });
   };
 
@@ -1167,7 +1119,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         const dbUpdates: any = {};
         
         if (updates.status) dbUpdates.status = updates.status;
-        if (updates.sourcerId !== undefined) dbUpdates.sourcer_id = updates.sourcerId;
+        if (updates.sourcerId !== undefined) dbUpdates.sourcer_name = updates.sourcerId; // Temporarily using sourcer_name to test production schema
         if (updates.completionLink !== undefined) dbUpdates.completion_link = updates.completionLink;
         
         const { data: updatedJobData, error } = await supabase
@@ -1186,12 +1138,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           id: updatedJobData.id || '',
           userId: updatedJobData.user_id || '',
           userEmail: updatedJobData.user_email || '',
-          companyId: updatedJobData.company_id || '',
-          company: updatedJobData.companies ? {
-            id: updatedJobData.company_id,
-            name: updatedJobData.companies.name,
-            createdAt: new Date()
-          } : undefined,
+          companyName: updatedJobData.company_name || '',
           title: updatedJobData.title || '',
           description: updatedJobData.description || '',
           seniorityLevel: updatedJobData.seniority_level || '',
@@ -1201,7 +1148,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           salaryRangeMax: updatedJobData.salary_range_max ?? 0,
           keySellingPoints: updatedJobData.key_selling_points || [],
           status: updatedJobData.status || '',
-          sourcerId: updatedJobData.sourcer_id || null,
+          sourcerId: updatedJobData.sourcer_name || null, // Temporarily using sourcer_name to test production schema
           completionLink: updatedJobData.completion_link || null,
           candidatesRequested: updatedJobData.candidates_requested ?? 0,
           createdAt: updatedJobData.created_at ? new Date(updatedJobData.created_at) : new Date(),
