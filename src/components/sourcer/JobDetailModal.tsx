@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { FormInput } from '../forms/FormInput';
 import { X, CheckCircle, AlertCircle, Plus, Trash2, Users, ExternalLink, Loader, Zap } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 interface JobDetailModalProps {
   job: Job;
@@ -22,7 +23,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   onClaim,
   onComplete
 }) => {
-  const { addCandidatesFromLinkedIn, getCandidatesByJob } = useData();
+  const { addCandidatesFromLinkedIn, getCandidatesByJob, loading } = useData();
   const { userProfile } = useAuth();
   
   // Use the authenticated user's name from their profile
@@ -37,11 +38,12 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   const [csvError, setCsvError] = useState('');
   const [showAcceptedCandidates, setShowAcceptedCandidates] = useState(false);
   const [showJobCompletionConfirmation, setShowJobCompletionConfirmation] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   
   const MAX_CANDIDATES_PER_SUBMISSION = 50;
   
   // Get accepted candidates for this job
-  const acceptedCandidates = getCandidatesByJob(job.id);
+  const [acceptedCandidates, setAcceptedCandidates] = useState(getCandidatesByJob(job.id));
   
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
@@ -117,7 +119,12 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   };
 
   const handleComplete = async () => {
+    if (loading || !userProfile) {
+      setError('User information is still loading. Please wait and try again.');
+      return;
+    }
     let validUrls: string[] = [];
+    setSuccessMessage('');
     
     if (submissionMethod === 'csv') {
       // Handle CSV upload
@@ -173,23 +180,22 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
       
       console.log(`Candidates submitted successfully for job: ${job.id}. Accepted: ${result.acceptedCount}, Rejected: ${result.rejectedCount}`);
       
-      // Check if job was completed by this submission
-      if ((result as any).isJobCompleted) {
-        // Show completion confirmation for 1 second before navigating
-        setShowJobCompletionConfirmation(true);
-        setIsSubmitting(false);
-        
-        setTimeout(() => {
-          onComplete && onComplete(job.id);
-          onClose();
-          // Navigate to sourcer dashboard
-          window.location.href = '/sourcer';
-        }, 1000);
-      } else {
-        // Job not completed yet, continue normally
-        onComplete && onComplete(job.id);
-        onClose();
+      // Force reload of candidates from Supabase
+      const { data: latestCandidates, error: candidatesError } = await supabase
+        .from('candidates')
+        .select('*')
+        .eq('job_id', job.id);
+      if (!candidatesError && latestCandidates) {
+        setAcceptedCandidates(latestCandidates);
       }
+      
+      // Show a success message and reset form, do not close modal
+      setSuccessMessage(`✅ ${result.acceptedCount} candidate${result.acceptedCount === 1 ? '' : 's'} submitted successfully!`);
+      setError('');
+      setLinkedinUrls(['']);
+      setCsvFile(null);
+      // Optionally, you could also refresh acceptedCandidates here if needed
+      setIsSubmitting(false);
     } catch (error) {
       console.error('Error submitting candidates:', error);
       setError('Failed to process LinkedIn profiles. Please try again.');
@@ -284,7 +290,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
           <div className="flex justify-between items-start mb-8">
             <div>
               <h3 className="text-3xl font-anton text-white-knight mb-2 uppercase tracking-wide">{job.title}</h3>
-              <p className="text-xl text-supernova font-jakarta font-semibold">{job.companyName}</p>
+              <p className="text-xl text-supernova font-jakarta font-semibold">{job.company?.name}</p>
               <p className="flex items-center text-base font-jakarta text-supernova mt-2">
                 <Users size={18} className="mr-2" />
                 <span>Requested Candidates: {job.candidatesRequested}</span>
@@ -363,7 +369,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <p className="text-sm font-jakarta font-semibold text-guardian">Company</p>
-                  <p className="text-white-knight font-jakarta font-bold">{job.companyName}</p>
+                  <p className="text-white-knight font-jakarta font-bold">{job.company?.name}</p>
                 </div>
                 <div>
                   <p className="text-sm font-jakarta font-semibold text-guardian">Location</p>
@@ -381,21 +387,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
             </div> */}
             
 
-            
-            {job.status === 'Completed' && job.completionLink && (
-              <div className="bg-green-500/10 border border-green-500/30 p-6 rounded-lg mb-6">
-                <div className="flex items-center mb-2">
-                  <CheckCircle className="text-green-400 mr-2" size={20} />
-                  <p className="text-sm font-jakarta font-semibold text-green-400 uppercase tracking-wide">Completion Info</p>
-                </div>
-                <p className="text-white-knight font-jakarta mb-3">
-                  This job was completed by <strong className="text-supernova">{job.sourcerId}</strong>
-                </p>
-                <div className="bg-shadowforce border border-guardian/20 p-4 rounded-lg">
-                  <p className="text-guardian font-jakarta text-sm break-all">{job.completionLink}</p>
-                </div>
-              </div>
-            )}
+
             
             {/* Claim Job Section */}
             {job.status === 'Unclaimed' && onClaim && (
@@ -640,12 +632,18 @@ https://linkedin.com/in/candidate2
                     )}
                   </div>
                 )}
+                {successMessage && (
+                  <div className="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 font-jakarta font-semibold text-center">
+                    {successMessage}
+                  </div>
+                )}
                 <Button 
                   onClick={handleComplete} 
                   variant="success"
                   fullWidth
                   size="lg"
-                  isLoading={isSubmitting}
+                  isLoading={isSubmitting || loading}
+                  disabled={isSubmitting}
                   className="flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
@@ -733,6 +731,56 @@ https://linkedin.com/in/candidate2
                           ))}
                         </div>
                       </div>
+                    )}
+                  </div>
+                )}
+                {/* Manual Job Completion Button - only enabled when target is reached */}
+                {job.status === 'Claimed' && (
+                  <div className="mt-8 flex flex-col items-center">
+                    <Button
+                      variant="success"
+                      size="lg"
+                      disabled={acceptedCandidates.length < job.candidatesRequested || isSubmitting}
+                      onClick={async () => {
+                        if (acceptedCandidates.length < job.candidatesRequested) return;
+                        setIsSubmitting(true);
+                        setError('');
+                        try {
+                          // Fetch latest candidates from Supabase before completing
+                          const { data: latestCandidates, error } = await supabase
+                            .from('candidates')
+                            .select('*')
+                            .eq('job_id', job.id);
+                          if (error) {
+                            setError('Failed to verify candidate count. Please try again.');
+                            setIsSubmitting(false);
+                            return;
+                          }
+                          if ((latestCandidates?.length || 0) < job.candidatesRequested) {
+                            setError(`You must have at least ${job.candidatesRequested} accepted candidates to complete this job. Please refresh and try again.`);
+                            setIsSubmitting(false);
+                            return;
+                          }
+                          // Use DataContext or useSourcerData to complete the job
+                          await onComplete && onComplete(job.id);
+                          setShowJobCompletionConfirmation(true);
+                          setTimeout(() => {
+                            onClose();
+                            window.location.href = '/sourcer';
+                          }, 1000);
+                        } catch (e) {
+                          setError('Failed to complete job. Please try again.');
+                        } finally {
+                          setIsSubmitting(false);
+                        }
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <CheckCircle size={20} />
+                      COMPLETE JOB
+                    </Button>
+                    {acceptedCandidates.length < job.candidatesRequested && (
+                      <p className="text-sm text-guardian mt-2">You must submit at least {job.candidatesRequested} accepted candidates to complete this job.</p>
                     )}
                   </div>
                 )}

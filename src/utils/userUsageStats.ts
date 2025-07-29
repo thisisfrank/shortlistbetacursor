@@ -35,8 +35,9 @@ export function getUserUsageStats(
   const candidatesUsed = candidateTransactions.reduce((total, ct) => total + Math.abs(ct.amount), 0);
   const candidatesRemaining = Math.max(0, candidatesLimit - candidatesUsed);
 
-  // Credits reset date
-  const creditsResetDate = userProfile.creditsResetDate ?? null;
+  // Calculate credits reset date (start of next month)
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const creditsResetDate = nextMonth;
 
   return {
     jobsUsed,

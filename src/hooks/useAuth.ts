@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
 export interface UserProfile {
@@ -8,10 +8,6 @@ export interface UserProfile {
   name: string;
   role: 'client' | 'sourcer' | 'admin';
   tierId: string;
-  availableCredits: number;
-  jobsRemaining: number;
-  creditsResetDate: Date | null;
-  hasReceivedFreeShortlist: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,11 +18,7 @@ function mapDbProfileToUserProfile(profile: any): UserProfile {
     email: profile.email,
     name: profile.name || '',
     role: profile.role,
-    tierId: profile.tier_id || 'tier-free',
-    availableCredits: profile.available_credits ?? 0,
-    jobsRemaining: profile.jobs_remaining ?? 0,
-    creditsResetDate: profile.credits_reset_date ? new Date(profile.credits_reset_date) : null,
-    hasReceivedFreeShortlist: !!profile.has_received_free_shortlist,
+    tierId: profile.tier_id || '5841d1d6-20d7-4360-96f8-0444305fac5b', // Free tier ID from production
     createdAt: profile.created_at ? new Date(profile.created_at) : new Date(),
     updatedAt: profile.updated_at ? new Date(profile.updated_at) : new Date(),
   };
@@ -39,12 +31,60 @@ export const useAuth = () => {
   const [signOutLoading, setSignOutLoading] = useState(false);
   const [authInitialized, setAuthInitialized] = useState(false);
 
+  // IMMEDIATE URL CAPTURE - before anything else happens
+  const currentUrl = window.location.href;
+  const currentHash = window.location.hash;
+  console.log('🚨 IMMEDIATE URL CAPTURE:', {
+    url: currentUrl,
+    hash: currentHash,
+    pathname: window.location.pathname,
+    timestamp: new Date().toISOString()
+  });
+
   useEffect(() => {
     let isMounted = true;
     let authTimeout: NodeJS.Timeout;
-    // REMOVE Supabase onAuthStateChange event listener for true sticky session
-    // Only update user/session on explicit login/logout/signup
-    // No event listeners for tab switch, focus, or session events
+
+    // Check for password recovery in URL before initializing auth
+    const checkForPasswordRecovery = () => {
+      const hash = window.location.hash;
+      const fullUrl = window.location.href;
+      const hasTypeRecovery = hash.includes('type=recovery');
+      
+      console.log('🔍 Checking URL for password recovery:', { 
+        hash, 
+        fullUrl,
+        hasTypeRecovery,
+        pathname: window.location.pathname,
+        search: window.location.search,
+        hashLength: hash.length,
+        rawHash: hash
+      });
+      
+      if (hash && hash.includes('type=recovery')) {
+        console.log('🔑 Password recovery detected in URL, redirecting...');
+        // Extract parameters
+        const params = new URLSearchParams(hash.substring(1));
+        const type = params.get('type');
+        const accessToken = params.get('access_token');
+        
+        console.log('🔑 Recovery parameters:', { type, hasAccessToken: !!accessToken });
+        
+        if (type === 'recovery' && accessToken) {
+          console.log('🔑 Valid recovery link detected, redirecting to /reset-password');
+          // Redirect to reset password page immediately
+          window.location.href = '/reset-password';
+          return true; // Indicates we found recovery
+        }
+      }
+      return false;
+    };
+
+    // Check for recovery first
+    const isPasswordRecovery = checkForPasswordRecovery();
+    if (isPasswordRecovery) {
+      return; // Exit early if password recovery
+    }
 
     const initAuth = async () => {
       try {
@@ -105,15 +145,56 @@ export const useAuth = () => {
       }
     };
 
+    // Listen for auth state changes (including password recovery)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      console.log('🔐 Auth state change:', event);
+      
+      if (event === 'PASSWORD_RECOVERY') {
+        console.log('🔑 Password recovery event detected, redirecting to reset page');
+        // Redirect to reset password page
+        window.location.href = '/reset-password';
+        return;
+      }
+      
+      if (event === 'SIGNED_IN') {
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        if (currentUser && isMounted) {
+          // Load user profile for signed in user
+          supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single()
+            .then(({ data: profile, error }: { data: any; error: any }) => {
+              if (!isMounted) return;
+              if (error) {
+                console.error('❌ Error loading user profile:', error);
+                setUserProfile(null);
+              } else {
+                console.log('✅ User profile loaded:', profile?.role);
+                setUserProfile(mapDbProfileToUserProfile(profile));
+              }
+            });
+        }
+      }
+      
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setUserProfile(null);
+      }
+    });
+
     // Initialize auth (only on mount)
     initAuth();
 
     return () => {
-      console.log('🔐 Cleaning up auth (sticky session mode)...');
+      console.log('🔐 Cleaning up auth...');
       isMounted = false;
       if (authTimeout) {
         clearTimeout(authTimeout);
       }
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -190,10 +271,6 @@ export const useAuth = () => {
           name,
           role,
           tierId: 'tier-free',
-          availableCredits: 0,
-          jobsRemaining: 0,
-          creditsResetDate: null,
-          hasReceivedFreeShortlist: false,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -239,6 +316,59 @@ export const useAuth = () => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      return { error };
+    } catch (error) {
+      return { error };
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      console.log('🔑 updatePassword called, updating user password...');
+      
+      // Add timeout to prevent hanging
+      const updatePromise = supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Password update timeout')), 10000); // 10 second timeout
+      });
+      
+      const { error } = await Promise.race([updatePromise, timeoutPromise]) as any;
+      
+      if (error) {
+        console.error('❌ Supabase updateUser error:', error);
+      } else {
+        console.log('✅ Supabase updateUser successful');
+      }
+      
+      return { error };
+    } catch (error) {
+      console.error('💥 updatePassword catch error:', error);
+      return { error };
+    }
+  };
+
+  const clearAllAuth = async () => {
+    setSignOutLoading(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      setUser(null);
+      setUserProfile(null);
+      setSignOutLoading(false);
+      return { error };
+    } catch (error) {
+      setSignOutLoading(false);
+      return { error };
+    }
+  };
+
   return {
     user,
     userProfile,
@@ -248,5 +378,8 @@ export const useAuth = () => {
     signUp,
     signOut,
     refreshProfile,
+    resetPassword,
+    updatePassword,
+    clearAllAuth,
   };
 };

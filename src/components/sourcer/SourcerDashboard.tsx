@@ -168,7 +168,7 @@ const SourcerDashboard: React.FC = () => {
             SOURCER HUB
           </h1>
           <p className="text-xl text-guardian text-center font-jakarta max-w-2xl mx-auto">
-            Claim jobs, source top candidates, and deliver exceptional results with AI-powered tools
+            Claim jobs and source candidates
           </p>
         </header>
 
@@ -272,11 +272,8 @@ const SourcerDashboard: React.FC = () => {
           
           {sourcerName && (
             <div className="bg-supernova/10 border border-supernova/30 p-4 rounded-lg mb-6">
-              <p className="text-supernova font-jakarta font-semibold">
+              <p className="text-supernova font-jakarta">
                 Sourcing as: <span className="font-anton text-white-knight text-lg">{sourcerName.toUpperCase()}</span>
-              </p>
-              <p className="text-guardian font-jakarta text-sm mt-1">
-                Logged in as {userProfile?.email}
               </p>
             </div>
           )}

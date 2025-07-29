@@ -88,11 +88,62 @@ async function updateUserTier(customerId: string, priceId: string | null, subscr
 
     if (updateData && updateData.length > 0) {
       console.log(`✅ Successfully updated user ${userId} to tier ${targetTierId}. Updated data:`, updateData[0]);
+      
+      // Update allotments for the new tier
+      await updateUserAllotments(userId, targetTierId, subscriptionStatus === 'active');
     } else {
       console.warn(`⚠️ No rows were updated for user ${userId}. User might not be a client or doesn't exist.`);
     }
   } catch (error) {
     console.error(`💥 Error in updateUserTier:`, error);
+    throw error;
+  }
+}
+
+// Function to update user allotments based on tier
+async function updateUserAllotments(userId: string, tierId: string, isNewSubscription: boolean = false) {
+  try {
+    console.log(`🎯 Updating allotments for user: ${userId}, tier: ${tierId}, new subscription: ${isNewSubscription}`);
+    
+    // Get tier details
+    const { data: tierData, error: tierError } = await supabase
+      .from('tiers')
+      .select('monthly_job_allotment, monthly_candidate_allotment')
+      .eq('id', tierId)
+      .single();
+
+    if (tierError || !tierData) {
+      console.error('❌ Error getting tier data:', tierError);
+      return;
+    }
+
+    // Calculate reset date (30 days from now)
+    const resetDate = new Date();
+    resetDate.setDate(resetDate.getDate() + 30);
+
+    // Update user allotments
+    const { data: updateData, error: updateError } = await supabase
+      .from('user_profiles')
+      .update({
+        jobs_remaining: tierData.monthly_job_allotment,
+        available_credits: tierData.monthly_candidate_allotment,
+        credits_reset_date: resetDate.toISOString()
+      })
+      .eq('id', userId)
+      .select('id, jobs_remaining, available_credits, credits_reset_date');
+
+    if (updateError) {
+      console.error('❌ Error updating client allotments:', updateError);
+      throw new Error(`Failed to update allotments: ${updateError.message}`);
+    }
+
+    if (updateData && updateData.length > 0) {
+      console.log(`✅ Successfully updated allotments for user ${userId}:`, updateData[0]);
+    } else {
+      console.warn(`⚠️ No client record found for user ${userId}`);
+    }
+  } catch (error) {
+    console.error(`💥 Error in updateUserAllotments:`, error);
     throw error;
   }
 }

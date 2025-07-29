@@ -3,12 +3,7 @@ export interface UserProfile {
   email: string;
   name: string;
   role: 'client' | 'sourcer' | 'admin';
-  // Subscription fields moved from Client
   tierId: string;
-  availableCredits: number;
-  jobsRemaining: number;
-  creditsResetDate: Date;
-  hasReceivedFreeShortlist: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -36,7 +31,7 @@ export interface Job {
   id: string;
   userId: string; // Changed from clientId to userId
   userEmail?: string; // Email of the user who submitted the job
-  companyName: string; // Company hiring for this specific job
+  companyName: string; // Production uses company_name (string field)
   title: string;
   description: string;
   seniorityLevel: 'Junior' | 'Mid' | 'Senior' | 'Executive';

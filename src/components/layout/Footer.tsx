@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export const Footer: React.FC = () => {
   return (
@@ -15,12 +16,12 @@ export const Footer: React.FC = () => {
             </p>
           </div>
           <div className="flex space-x-8">
-            <a href="#" className="text-guardian hover:text-supernova text-sm font-jakarta font-medium transition-colors">
+            <Link to="/privacy" className="text-guardian hover:text-supernova text-sm font-jakarta font-medium transition-colors">
               Privacy Policy
-            </a>
-            <a href="#" className="text-guardian hover:text-supernova text-sm font-jakarta font-medium transition-colors">
+            </Link>
+            <Link to="/terms" className="text-guardian hover:text-supernova text-sm font-jakarta font-medium transition-colors">
               Terms of Service
-            </a>
+            </Link>
             <a href="#" className="text-guardian hover:text-supernova text-sm font-jakarta font-medium transition-colors">
               Contact Us
             </a>
