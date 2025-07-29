@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
-import { Button } from '../ui/Button';
-import { Users, UserCheck, Calendar, Building } from 'lucide-react';
+import { Building } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 export const ClientManagement: React.FC = () => {
-  const { jobs } = useData();
+  const { jobs, tiers } = useData();
+  const [userTiers, setUserTiers] = useState<Record<string, string>>({});
   
   // Get unique companies from jobs
   const companies = [...new Set(jobs.map(job => job.companyName).filter(Boolean))];
@@ -28,12 +29,55 @@ export const ClientManagement: React.FC = () => {
     };
   });
 
+  // Load user tier information
+  useEffect(() => {
+    const loadUserTiers = async () => {
+      try {
+        const userEmails = [...new Set(jobsByCompany.map(company => company.mainContactEmail).filter(email => email !== 'N/A'))];
+        if (userEmails.length === 0) return;
+
+        const { data: userProfiles, error } = await supabase
+          .from('user_profiles')
+          .select('email, tier_id')
+          .in('email', userEmails);
+
+        if (!error && userProfiles) {
+          const tierMap: Record<string, string> = {};
+          userProfiles.forEach((profile: any) => {
+            const tier = tiers.find(t => t.id === profile.tier_id);
+            tierMap[profile.email] = tier?.name || 'Unknown';
+          });
+          setUserTiers(tierMap);
+        }
+      } catch (error) {
+        console.error('Error loading user tiers:', error);
+      }
+    };
+
+    if (jobsByCompany.length > 0 && tiers.length > 0) {
+      loadUserTiers();
+    }
+  }, [jobsByCompany, tiers]);
+
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
     }).format(new Date(date));
+  };
+
+  const getTierBadgeVariant = (tierName: string) => {
+    switch (tierName.toLowerCase()) {
+      case 'premium':
+      case 'enterprise':
+        return 'success';
+      case 'professional':
+      case 'pro':
+        return 'warning';
+      default:
+        return 'default';
+    }
   };
 
   return (
@@ -60,24 +104,21 @@ export const ClientManagement: React.FC = () => {
                 <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
                   Main Contact
                 </th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
+                <th scope="col" className="px-4 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
                   Jobs
                 </th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                  Status
+                  Tier
                 </th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
                   Latest Activity
-                </th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-anton text-guardian uppercase tracking-wider">
-                  Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-shadowforce-light divide-y divide-guardian/20">
               {companies.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-guardian font-jakarta">
+                  <td colSpan={5} className="px-6 py-8 text-center text-guardian font-jakarta">
                     No companies found. Companies will appear here when users submit jobs.
                   </td>
                 </tr>
@@ -92,49 +133,37 @@ export const ClientManagement: React.FC = () => {
                         {company.mainContactEmail}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-4">
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
                         <div className="text-center">
-                          <div className="text-lg font-anton text-white-knight">{company.totalJobs}</div>
+                          <div className="text-sm font-anton text-white-knight">{company.totalJobs}</div>
                           <div className="text-xs text-guardian">Total</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-lg font-anton text-orange-400">{company.unclaimedJobs}</div>
-                          <div className="text-xs text-guardian">Unclaimed</div>
+                          <div className="text-sm font-anton text-orange-400">{company.unclaimedJobs}</div>
+                          <div className="text-xs text-guardian">Open</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-lg font-anton text-purple-400">{company.claimedJobs}</div>
-                          <div className="text-xs text-guardian">In Progress</div>
+                          <div className="text-sm font-anton text-purple-400">{company.claimedJobs}</div>
+                          <div className="text-xs text-guardian">Active</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-lg font-anton text-green-400">{company.completedJobs}</div>
-                          <div className="text-xs text-guardian">Completed</div>
+                          <div className="text-sm font-anton text-green-400">{company.completedJobs}</div>
+                          <div className="text-xs text-guardian">Done</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Badge 
-                        variant={company.completedJobs > 0 ? 'success' : company.claimedJobs > 0 ? 'warning' : 'default'}
+                        variant={getTierBadgeVariant(userTiers[company.mainContactEmail] || 'Unknown')}
                       >
-                        {company.completedJobs > 0 ? 'Active' : company.claimedJobs > 0 ? 'In Progress' : 'New'}
+                        {userTiers[company.mainContactEmail] || 'Unknown'}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-guardian font-jakarta">
                         {company.latestJob ? formatDate(company.latestJob.createdAt) : 'No activity'}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          // TODO: Implement company detail view
-                          alert('Company detail view coming soon!');
-                        }}
-                      >
-                        View Details
-                      </Button>
                     </td>
                   </tr>
                 ))

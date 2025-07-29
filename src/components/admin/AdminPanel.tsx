@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { Badge } from '../ui/Badge';
 import { Card, CardContent } from '../ui/Card';
@@ -6,12 +6,52 @@ import { Button } from '../ui/Button';
 import { JobDetailModal } from '../sourcer/JobDetailModal';
 import { Search, CalendarDays, Users, Filter, Zap, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 import BoltIcon from '../../assets/v2.png';
+import { supabase } from '../../lib/supabase';
 
 export const AdminPanel: React.FC = () => {
   const { jobs, tiers, getTierById, updateJob } = useData();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [sourcerNames, setSourcerNames] = useState<Record<string, string>>({});
+  
+  // Load sourcer names from user_profiles
+  useEffect(() => {
+    const loadSourcerNames = async () => {
+      try {
+        const sourcerIds = [...new Set(jobs.filter(job => job.sourcerId).map(job => job.sourcerId!))];
+        if (sourcerIds.length === 0) return;
+
+        // Query for specific sourcer IDs instead of filtering by role
+        const { data: profiles, error } = await supabase
+          .from('user_profiles')
+          .select('id, name')
+          .in('id', sourcerIds);
+
+        if (!error && profiles) {
+          const nameMap: Record<string, string> = {};
+          profiles.forEach((profile: any) => {
+            nameMap[profile.id] = profile.name || 'Unknown Sourcer';
+          });
+          setSourcerNames(nameMap);
+        } else {
+          console.error('Error loading sourcer profiles:', error);
+        }
+      } catch (error) {
+        console.error('Error loading sourcer names:', error);
+        // Don't throw - just continue with IDs if names fail to load
+      }
+    };
+
+    if (jobs.length > 0) {
+      loadSourcerNames();
+    }
+  }, [jobs]);
+
+  // Get sourcer name by ID
+  const getSourcerName = (sourcerId: string): string => {
+    return sourcerNames[sourcerId] || `Sourcer ${sourcerId.substring(0, 8)}...`;
+  };
   
   // Get counts for dashboard - removed clients references
   const totalJobs = jobs.length;
@@ -232,7 +272,7 @@ export const AdminPanel: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-white-knight font-jakarta">
-                              {job.sourcerId || 'Unassigned'}
+                              {job.sourcerId ? getSourcerName(job.sourcerId) : 'Unassigned'}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">

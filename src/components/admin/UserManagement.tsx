@@ -256,54 +256,18 @@ export const UserManagement: React.FC = () => {
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-guardian" size={16} />
-                <FormInput
-                  label="Search"
-                  type="text"
-                  placeholder="Search users by email, name, or role..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 sr-only"
-                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-guardian" size={18} />
                 <input
                   type="text"
                   placeholder="Search users by email, name, or role..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 block w-full border-0 border-b-2 px-0 py-4 text-lg bg-transparent text-white-knight placeholder-guardian/60 font-jakarta focus:ring-0 focus:border-supernova transition-colors duration-200 border-guardian/40 hover:border-guardian/60"
+                  className="pl-12 block w-full border-0 border-b-2 px-0 py-4 text-lg bg-transparent text-white-knight placeholder-guardian/60 font-jakarta focus:ring-0 focus:border-supernova transition-colors duration-200 border-guardian/40 hover:border-guardian/60"
                   aria-label="Search users by email, name, or role..."
                 />
               </div>
+                        </div>
             </div>
-            <Button
-              onClick={loadUsers}
-              disabled={loading}
-              className="flex items-center gap-2"
-            >
-              {loading ? <Loader className="animate-spin" size={16} /> : <Users size={16} />}
-              {loading ? 'LOADING...' : 'REFRESH'}
-            </Button>
-            <Button
-              onClick={async () => {
-                console.log('🧪 Testing get_all_users function...');
-                try {
-                  const { data, error } = await supabase.rpc('get_all_users');
-                  console.log('🧪 Test result:', { data, error });
-                  setMessage({ 
-                    type: error ? 'error' : 'success', 
-                    text: error ? `Function test failed: ${error.message}` : `Function exists! Found ${data?.length || 0} users.`
-                  });
-                } catch (err) {
-                  console.error('🧪 Test error:', err);
-                  setMessage({ type: 'error', text: `Test failed: ${err instanceof Error ? err.message : 'Unknown error'}` });
-                }
-              }}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              🧪 TEST FUNCTION
-            </Button>
-          </div>
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

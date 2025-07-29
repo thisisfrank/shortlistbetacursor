@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { JobDetailModal } from '../sourcer/JobDetailModal';
 import { JobTimer } from '../ui/JobTimer';
@@ -7,6 +7,7 @@ import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { FormInput, FormTextarea, FormSelect } from '../forms/FormInput';
 import { Search, CalendarDays, Filter, Edit, X, Save } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 export const JobManagement: React.FC = () => {
   const { jobs, updateJob } = useData();
@@ -16,6 +17,45 @@ export const JobManagement: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingJob, setEditingJob] = useState<any>(null);
   const [editForm, setEditForm] = useState<any>({});
+  const [sourcerNames, setSourcerNames] = useState<Record<string, string>>({});
+  
+  // Load sourcer names from user_profiles
+  useEffect(() => {
+    const loadSourcerNames = async () => {
+      try {
+        const sourcerIds = [...new Set(jobs.filter(job => job.sourcerId).map(job => job.sourcerId!))];
+        if (sourcerIds.length === 0) return;
+
+        // Query for specific sourcer IDs instead of filtering by role
+        const { data: profiles, error } = await supabase
+          .from('user_profiles')
+          .select('id, name')
+          .in('id', sourcerIds);
+
+        if (!error && profiles) {
+          const nameMap: Record<string, string> = {};
+          profiles.forEach((profile: any) => {
+            nameMap[profile.id] = profile.name || 'Unknown Sourcer';
+          });
+          setSourcerNames(nameMap);
+        } else {
+          console.error('Error loading sourcer profiles:', error);
+        }
+      } catch (error) {
+        console.error('Error loading sourcer names:', error);
+        // Don't throw - just continue with IDs if names fail to load
+      }
+    };
+
+    if (jobs.length > 0) {
+      loadSourcerNames();
+    }
+  }, [jobs]);
+
+  // Get sourcer name by ID
+  const getSourcerName = (sourcerId: string): string => {
+    return sourcerNames[sourcerId] || `Sourcer ${sourcerId.substring(0, 8)}...`;
+  };
   
   // Get selected job - removed client lookup since company info is in job
   const selectedJob = selectedJobId ? jobs.find(job => job.id === selectedJobId) || null : null;
@@ -227,9 +267,9 @@ export const JobManagement: React.FC = () => {
                           </Badge>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                                                      <div className="text-sm text-white-knight font-jakarta">
-                              {job.sourcerId || 'Unassigned'}
-                            </div>
+                          <div className="text-sm text-white-knight font-jakarta">
+                            {job.sourcerId ? getSourcerName(job.sourcerId) : 'Unassigned'}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-guardian font-jakarta">
