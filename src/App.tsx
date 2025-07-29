@@ -67,7 +67,7 @@ function App() {
               <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
               <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
-              <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               
               {/* Legal Pages - completely independent, no auth required */}
               <Route path="/privacy" element={<PrivacyPolicyPage />} />

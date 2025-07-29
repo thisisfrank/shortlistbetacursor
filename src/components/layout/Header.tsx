@@ -92,7 +92,8 @@ export const Header: React.FC = () => {
       const roleHomePath = getRoleHomePath(userProfile.role);
       const isOnValidPath = navItems.some(item => item.path === location.pathname);
       const isOnSubscriptionPath = location.pathname.startsWith('/subscription');
-      const isOnAuthPath = location.pathname === '/login' || location.pathname === '/signup';
+      const isOnAuthPath = location.pathname === '/login' || location.pathname === '/signup' || 
+                          location.pathname === '/forgot-password' || location.pathname === '/reset-password';
       
       // Only navigate if we're not already on a valid path and not on auth/subscription pages
       if (location.pathname !== roleHomePath && !isOnValidPath && !isOnSubscriptionPath && !isOnAuthPath) {
@@ -107,7 +108,11 @@ export const Header: React.FC = () => {
     } else if (userProfile === null && !loading) {
       // FIXED: Only navigate to landing page after loading is complete AND userProfile is null
       // This prevents premature redirects during the initial loading phase
-      if (location.pathname !== '/' && !location.pathname.startsWith('/login') && !location.pathname.startsWith('/signup')) {
+      if (location.pathname !== '/' && 
+          !location.pathname.startsWith('/login') && 
+          !location.pathname.startsWith('/signup') &&
+          !location.pathname.startsWith('/forgot-password') &&
+          !location.pathname.startsWith('/reset-password')) {
         const timeoutId = setTimeout(() => {
           console.log('🏠 Header: No user profile after loading complete, navigating to landing page');
           navigate('/');
