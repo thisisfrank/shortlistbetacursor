@@ -8,9 +8,14 @@ export interface UserProfile {
   availableCredits: number;
   jobsRemaining: number;
   creditsResetDate: Date;
-  hasReceivedFreeShortlist: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  createdAt: Date;
 }
 
 export interface CreditTransaction {
@@ -36,7 +41,8 @@ export interface Job {
   id: string;
   userId: string; // Changed from clientId to userId
   userEmail?: string; // Email of the user who submitted the job
-  companyName: string; // Company hiring for this specific job
+  companyId: string; // Reference to companies table
+  company?: Company; // Optional company data when joined
   title: string;
   description: string;
   seniorityLevel: 'Junior' | 'Mid' | 'Senior' | 'Executive';

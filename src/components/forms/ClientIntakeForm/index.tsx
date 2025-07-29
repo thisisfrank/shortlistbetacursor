@@ -12,6 +12,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { getUserUsageStats } from '../../../utils/userUsageStats';
 import { AlertModal } from '../../ui/AlertModal';
 import { useNavigate } from 'react-router-dom';
+import { ghlService } from '../../../services/ghlService';
 
 interface ClientIntakeFormProps {
   currentStep: FormStep;
@@ -310,7 +311,7 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
         companyName: formData.companyName,
         title: formData.title,
         description: formData.description,
-        seniorityLevel: formData.seniorityLevel,
+        seniorityLevel: formData.seniorityLevel as 'Junior' | 'Mid' | 'Senior' | 'Executive',
         location: location,
         salaryRangeMin: extractNumericValue(formData.salaryRangeMin),
         salaryRangeMax: extractNumericValue(formData.salaryRangeMax),
@@ -325,6 +326,17 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
       const newJob = await addJob(jobData);
       
       // console.log('✅ REAL job created successfully:', newJob);
+      
+      // Send job submission notification to Go High Level webhook
+      if (userProfile && newJob) {
+        try {
+          await ghlService.sendJobStatusUpdate(newJob, userProfile, 'submitted');
+          console.log('✅ Job submission notification sent to GHL');
+        } catch (ghlError) {
+          console.warn('⚠️ GHL webhook notification failed:', ghlError);
+          // Don't fail the job submission if GHL webhook fails
+        }
+      }
       
       // Move to confirmation step
       setCurrentStep('confirmation');

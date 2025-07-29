@@ -102,11 +102,6 @@ export const useSourcerData = () => {
     // Use the existing LinkedIn scraping functionality
     const result = await dataContext.addCandidatesFromLinkedIn(jobId, linkedinUrls);
     
-    if (result.success) {
-      // Mark job as completed after successful candidate submission
-      completeJob(jobId);
-    }
-    
     return result;
   };
 

@@ -23,7 +23,7 @@ export const SourcerMenu: React.FC = () => {
     <>
       <div className="mb-6 pb-4 border-b border-guardian/20 text-center">
         <h3 className="font-anton text-lg text-white-knight uppercase tracking-wide">
-          Sourcer Portal
+          Sourcer Hub
         </h3>
         <p className="text-guardian font-jakarta text-sm">{user?.email}</p>
       </div>

@@ -15,25 +15,14 @@ export function getUserUsageStats(
   const candidatesLimit = tier?.monthlyCandidateAllotment ?? 20;
   const tierName = tier?.name ?? 'Free';
 
-  // Jobs submitted by this user (optionally, in the current month)
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const jobsUsed = jobs.filter(
-    job => job.userId === userProfile.id && job.createdAt >= startOfMonth
-  ).length;
-  const jobsRemaining = Math.max(0, jobsLimit - jobsUsed);
+  // Use the actual database values for remaining credits/jobs
+  // These are updated immediately when credits are deducted
+  const jobsRemaining = userProfile.jobsRemaining;
+  const candidatesRemaining = userProfile.availableCredits;
 
-  // Calculate candidate credits used from credit transactions (in the current month)
-  const candidateTransactions = creditTransactions.filter(
-    ct => ct.userId === userProfile.id && 
-          ct.transactionType === 'deduction' &&
-          ct.description.includes('candidate') &&
-          ct.createdAt >= startOfMonth
-  );
-  
-  // Sum up all candidate credit deductions (amounts are negative, so we negate them)
-  const candidatesUsed = candidateTransactions.reduce((total, ct) => total + Math.abs(ct.amount), 0);
-  const candidatesRemaining = Math.max(0, candidatesLimit - candidatesUsed);
+  // Calculate used values for display purposes
+  const jobsUsed = Math.max(0, jobsLimit - jobsRemaining);
+  const candidatesUsed = Math.max(0, candidatesLimit - candidatesRemaining);
 
   // Credits reset date
   const creditsResetDate = userProfile.creditsResetDate ?? null;

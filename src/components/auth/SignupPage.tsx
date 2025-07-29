@@ -58,7 +58,16 @@ export const SignupPage: React.FC = () => {
 
     if (signUpError) {
       console.error('❌ Signup error:', signUpError);
-      setError(signUpError.message);
+      // Provide more helpful error messages
+      let errorMessage = signUpError.message;
+      if (signUpError.message.includes('already registered')) {
+        errorMessage = 'An account with this email already exists. Please use a different email or try signing in instead.';
+      } else if (signUpError.message.includes('Invalid email')) {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (signUpError.message.includes('Password')) {
+        errorMessage = 'Password must be at least 6 characters long.';
+      }
+      setError(errorMessage);
     } else if (data.user) {
       console.log('✅ Signup successful, showing success state');
       setSuccess(true);

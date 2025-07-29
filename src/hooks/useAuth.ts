@@ -11,7 +11,6 @@ export interface UserProfile {
   availableCredits: number;
   jobsRemaining: number;
   creditsResetDate: Date | null;
-  hasReceivedFreeShortlist: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,7 +25,6 @@ function mapDbProfileToUserProfile(profile: any): UserProfile {
     availableCredits: profile.available_credits ?? 0,
     jobsRemaining: profile.jobs_remaining ?? 0,
     creditsResetDate: profile.credits_reset_date ? new Date(profile.credits_reset_date) : null,
-    hasReceivedFreeShortlist: !!profile.has_received_free_shortlist,
     createdAt: profile.created_at ? new Date(profile.created_at) : new Date(),
     updatedAt: profile.updated_at ? new Date(profile.updated_at) : new Date(),
   };
@@ -165,35 +163,38 @@ export const useAuth = () => {
   const signUp = async (email: string, password: string, role: 'client' | 'sourcer' = 'client', name: string = '') => {
     setLoading(true);
     try {
+      console.log('🔐 Attempting signup with:', { email, role, name });
+      
+      // Clear any existing session first
+      await supabase.auth.signOut();
+      
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) {
+        console.error('❌ Supabase signup error:', error);
         setLoading(false);
         return { data: null, error };
       }
-      // Insert user profile after sign up
+      
+      // Simple, clean manual creation
       if (data.user) {
         await supabase.from('user_profiles').insert({
           id: data.user.id,
-          email,
-          name,
-          role,
-          tier_id: 'tier-free',
-          available_credits: 0,
-          jobs_remaining: 0,
-          credits_reset_date: null,
-          has_received_free_shortlist: false,
+          email: data.user.email,
+          name: name || email.split('@')[0],     // Use provided name or fallback
+          role: role,
+          tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b'
         });
+        
         setUser(data.user);
         setUserProfile({
           id: data.user.id,
-          email,
-          name,
-          role,
-          tierId: 'tier-free',
-          availableCredits: 0,
-          jobsRemaining: 0,
-          creditsResetDate: null,
-          hasReceivedFreeShortlist: false,
+          email: data.user.email!,
+          name: name || email.split('@')[0],
+          role: role,
+          tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
+          availableCredits: 20,
+          jobsRemaining: 1,
+          creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -239,6 +240,17 @@ export const useAuth = () => {
     }
   };
 
+  const clearAllAuth = async () => {
+    console.log('🧹 Clearing all auth data...');
+    await supabase.auth.signOut();
+    setUser(null);
+    setUserProfile(null);
+    // Clear local storage
+    localStorage.removeItem('supabase.auth.token');
+    sessionStorage.clear();
+    console.log('✅ Auth data cleared');
+  };
+
   return {
     user,
     userProfile,
@@ -248,5 +260,6 @@ export const useAuth = () => {
     signUp,
     signOut,
     refreshProfile,
+    clearAllAuth,
   };
 };
