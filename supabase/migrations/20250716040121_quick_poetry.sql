@@ -23,11 +23,35 @@ CREATE POLICY "Users can read own profile" ON user_profiles
 CREATE POLICY "Users can update own profile" ON user_profiles
   FOR UPDATE USING (auth.uid() = id);
 
--- Remove conflicting create_user_profile trigger and function
--- This conflicts with frontend signup that properly handles full names
+-- Drop existing function and trigger if they exist
 DROP TRIGGER IF EXISTS create_user_profile_trigger ON auth.users;
 DROP FUNCTION IF EXISTS create_user_profile();
 
--- Note: User profile creation is now handled by:
--- 1. Frontend application for regular client signups (with full name)
--- 2. handle_new_user() trigger only for special admin/sourcer emails
+-- Create a simple function to handle user profile creation
+CREATE OR REPLACE FUNCTION create_user_profile()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.user_profiles (id, email, role)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    CASE 
+      WHEN NEW.email = 'thisisfrankgonzalez@gmail.com' THEN 'admin'
+      WHEN NEW.email = 'thisisjasongonzalez@gmail.com' THEN 'sourcer'
+      ELSE 'client'
+    END
+  );
+  RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Log the error but don't fail the user creation
+    RAISE WARNING 'Failed to create user profile: %', SQLERRM;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create the trigger
+CREATE TRIGGER create_user_profile_trigger
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION create_user_profile();

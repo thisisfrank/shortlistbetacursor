@@ -47,6 +47,7 @@ export const CandidatesView: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [expandedCandidates, setExpandedCandidates] = useState<Set<string>>(new Set());
+  const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
   const [matchScores, setMatchScores] = useState<Record<string, { score: number; reasoning: string; loading: boolean }>>({});
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   const [alertModal, setAlertModal] = useState<{
@@ -92,6 +93,16 @@ export const CandidatesView: React.FC = () => {
       newExpanded.add(candidateId);
     }
     setExpandedCandidates(newExpanded);
+  };
+
+  const toggleJobExpansion = (jobId: string) => {
+    const newExpanded = new Set(expandedJobs);
+    if (newExpanded.has(jobId)) {
+      newExpanded.delete(jobId);
+    } else {
+      newExpanded.add(jobId);
+    }
+    setExpandedJobs(newExpanded);
   };
   
   const getMatchScore = useCallback(async (candidateId: string, jobId: string) => {
@@ -821,14 +832,14 @@ export const CandidatesView: React.FC = () => {
                   const jobCandidates = getCandidatesByJob(job.id);
                   const isCompleted = job.status === 'Completed';
                   const clientStatus = isCompleted ? 'COMPLETED' : 'IN PROGRESS';
+                  const isExpanded = expandedJobs.has(job.id);
                   
                   return (
                     <Card 
                       key={job.id} 
                       className={`hover:shadow-2xl transition-all duration-300 transform hover:scale-105 ${isCompleted ? 'cursor-pointer' : 'cursor-default opacity-75'}`}
                     >
-                      <div onClick={() => isCompleted ? setSelectedJobId(job.id) : null}>
-                        <CardContent className="p-6">
+                      <CardContent className="p-6">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1">
                             <h3 className="text-xl font-anton text-white-knight mb-2 uppercase tracking-wide line-clamp-2">
@@ -841,6 +852,27 @@ export const CandidatesView: React.FC = () => {
                               {clientStatus}
                             </Badge>
                           </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleJobExpansion(job.id);
+                            }}
+                            className="flex items-center gap-2"
+                          >
+                            {isExpanded ? (
+                              <>
+                                <ChevronDown size={16} />
+                                COLLAPSE
+                              </>
+                            ) : (
+                              <>
+                                <ChevronRight size={16} />
+                                EXPAND
+                              </>
+                            )}
+                          </Button>
                         </div>
                         
                         <div className="mb-4 p-3 bg-supernova/10 border border-supernova/30 rounded-lg">
@@ -859,6 +891,93 @@ export const CandidatesView: React.FC = () => {
                           </div>
                         </div>
                         
+                        {/* Expanded Job Details */}
+                        {isExpanded && (
+                          <div className="border-t border-guardian/20 pt-6 space-y-6 mb-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {/* Job Description */}
+                              <div>
+                                <div className="flex items-center mb-3">
+                                  <Briefcase size={16} className="text-supernova mr-2" />
+                                  <span className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Job Description</span>
+                                </div>
+                                <div className="bg-gradient-to-br from-supernova/10 to-supernova/5 border border-supernova/20 p-4 rounded-lg">
+                                  <p className="text-white-knight font-jakarta text-sm leading-relaxed">
+                                    {job.description || 'No description provided'}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              {/* Seniority Level */}
+                              <div>
+                                <div className="flex items-center mb-3">
+                                  <Target size={16} className="text-green-400 mr-2" />
+                                  <span className="text-sm font-jakarta font-semibold text-green-400 uppercase tracking-wide">Seniority Level</span>
+                                </div>
+                                <div className="bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 p-4 rounded-lg">
+                                  <p className="text-white-knight font-jakarta font-semibold">
+                                    {job.seniorityLevel === 'Junior' ? 'Junior (1-3 years)' :
+                                     job.seniorityLevel === 'Mid' ? 'Mid (4-6 years)' :
+                                     job.seniorityLevel === 'Senior' ? 'Senior (7-10 years)' :
+                                     job.seniorityLevel === 'Executive' ? 'Executive (10+ years)' :
+                                     job.seniorityLevel || 'Not specified'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Must-Have Skills */}
+                            {job.mustHaveSkills && job.mustHaveSkills.length > 0 && (
+                              <div>
+                                <div className="flex items-center mb-3">
+                                  <Zap size={16} className="text-orange-400 mr-2" />
+                                  <span className="text-sm font-jakarta font-semibold text-orange-400 uppercase tracking-wide">Must-Have Skills</span>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {job.mustHaveSkills.map((skill, index) => (
+                                    <span 
+                                      key={index}
+                                      className="px-3 py-1 bg-gradient-to-r from-orange-500/20 to-orange-500/10 border border-orange-500/30 text-orange-300 text-xs rounded-full font-jakarta font-medium"
+                                    >
+                                      {skill}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Work Arrangement */}
+                            {job.workArrangement && (
+                              <div>
+                                <div className="flex items-center mb-3">
+                                  <MapPin size={16} className="text-blue-400 mr-2" />
+                                  <span className="text-sm font-jakarta font-semibold text-blue-400 uppercase tracking-wide">Work Arrangement</span>
+                                </div>
+                                <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20 p-4 rounded-lg">
+                                  <p className="text-white-knight font-jakarta font-semibold">
+                                    {job.workArrangement}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Location */}
+                            {job.location && (
+                              <div>
+                                <div className="flex items-center mb-3">
+                                  <MapPin size={16} className="text-purple-400 mr-2" />
+                                  <span className="text-sm font-jakarta font-semibold text-purple-400 uppercase tracking-wide">Location</span>
+                                </div>
+                                <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 p-4 rounded-lg">
+                                  <p className="text-white-knight font-jakarta font-semibold">
+                                    {job.location}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -874,8 +993,7 @@ export const CandidatesView: React.FC = () => {
                         >
                           {isCompleted ? 'SEE CANDIDATES' : 'PENDING COMPLETION'}
                         </Button>
-                        </CardContent>
-                      </div>
+                      </CardContent>
                     </Card>
                   );
                 })}
