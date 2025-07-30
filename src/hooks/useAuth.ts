@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../types';
+import { ghlService } from '../services/ghlService';
 
 function mapDbProfileToUserProfile(profile: any): UserProfile {
   return {
@@ -345,16 +346,29 @@ export const useAuth = () => {
           console.error('❌ Profile creation error:', profileError);
         }
         
-        setUser(data.user);
-        setUserProfile({
+        const userProfileData = {
           id: data.user.id,
           email,
           name,
           role,
           tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
+          availableCredits: 20,
+          jobsRemaining: 1,
+          creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           createdAt: new Date(),
           updatedAt: new Date(),
-        });
+        };
+        
+        setUser(data.user);
+        setUserProfile(userProfileData);
+        
+        // Send signup thank you notification to GoHighLevel
+        try {
+          await ghlService.sendSignupThankYouNotification(userProfileData, 'web_signup');
+        } catch (error) {
+          console.error('Failed to send GHL Sign Up Thank You notification:', error);
+          // Don't fail signup if GHL notification fails
+        }
       }
       setLoading(false);
       return { data, error: null };

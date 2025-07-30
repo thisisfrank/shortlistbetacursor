@@ -9,6 +9,7 @@ import { Badge } from '../ui/Badge';
 import { FormInput } from '../forms/FormInput';
 import { X, CheckCircle, AlertCircle, Plus, Trash2, Users, ExternalLink, Loader, Zap } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { ghlService } from '../../services/ghlService';
 
 interface JobDetailModalProps {
   job: Job;
@@ -187,6 +188,8 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
         .eq('job_id', job.id);
       if (!candidatesError && latestCandidates) {
         setAcceptedCandidates(latestCandidates);
+        
+
       }
       
       // Show a success message and reset form, do not close modal
@@ -290,7 +293,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
           <div className="flex justify-between items-start mb-8">
             <div>
               <h3 className="text-3xl font-anton text-white-knight mb-2 uppercase tracking-wide">{job.title}</h3>
-              <p className="text-xl text-supernova font-jakarta font-semibold">{job.company?.name}</p>
+                              <p className="text-xl text-supernova font-jakarta font-semibold">{job.companyName}</p>
               <p className="flex items-center text-base font-jakarta text-supernova mt-2">
                 <Users size={18} className="mr-2" />
                 <span>Requested Candidates: {job.candidatesRequested}</span>
@@ -369,7 +372,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <p className="text-sm font-jakarta font-semibold text-guardian">Company</p>
-                  <p className="text-white-knight font-jakarta font-bold">{job.company?.name}</p>
+                  <p className="text-white-knight font-jakarta font-bold">{job.companyName}</p>
                 </div>
                 <div>
                   <p className="text-sm font-jakarta font-semibold text-guardian">Location</p>

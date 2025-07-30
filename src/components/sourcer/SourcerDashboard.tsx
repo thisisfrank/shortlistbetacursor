@@ -6,9 +6,10 @@ import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/Button';
 import { Search, ClipboardList, Check, Clock, Zap, Target, Users } from 'lucide-react';
+import { ghlService } from '../../services/ghlService';
 
 const SourcerDashboard: React.FC = () => {
-  const { jobs, updateJob, loading, loadUserData, loadError } = useData();
+  const { jobs, updateJob, loading, loadUserData, loadError, getCandidatesByJob, getUserProfileById } = useData();
   const { userProfile } = useAuth();
   const [filter, setFilter] = useState<'all' | 'unclaimed' | 'claimed' | 'completed'>('unclaimed');
   const [search, setSearch] = useState('');
@@ -138,17 +139,43 @@ const SourcerDashboard: React.FC = () => {
   };
 
   // Complete a job
-  const handleCompleteJob = (jobId: string) => {
+  const handleCompleteJob = async (jobId: string) => {
     if (updateJob) {
-      const result = updateJob(jobId, {
-        status: 'Completed',
-        completionLink: 'Candidates submitted via structured form'
-      });
-      if (result && typeof (result as any).catch === 'function') {
-        (result as any).catch((error: any) => {
-          console.error('Error completing job:', error);
-          alert('Error completing job. Please try again.');
+      try {
+        // Get the job details
+        const job = jobs.find(j => j.id === jobId);
+        if (!job) {
+          console.error('Job not found for completion:', jobId);
+          return;
+        }
+
+        // Get candidates for this job
+        const candidates = getCandidatesByJob(jobId);
+        
+        // Get the user profile of the person who submitted the job
+        const userProfile = await getUserProfileById(job.userId);
+        
+        // Update job status
+        const result = await updateJob(jobId, {
+          status: 'Completed',
+          completionLink: 'Candidates submitted via structured form'
         });
+        
+        if (result) {
+          // Send job completion notification to GoHighLevel
+          if (userProfile && candidates.length > 0) {
+            try {
+              await ghlService.sendJobCompletionNotification(job, userProfile, candidates);
+              console.log('✅ Job completion notification sent to GHL');
+            } catch (ghlError) {
+              console.warn('⚠️ GHL Job Completion Notification webhook failed:', ghlError);
+              // Don't fail the job completion if GHL webhook fails
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error completing job:', error);
+        alert('Error completing job. Please try again.');
       }
     }
   };

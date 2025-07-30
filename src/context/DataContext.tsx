@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
-import { Job, Candidate, Tier, CreditTransaction } from '../types';
+import { Job, Candidate, Tier, CreditTransaction, UserProfile } from '../types';
 import { scrapeLinkedInProfiles } from '../services/apifyService';
 import { generateJobMatchScore } from '../services/anthropicService';
 import { useAuth } from './AuthContext';
@@ -25,6 +25,7 @@ interface DataContextType {
   getJobById: (jobId: string) => Job | null;
   getJobsByUser: (userId: string) => Job[];
   getTierById: (tierId: string) => Tier | null;
+  getUserProfileById: (userId: string) => Promise<UserProfile | null>;
   resetData: () => void;
   testInsertCandidate: () => Promise<{ success: boolean; data: any; error: any }>;
   recordCreditTransaction: (userId: string | null | undefined, type: 'job' | 'candidate', amount: number, jobId?: string) => Promise<void>;
@@ -1194,6 +1195,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     return data.tiers.find((t: Tier) => (t.id || '') === tierId) || null;
   };
 
+  const getUserProfileById = async (userId: string): Promise<UserProfile | null> => {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching user profile by ID:', error);
+      return null;
+    }
+    return data || null;
+  };
+
   const resetData = () => {
     if (window.confirm('Are you sure you want to reset ALL data? This will clear all jobs and candidates.')) {
       localStorage.removeItem('jobs');
@@ -1273,6 +1288,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     getJobById,
     getJobsByUser,
     getTierById,
+    getUserProfileById,
     resetData,
     testInsertCandidate,
     recordCreditTransaction,

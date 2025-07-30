@@ -312,13 +312,13 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
       
       // console.log('✅ REAL job created successfully:', newJob);
       
-      // Send job submission notification to Go High Level webhook
+      // Send job submission confirmation to Go High Level webhook
       if (userProfile && newJob) {
         try {
-          await ghlService.sendJobStatusUpdate(newJob, userProfile, 'submitted');
-          console.log('✅ Job submission notification sent to GHL');
+          await ghlService.sendJobSubmissionConfirmation(newJob, userProfile);
+          console.log('✅ Job submission confirmation sent to GHL');
         } catch (ghlError) {
-          console.warn('⚠️ GHL webhook notification failed:', ghlError);
+          console.warn('⚠️ GHL Job Submission Confirmation webhook failed:', ghlError);
           // Don't fail the job submission if GHL webhook fails
         }
       }
