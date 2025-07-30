@@ -10,11 +10,11 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS handle_new_user();
 
 -- Create new function to set tier_id to Free tier only for clients
+-- Note: Name will be set by the frontend application during signup
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS trigger AS $$
 DECLARE
   user_role text;
-  user_name text;
 BEGIN
   -- Determine role (default to client, but allow for special emails)
   IF NEW.email = 'thisisfrankgonzalez@gmail.com' THEN
@@ -25,27 +25,19 @@ BEGIN
     user_role := 'client';
   END IF;
 
-  user_name := SPLIT_PART(NEW.email, '@', 1);
-
-  IF user_role = 'client' THEN
-    INSERT INTO user_profiles (id, email, role, tier_id, name)
-    VALUES (
-      NEW.id,
-      NEW.email,
-      user_role,
-      '5841d1d6-20d7-4360-96f8-0444305fac5b',
-      user_name
-    );
-  ELSE
+  -- Only create profile for special admin/sourcer emails
+  -- Regular client signups will be handled by the frontend application
+  IF user_role IN ('admin', 'sourcer') THEN
     INSERT INTO user_profiles (id, email, role, tier_id, name)
     VALUES (
       NEW.id,
       NEW.email,
       user_role,
       NULL,
-      user_name
+      SPLIT_PART(NEW.email, '@', 1)
     );
   END IF;
+  
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
