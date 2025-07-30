@@ -258,24 +258,41 @@ export const useAuth = () => {
         setLoading(false);
         return { data: null, error };
       }
-      // Insert user profile after sign up
+      // Insert/Update user profile after sign up
+      // Using upsert to handle case where database trigger already created profile
       if (data.user) {
-        await supabase.from('user_profiles').insert({
+        const profileData = {
           id: data.user.id,
           email,
-          name,
+          name: name || email.split('@')[0], // Fallback to email prefix if no name provided
           role,
           tier_id: 'tier-free',
           available_credits: 0,
           jobs_remaining: 0,
           credits_reset_date: null,
           has_received_free_shortlist: false,
-        });
+        };
+
+        // Use upsert to either insert new profile or update existing one with correct name
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .upsert(profileData, { 
+            onConflict: 'id',
+            ignoreDuplicates: false 
+          });
+
+        if (profileError) {
+          console.error('❌ Profile upsert error:', profileError);
+          // Don't fail signup if profile update fails, but log it
+        } else {
+          console.log('✅ Profile created/updated with name:', name);
+        }
+
         setUser(data.user);
         setUserProfile({
           id: data.user.id,
           email,
-          name,
+          name: name || email.split('@')[0],
           role,
           tierId: 'tier-free',
           createdAt: new Date(),
@@ -285,6 +302,7 @@ export const useAuth = () => {
       setLoading(false);
       return { data, error: null };
     } catch (error) {
+      console.error('❌ Signup error:', error);
       setLoading(false);
       return { data: null, error };
     }
