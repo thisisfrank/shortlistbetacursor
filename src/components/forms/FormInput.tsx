@@ -169,16 +169,20 @@ export const FormSelect: React.FC<FormSelectProps> = ({
         id={inputId}
         className={`
           block w-full border-0 border-b-2 px-0 py-4 text-lg
-          bg-transparent text-white-knight font-jakarta
+          bg-transparent font-jakarta
           focus:ring-0 focus:border-supernova transition-colors duration-200
+          ${props.disabled ? 'text-guardian/60 cursor-not-allowed' : 'text-white-knight'}
           ${error ? 'border-red-500' : 'border-guardian/40 hover:border-guardian/60'}
           ${className}
         `}
         {...props}
       >
-        <option value="" className="bg-shadowforce text-guardian/60">Select {label}</option>
         {options.map((option) => (
-          <option key={option.value} value={option.value} className="bg-shadowforce text-white-knight">
+          <option 
+            key={option.value} 
+            value={option.value} 
+            className={option.value === '' ? "bg-shadowforce text-guardian/60 font-jakarta" : "bg-shadowforce text-white-knight font-jakarta"}
+          >
             {option.label}
           </option>
         ))}

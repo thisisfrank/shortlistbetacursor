@@ -23,38 +23,43 @@ GRANT ALL ON user_profiles TO authenticated;
 GRANT ALL ON user_profiles TO anon;
 GRANT ALL ON user_profiles TO service_role;
 
--- Step 4: Ensure the trigger function exists and works properly
-CREATE OR REPLACE FUNCTION create_user_profile()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.user_profiles (id, email, role, name)
-  VALUES (
-    NEW.id,
-    NEW.email,
-    CASE 
-      WHEN NEW.email = 'thisisfrankgonzalez@gmail.com' THEN 'admin'::user_role
-      WHEN NEW.email = 'thisisjasongonzalez@gmail.com' THEN 'sourcer'::user_role
-      WHEN NEW.email = 'client@test.com' THEN 'client'::user_role
-      WHEN NEW.email = 'client2@test.com' THEN 'client'::user_role
-      ELSE 'client'::user_role
-    END,
-    SPLIT_PART(NEW.email, '@', 1) -- Use email prefix as default name
-  );
-  RETURN NEW;
-EXCEPTION
-  WHEN OTHERS THEN
-    -- Log the error but don't fail the user creation
-    RAISE WARNING 'Failed to create user profile: %', SQLERRM;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- Step 4: Create user profiles trigger function (DISABLED - conflicts with frontend signup)
+-- Original function used SPLIT_PART(NEW.email, '@', 1) which prevented full names
+-- CREATE OR REPLACE FUNCTION create_user_profile()
+-- RETURNS TRIGGER AS $$
+-- BEGIN
+--   INSERT INTO public.user_profiles (id, email, role, name)
+--   VALUES (
+--     NEW.id,
+--     NEW.email,
+--     CASE 
+--       WHEN NEW.email = 'thisisfrankgonzalez@gmail.com' THEN 'admin'::user_role
+--       WHEN NEW.email = 'thisisjasongonzalez@gmail.com' THEN 'sourcer'::user_role
+--       WHEN NEW.email = 'client@test.com' THEN 'client'::user_role
+--       WHEN NEW.email = 'client2@test.com' THEN 'client'::user_role
+--       ELSE 'client'::user_role
+--     END,
+--     SPLIT_PART(NEW.email, '@', 1) -- Use email prefix as default name
+--   );
+--   RETURN NEW;
+-- EXCEPTION
+--   WHEN OTHERS THEN
+--     -- Log the error but don't fail the user creation
+--     RAISE WARNING 'Failed to create user profile: %', SQLERRM;
+--     RETURN NEW;
+-- END;
+-- $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Step 5: Ensure trigger exists
-DROP TRIGGER IF EXISTS create_user_profile_trigger ON auth.users;
-CREATE TRIGGER create_user_profile_trigger
-  AFTER INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION create_user_profile();
+-- Step 5: Ensure trigger exists (DISABLED - handled by frontend signup)
+-- DROP TRIGGER IF EXISTS create_user_profile_trigger ON auth.users;
+-- CREATE TRIGGER create_user_profile_trigger
+--   AFTER INSERT ON auth.users
+--   FOR EACH ROW
+--   EXECUTE FUNCTION create_user_profile();
+
+-- Note: User profile creation is now handled by:
+-- 1. Frontend application for regular client signups (with full name from form)
+-- 2. handle_new_user() trigger only for special admin/sourcer emails
 
 -- Step 6: Fix existing user profiles with null names
 UPDATE user_profiles 

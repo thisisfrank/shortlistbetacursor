@@ -39,7 +39,7 @@ export interface Job {
   location: string;
   salaryRangeMin: number;
   salaryRangeMax: number;
-  keySellingPoints: string[];
+  mustHaveSkills: string[];
   status: 'Unclaimed' | 'Claimed' | 'Completed';
   sourcerId?: string | null; // UUID of the sourcer who claimed the job (optional for client job submission)
   completionLink: string | null;

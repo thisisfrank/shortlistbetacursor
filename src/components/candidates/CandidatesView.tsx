@@ -119,7 +119,7 @@ export const CandidatesView: React.FC = () => {
         jobTitle: job.title,
         jobDescription: job.description,
         seniorityLevel: job.seniorityLevel,
-        keySkills: job.keySellingPoints, // Using selling points as key skills
+                  keySkills: job.mustHaveSkills, // Using must-have skills as key skills
         candidateData: {
           firstName: candidate.firstName,
           lastName: candidate.lastName,

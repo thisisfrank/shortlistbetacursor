@@ -394,7 +394,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         location: j.location || '',
         salaryRangeMin: j.salary_range_min ?? 0,
         salaryRangeMax: j.salary_range_max ?? 0,
-        keySellingPoints: j.key_selling_points || [],
+                    mustHaveSkills: j.must_have_skills || [],
         status: j.status || '',
         sourcerId: j.sourcer_name || null, // Temporarily using sourcer_name to test production schema
         completionLink: j.completion_link || null,
@@ -506,7 +506,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             location: jobData.location || '',
             salaryRangeMin: jobData.salaryRangeMin ?? 0,
             salaryRangeMax: jobData.salaryRangeMax ?? 0,
-            keySellingPoints: jobData.keySellingPoints || [],
+            mustHaveSkills: jobData.mustHaveSkills || [],
             status: 'Unclaimed',
             sourcerId: null,
             completionLink: null,
@@ -552,7 +552,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             location: jobData.location || '',
             salary_range_min: jobData.salaryRangeMin ?? 0,
             salary_range_max: jobData.salaryRangeMax ?? 0,
-            key_selling_points: jobData.keySellingPoints || [],
+            must_have_skills: jobData.mustHaveSkills || [],
             candidates_requested: jobData.candidatesRequested ?? 0,
             status: 'Unclaimed'
           };
@@ -598,7 +598,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             location: insertedJob.location || '',
             salaryRangeMin: insertedJob.salary_range_min ?? 0,
             salaryRangeMax: insertedJob.salary_range_max ?? 0,
-            keySellingPoints: insertedJob.key_selling_points || [],
+            mustHaveSkills: insertedJob.must_have_skills || [],
             status: insertedJob.status || '',
             sourcerId: insertedJob.sourcer_name || null,
             completionLink: insertedJob.completion_link || null,
@@ -643,7 +643,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             location: jobData.location || '',
             salaryRangeMin: jobData.salaryRangeMin ?? 0,
             salaryRangeMax: jobData.salaryRangeMax ?? 0,
-            keySellingPoints: jobData.keySellingPoints || [],
+            mustHaveSkills: jobData.mustHaveSkills || [],
             status: 'Unclaimed',
             sourcerId: null,
             completionLink: null,
@@ -1146,7 +1146,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           location: updatedJobData.location || '',
           salaryRangeMin: updatedJobData.salary_range_min ?? 0,
           salaryRangeMax: updatedJobData.salary_range_max ?? 0,
-          keySellingPoints: updatedJobData.key_selling_points || [],
+                      mustHaveSkills: updatedJobData.must_have_skills || [],
           status: updatedJobData.status || '',
           sourcerId: updatedJobData.sourcer_name || null, // Temporarily using sourcer_name to test production schema
           completionLink: updatedJobData.completion_link || null,

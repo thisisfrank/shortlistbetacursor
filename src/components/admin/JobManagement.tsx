@@ -121,7 +121,7 @@ export const JobManagement: React.FC = () => {
       location: job.location,
       salaryRangeMin: job.salaryRangeMin?.toString() || '',
       salaryRangeMax: job.salaryRangeMax?.toString() || '',
-      keySellingPoints: job.keySellingPoints,
+      keySellingPoints: job.mustHaveSkills,
       candidatesRequested: job.candidatesRequested?.toString() || '3'
     });
   };
@@ -138,7 +138,7 @@ export const JobManagement: React.FC = () => {
         location: editForm.location,
         salaryRangeMin: editForm.salaryRangeMin ? parseInt(editForm.salaryRangeMin) : undefined,
         salaryRangeMax: editForm.salaryRangeMax ? parseInt(editForm.salaryRangeMax) : undefined,
-        keySellingPoints: editForm.keySellingPoints,
+        mustHaveSkills: editForm.mustHaveSkills,
         candidatesRequested: parseInt(editForm.candidatesRequested)
       };
       

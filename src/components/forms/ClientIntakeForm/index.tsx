@@ -3,7 +3,7 @@ import { Card, CardContent } from '../../ui/Card';
 import { JobTitleStep } from './JobTitleStep';
 import { JobDetailsStep } from './JobDetailsStep';
 import { CompanyInfoStep } from './CompanyInfoStep';
-import { RequirementsStep } from './RequirementsStep';
+
 import { SimpleSummaryStep } from './SimpleSummaryStep';
 import { ConfirmationStep } from './ConfirmationStep';
 import { FormStep } from '../../../types';
@@ -55,7 +55,7 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
     isRemote: false,
     salaryRangeMin: '',
     salaryRangeMax: '',
-    keySellingPoints: [] as string[],
+    mustHaveSkills: [] as string[],
     candidatesRequested: '1'
   });
 
@@ -99,13 +99,11 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
     }
   };
 
-  const handleSellingPointsChange = (points: string[]) => {
-    setFormDataWithDebug({ ...formData, keySellingPoints: points });
-    
-    // Clear error for this field if it exists
-    if (errors.keySellingPoints) {
+  const handleSkillsChange = (skills: string[]) => {
+    setFormDataWithDebug({ ...formData, mustHaveSkills: skills });
+    if (errors.mustHaveSkills) {
       const newErrors = { ...errors };
-      delete newErrors.keySellingPoints;
+      delete newErrors.mustHaveSkills;
       setErrors(newErrors);
     }
   };
@@ -157,13 +155,6 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
       newErrors.seniorityLevel = 'Seniority level is required';
     }
     
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateRequirements = () => {
-    const newErrors: Record<string, string> = {};
-    
     // Only validate city and state if not remote
     if (!formData.isRemote) {
       if (!formData.city.trim()) {
@@ -187,13 +178,17 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
       newErrors.salaryRangeMax = 'Maximum salary must be greater than minimum salary';
     }
     
-    if (formData.keySellingPoints.length === 0) {
-      newErrors.keySellingPoints = 'At least one selling point is required';
+    if (formData.mustHaveSkills.length === 0) {
+      newErrors.mustHaveSkills = 'At least one skill is required';
+    } else if (formData.mustHaveSkills.length > 3) {
+      newErrors.mustHaveSkills = 'No more than 3 skills allowed';
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+
 
   const goToNextStep = () => {
     // console.log('🔍 Before validation - current title:', formData.title);
@@ -215,12 +210,6 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
       case 'company-info':
         isValid = validateCompanyInfo();
         // console.log('🔍 After company-info validation - title:', formData.title);
-        if (isValid) setCurrentStep('requirements');
-        break;
-        
-      case 'requirements':
-        isValid = validateRequirements();
-        // console.log('🔍 After requirements validation - title:', formData.title);
         if (isValid) setCurrentStep('summary');
         break;
         
@@ -239,12 +228,8 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
         setCurrentStep('job-details');
         break;
         
-      case 'requirements':
-        setCurrentStep('company-info');
-        break;
-        
       case 'summary':
-        setCurrentStep('requirements');
+        setCurrentStep('company-info');
         break;
         
       default:
@@ -315,7 +300,7 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
         location: location,
         salaryRangeMin: extractNumericValue(formData.salaryRangeMin),
         salaryRangeMax: extractNumericValue(formData.salaryRangeMax),
-        keySellingPoints: formData.keySellingPoints,
+        mustHaveSkills: formData.mustHaveSkills,
         candidatesRequested: parseInt(formData.candidatesRequested)
       };
 
@@ -368,7 +353,7 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
       isRemote: false,
       salaryRangeMin: '',
       salaryRangeMax: '',
-      keySellingPoints: [],
+      mustHaveSkills: [],
       candidatesRequested: '1'
     });
     setErrors({});
@@ -400,9 +385,17 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
             formData={{
               title: formData.title,
               description: formData.description,
-              seniorityLevel: formData.seniorityLevel
+              seniorityLevel: formData.seniorityLevel,
+              city: formData.city,
+              state: formData.state,
+              isRemote: formData.isRemote,
+              salaryRangeMin: formData.salaryRangeMin,
+              salaryRangeMax: formData.salaryRangeMax,
+              mustHaveSkills: formData.mustHaveSkills,
+              candidatesRequested: formData.candidatesRequested
             }}
             onChange={handleInputChange}
+            onSkillsChange={handleSkillsChange}
             onNext={goToNextStep}
             onBack={goToPreviousStep}
             errors={errors}
@@ -425,25 +418,7 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
           />
         )}
         
-        {currentStep === 'requirements' && (
-          <RequirementsStep
-            formData={{
-              title: formData.title,
-              city: formData.city,
-              state: formData.state,
-              isRemote: formData.isRemote,
-              salaryRangeMin: formData.salaryRangeMin,
-              salaryRangeMax: formData.salaryRangeMax,
-              keySellingPoints: formData.keySellingPoints,
-              candidatesRequested: formData.candidatesRequested
-            }}
-            onChange={handleInputChange}
-            onSellingPointsChange={handleSellingPointsChange}
-            onNext={goToNextStep}
-            onBack={goToPreviousStep}
-            errors={errors}
-          />
-        )}
+
         
         {currentStep === 'summary' && (
           <SimpleSummaryStep
@@ -460,7 +435,7 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
               isRemote: formData.isRemote,
               salaryRangeMin: formData.salaryRangeMin,
               salaryRangeMax: formData.salaryRangeMax,
-              keySellingPoints: formData.keySellingPoints,
+              mustHaveSkills: formData.mustHaveSkills,
               candidatesRequested: formData.candidatesRequested
             }}
             onChange={handleInputChange}

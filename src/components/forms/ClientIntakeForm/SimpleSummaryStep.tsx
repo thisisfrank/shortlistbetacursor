@@ -19,13 +19,16 @@ interface SimpleSummaryStepProps {
     isRemote: boolean;
     salaryRangeMin: string;
     salaryRangeMax: string;
-    keySellingPoints: string[];
+    mustHaveSkills: string[];
     candidatesRequested: string;
   };
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => void;
   onSubmit: () => void;
   onBack: () => void;
   isSubmitting: boolean;
+  errors?: Record<string, string>;
 }
 
 export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
@@ -139,7 +142,7 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
       <div className="bg-shadowforce border border-guardian/30 p-8 rounded-xl">
         <h3 className="text-xl font-anton text-supernova mb-6 uppercase tracking-wide">Key Selling Points</h3>
         <ul className="space-y-3">
-          {formData.keySellingPoints.map((point, index) => (
+          {formData.mustHaveSkills.map((point, index) => (
             <li key={index} className="flex items-start">
               <span className="text-supernova mr-3 font-bold">•</span>
               <span className="text-white-knight font-jakarta">{point}</span>
