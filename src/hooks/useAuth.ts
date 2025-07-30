@@ -1,16 +1,7 @@
 import { useState, useEffect } from 'react';
 import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-
-export interface UserProfile {
-  id: string;
-  email: string;
-  name: string;
-  role: 'client' | 'sourcer' | 'admin';
-  tierId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { UserProfile } from '../types';
 
 function mapDbProfileToUserProfile(profile: any): UserProfile {
   return {
@@ -19,6 +10,9 @@ function mapDbProfileToUserProfile(profile: any): UserProfile {
     name: profile.name || '',
     role: profile.role,
     tierId: profile.tier_id || '5841d1d6-20d7-4360-96f8-0444305fac5b', // Free tier ID from production
+    availableCredits: profile.available_credits,
+    jobsRemaining: profile.jobs_remaining,
+    creditsResetDate: profile.credits_reset_date ? new Date(profile.credits_reset_date) : null,
     createdAt: profile.created_at ? new Date(profile.created_at) : new Date(),
     updatedAt: profile.updated_at ? new Date(profile.updated_at) : new Date(),
   };
@@ -258,6 +252,7 @@ export const useAuth = () => {
         setLoading(false);
         return { data: null, error };
       }
+      // Insert user profile after sign up
       // Upsert user profile after sign up (overwrites trigger-created profile with correct name)
       if (data.user) {
         const { error: profileError } = await supabase.from('user_profiles').upsert({
@@ -266,6 +261,9 @@ export const useAuth = () => {
           name,
           role,
           tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
+          available_credits: 20,
+          jobs_remaining: 1,
+          credits_reset_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         });
         
         if (profileError) {
@@ -286,7 +284,6 @@ export const useAuth = () => {
       setLoading(false);
       return { data, error: null };
     } catch (error) {
-      console.error('❌ Signup error:', error);
       setLoading(false);
       return { data: null, error };
     }

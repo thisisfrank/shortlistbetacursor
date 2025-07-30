@@ -4,6 +4,9 @@ export interface UserProfile {
   name: string;
   role: 'client' | 'sourcer' | 'admin';
   tierId: string;
+  availableCredits?: number;
+  jobsRemaining?: number;
+  creditsResetDate?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
