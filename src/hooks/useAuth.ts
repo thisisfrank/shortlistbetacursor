@@ -265,11 +265,7 @@ export const useAuth = () => {
           email,
           name,
           role,
-          tier_id: 'tier-free',
-          available_credits: 0,
-          jobs_remaining: 0,
-          credits_reset_date: null,
-          has_received_free_shortlist: false,
+          tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
         });
         
         if (profileError) {
@@ -282,7 +278,7 @@ export const useAuth = () => {
           email,
           name,
           role,
-          tierId: 'tier-free',
+          tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
           createdAt: new Date(),
           updatedAt: new Date(),
         });
