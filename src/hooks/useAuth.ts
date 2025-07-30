@@ -167,11 +167,45 @@ export const useAuth = () => {
             .select('*')
             .eq('id', currentUser.id)
             .single()
-            .then(({ data: profile, error }: { data: any; error: any }) => {
+            .then(async ({ data: profile, error }: { data: any; error: any }) => {
               if (!isMounted) return;
               if (error) {
                 console.error('❌ Error loading user profile:', error);
-                setUserProfile(null);
+                // If profile doesn't exist, try to create one
+                if (error.code === 'PGRST116') {
+                  console.log('🔄 User profile not found, attempting to create one...');
+                  const { error: createError } = await supabase.from('user_profiles').upsert({
+                    id: currentUser.id,
+                    email: currentUser.email,
+                    name: currentUser.email?.split('@')[0] || 'User',
+                    role: 'client',
+                    tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
+                    available_credits: 20,
+                    jobs_remaining: 1,
+                    credits_reset_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                  });
+                  
+                  if (createError) {
+                    console.error('❌ Failed to create user profile:', createError);
+                    setUserProfile(null);
+                  } else {
+                    console.log('✅ Created missing user profile');
+                    setUserProfile({
+                      id: currentUser.id,
+                      email: currentUser.email || '',
+                      name: currentUser.email?.split('@')[0] || 'User',
+                      role: 'client',
+                      tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
+                      availableCredits: 20,
+                      jobsRemaining: 1,
+                      creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                    });
+                  }
+                } else {
+                  setUserProfile(null);
+                }
               } else {
                 console.log('✅ User profile loaded:', profile?.role);
                 setUserProfile(mapDbProfileToUserProfile(profile));
@@ -222,15 +256,56 @@ export const useAuth = () => {
       const currentUser = data.user ?? null;
       setUser(currentUser);
       if (currentUser) {
-        const { data: profile, error: profileError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', currentUser.id)
-          .single();
-        if (profileError) {
+        try {
+          const { data: profile, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
+          
+          if (profileError) {
+            console.error('❌ Error loading user profile:', profileError);
+            // If profile doesn't exist, try to create one
+            if (profileError.code === 'PGRST116') {
+              console.log('🔄 User profile not found, attempting to create one...');
+              const { error: createError } = await supabase.from('user_profiles').upsert({
+                id: currentUser.id,
+                email: currentUser.email,
+                name: currentUser.email?.split('@')[0] || 'User',
+                role: 'client',
+                tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
+                available_credits: 20,
+                jobs_remaining: 1,
+                credits_reset_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              });
+              
+              if (createError) {
+                console.error('❌ Failed to create user profile:', createError);
+                setUserProfile(null);
+              } else {
+                console.log('✅ Created missing user profile');
+                setUserProfile({
+                  id: currentUser.id,
+                  email: currentUser.email || '',
+                  name: currentUser.email?.split('@')[0] || 'User',
+                  role: 'client',
+                  tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
+                  availableCredits: 20,
+                  jobsRemaining: 1,
+                  creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                });
+              }
+            } else {
+              setUserProfile(null);
+            }
+          } else {
+            setUserProfile(mapDbProfileToUserProfile(profile));
+          }
+        } catch (error) {
+          console.error('❌ Unexpected error loading user profile:', error);
           setUserProfile(null);
-        } else {
-          setUserProfile(mapDbProfileToUserProfile(profile));
         }
       } else {
         setUserProfile(null);
