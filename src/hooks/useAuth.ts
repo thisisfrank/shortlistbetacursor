@@ -258,41 +258,29 @@ export const useAuth = () => {
         setLoading(false);
         return { data: null, error };
       }
-      // Insert/Update user profile after sign up
-      // Using upsert to handle case where database trigger already created profile
+      // Upsert user profile after sign up (overwrites trigger-created profile with correct name)
       if (data.user) {
-        const profileData = {
+        const { error: profileError } = await supabase.from('user_profiles').upsert({
           id: data.user.id,
           email,
-          name: name || email.split('@')[0], // Fallback to email prefix if no name provided
+          name,
           role,
           tier_id: 'tier-free',
           available_credits: 0,
           jobs_remaining: 0,
           credits_reset_date: null,
           has_received_free_shortlist: false,
-        };
-
-        // Use upsert to either insert new profile or update existing one with correct name
-        const { error: profileError } = await supabase
-          .from('user_profiles')
-          .upsert(profileData, { 
-            onConflict: 'id',
-            ignoreDuplicates: false 
-          });
-
+        });
+        
         if (profileError) {
-          console.error('❌ Profile upsert error:', profileError);
-          // Don't fail signup if profile update fails, but log it
-        } else {
-          console.log('✅ Profile created/updated with name:', name);
+          console.error('❌ Profile creation error:', profileError);
         }
-
+        
         setUser(data.user);
         setUserProfile({
           id: data.user.id,
           email,
-          name: name || email.split('@')[0],
+          name,
           role,
           tierId: 'tier-free',
           createdAt: new Date(),
