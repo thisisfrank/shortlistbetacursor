@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { AlertModal } from '../ui/AlertModal';
+import { ShortlistModal } from '../ui/ShortlistModal';
 import { generateJobMatchScore } from '../../services/anthropicService';
 import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download } from 'lucide-react';
+import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List } from 'lucide-react';
 
 // Helper function to calculate total years of experience
 const calculateYearsOfExperience = (experience?: Array<{ title: string; company: string; duration: string }>): number => {
@@ -66,7 +67,15 @@ const calculateYearsOfExperience = (experience?: Array<{ title: string; company:
 };
 
 export const CandidatesView: React.FC = () => {
-  const { jobs, candidates, getCandidatesByJob, getJobById } = useData();
+  const { 
+    jobs, 
+    candidates, 
+    getCandidatesByJob, 
+    getJobById, 
+    shortlists, 
+    getShortlistsByUser, 
+    getCandidatesByShortlist 
+  } = useData();
   const { user, userProfile } = useAuth();
   const navigate = useNavigate();
   
@@ -120,9 +129,21 @@ export const CandidatesView: React.FC = () => {
   const matchScoresRef = useRef(matchScores);
   const [selectedCandidates, setSelectedCandidates] = useState<Set<string>>(new Set());
   const [isExporting, setIsExporting] = useState(false);
+  const [isShortlistModalOpen, setIsShortlistModalOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<'all' | 'shortlist'>('all');
+  const [selectedShortlistId, setSelectedShortlistId] = useState<string>('');
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   
-  // Define currentJobCandidates at component level
-  const currentJobCandidates = selectedJobId ? getCandidatesByJob(selectedJobId) : [];
+  // Define currentJobCandidates at component level with shortlist filtering
+  const allJobCandidates = selectedJobId ? getCandidatesByJob(selectedJobId) : [];
+  const currentJobCandidates = currentView === 'shortlist' && selectedShortlistId
+    ? getCandidatesByShortlist(selectedShortlistId).filter(candidate => 
+        allJobCandidates.some(jobCandidate => jobCandidate.id === candidate.id)
+      )
+    : allJobCandidates;
+  
+  // Get user's shortlists
+  const userShortlists = user?.id ? getShortlistsByUser(user.id) : [];
   
   // Sort candidates by match score (highest first), with unscored candidates at the bottom
   const sortedCurrentJobCandidates = [...currentJobCandidates].sort((a, b) => {
@@ -431,6 +452,59 @@ export const CandidatesView: React.FC = () => {
               ← BACK TO JOBS
             </Button>
           </div>
+
+          {/* Shortlist Filtering Controls */}
+          {userShortlists.length > 0 && (
+            <div className="mb-8">
+              <Card className="bg-gradient-to-r from-supernova/20 to-supernova/10 border-supernova/30">
+                <CardContent className="p-6">
+                  <div className="flex flex-col md:flex-row md:items-center gap-4">
+                    <div className="flex items-center gap-4">
+                      <List className="text-supernova" size={20} />
+                      <span className="text-white-knight font-jakarta font-semibold">
+                        View Options:
+                      </span>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-3">
+                      <Button
+                        variant={currentView === 'all' ? 'primary' : 'outline'}
+                        size="sm"
+                        onClick={() => {
+                          setCurrentView('all');
+                          setSelectedShortlistId('');
+                        }}
+                      >
+                        All Candidates ({allJobCandidates.length})
+                      </Button>
+                      
+                      {userShortlists.map((shortlist) => {
+                        const shortlistCandidateCount = getCandidatesByShortlist(shortlist.id)
+                          .filter(candidate => 
+                            allJobCandidates.some(jobCandidate => jobCandidate.id === candidate.id)
+                          ).length;
+                        
+                        return (
+                          <Button
+                            key={shortlist.id}
+                            variant={currentView === 'shortlist' && selectedShortlistId === shortlist.id ? 'primary' : 'outline'}
+                            size="sm"
+                            onClick={() => {
+                              setCurrentView('shortlist');
+                              setSelectedShortlistId(shortlist.id);
+                            }}
+                            disabled={shortlistCandidateCount === 0}
+                          >
+                            {shortlist.name} ({shortlistCandidateCount})
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
           
           {/* Candidate Selection and Export Controls */}
           {currentJobCandidates.length > 0 && (
@@ -467,6 +541,16 @@ export const CandidatesView: React.FC = () => {
                       <Button
                         variant="primary"
                         size="sm"
+                        onClick={() => setIsShortlistModalOpen(true)}
+                        disabled={selectedCandidates.size === 0}
+                        className="flex items-center gap-2"
+                      >
+                        <List size={16} />
+                        ADD TO SHORTLIST
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={exportSelectedCandidates}
                         disabled={selectedCandidates.size === 0}
                         isLoading={isExporting}
@@ -489,10 +573,14 @@ export const CandidatesView: React.FC = () => {
                   <div className="mb-6">
                     <Users size={64} className="text-guardian/40 mx-auto" />
                   </div>
-                  <h3 className="font-anton text-2xl text-guardian mb-2">NO CANDIDATES YET</h3>
+                  <h3 className="font-anton text-2xl text-guardian mb-2">
+                    {currentView === 'shortlist' ? 'NO CANDIDATES IN THIS SHORTLIST' : 'NO CANDIDATES YET'}
+                  </h3>
                   <p className="text-guardian/80 font-jakarta">
-                    No candidates have been submitted for this job yet. 
-                    Once a sourcer completes this job, candidates will appear here.
+                    {currentView === 'shortlist' 
+                      ? `No candidates from this job are in the selected shortlist yet. Add candidates to "${userShortlists.find(sl => sl.id === selectedShortlistId)?.name || 'this shortlist'}" to see them here.`
+                      : 'No candidates have been submitted for this job yet. Once a sourcer completes this job, candidates will appear here.'
+                    }
                   </p>
                 </div>
               </CardContent>
@@ -501,7 +589,10 @@ export const CandidatesView: React.FC = () => {
             <Card>
               <CardContent className="p-8">
                 <h3 className="text-2xl font-anton text-white-knight mb-8 uppercase tracking-wide">
-                  {currentJobCandidates.length} Candidate{currentJobCandidates.length !== 1 ? 's' : ''} Submitted
+                  {currentView === 'shortlist' && selectedShortlistId
+                    ? `${currentJobCandidates.length} Candidate${currentJobCandidates.length !== 1 ? 's' : ''} in ${userShortlists.find(sl => sl.id === selectedShortlistId)?.name || 'Shortlist'}`
+                    : `${currentJobCandidates.length} Candidate${currentJobCandidates.length !== 1 ? 's' : ''} Submitted`
+                  }
                 </h3>
                 
                 <div className="space-y-6">
@@ -875,7 +966,7 @@ export const CandidatesView: React.FC = () => {
                 Select Job to View Candidates
                 {jobs && jobs.length > 0 && (
                   <span className="block text-base font-jakarta text-supernova mt-2 md:mt-0 md:ml-4 normal-case font-normal">
-                    requested candidates: {jobs.reduce((sum, job) => sum + (job.candidatesRequested || 0), 0)}
+                    Total Requested Candidates: {jobs.reduce((sum, job) => sum + (job.candidatesRequested || 0), 0)}
                   </span>
                 )}
               </h2>
@@ -903,7 +994,7 @@ export const CandidatesView: React.FC = () => {
                 <p className="text-guardian/80 font-jakarta">No jobs match your current search criteria.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 {sortedJobs.map(job => {
                   const jobCandidates = getCandidatesByJob(job.id);
                   const isCompleted = job.status === 'Completed';
@@ -970,20 +1061,21 @@ export const CandidatesView: React.FC = () => {
                         {/* Expanded Job Details */}
                         {isExpanded && (
                           <div className="border-t border-guardian/20 pt-6 space-y-6 mb-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {/* Job Description */}
-                              <div>
-                                <div className="flex items-center mb-3">
-                                  <Briefcase size={16} className="text-supernova mr-2" />
-                                  <span className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Job Description</span>
-                                </div>
-                                <div className="bg-gradient-to-br from-supernova/10 to-supernova/5 border border-supernova/20 p-4 rounded-lg">
-                                  <p className="text-white-knight font-jakarta text-sm leading-relaxed">
-                                    {job.description || 'No description provided'}
-                                  </p>
-                                </div>
+                            {/* Job Description - Full Width */}
+                            <div>
+                              <div className="flex items-center mb-3">
+                                <Briefcase size={16} className="text-supernova mr-2" />
+                                <span className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Job Description</span>
                               </div>
-                              
+                              <div className="bg-gradient-to-br from-supernova/10 to-supernova/5 border border-supernova/20 p-4 rounded-lg">
+                                <p className="text-white-knight font-jakarta text-sm leading-relaxed">
+                                  {job.description || 'No description provided'}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {/* 3-Column Section: Seniority, Skills, Location */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                               {/* Seniority Level */}
                               <div>
                                 <div className="flex items-center mb-3">
@@ -1000,45 +1092,32 @@ export const CandidatesView: React.FC = () => {
                                   </p>
                                 </div>
                               </div>
-                            </div>
-                            
-                            {/* Must-Have Skills */}
-                            {job.mustHaveSkills && job.mustHaveSkills.length > 0 && (
+                              
+                              {/* Must-Have Skills */}
                               <div>
                                 <div className="flex items-center mb-3">
                                   <Zap size={16} className="text-orange-400 mr-2" />
                                   <span className="text-sm font-jakarta font-semibold text-orange-400 uppercase tracking-wide">Must-Have Skills</span>
                                 </div>
-                                <div className="flex flex-wrap gap-2">
-                                  {job.mustHaveSkills.map((skill, index) => (
-                                    <span 
-                                      key={index}
-                                      className="px-3 py-1 bg-gradient-to-r from-orange-500/20 to-orange-500/10 border border-orange-500/30 text-orange-300 text-xs rounded-full font-jakarta font-medium"
-                                    >
-                                      {skill}
-                                    </span>
-                                  ))}
+                                <div className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/20 p-4 rounded-lg min-h-[60px] flex items-center">
+                                  {job.mustHaveSkills && job.mustHaveSkills.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1">
+                                      {job.mustHaveSkills.map((skill, index) => (
+                                        <span 
+                                          key={index}
+                                          className="px-2 py-1 bg-gradient-to-r from-orange-500/30 to-orange-500/20 border border-orange-500/40 text-orange-300 text-xs rounded-full font-jakarta font-medium"
+                                        >
+                                          {skill}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-white-knight font-jakarta font-semibold">Not specified</p>
+                                  )}
                                 </div>
                               </div>
-                            )}
-                            
-                            {/* Work Arrangement */}
-                            {job.workArrangement && (
-                              <div>
-                                <div className="flex items-center mb-3">
-                                  <MapPin size={16} className="text-blue-400 mr-2" />
-                                  <span className="text-sm font-jakarta font-semibold text-blue-400 uppercase tracking-wide">Work Arrangement</span>
-                                </div>
-                                <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20 p-4 rounded-lg">
-                                  <p className="text-white-knight font-jakarta font-semibold">
-                                    {job.workArrangement}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Location */}
-                            {job.location && (
+                              
+                              {/* Location */}
                               <div>
                                 <div className="flex items-center mb-3">
                                   <MapPin size={16} className="text-purple-400 mr-2" />
@@ -1046,11 +1125,16 @@ export const CandidatesView: React.FC = () => {
                                 </div>
                                 <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 p-4 rounded-lg">
                                   <p className="text-white-knight font-jakarta font-semibold">
-                                    {job.location}
+                                    {job.location || 'Not specified'}
                                   </p>
+                                  {job.workArrangement && (
+                                    <p className="text-purple-300 font-jakarta text-sm mt-1">
+                                      {job.workArrangement}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
-                            )}
+                            </div>
                           </div>
                         )}
                         
@@ -1077,6 +1161,101 @@ export const CandidatesView: React.FC = () => {
             )}
           </CardContent>
         </Card>
+        
+        {/* Screenshots Section */}
+        <div className="mt-12">
+          {/* Headlines */}
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-anton text-white-knight mb-4 uppercase tracking-wide">
+              You're in Good Hands
+            </h2>
+            <p className="text-xl text-guardian font-jakarta max-w-2xl mx-auto">
+              Some thoughts from current and former clients
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <div className="bg-shadowforce border border-guardian/30 rounded-lg overflow-hidden hover:border-supernova/50 transition-all duration-300 cursor-pointer">
+              <img 
+                src="/screenshots/screenshot1.png"
+                alt="Client testimonial screenshot 1" 
+                className="w-full h-auto object-cover"
+                onClick={() => setZoomedImage("/screenshots/screenshot1.png")}
+              />
+            </div>
+            <div className="bg-shadowforce border border-guardian/30 rounded-lg overflow-hidden hover:border-supernova/50 transition-all duration-300 cursor-pointer">
+              <img 
+                src="/screenshots/screenshot2.png"
+                alt="Client testimonial screenshot 2" 
+                className="w-full h-auto object-cover"
+                onClick={() => setZoomedImage("/screenshots/screenshot2.png")}
+              />
+            </div>
+            <div className="bg-shadowforce border border-guardian/30 rounded-lg overflow-hidden hover:border-supernova/50 transition-all duration-300 cursor-pointer">
+              <img 
+                src="/screenshots/screenshot3.png"
+                alt="Client testimonial screenshot 3" 
+                className="w-full h-auto object-cover"
+                onClick={() => setZoomedImage("/screenshots/screenshot3.png")}
+              />
+            </div>
+            <div className="bg-shadowforce border border-guardian/30 rounded-lg overflow-hidden hover:border-supernova/50 transition-all duration-300 cursor-pointer">
+              <img 
+                src="/screenshots/screenshot4.png"
+                alt="Client testimonial screenshot 4" 
+                className="w-full h-auto object-cover"
+                onClick={() => setZoomedImage("/screenshots/screenshot4.png")}
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* FAQ Section */}
+        <div className="mt-16">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-anton text-white-knight mb-4 uppercase tracking-wide">
+              Frequently Asked Questions
+            </h2>
+          </div>
+          
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="bg-shadowforce border border-guardian/30 rounded-xl p-6 hover:border-supernova/50 transition-colors duration-300">
+              <h3 className="text-xl font-anton text-supernova mb-3 uppercase tracking-wide">
+                How long does it take to receive candidates?
+              </h3>
+              <p className="text-guardian font-jakarta leading-relaxed">
+                Most jobs receive initial candidate submissions within 24 hours. Complex or highly specialized roles may take 2-3 days. Active sourcers are notified immediately when you post a job.
+              </p>
+            </div>
+            
+            <div className="bg-shadowforce border border-guardian/30 rounded-xl p-6 hover:border-supernova/50 transition-colors duration-300">
+              <h3 className="text-xl font-anton text-supernova mb-3 uppercase tracking-wide">
+                How many candidates will I receive?
+              </h3>
+              <p className="text-guardian font-jakarta leading-relaxed">
+                This depends on your credit package and job requirements. More detailed job descriptions typically attract higher-quality submissions.
+              </p>
+            </div>
+            
+            <div className="bg-shadowforce border border-guardian/30 rounded-xl p-6 hover:border-supernova/50 transition-colors duration-300">
+              <h3 className="text-xl font-anton text-supernova mb-3 uppercase tracking-wide">
+                What if I'm not seeing the right candidates?
+              </h3>
+              <p className="text-guardian font-jakarta leading-relaxed">
+                Try adding more specific requirements, skills, or company culture details to your job description. You can also message sourcers directly to clarify what you're looking for.
+              </p>
+            </div>
+            
+            <div className="bg-shadowforce border border-guardian/30 rounded-xl p-6 hover:border-supernova/50 transition-colors duration-300">
+              <h3 className="text-xl font-anton text-supernova mb-3 uppercase tracking-wide">
+                How do I know when new candidates are submitted?
+              </h3>
+              <p className="text-guardian font-jakarta leading-relaxed">
+                You'll receive email notifications for new candidate submissions. You can also check your dashboard anytime to see the latest profiles and their match scores.
+              </p>
+            </div>
+          </div>
+        </div>
         
         {/* Upgrade CTA */}
         <div className="mt-12">
@@ -1121,6 +1300,41 @@ export const CandidatesView: React.FC = () => {
         actionLabel={alertModal.actionLabel}
         onAction={alertModal.onAction}
       />
+
+      <ShortlistModal
+        isOpen={isShortlistModalOpen}
+        onClose={() => setIsShortlistModalOpen(false)}
+        selectedCandidateIds={Array.from(selectedCandidates)}
+        onCandidatesAddedToShortlist={() => {
+          setSelectedCandidates(new Set());
+          setIsShortlistModalOpen(false);
+        }}
+      />
+
+      {/* Image Zoom Modal */}
+      {zoomedImage && (
+        <div 
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={() => setZoomedImage(null)}
+        >
+          <div className="relative max-w-5xl max-h-full">
+            <img 
+              src={zoomedImage} 
+              alt="Zoomed client testimonial" 
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button
+              onClick={() => setZoomedImage(null)}
+              className="absolute top-4 right-4 bg-shadowforce/80 hover:bg-shadowforce text-white-knight rounded-full p-2 hover:text-supernova transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -89,14 +89,14 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
                 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-supernova 
                 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
               style={{
-                background: `linear-gradient(to right, #FFCF00 0%, #FFCF00 ${(candidatesRequested / maxCandidates) * 100}%, #111111 ${(candidatesRequested / maxCandidates) * 100}%, #111111 100%)`
+                background: `linear-gradient(to right, #FFCF00 0%, #FFCF00 ${((candidatesRequested - 1) / (maxCandidates - 1)) * 100}%, #111111 ${((candidatesRequested - 1) / (maxCandidates - 1)) * 100}%, #111111 100%)`
               }}
             />
             <div className="flex justify-between text-xs text-guardian font-jakarta mt-2">
               <span>1</span>
-              <span>{Math.floor(maxCandidates / 4)}</span>
-              <span>{Math.floor(maxCandidates / 2)}</span>
-              <span>{Math.floor((maxCandidates * 3) / 4)}</span>
+              <span>{Math.floor((maxCandidates - 1) * 0.25) + 1}</span>
+              <span>{Math.floor((maxCandidates - 1) * 0.5) + 1}</span>
+              <span>{Math.floor((maxCandidates - 1) * 0.75) + 1}</span>
               <span>{maxCandidates}</span>
             </div>
           </div>

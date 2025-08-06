@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
-import { Job, Candidate, Tier, CreditTransaction, UserProfile } from '../types';
+import { Job, Candidate, Tier, CreditTransaction, UserProfile, Shortlist, ShortlistCandidate } from '../types';
 import { scrapeLinkedInProfiles } from '../services/apifyService';
 import { generateJobMatchScore } from '../services/anthropicService';
 import { useAuth } from './AuthContext';
@@ -10,6 +10,8 @@ interface DataContextType {
   candidates: Candidate[];
   tiers: Tier[];
   creditTransactions: CreditTransaction[];
+  shortlists: Shortlist[];
+  shortlistCandidates: ShortlistCandidate[];
   addJob: (job: Omit<Job, 'id' | 'status' | 'sourcerName' | 'completionLink' | 'createdAt' | 'updatedAt'>) => Promise<Job>;
   addCandidate: (candidate: Omit<Candidate, 'id' | 'submittedAt'>) => Promise<Candidate>;
   addCandidatesFromLinkedIn: (jobId: string, linkedinUrls: string[]) => Promise<{ 
@@ -26,6 +28,15 @@ interface DataContextType {
   getJobsByUser: (userId: string) => Job[];
   getTierById: (tierId: string) => Tier | null;
   getUserProfileById: (userId: string) => Promise<UserProfile | null>;
+  // Shortlist functions
+  createShortlist: (name: string, description?: string) => Promise<Shortlist>;
+  updateShortlist: (shortlistId: string, updates: { name?: string; description?: string }) => Promise<Shortlist | null>;
+  deleteShortlist: (shortlistId: string) => Promise<boolean>;
+  getShortlistsByUser: (userId: string) => Shortlist[];
+  addCandidateToShortlist: (shortlistId: string, candidateId: string) => Promise<boolean>;
+  removeCandidateFromShortlist: (shortlistId: string, candidateId: string) => Promise<boolean>;
+  getCandidatesByShortlist: (shortlistId: string) => Candidate[];
+  getShortlistsForCandidate: (candidateId: string) => Shortlist[];
   resetData: () => void;
   testInsertCandidate: () => Promise<{ success: boolean; data: any; error: any }>;
   recordCreditTransaction: (userId: string | null | undefined, type: 'job' | 'candidate', amount: number, jobId?: string) => Promise<void>;
@@ -88,12 +99,16 @@ const createEmptyData = () => {
 
   const emptyJobs: Job[] = [];
   const emptyCandidates: Candidate[] = [];
+  const emptyShortlists: Shortlist[] = [];
+  const emptyShortlistCandidates: ShortlistCandidate[] = [];
 
   return {
     tiers: emptyTiers,
     jobs: emptyJobs,
     candidates: emptyCandidates,
-    creditTransactions: emptyCreditTransactions
+    creditTransactions: emptyCreditTransactions,
+    shortlists: emptyShortlists,
+    shortlistCandidates: emptyShortlistCandidates
   };
 };
 
@@ -107,6 +122,8 @@ function saveDataToCache(data: any) {
       candidates: data.candidates,
       userProfile: data.userProfile || null,
       creditTransactions: data.creditTransactions || [],
+      shortlists: data.shortlists || [],
+      shortlistCandidates: data.shortlistCandidates || [],
       timestamp: Date.now(),
     }));
   } catch (e) {
@@ -135,6 +152,8 @@ const loadInitialData = () => {
       candidates: cached.candidates || [],
       tiers: createEmptyData().tiers, // Always use fresh tiers
       creditTransactions: cached.creditTransactions || [],
+      shortlists: cached.shortlists || [],
+      shortlistCandidates: cached.shortlistCandidates || [],
       userProfile: cached.userProfile || null,
     };
   }
@@ -447,11 +466,54 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         console.warn('⚠️ Error loading credit transactions:', creditTransactionsError);
       }
 
+      // Load shortlists for the user
+      const { data: shortlistsData, error: shortlistsError } = await supabase
+        .from('shortlists')
+        .select('*')
+        .eq('user_id', user.id || '');
+
+      const loadedShortlists: Shortlist[] = shortlistsData?.map((sl: any) => ({
+        id: sl.id,
+        userId: sl.user_id,
+        name: sl.name,
+        description: sl.description,
+        createdAt: new Date(sl.created_at),
+        updatedAt: new Date(sl.updated_at)
+      })) || [];
+
+      if (shortlistsError) {
+        console.warn('⚠️ Error loading shortlists:', shortlistsError);
+      }
+
+      // Load shortlist candidates
+      const shortlistIds = loadedShortlists.map(sl => sl.id);
+      let loadedShortlistCandidates: ShortlistCandidate[] = [];
+      
+      if (shortlistIds.length > 0) {
+        const { data: shortlistCandidatesData, error: shortlistCandidatesError } = await supabase
+          .from('shortlist_candidates')
+          .select('*')
+          .in('shortlist_id', shortlistIds);
+
+        loadedShortlistCandidates = shortlistCandidatesData?.map((sc: any) => ({
+          id: sc.id,
+          shortlistId: sc.shortlist_id,
+          candidateId: sc.candidate_id,
+          addedAt: new Date(sc.added_at)
+        })) || [];
+
+        if (shortlistCandidatesError) {
+          console.warn('⚠️ Error loading shortlist candidates:', shortlistCandidatesError);
+        }
+      }
+
       setData(prev => ({
         ...prev,
         jobs: loadedJobs,
         candidates: loadedCandidates,
         creditTransactions: loadedCreditTransactions,
+        shortlists: loadedShortlists,
+        shortlistCandidates: loadedShortlistCandidates,
         userProfile: userProfile || null,
       }));
       // Save to cache
@@ -459,6 +521,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         jobs: loadedJobs,
         candidates: loadedCandidates,
         creditTransactions: loadedCreditTransactions,
+        shortlists: loadedShortlists,
+        shortlistCandidates: loadedShortlistCandidates,
         userProfile: userProfile || null,
       });
 
@@ -475,6 +539,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           jobs: cached.jobs || [],
           candidates: cached.candidates || [],
           creditTransactions: cached.creditTransactions || [],
+          shortlists: cached.shortlists || [],
+          shortlistCandidates: cached.shortlistCandidates || [],
           userProfile: cached.userProfile || null,
         }));
       }
@@ -1220,6 +1286,174 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  // Shortlist functions
+  const createShortlist = async (name: string, description?: string): Promise<Shortlist> => {
+    if (!user?.id) {
+      throw new Error('User must be authenticated to create shortlists');
+    }
+
+    const { data: newShortlist, error } = await supabase
+      .from('shortlists')
+      .insert({
+        user_id: user.id,
+        name,
+        description
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating shortlist:', error);
+      throw error;
+    }
+
+    const shortlist: Shortlist = {
+      id: newShortlist.id,
+      userId: newShortlist.user_id,
+      name: newShortlist.name,
+      description: newShortlist.description,
+      createdAt: new Date(newShortlist.created_at),
+      updatedAt: new Date(newShortlist.updated_at)
+    };
+
+    setData(prev => ({
+      ...prev,
+      shortlists: [...prev.shortlists, shortlist]
+    }));
+
+    return shortlist;
+  };
+
+  const updateShortlist = async (shortlistId: string, updates: { name?: string; description?: string }): Promise<Shortlist | null> => {
+    const { data: updatedShortlist, error } = await supabase
+      .from('shortlists')
+      .update(updates)
+      .eq('id', shortlistId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating shortlist:', error);
+      return null;
+    }
+
+    const shortlist: Shortlist = {
+      id: updatedShortlist.id,
+      userId: updatedShortlist.user_id,
+      name: updatedShortlist.name,
+      description: updatedShortlist.description,
+      createdAt: new Date(updatedShortlist.created_at),
+      updatedAt: new Date(updatedShortlist.updated_at)
+    };
+
+    setData(prev => ({
+      ...prev,
+      shortlists: prev.shortlists.map(sl => sl.id === shortlistId ? shortlist : sl)
+    }));
+
+    return shortlist;
+  };
+
+  const deleteShortlist = async (shortlistId: string): Promise<boolean> => {
+    const { error } = await supabase
+      .from('shortlists')
+      .delete()
+      .eq('id', shortlistId);
+
+    if (error) {
+      console.error('Error deleting shortlist:', error);
+      return false;
+    }
+
+    setData(prev => ({
+      ...prev,
+      shortlists: prev.shortlists.filter(sl => sl.id !== shortlistId),
+      shortlistCandidates: prev.shortlistCandidates.filter(sc => sc.shortlistId !== shortlistId)
+    }));
+
+    return true;
+  };
+
+  const getShortlistsByUser = (userId: string): Shortlist[] => {
+    return data.shortlists.filter(sl => sl.userId === userId);
+  };
+
+  const addCandidateToShortlist = async (shortlistId: string, candidateId: string): Promise<boolean> => {
+    const { data: newShortlistCandidate, error } = await supabase
+      .from('shortlist_candidates')
+      .insert({
+        shortlist_id: shortlistId,
+        candidate_id: candidateId
+      })
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === '23505') { // Unique constraint violation
+        console.log('Candidate already in shortlist');
+        return true;
+      }
+      console.error('Error adding candidate to shortlist:', error);
+      return false;
+    }
+
+    const shortlistCandidate: ShortlistCandidate = {
+      id: newShortlistCandidate.id,
+      shortlistId: newShortlistCandidate.shortlist_id,
+      candidateId: newShortlistCandidate.candidate_id,
+      addedAt: new Date(newShortlistCandidate.added_at)
+    };
+
+    setData(prev => ({
+      ...prev,
+      shortlistCandidates: [...prev.shortlistCandidates, shortlistCandidate]
+    }));
+
+    return true;
+  };
+
+  const removeCandidateFromShortlist = async (shortlistId: string, candidateId: string): Promise<boolean> => {
+    const { error } = await supabase
+      .from('shortlist_candidates')
+      .delete()
+      .eq('shortlist_id', shortlistId)
+      .eq('candidate_id', candidateId);
+
+    if (error) {
+      console.error('Error removing candidate from shortlist:', error);
+      return false;
+    }
+
+    setData(prev => ({
+      ...prev,
+      shortlistCandidates: prev.shortlistCandidates.filter(sc => 
+        !(sc.shortlistId === shortlistId && sc.candidateId === candidateId)
+      )
+    }));
+
+    return true;
+  };
+
+  const getCandidatesByShortlist = (shortlistId: string): Candidate[] => {
+    const shortlistCandidateIds = data.shortlistCandidates
+      .filter(sc => sc.shortlistId === shortlistId)
+      .map(sc => sc.candidateId);
+    
+    return data.candidates.filter(candidate => 
+      shortlistCandidateIds.includes(candidate.id)
+    );
+  };
+
+  const getShortlistsForCandidate = (candidateId: string): Shortlist[] => {
+    const shortlistIds = data.shortlistCandidates
+      .filter(sc => sc.candidateId === candidateId)
+      .map(sc => sc.shortlistId);
+    
+    return data.shortlists.filter(shortlist => 
+      shortlistIds.includes(shortlist.id)
+    );
+  };
+
   // Test function to manually insert a candidate
   const testInsertCandidate = async () => {
     try {
@@ -1276,6 +1510,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     candidates: data.candidates,
     tiers: data.tiers,
     creditTransactions: data.creditTransactions,
+    shortlists: data.shortlists,
+    shortlistCandidates: data.shortlistCandidates,
     loading,
     loadError,
     addJob,
@@ -1289,6 +1525,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     getJobsByUser,
     getTierById,
     getUserProfileById,
+    createShortlist,
+    updateShortlist,
+    deleteShortlist,
+    getShortlistsByUser,
+    addCandidateToShortlist,
+    removeCandidateFromShortlist,
+    getCandidatesByShortlist,
+    getShortlistsForCandidate,
     resetData,
     testInsertCandidate,
     recordCreditTransaction,

@@ -91,3 +91,19 @@ export interface UserUsageStats {
   creditsResetDate: Date | null;
   tierName: string;
 }
+
+export interface Shortlist {
+  id: string;
+  userId: string;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ShortlistCandidate {
+  id: string;
+  shortlistId: string;
+  candidateId: string;
+  addedAt: Date;
+}
