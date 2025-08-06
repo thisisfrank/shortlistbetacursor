@@ -22,7 +22,7 @@ export const Footer: React.FC = () => {
             <Link to="/terms" className="text-guardian hover:text-supernova text-sm font-jakarta font-medium transition-colors">
               Terms of Service
             </Link>
-            <a href="#" className="text-guardian hover:text-supernova text-sm font-jakarta font-medium transition-colors">
+            <a href="mailto:alex@superrecruiter.io" className="text-guardian hover:text-supernova text-sm font-jakarta font-medium transition-colors">
               Contact Us
             </a>
           </div>

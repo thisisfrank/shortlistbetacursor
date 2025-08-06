@@ -44,6 +44,74 @@ interface CandidateData {
   about?: string;
 }
 
+// Helper function to calculate total years of experience
+const calculateYearsOfExperience = (experience?: Array<{ title: string; company: string; duration: string }>): number => {
+  if (!experience || experience.length === 0) return 0;
+  
+  let totalMonths = 0;
+  
+  for (const exp of experience) {
+    const duration = exp.duration?.toLowerCase() || '';
+    
+    // Handle different duration formats
+    if (duration.includes('yr') || duration.includes('year')) {
+      const yearMatch = duration.match(/(\d+)\s*(yr|year)/);
+      if (yearMatch) {
+        totalMonths += parseInt(yearMatch[1]) * 12;
+      }
+    }
+    
+    if (duration.includes('mo') || duration.includes('month')) {
+      const monthMatch = duration.match(/(\d+)\s*(mo|month)/);
+      if (monthMatch) {
+        totalMonths += parseInt(monthMatch[1]);
+      }
+    }
+    
+    // Handle date ranges like "Jan 2020 - Dec 2022"
+    if (duration.includes('-') && !duration.includes('yr') && !duration.includes('mo')) {
+      const dateRangeMatch = duration.match(/(\w{3})\s*(\d{4})\s*-\s*(\w{3})\s*(\d{4})/);
+      if (dateRangeMatch) {
+        const startYear = parseInt(dateRangeMatch[2]);
+        const endYear = parseInt(dateRangeMatch[4]);
+        const months = Math.max(1, (endYear - startYear) * 12);
+        totalMonths += months;
+      }
+    }
+    
+    // Handle single years like "2020 - 2022"
+    if (duration.includes('-')) {
+      const yearRangeMatch = duration.match(/(\d{4})\s*-\s*(\d{4})/);
+      if (yearRangeMatch) {
+        const startYear = parseInt(yearRangeMatch[1]);
+        const endYear = parseInt(yearRangeMatch[2]);
+        const months = Math.max(1, (endYear - startYear) * 12);
+        totalMonths += months;
+      }
+    }
+    
+    // If no specific format matches, assume 1 year minimum per role
+    if (totalMonths === 0 && duration && duration !== 'n/a' && duration !== 'N/A') {
+      totalMonths += 12;
+    }
+  }
+  
+  return Math.round(totalMonths / 12 * 10) / 10; // Round to 1 decimal place
+};
+
+// Helper function to extract unique industries/companies
+const extractIndustries = (experience?: Array<{ title: string; company: string; duration: string }>): string[] => {
+  if (!experience || experience.length === 0) return [];
+  
+  const companies = experience
+    .map(exp => exp.company)
+    .filter(company => company && company !== 'N/A' && company.trim() !== '')
+    .map(company => company.trim());
+  
+  // Remove duplicates and return unique companies
+  return [...new Set(companies)];
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -52,6 +120,10 @@ serve(async (req) => {
 
   try {
     const { candidateData }: { candidateData: CandidateData } = await req.json()
+
+    // Calculate years of experience and extract industries
+    const yearsOfExperience = calculateYearsOfExperience(candidateData.experience);
+    const industries = extractIndustries(candidateData.experience);
 
     // Debug environment variables to understand what's available
     console.log('Summary function - Available env vars:', {
@@ -83,15 +155,16 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 150,
+        max_tokens: 200,
         messages: [
           {
             role: 'user',
-            content: `Based on the following candidate information, write a professional summary in exactly 2 sentences maximum that highlights their key qualifications, experience, and value proposition:
+            content: `Based on the following candidate information, write a professional summary in exactly 2-3 sentences maximum that highlights their key qualifications, experience, and value proposition. IMPORTANT: Include their total years of experience and list their other industries/companies as bullet points.
 
 Name: ${candidateData.firstName} ${candidateData.lastName}
 Current Role: ${candidateData.headline || 'N/A'}
 Location: ${candidateData.location || 'N/A'}
+Total Years of Experience: ${yearsOfExperience} years
 
 Experience:
 ${candidateData.experience && candidateData.experience.length > 0 
@@ -112,7 +185,13 @@ ${candidateData.skills && candidateData.skills.length > 0
 }
 
 About:
-${candidateData.about || 'No about section available'}`
+${candidateData.about || 'No about section available'}
+
+Format your response as follows:
+[2-3 sentence professional summary that mentions their ${yearsOfExperience} years of experience]
+
+Other Industries/Companies:
+${industries.length > 0 ? industries.map(company => `• ${company}`).join('\n') : '• No additional companies listed'}`
           }
         ]
       })

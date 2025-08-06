@@ -49,6 +49,7 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
     phone: '',
     title: '',
     description: '',
+    industry: '',
     seniorityLevel: '',
     city: '',
     state: '',
@@ -385,6 +386,7 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
             formData={{
               title: formData.title,
               description: formData.description,
+              industry: formData.industry,
               seniorityLevel: formData.seniorityLevel,
               city: formData.city,
               state: formData.state,
@@ -429,6 +431,7 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
               phone: formData.phone,
               title: formData.title,
               description: formData.description,
+              industry: formData.industry,
               seniorityLevel: formData.seniorityLevel,
               city: formData.city,
               state: formData.state,

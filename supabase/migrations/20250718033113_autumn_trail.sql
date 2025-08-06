@@ -33,7 +33,10 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 -- Enable RLS
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
 
--- Create policies
+-- Create policies (drop first if they exist)
+DROP POLICY IF EXISTS "Users can read own profile" ON user_profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON user_profiles;
+
 CREATE POLICY "Users can read own profile"
   ON user_profiles
   FOR SELECT

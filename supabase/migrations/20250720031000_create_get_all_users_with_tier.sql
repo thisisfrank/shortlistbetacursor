@@ -1,5 +1,7 @@
 -- Create or replace a function to get all users with their tier_id
-CREATE OR REPLACE FUNCTION get_all_users()
+-- Drop existing function first to change return type
+DROP FUNCTION IF EXISTS get_all_users();
+CREATE FUNCTION get_all_users()
 RETURNS TABLE (
   id uuid,
   email text,

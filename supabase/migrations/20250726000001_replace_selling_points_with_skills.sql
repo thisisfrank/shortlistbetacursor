@@ -12,8 +12,8 @@
     - Limits to 3 items to match new validation rules
 */
 
--- Add new must_have_skills column
-ALTER TABLE jobs ADD COLUMN must_have_skills text[] DEFAULT '{}';
+-- Add new must_have_skills column (if it doesn't already exist)
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS must_have_skills text[] DEFAULT '{}';
 
 -- Copy existing data from key_selling_points to must_have_skills
 -- Only copy up to 3 items to match new validation rules
@@ -26,5 +26,5 @@ SET must_have_skills = (
 ) 
 WHERE key_selling_points IS NOT NULL AND array_length(key_selling_points, 1) > 0;
 
--- Drop the old key_selling_points column
-ALTER TABLE jobs DROP COLUMN key_selling_points;
+-- Drop the old key_selling_points column (if it exists)
+ALTER TABLE jobs DROP COLUMN IF EXISTS key_selling_points;

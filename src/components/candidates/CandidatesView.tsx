@@ -10,6 +10,61 @@ import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download } from 'lucide-react';
 
+// Helper function to calculate total years of experience
+const calculateYearsOfExperience = (experience?: Array<{ title: string; company: string; duration: string }>): number => {
+  if (!experience || experience.length === 0) return 0;
+  
+  let totalMonths = 0;
+  
+  for (const exp of experience) {
+    const duration = exp.duration?.toLowerCase() || '';
+    
+    // Handle different duration formats
+    if (duration.includes('yr') || duration.includes('year')) {
+      const yearMatch = duration.match(/(\d+)\s*(yr|year)/);
+      if (yearMatch) {
+        totalMonths += parseInt(yearMatch[1]) * 12;
+      }
+    }
+    
+    if (duration.includes('mo') || duration.includes('month')) {
+      const monthMatch = duration.match(/(\d+)\s*(mo|month)/);
+      if (monthMatch) {
+        totalMonths += parseInt(monthMatch[1]);
+      }
+    }
+    
+    // Handle date ranges like "Jan 2020 - Dec 2022"
+    if (duration.includes('-') && !duration.includes('yr') && !duration.includes('mo')) {
+      const dateRangeMatch = duration.match(/(\w{3})\s*(\d{4})\s*-\s*(\w{3})\s*(\d{4})/);
+      if (dateRangeMatch) {
+        const startYear = parseInt(dateRangeMatch[2]);
+        const endYear = parseInt(dateRangeMatch[4]);
+        const months = Math.max(1, (endYear - startYear) * 12);
+        totalMonths += months;
+      }
+    }
+    
+    // Handle single years like "2020 - 2022"
+    if (duration.includes('-')) {
+      const yearRangeMatch = duration.match(/(\d{4})\s*-\s*(\d{4})/);
+      if (yearRangeMatch) {
+        const startYear = parseInt(yearRangeMatch[1]);
+        const endYear = parseInt(yearRangeMatch[2]);
+        const months = Math.max(1, (endYear - startYear) * 12);
+        totalMonths += months;
+      }
+    }
+    
+    // If no specific format matches, assume 1 year minimum per role
+    if (totalMonths === 0 && duration && duration !== 'n/a' && duration !== 'N/A') {
+      totalMonths += 12;
+    }
+  }
+  
+  return Math.round(totalMonths / 12 * 10) / 10; // Round to 1 decimal place
+};
+
 export const CandidatesView: React.FC = () => {
   const { jobs, candidates, getCandidatesByJob, getJobById } = useData();
   const { user, userProfile } = useAuth();
@@ -68,6 +123,24 @@ export const CandidatesView: React.FC = () => {
   
   // Define currentJobCandidates at component level
   const currentJobCandidates = selectedJobId ? getCandidatesByJob(selectedJobId) : [];
+  
+  // Sort candidates by match score (highest first), with unscored candidates at the bottom
+  const sortedCurrentJobCandidates = [...currentJobCandidates].sort((a, b) => {
+    const scoreA = matchScores[a.id]?.score || 0;
+    const scoreB = matchScores[b.id]?.score || 0;
+    
+    // If both have scores, sort by score (highest first)
+    if (scoreA > 0 && scoreB > 0) {
+      return scoreB - scoreA;
+    }
+    
+    // If only one has a score, prioritize the one with score
+    if (scoreA > 0 && scoreB === 0) return -1;
+    if (scoreB > 0 && scoreA === 0) return 1;
+    
+    // If neither has a score, maintain original order
+    return 0;
+  });
   
   // Update ref when state changes
   useEffect(() => {
@@ -203,7 +276,7 @@ export const CandidatesView: React.FC = () => {
   };
 
   const selectAllCandidates = () => {
-    const allCandidateIds = new Set(currentJobCandidates.map(c => c.id));
+    const allCandidateIds = new Set(sortedCurrentJobCandidates.map(c => c.id));
     setSelectedCandidates(allCandidateIds);
   };
 
@@ -226,7 +299,7 @@ export const CandidatesView: React.FC = () => {
 
     try {
       const selectedJob = selectedJobId ? getJobById(selectedJobId) : null;
-      const selectedCandidateData = currentJobCandidates.filter(candidate => 
+      const selectedCandidateData = sortedCurrentJobCandidates.filter(candidate => 
         selectedCandidates.has(candidate.id)
       );
 
@@ -236,6 +309,7 @@ export const CandidatesView: React.FC = () => {
         'LinkedIn URL',
         'Current Role',
         'Location',
+        'Years of Experience',
         'Match Score',
         'AI Summary',
         'Experience',
@@ -246,6 +320,7 @@ export const CandidatesView: React.FC = () => {
 
       const csvRows = selectedCandidateData.map(candidate => {
         const matchScore = matchScores[candidate.id]?.score || 'N/A';
+        const yearsOfExperience = calculateYearsOfExperience(candidate.experience);
         
         // Format experience as text
         const experienceText = candidate.experience && candidate.experience.length > 0
@@ -267,6 +342,7 @@ export const CandidatesView: React.FC = () => {
           `"${candidate.linkedinUrl}"`,
           `"${candidate.headline || 'N/A'}"`,
           `"${candidate.location || 'N/A'}"`,
+          `"${yearsOfExperience} years"`,
           `"${matchScore}${typeof matchScore === 'number' ? '%' : ''}"`,
           `"${(candidate.summary || 'N/A').replace(/"/g, '""')}"`,
           `"${experienceText.replace(/"/g, '""')}"`,
@@ -429,7 +505,7 @@ export const CandidatesView: React.FC = () => {
                 </h3>
                 
                 <div className="space-y-6">
-                  {currentJobCandidates.map(candidate => (
+                  {sortedCurrentJobCandidates.map(candidate => (
                     <Card key={candidate.id} className="hover:shadow-2xl transition-all duration-300 border-l-4 border-l-supernova">
                       <CardContent className="p-8">
                         {/* Main candidate info row - always visible */}
@@ -549,9 +625,9 @@ export const CandidatesView: React.FC = () => {
                                       <p className="text-sm font-jakarta font-semibold text-blue-400 uppercase tracking-wide">AI Summary</p>
                                     </div>
                                     <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20 p-4 rounded-lg">
-                                      <p className="text-white-knight font-jakarta text-sm leading-relaxed">
+                                      <div className="text-white-knight font-jakarta text-sm leading-relaxed whitespace-pre-line">
                                         {candidate.summary}
-                                      </p>
+                                      </div>
                                     </div>
                                   </div>
                                 )}

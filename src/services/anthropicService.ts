@@ -16,8 +16,80 @@ export interface CandidateData {
   about?: string;
 }
 
+// Helper function to calculate total years of experience
+const calculateYearsOfExperience = (experience?: Array<{ title: string; company: string; duration: string }>): number => {
+  if (!experience || experience.length === 0) return 0;
+  
+  let totalMonths = 0;
+  
+  for (const exp of experience) {
+    const duration = exp.duration?.toLowerCase() || '';
+    
+    // Handle different duration formats
+    if (duration.includes('yr') || duration.includes('year')) {
+      const yearMatch = duration.match(/(\d+)\s*(yr|year)/);
+      if (yearMatch) {
+        totalMonths += parseInt(yearMatch[1]) * 12;
+      }
+    }
+    
+    if (duration.includes('mo') || duration.includes('month')) {
+      const monthMatch = duration.match(/(\d+)\s*(mo|month)/);
+      if (monthMatch) {
+        totalMonths += parseInt(monthMatch[1]);
+      }
+    }
+    
+    // Handle date ranges like "Jan 2020 - Dec 2022"
+    if (duration.includes('-') && !duration.includes('yr') && !duration.includes('mo')) {
+      const dateRangeMatch = duration.match(/(\w{3})\s*(\d{4})\s*-\s*(\w{3})\s*(\d{4})/);
+      if (dateRangeMatch) {
+        const startYear = parseInt(dateRangeMatch[2]);
+        const endYear = parseInt(dateRangeMatch[4]);
+        const months = Math.max(1, (endYear - startYear) * 12);
+        totalMonths += months;
+      }
+    }
+    
+    // Handle single years like "2020 - 2022"
+    if (duration.includes('-')) {
+      const yearRangeMatch = duration.match(/(\d{4})\s*-\s*(\d{4})/);
+      if (yearRangeMatch) {
+        const startYear = parseInt(yearRangeMatch[1]);
+        const endYear = parseInt(yearRangeMatch[2]);
+        const months = Math.max(1, (endYear - startYear) * 12);
+        totalMonths += months;
+      }
+    }
+    
+    // If no specific format matches, assume 1 year minimum per role
+    if (totalMonths === 0 && duration && duration !== 'n/a' && duration !== 'N/A') {
+      totalMonths += 12;
+    }
+  }
+  
+  return Math.round(totalMonths / 12 * 10) / 10; // Round to 1 decimal place
+};
+
+// Helper function to extract unique industries/companies
+const extractIndustries = (experience?: Array<{ title: string; company: string; duration: string }>): string[] => {
+  if (!experience || experience.length === 0) return [];
+  
+  const companies = experience
+    .map(exp => exp.company)
+    .filter(company => company && company !== 'N/A' && company.trim() !== '')
+    .map(company => company.trim());
+  
+  // Remove duplicates and return unique companies
+  return [...new Set(companies)];
+};
+
 export const generateCandidateSummary = async (candidateData: CandidateData): Promise<string> => {
   try {
+    // Calculate years of experience and extract industries
+    const yearsOfExperience = calculateYearsOfExperience(candidateData.experience);
+    const industries = extractIndustries(candidateData.experience);
+    
     // Use Supabase Edge Function to call Anthropic API
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     
@@ -34,15 +106,16 @@ export const generateCandidateSummary = async (candidateData: CandidateData): Pr
       },
       body: JSON.stringify({
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 150,
+        max_tokens: 200,
         messages: [
           {
             role: 'user',
-            content: `Based on the following candidate information, write a professional summary in exactly 2 sentences maximum that highlights their key qualifications, experience, and value proposition:
+            content: `Based on the following candidate information, write a professional summary in exactly 2-3 sentences maximum that highlights their key qualifications, experience, and value proposition. IMPORTANT: Include their total years of experience and list their other industries/companies as bullet points.
 
 Name: ${candidateData.firstName} ${candidateData.lastName}
 Current Role: ${candidateData.headline || 'N/A'}
 Location: ${candidateData.location || 'N/A'}
+Total Years of Experience: ${yearsOfExperience} years
 
 Experience:
 ${candidateData.experience && candidateData.experience.length > 0 
@@ -63,7 +136,13 @@ ${candidateData.skills && candidateData.skills.length > 0
 }
 
 About:
-${candidateData.about || 'No about section available'}`
+${candidateData.about || 'No about section available'}
+
+Format your response as follows:
+[2-3 sentence professional summary that mentions their ${yearsOfExperience} years of experience]
+
+Other Industries/Companies:
+${industries.length > 0 ? industries.map(company => `• ${company}`).join('\n') : '• No additional companies listed'}`
           }
         ]
       })
@@ -294,6 +373,8 @@ const generateFallbackMatchScore = (matchData: JobMatchData): { score: number; r
 
 const generateFallbackSummary = (candidateData: CandidateData): string => {
   const { firstName, lastName, headline, location, experience, education, skills } = candidateData;
+  const yearsOfExperience = calculateYearsOfExperience(experience);
+  const industries = extractIndustries(experience);
   
   let summary = `${firstName} ${lastName} is a`;
   
@@ -309,13 +390,18 @@ const generateFallbackSummary = (candidateData: CandidateData): string => {
     summary += ` based in ${location}`;
   }
   
+  // Add years of experience
+  if (yearsOfExperience > 0) {
+    summary += ` with ${yearsOfExperience} years of experience`;
+  }
+  
   // Add experience context
   if (experience && experience.length > 0) {
     const latestRole = experience[0];
-    summary += ` with experience as ${latestRole.title} at ${latestRole.company}`;
+    summary += `, currently working as ${latestRole.title} at ${latestRole.company}`;
     
     if (experience.length > 1) {
-      summary += ` and ${experience.length - 1} other professional role${experience.length > 2 ? 's' : ''}`;
+      summary += ` and having held ${experience.length - 1} other professional role${experience.length > 2 ? 's' : ''}`;
     }
   }
   
@@ -334,8 +420,12 @@ const generateFallbackSummary = (candidateData: CandidateData): string => {
     summary += ` They hold a ${latestEducation.degree} from ${latestEducation.school}.`;
   }
   
-  // Add positive value proposition instead of noting it's fallback
-  summary += ` ${firstName} brings valuable experience and would be a strong addition to the right team.`;
+  // Add industries section
+  if (industries.length > 0) {
+    summary += `\n\nOther Industries/Companies:\n${industries.map(company => `• ${company}`).join('\n')}`;
+  } else {
+    summary += '\n\nOther Industries/Companies:\n• No additional companies listed';
+  }
   
   return summary;
 };

@@ -8,6 +8,7 @@ interface JobDetailsStepProps {
   formData: {
     title: string;
     description: string;
+    industry: string;
     seniorityLevel: string;
     city: string;
     state: string;
@@ -179,8 +180,18 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
         onChange={onChange}
         error={errors.description}
         required
-        placeholder="Enter a detailed job description"
+        placeholder="Enter a detailed job description. The more information you can provide, the better our candidate matching system will be able to return you precise, highly qualified candidates."
         rows={6}
+      />
+      
+      <FormInput
+        label="Industry"
+        name="industry"
+        value={formData.industry}
+        onChange={onChange}
+        error={errors.industry}
+        placeholder="e.g., Technology, Healthcare, Finance, Manufacturing"
+        required={false}
       />
       
       {/* Experience Required */}

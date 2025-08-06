@@ -13,6 +13,7 @@ interface SimpleSummaryStepProps {
     phone: string;
     title: string;
     description: string;
+    industry: string;
     seniorityLevel: string;
     city: string;
     state: string;
@@ -57,33 +58,63 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
   
   return (
     <div className="space-y-8 animate-fadeIn">
-      <h2 className="text-3xl font-anton text-guardian mb-8 uppercase tracking-wide">Review Your Job Request</h2>
-      
-      {/* Top Navigation Buttons */}
-      <div className="flex pt-4 gap-6 mb-8">
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={onBack}
-          className="flex-1"
-          disabled={isSubmitting}
-          size="lg"
-        >
-          EDIT JOB
-        </Button>
+     
+      {/* Candidate Credit System */}
+      <div className="bg-shadowforce border border-guardian/30 p-8 rounded-xl text-center">
+        <div className="flex items-center justify-center mb-6">
+          <Users className="text-supernova mr-3" size={32} />
+          <h3 className="text-2xl font-anton text-white uppercase tracking-wide">How Many Candidate Credits Do You Need for this Job?</h3>
+        </div>
         
-        <Button 
-          type="button"
-          onClick={onSubmit}
-          disabled={exceedsCredits}
-          className="flex-1"
-          isLoading={isSubmitting}
-          size="lg"
-        >
-          {isSubmitting ? 'PROCESSING...' : 
-           exceedsCredits ? 'INSUFFICIENT CREDITS' : 
-           'SUBMIT JOB REQUEST'}
-        </Button>
+        <div className="mb-6">
+          <p className="text-white-knight font-jakarta text-sm mb-4">
+            <strong>How it works:</strong> You can use candidate credits to get a complete profile including their name, 
+            LinkedIn URL, and a comprehensive info card with their experience, education, skills, and AI-generated summary.
+          </p>
+        </div>
+        
+        <div className="mb-6">
+          <div className="relative">
+            <input
+              type="range"
+              name="candidatesRequested"
+              min="1"
+              max={maxCandidates}
+              value={candidatesRequested}
+              onChange={onChange}
+              className="w-full h-2 bg-shadowforce rounded-full appearance-none cursor-pointer 
+                [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 
+                [&::-webkit-slider-thumb]:bg-supernova [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
+                [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:shadow-lg
+                [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-supernova 
+                [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
+              style={{
+                background: `linear-gradient(to right, #FFCF00 0%, #FFCF00 ${(candidatesRequested / maxCandidates) * 100}%, #111111 ${(candidatesRequested / maxCandidates) * 100}%, #111111 100%)`
+              }}
+            />
+            <div className="flex justify-between text-xs text-guardian font-jakarta mt-2">
+              <span>1</span>
+              <span>{Math.floor(maxCandidates / 4)}</span>
+              <span>{Math.floor(maxCandidates / 2)}</span>
+              <span>{Math.floor((maxCandidates * 3) / 4)}</span>
+              <span>{maxCandidates}</span>
+            </div>
+          </div>
+          
+          <div className="text-center mt-4">
+            <span className="text-2xl font-anton text-supernova">{candidatesRequested}</span>
+            <span className="text-guardian font-jakarta ml-2">/ {maxCandidates} credits</span>
+          </div>
+          
+          {exceedsCredits && (
+            <div className="mt-4">
+              <p className="text-red-400 font-jakarta font-semibold">
+                ⚠️ You've requested {candidatesRequested} candidates but only have {maxCandidates} credits available. 
+                Please reduce your request or upgrade to a paid tier for more credits.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
       
       <div className="bg-shadowforce border border-guardian/30 p-8 rounded-xl">
@@ -125,6 +156,13 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
             <p className="text-white-knight font-jakarta leading-relaxed whitespace-pre-line">{formData.description}</p>
           </div>
           
+          {formData.industry && (
+            <div>
+              <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Industry</p>
+              <p className="text-lg text-white-knight font-jakarta font-medium">{formData.industry}</p>
+            </div>
+          )}
+          
           <div className="flex gap-3">
             <Badge>{formData.seniorityLevel}</Badge>
             <Badge>{formData.isRemote ? 'Remote' : `${formData.city}, ${formData.state}`}</Badge>
@@ -151,72 +189,7 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
         </ul>
       </div>
       
-      {/* Candidate Credit System */}
-      <div className="p-8">
-        <div className="flex items-center mb-6">
-          <Users className="text-supernova mr-3" size={32} />
-          <h3 className="text-2xl font-anton text-supernova uppercase tracking-wide">Candidate Credits</h3>
-        </div>
-        
-        <div className="mb-6">
-          <p className="text-white-knight font-jakarta text-sm mb-4">
-            <strong>How it works:</strong> Each candidate credit gives you a complete profile including their name, 
-            LinkedIn URL, and a comprehensive info card with their experience, education, skills, and AI-generated summary.
-          </p>
-        </div>
-        
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <label className="text-lg font-anton text-white-knight uppercase tracking-wide">
-              Number of Candidates Requested
-            </label>
-            <div className="text-right">
-              <span className="text-2xl font-anton text-supernova">{candidatesRequested}</span>
-              <span className="text-guardian font-jakarta ml-2">/ {maxCandidates} credits</span>
-            </div>
-          </div>
-          
-          <div className="relative">
-            <input
-              type="range"
-              name="candidatesRequested"
-              min="1"
-              max={maxCandidates}
-              value={candidatesRequested}
-              onChange={onChange}
-              className="w-full h-2 bg-shadowforce rounded-full appearance-none cursor-pointer 
-                [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 
-                [&::-webkit-slider-thumb]:bg-supernova [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
-                [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:shadow-lg
-                [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-supernova 
-                [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
-              style={{
-                background: `linear-gradient(to right, #FFCF00 0%, #FFCF00 ${(candidatesRequested / maxCandidates) * 100}%, #111111 ${(candidatesRequested / maxCandidates) * 100}%, #111111 100%)`
-              }}
-            />
-            <div className="flex justify-between text-xs text-guardian font-jakarta mt-2">
-              <span>1</span>
-              <span>{Math.floor(maxCandidates / 4)}</span>
-              <span>{Math.floor(maxCandidates / 2)}</span>
-              <span>{Math.floor((maxCandidates * 3) / 4)}</span>
-              <span>{maxCandidates}</span>
-            </div>
-          </div>
-          
-          {exceedsCredits && (
-            <div className="mt-4">
-              <p className="text-red-400 font-jakarta font-semibold">
-                ⚠️ You've requested {candidatesRequested} candidates but only have {maxCandidates} credits available. 
-                Please reduce your request or upgrade to a paid tier for more credits.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-      
-
-      
-              <div className="flex pt-8 gap-6">
+      <div className="flex pt-8 gap-6">
         <Button 
           type="button" 
           variant="outline" 

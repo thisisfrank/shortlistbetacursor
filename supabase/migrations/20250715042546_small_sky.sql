@@ -32,7 +32,7 @@ ALTER TABLE tiers ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read access on tiers"
   ON tiers
   FOR SELECT
-  TO public
+  TO anon, authenticated
   USING (true);
 
 -- Insert the tier definitions

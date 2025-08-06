@@ -6,7 +6,7 @@ DROP POLICY IF EXISTS "Sourcers can update claimed jobs" ON jobs;
 
 -- Create a new policy that allows sourcers to:
 -- 1. Claim unclaimed jobs (change status from Unclaimed to Claimed)
--- 2. Update jobs they have claimed (where sourcer_name matches their user ID)
+-- 2. Update jobs they have claimed (where sourcer_id matches their user ID)
 -- 3. Complete jobs they have claimed
 CREATE POLICY "Sourcers can claim and update their jobs"
   ON jobs
@@ -19,7 +19,7 @@ CREATE POLICY "Sourcers can claim and update their jobs"
     ) AND (
       -- Can claim unclaimed jobs
       status = 'Unclaimed' OR
-      -- Can update jobs they've claimed (sourcer_name should match their user ID as text)
-      sourcer_name = auth.uid()::text
+      -- Can update jobs they've claimed (sourcer_id should match their user ID)
+      sourcer_id = auth.uid()
     )
   ); 

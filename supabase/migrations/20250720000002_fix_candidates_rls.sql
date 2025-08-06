@@ -13,8 +13,9 @@ CREATE POLICY "Users can read candidates for their jobs"
   TO authenticated
   USING (
     job_id IN (
-      SELECT j.id FROM jobs j
-      WHERE j.user_id = auth.uid()
+      SELECT j.id FROM jobs j, clients c
+      WHERE j.client_id = c.id 
+      AND c.user_id = auth.uid()
     )
   );
 

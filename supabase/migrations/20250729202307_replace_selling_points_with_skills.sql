@@ -12,19 +12,28 @@
     - Limits to 3 items to match new validation rules
 */
 
--- Add new must_have_skills column
-ALTER TABLE jobs ADD COLUMN must_have_skills text[] DEFAULT '{}';
+-- Add new must_have_skills column (if it doesn't already exist)
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS must_have_skills text[] DEFAULT '{}';
 
--- Copy existing data from key_selling_points to must_have_skills
+-- Copy existing data from key_selling_points to must_have_skills (if column exists)
 -- Only copy up to 3 items to match new validation rules
-UPDATE jobs 
-SET must_have_skills = (
-  SELECT ARRAY(
-    SELECT unnest(key_selling_points) 
-    LIMIT 3
-  )
-) 
-WHERE key_selling_points IS NOT NULL AND array_length(key_selling_points, 1) > 0;
+-- Check if key_selling_points column exists before trying to copy
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'jobs' AND column_name = 'key_selling_points'
+  ) THEN
+    UPDATE jobs 
+    SET must_have_skills = (
+      SELECT ARRAY(
+        SELECT unnest(key_selling_points) 
+        LIMIT 3
+      )
+    ) 
+    WHERE key_selling_points IS NOT NULL AND array_length(key_selling_points, 1) > 0;
+  END IF;
+END $$;
 
--- Drop the old key_selling_points column
-ALTER TABLE jobs DROP COLUMN key_selling_points;
+-- Drop the old key_selling_points column (if it exists)
+ALTER TABLE jobs DROP COLUMN IF EXISTS key_selling_points;
