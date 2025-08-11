@@ -21,6 +21,7 @@ import { ClientPage } from './pages/ClientPage';
 import { SourcerPage } from './pages/SourcerPage';
 import { CandidatesPage } from './pages/CandidatesPage';
 import { AccountPage } from './pages/AccountPage';
+import { MarketplacePage } from './pages/MarketplacePage';
 
 // Auth Pages
 import { LoginPage } from './components/auth/LoginPage';
@@ -87,6 +88,7 @@ function App() {
                     
                     {/* Account & Settings Routes - All Authenticated Users */}
                     <Route path="/account" element={<ClientRoute><AccountPage /></ClientRoute>} />
+                    <Route path="/marketplace" element={<ClientRoute><MarketplacePage /></ClientRoute>} />
                     
                     {/* Subscription Routes - All Authenticated Users */}
                     <Route path="/subscription" element={
