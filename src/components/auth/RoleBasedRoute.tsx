@@ -87,6 +87,10 @@ export const SourcerOrAdminRoute: React.FC<{ children: React.ReactNode }> = ({ c
   <RoleBasedRoute allowedRoles={['sourcer', 'admin']}>{children}</RoleBasedRoute>
 );
 
+export const AuthenticatedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <RoleBasedRoute allowedRoles={['client', 'sourcer', 'admin']}>{children}</RoleBasedRoute>
+);
+
 // Public route for unauthenticated users
 export const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, userProfile, loading } = useAuth();

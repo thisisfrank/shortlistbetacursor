@@ -103,7 +103,7 @@ export const Header: React.FC = () => {
       const isOnSubscriptionPath = location.pathname.startsWith('/subscription');
       const isOnAuthPath = location.pathname === '/login' || location.pathname === '/signup' || 
                           location.pathname === '/forgot-password' || location.pathname === '/reset-password';
-      const isOnSideNavPath = location.pathname === '/account' || location.pathname === '/marketplace';
+      const isOnSideNavPath = location.pathname === '/account' || location.pathname === '/marketplace' || location.pathname === '/ai-message-generator';
       
       // Only navigate if we're not already on a valid path and not on auth/subscription/sidenav pages
       if (location.pathname !== roleHomePath && !isOnValidPath && !isOnSubscriptionPath && !isOnAuthPath && !isOnSideNavPath) {

@@ -9,7 +9,7 @@ interface MarketplaceItem {
   description: string;
   points: number | 'FREE';
   unlockCondition?: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: any;
   category: 'free' | 'starter' | 'enterprise';
   isLocked: boolean;
 }
@@ -23,7 +23,7 @@ const marketplaceItems: MarketplaceItem[] = [
     unlockCondition: 'Free with first job entry',
     icon: Zap,
     category: 'free',
-    isLocked: true
+    isLocked: false
   },
   {
     id: 'clay-table-emails',
@@ -158,8 +158,13 @@ export const MarketplacePage: React.FC = () => {
   }, {} as Record<string, MarketplaceItem[]>);
 
   const handleUnlock = (item: MarketplaceItem) => {
-    // This will be implemented when the points system is ready
-    console.log('Attempting to unlock:', item.title);
+    // Navigate to AI Message Generator if it's unlocked
+    if (item.id === 'ai-message-generator' && !item.isLocked) {
+      window.location.href = '/ai-message-generator';
+    } else {
+      // This will be implemented when the points system is ready
+      console.log('Attempting to unlock:', item.title);
+    }
   };
 
   return (

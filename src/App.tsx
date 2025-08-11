@@ -11,6 +11,7 @@ import {
   ClientRoute, 
   SourcerRoute, 
   ClientOrAdminRoute,
+  AuthenticatedRoute,
   PublicRoute 
 } from './components/auth/RoleBasedRoute';
 
@@ -22,6 +23,7 @@ import { SourcerPage } from './pages/SourcerPage';
 import { CandidatesPage } from './pages/CandidatesPage';
 import { AccountPage } from './pages/AccountPage';
 import { MarketplacePage } from './pages/MarketplacePage';
+import { AIMessageGeneratorPage } from './pages/AIMessageGeneratorPage';
 
 // Auth Pages
 import { LoginPage } from './components/auth/LoginPage';
@@ -87,8 +89,9 @@ function App() {
                     <Route path="/candidates" element={<ClientRoute><CandidatesPage /></ClientRoute>} />
                     
                     {/* Account & Settings Routes - All Authenticated Users */}
-                    <Route path="/account" element={<ClientRoute><AccountPage /></ClientRoute>} />
-                    <Route path="/marketplace" element={<ClientRoute><MarketplacePage /></ClientRoute>} />
+                    <Route path="/account" element={<AuthenticatedRoute><AccountPage /></AuthenticatedRoute>} />
+                    <Route path="/marketplace" element={<AuthenticatedRoute><MarketplacePage /></AuthenticatedRoute>} />
+                    <Route path="/ai-message-generator" element={<AuthenticatedRoute><AIMessageGeneratorPage /></AuthenticatedRoute>} />
                     
                     {/* Subscription Routes - All Authenticated Users */}
                     <Route path="/subscription" element={
