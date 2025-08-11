@@ -94,7 +94,7 @@ const marketplaceItems: MarketplaceItem[] = [
     id: 'infrastructure-build',
     title: 'Infrastructure Build',
     description: 'Complete recruitment infrastructure setup guide',
-    points: 150,
+    points: 1000,
     icon: Building,
     category: 'starter',
     isLocked: true
@@ -193,8 +193,8 @@ export const MarketplacePage: React.FC = () => {
                 const canAfford = typeof item.points === 'number' ? currentPoints >= item.points : true;
                 
                 return (
-                  <Card key={item.id} className={`p-6 ${getCategoryColor(category)} border-2`}>
-                    <div className="flex items-start gap-4 mb-4">
+                  <Card key={item.id} className={`p-6 ${getCategoryColor(category)} border-2 flex flex-col h-full`}>
+                    <div className="flex items-start gap-4 mb-4 flex-grow">
                       <div className="p-3 bg-shadowforce rounded-lg">
                         <Icon size={24} className="text-supernova" />
                       </div>
@@ -231,30 +231,43 @@ export const MarketplacePage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Action Button */}
-                    <Button
-                      onClick={() => handleUnlock(item)}
-                      disabled={item.isLocked && (typeof item.points === 'number' ? !canAfford : true)}
-                      className={`w-full ${
-                        item.isLocked 
-                          ? (typeof item.points === 'number' && !canAfford)
-                            ? 'bg-guardian/30 text-guardian cursor-not-allowed'
-                            : 'bg-guardian/50 text-white-knight hover:bg-guardian/70'
-                          : 'bg-supernova text-shadowforce hover:bg-supernova/90'
-                      }`}
-                    >
-                      {item.isLocked ? (
-                        <div className="flex items-center gap-2">
-                          <Lock size={16} />
-                          {typeof item.points === 'number' && !canAfford ? 'Insufficient Points' : 'Locked'}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <Download size={16} />
-                          Download
-                        </div>
+                    {/* Action Buttons */}
+                    <div className="space-y-2">
+                      <Button
+                        onClick={() => handleUnlock(item)}
+                        disabled={item.isLocked && (typeof item.points === 'number' ? !canAfford : true)}
+                        className={`w-full text-sm ${
+                          item.isLocked 
+                            ? (typeof item.points === 'number' && !canAfford)
+                              ? 'bg-guardian/30 text-guardian cursor-not-allowed'
+                              : 'bg-guardian/50 text-white-knight hover:bg-guardian/70'
+                            : 'bg-supernova text-shadowforce hover:bg-supernova/90'
+                        }`}
+                      >
+                        {item.isLocked ? (
+                          <div className="flex items-center gap-2">
+                            <Lock size={14} />
+                            <span className="text-sm">
+                              {typeof item.points === 'number' && !canAfford ? 'Insufficient Points' : 'Locked'}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <Download size={14} />
+                            <span className="text-sm">Download</span>
+                          </div>
+                        )}
+                      </Button>
+                      
+                      {item.points !== 'FREE' && (
+                        <Button
+                          onClick={() => console.log('Buy now:', item.title)}
+                          className="w-full bg-supernova text-shadowforce hover:bg-supernova/90 text-sm"
+                        >
+                          Buy Now
+                        </Button>
                       )}
-                    </Button>
+                    </div>
                   </Card>
                 );
               })}
