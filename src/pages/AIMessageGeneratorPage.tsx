@@ -182,13 +182,7 @@ Best regards,
           </div>
 
           {completedJobsWithCandidates.length === 0 ? (
-            <div className="text-center py-12">
-              <Briefcase size={48} className="text-guardian mx-auto mb-4" />
-              <p className="text-guardian">No completed jobs found</p>
-              <p className="text-guardian/60 text-sm mt-2">
-                Complete a job with candidates to start generating messages
-              </p>
-            </div>
+            <div></div>
           ) : (
             <div className="space-y-3">
               {completedJobsWithCandidates.map((job) => (
@@ -342,6 +336,55 @@ Best regards,
                 </Card>
               </div>
             </div>
+        </div>
+      </div>
+
+      {/* Results Section */}
+      <div className="bg-shadowforce-light/30 border-t border-guardian/20 py-16">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white-knight font-jakarta mb-4">
+              Our messaging brings client results like these
+            </h2>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-6 max-w-6xl mx-auto">
+            {[
+              {
+                index: 1,
+                caption: "👉 In just 8 months, Super Recruiter helped Peak Activity make 27 hires - with a 58% candidate submit-to-hire ratio."
+              },
+              {
+                index: 2,
+                caption: "👉 With an average open rate of double industry average, Super Recruiter delivered the critical talent Phalcon USA needed to scale in the fast-moving data center sector."
+              },
+              {
+                index: 3,
+                caption: "👉 Super Recruiter helped Forterra cut their cost per hire by over 70% compared to their previous hiring solutions."
+              },
+              {
+                index: 4,
+                caption: "👉 Over 10 months, Super Recruiter saved Credo more than $300K in forecasted hiring spend while achieving a 62% candidate submit-to-hire ratio."
+              }
+            ].map((item) => (
+              <div key={item.index} className="group">
+                <div className="bg-shadowforce rounded-lg p-4 transition-transform hover:scale-105 h-full flex flex-col">
+                  <div className="mb-4">
+                    <p className="text-white-knight text-sm leading-relaxed">
+                      {item.caption}
+                    </p>
+                  </div>
+                  <div className="flex-1">
+                    <img
+                      src={`/screenshots/instantly results ${item.index}.png`}
+                      alt={`Client result example ${item.index}`}
+                      className="w-full h-full object-cover rounded-lg shadow-lg"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
