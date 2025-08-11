@@ -254,33 +254,18 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
         throw new Error('User not authenticated');
       }
 
-      // Check tier limits before submission
+      // Check candidate credit limits before submission (job limits removed)
       const stats = getUserUsageStats(userProfile as any, jobs, candidates, tiers, creditTransactions);
       const requestedCandidates = parseInt(formData.candidatesRequested) || 1;
       
-      // Check if either limit is reached and block submission
-      const jobLimitReached = stats && stats.jobsRemaining <= 0;
+      // Only check candidate limit, job submissions are now unlimited
       const candidateLimitReached = stats && stats.candidatesRemaining < requestedCandidates;
       
-      if (jobLimitReached || candidateLimitReached) {
-        let title = '';
-        let message = '';
-        
-        if (jobLimitReached && candidateLimitReached) {
-          title = 'Credit Limits Reached';
-          message = `You have reached both your job limit (${stats.jobsLimit}) and don't have enough candidate credits (need ${requestedCandidates}, have ${stats.candidatesRemaining}). Upgrade your plan to continue submitting jobs.`;
-        } else if (jobLimitReached) {
-          title = 'Job Limit Reached';
-          message = `You have reached your monthly limit of ${stats.jobsLimit} job${stats.jobsLimit > 1 ? 's' : ''}. Upgrade your plan to submit more jobs and unlock premium features.`;
-        } else {
-          title = 'Insufficient Candidate Credits';
-          message = `You need ${requestedCandidates} candidate credit${requestedCandidates > 1 ? 's' : ''} but only have ${stats.candidatesRemaining} remaining. Upgrade your plan to get more candidate credits.`;
-        }
-        
+      if (candidateLimitReached) {
         setAlertModal({
           isOpen: true,
-          title,
-          message,
+          title: 'Insufficient Candidate Credits',
+          message: `You need ${requestedCandidates} candidate credit${requestedCandidates > 1 ? 's' : ''} but only have ${stats.candidatesRemaining} remaining. Upgrade your plan to get more candidate credits.`,
           type: 'upgrade',
           actionLabel: 'Upgrade Plan',
           onAction: () => navigate('/subscription')

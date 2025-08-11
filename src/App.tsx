@@ -20,6 +20,7 @@ import { AdminPage } from './pages/AdminPage';
 import { ClientPage } from './pages/ClientPage';
 import { SourcerPage } from './pages/SourcerPage';
 import { CandidatesPage } from './pages/CandidatesPage';
+import { AccountPage } from './pages/AccountPage';
 
 // Auth Pages
 import { LoginPage } from './components/auth/LoginPage';
@@ -83,6 +84,9 @@ function App() {
                     {/* Client Routes */}
                     <Route path="/client" element={<ClientRoute><ClientPage /></ClientRoute>} />
                     <Route path="/candidates" element={<ClientRoute><CandidatesPage /></ClientRoute>} />
+                    
+                    {/* Account & Settings Routes - All Authenticated Users */}
+                    <Route path="/account" element={<ClientRoute><AccountPage /></ClientRoute>} />
                     
                     {/* Subscription Routes - All Authenticated Users */}
                     <Route path="/subscription" element={

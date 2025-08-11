@@ -28,7 +28,7 @@ interface GHLSignupPayload {
     createdAt: Date;
     updatedAt: Date;
     availableCredits: number;
-    jobsRemaining: number;
+
     creditsResetDate: Date | null;
   };
   signupSource?: string;
@@ -64,7 +64,7 @@ class GHLService {
           createdAt: userProfile.createdAt,
           updatedAt: userProfile.updatedAt,
           availableCredits: userProfile.availableCredits || 0,
-          jobsRemaining: userProfile.jobsRemaining || 0,
+
           creditsResetDate: userProfile.creditsResetDate || null,
         },
         signupSource,
@@ -234,7 +234,7 @@ class GHLService {
         role: 'client',
         tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
         availableCredits: 20,
-        jobsRemaining: 1,
+
         creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -251,7 +251,7 @@ class GHLService {
           createdAt: testUserProfile.createdAt,
           updatedAt: testUserProfile.updatedAt,
           availableCredits: testUserProfile.availableCredits || 0,
-          jobsRemaining: testUserProfile.jobsRemaining || 0,
+
           creditsResetDate: testUserProfile.creditsResetDate || null,
         },
         signupSource: 'test_webhook',
@@ -320,7 +320,7 @@ if (typeof window !== 'undefined') {
       role: 'client' as const,
       tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
       availableCredits: 20,
-      jobsRemaining: 1,
+
       creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -359,7 +359,7 @@ if (typeof window !== 'undefined') {
       role: 'client' as const,
       tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
       availableCredits: 20,
-      jobsRemaining: 1,
+
       creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       createdAt: new Date(),
       updatedAt: new Date(),

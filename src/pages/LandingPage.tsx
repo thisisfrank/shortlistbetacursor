@@ -71,15 +71,7 @@ export const LandingPage: React.FC = () => {
                   size="lg"
                   className="glow-supernova text-xl px-12 py-6"
                 >
-                  GET FREE CANDIDATES
-                </Button>
-                <Button 
-                  onClick={() => window.location.href = '/login'}
-                  variant="outline"
-                  size="lg"
-                  className="text-xl px-12 py-6"
-                >
-                  SIGN IN
+                  SIGN UP FOR FREE CANDIDATES
                 </Button>
               </div>
             </div>
@@ -135,7 +127,7 @@ export const LandingPage: React.FC = () => {
             size="lg"
             className="glow-supernova text-xl px-12 py-6"
           >
-            CREATE FREE ACCOUNT
+            SIGN UP FOR FREE CANDIDATES
           </Button>
         </div>
       </div>

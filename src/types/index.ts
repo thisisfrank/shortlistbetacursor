@@ -5,7 +5,6 @@ export interface UserProfile {
   role: 'client' | 'sourcer' | 'admin';
   tierId: string;
   availableCredits?: number;
-  jobsRemaining?: number;
   creditsResetDate?: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -24,7 +23,6 @@ export interface CreditTransaction {
 export interface Tier {
   id: string;
   name: string;
-  monthlyJobAllotment: number;
   monthlyCandidateAllotment: number;
   includesCompanyEmails: boolean;
   createdAt: Date;
@@ -83,8 +81,8 @@ export type FormStep =
 
 export interface UserUsageStats {
   jobsUsed: number;
-  jobsLimit: number;
-  jobsRemaining: number;
+  jobsLimit: number; // Kept for backward compatibility, always 0
+  jobsRemaining: number; // Kept for backward compatibility, always 0
   candidatesUsed: number;
   candidatesLimit: number;
   candidatesRemaining: number;

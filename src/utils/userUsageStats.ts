@@ -11,17 +11,15 @@ export function getUserUsageStats(
 
   // Find the user's tier
   const tier = tiers.find(t => t.id === userProfile.tierId);
-  const jobsLimit = tier?.monthlyJobAllotment ?? 1;
   const candidatesLimit = tier?.monthlyCandidateAllotment ?? 20;
   const tierName = tier?.name ?? 'Free';
 
-  // Jobs submitted by this user (optionally, in the current month)
+  // Jobs submitted by this user (for display purposes only - no limits)
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const jobsUsed = jobs.filter(
     job => job.userId === userProfile.id && job.createdAt >= startOfMonth
   ).length;
-  const jobsRemaining = Math.max(0, jobsLimit - jobsUsed);
 
   // Calculate candidate credits used from credit transactions (in the current month)
   const candidateTransactions = creditTransactions.filter(
@@ -41,8 +39,8 @@ export function getUserUsageStats(
 
   return {
     jobsUsed,
-    jobsLimit,
-    jobsRemaining,
+    jobsLimit: 0, // No longer used - unlimited jobs
+    jobsRemaining: 0, // No longer used - unlimited jobs
     candidatesUsed,
     candidatesLimit,
     candidatesRemaining,

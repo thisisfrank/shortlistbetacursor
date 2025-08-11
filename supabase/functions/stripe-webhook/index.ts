@@ -108,7 +108,7 @@ async function updateUserAllotments(userId: string, tierId: string, isNewSubscri
     // Get tier details
     const { data: tierData, error: tierError } = await supabase
       .from('tiers')
-      .select('monthly_job_allotment, monthly_candidate_allotment')
+      .select('monthly_candidate_allotment')
       .eq('id', tierId)
       .single();
 
@@ -121,16 +121,15 @@ async function updateUserAllotments(userId: string, tierId: string, isNewSubscri
     const resetDate = new Date();
     resetDate.setDate(resetDate.getDate() + 30);
 
-    // Update user allotments
+    // Update user allotments (jobs are now unlimited)
     const { data: updateData, error: updateError } = await supabase
       .from('user_profiles')
       .update({
-        jobs_remaining: tierData.monthly_job_allotment,
         available_credits: tierData.monthly_candidate_allotment,
         credits_reset_date: resetDate.toISOString()
       })
       .eq('id', userId)
-      .select('id, jobs_remaining, available_credits, credits_reset_date');
+      .select('id, available_credits, credits_reset_date');
 
     if (updateError) {
       console.error('❌ Error updating client allotments:', updateError);

@@ -1,12 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { UserMenu } from './UserMenu';
+import { LeftPanel } from './LeftPanel';
+import { Menu } from 'lucide-react';
+import { Button } from '../ui/Button';
 
 export const Header: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { userProfile, loading } = useAuth();
+  const [leftPanelOpen, setLeftPanelOpen] = useState(false);
+  
+  const handleMenuToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setLeftPanelOpen(!leftPanelOpen);
+  };
   
   // Get the role-appropriate home path
   const getRoleHomePath = (role: string): string => {
@@ -94,12 +103,12 @@ export const Header: React.FC = () => {
       const isOnSubscriptionPath = location.pathname.startsWith('/subscription');
       const isOnAuthPath = location.pathname === '/login' || location.pathname === '/signup' || 
                           location.pathname === '/forgot-password' || location.pathname === '/reset-password';
+      const isOnSideNavPath = location.pathname === '/account' || location.pathname === '/marketplace';
       
-      // Only navigate if we're not already on a valid path and not on auth/subscription pages
-      if (location.pathname !== roleHomePath && !isOnValidPath && !isOnSubscriptionPath && !isOnAuthPath) {
+      // Only navigate if we're not already on a valid path and not on auth/subscription/sidenav pages
+      if (location.pathname !== roleHomePath && !isOnValidPath && !isOnSubscriptionPath && !isOnAuthPath && !isOnSideNavPath) {
         // Add a small delay to prevent rapid navigation
         const timeoutId = setTimeout(() => {
-          console.log('🏠 Header: Navigating to role home:', roleHomePath);
           navigate(roleHomePath);
         }, 100);
         
@@ -114,7 +123,6 @@ export const Header: React.FC = () => {
           !location.pathname.startsWith('/forgot-password') &&
           !location.pathname.startsWith('/reset-password')) {
         const timeoutId = setTimeout(() => {
-          console.log('🏠 Header: No user profile after loading complete, navigating to landing page');
           navigate('/');
         }, 200);
         
@@ -124,11 +132,31 @@ export const Header: React.FC = () => {
   }, [userProfile?.role, userProfile, loading, navigate, location.pathname, navItems]);
   
   return (
-    <header className="bg-shadowforce border-b border-guardian/20 shadow-lg">
+    <>
+      {/* Left Panel - only show for client users */}
+      {userProfile?.role === 'client' && (
+        <LeftPanel 
+          isOpen={leftPanelOpen}
+          onClose={() => setLeftPanelOpen(false)}
+        />
+      )}
+      
+      <header className="bg-shadowforce border-b border-guardian/20 shadow-lg">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-center h-20 relative">
-          {/* Logo - positioned absolutely to the left */}
-          <div className="absolute left-0 flex items-center">
+          {/* Menu Toggle and Logo - positioned absolutely to the left */}
+          <div className="absolute left-0 flex items-center gap-4">
+            {/* Menu Toggle Button - Only for Clients */}
+            {userProfile?.role === 'client' && (
+              <button
+                onClick={handleMenuToggle}
+                className="flex items-center justify-center w-8 h-8 bg-shadowforce-light hover:bg-supernova hover:text-shadowforce text-guardian rounded-lg transition-colors"
+                title="Toggle Navigation Menu"
+              >
+                <Menu size={16} />
+              </button>
+            )}
+            
             <Link to="/" className="flex items-center text-supernova hover:text-supernova-light transition-colors">
               <div className="sr-logo">
                 <span className="text-supernova">SUPER</span>
@@ -163,13 +191,31 @@ export const Header: React.FC = () => {
               })}
             </nav>
           )}
-          
-          {/* User Menu - positioned absolutely to the right */}
-          <div className="absolute right-0">
-            <UserMenu />
-          </div>
+
+          {/* Sign up and Sign in buttons - positioned absolutely to the right, only for unauthenticated users on landing page */}
+          {!userProfile && location.pathname === '/' && (
+            <div className="absolute right-0 flex items-center gap-3">
+              <Button
+                onClick={() => navigate('/signup')}
+                size="sm"
+                className="glow-supernova"
+              >
+                SIGN UP
+              </Button>
+              <Button
+                onClick={() => navigate('/login')}
+                variant="ghost"
+                size="sm"
+                className="text-guardian hover:text-supernova"
+              >
+                SIGN IN
+              </Button>
+            </div>
+          )}
+
         </div>
       </div>
     </header>
+    </>
   );
 };

@@ -31,13 +31,13 @@ Deno.serve(async (req) => {
         id,
         email,
         credits_reset_date,
-        jobs_remaining,
+
         available_credits,
         tier_id,
         tiers!inner(
           id,
           name,
-          monthly_job_allotment,
+
           monthly_candidate_allotment
         )
       `)
@@ -66,7 +66,6 @@ Deno.serve(async (req) => {
         const { error: updateError } = await supabase
           .from('user_profiles')
           .update({
-            jobs_remaining: user.tiers.monthly_job_allotment,
             available_credits: user.tiers.monthly_candidate_allotment,
             credits_reset_date: resetDate.toISOString()
           })
@@ -83,7 +82,6 @@ Deno.serve(async (req) => {
         } else {
           console.log(`✅ Renewed allotments for user ${user.id} (${user.email})`);
           console.log(`   Tier: ${user.tiers.name}`);
-          console.log(`   Jobs: ${user.jobs_remaining} → ${user.tiers.monthly_job_allotment}`);
           console.log(`   Credits: ${user.available_credits} → ${user.tiers.monthly_candidate_allotment}`);
           console.log(`   Next reset: ${resetDate.toISOString()}`);
           
@@ -92,8 +90,6 @@ Deno.serve(async (req) => {
             user_id: user.id,
             email: user.email,
             tier: user.tiers.name,
-            old_jobs: user.jobs_remaining,
-            new_jobs: user.tiers.monthly_job_allotment,
             old_credits: user.available_credits,
             new_credits: user.tiers.monthly_candidate_allotment,
             next_reset: resetDate.toISOString()

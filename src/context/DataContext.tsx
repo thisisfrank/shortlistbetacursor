@@ -66,7 +66,6 @@ const createEmptyData = () => {
     {
       id: 'tier-free',
       name: 'Free',
-      monthlyJobAllotment: 1,
       monthlyCandidateAllotment: 20,
       includesCompanyEmails: false,
       createdAt: new Date('2024-01-01')
@@ -74,7 +73,6 @@ const createEmptyData = () => {
     {
       id: 'tier-1',
       name: 'Tier 1',
-      monthlyJobAllotment: 1,
       monthlyCandidateAllotment: 50,
       includesCompanyEmails: true,
       createdAt: new Date('2024-01-01')
@@ -82,7 +80,6 @@ const createEmptyData = () => {
     {
       id: 'tier-2',
       name: 'Tier 2',
-      monthlyJobAllotment: 3,
       monthlyCandidateAllotment: 150,
       includesCompanyEmails: true,
       createdAt: new Date('2024-01-01')
@@ -90,7 +87,6 @@ const createEmptyData = () => {
     {
       id: 'tier-3',
       name: 'Tier 3',
-      monthlyJobAllotment: 10,
       monthlyCandidateAllotment: 400,
       includesCompanyEmails: true,
       createdAt: new Date('2024-01-01')
@@ -294,7 +290,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           tiers: tiers.map((t: any) => ({
             id: t.id || '',
             name: t.name || '',
-            monthlyJobAllotment: t.monthly_job_allotment,
             monthlyCandidateAllotment: t.monthly_candidate_allotment,
             includesCompanyEmails: t.includes_company_emails,
             createdAt: t.created_at ? new Date(t.created_at) : new Date(),

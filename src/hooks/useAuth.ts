@@ -12,7 +12,7 @@ function mapDbProfileToUserProfile(profile: any): UserProfile {
     role: profile.role,
     tierId: profile.tier_id || '5841d1d6-20d7-4360-96f8-0444305fac5b', // Free tier ID from production
     availableCredits: profile.available_credits,
-    jobsRemaining: profile.jobs_remaining,
+
     creditsResetDate: profile.credits_reset_date ? new Date(profile.credits_reset_date) : null,
     createdAt: profile.created_at ? new Date(profile.created_at) : new Date(),
     updatedAt: profile.updated_at ? new Date(profile.updated_at) : new Date(),
@@ -182,7 +182,7 @@ export const useAuth = () => {
                     role: 'client',
                     tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                     available_credits: 20,
-                    jobs_remaining: 1,
+
                     credits_reset_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                   });
                   
@@ -198,7 +198,7 @@ export const useAuth = () => {
                       role: 'client',
                       tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                       availableCredits: 20,
-                      jobsRemaining: 1,
+
                       creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
                       createdAt: new Date(),
                       updatedAt: new Date(),
@@ -276,7 +276,7 @@ export const useAuth = () => {
                 role: 'client',
                 tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                 available_credits: 20,
-                jobs_remaining: 1,
+
                 credits_reset_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
               });
               
@@ -292,7 +292,7 @@ export const useAuth = () => {
                   role: 'client',
                   tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                   availableCredits: 20,
-                  jobsRemaining: 1,
+        
                   creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
                   createdAt: new Date(),
                   updatedAt: new Date(),
@@ -338,7 +338,7 @@ export const useAuth = () => {
           role,
           tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
           available_credits: 20,
-          jobs_remaining: 1,
+
           credits_reset_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         });
         
@@ -353,7 +353,7 @@ export const useAuth = () => {
           role,
           tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
           availableCredits: 20,
-          jobsRemaining: 1,
+
           creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           createdAt: new Date(),
           updatedAt: new Date(),

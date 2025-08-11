@@ -48,7 +48,6 @@ export const useClientData = () => {
       completedJobs: myJobs.filter(job => job.status === 'Completed').length,
       pendingJobs: myJobs.filter(job => job.status !== 'Completed').length,
       availableCredits: userProfile.availableCredits,
-      jobsRemaining: userProfile.jobsRemaining,
       creditsResetDate: userProfile.creditsResetDate,
       tier: dataContext.getTierById(userProfile.tierId),
     };
@@ -56,9 +55,7 @@ export const useClientData = () => {
 
   // Actions
   const submitJob = (jobData: Omit<Job, 'id' | 'status' | 'sourcerId' | 'completionLink' | 'createdAt' | 'updatedAt' | 'userId'>) => {
-    if (!userProfile || userProfile.jobsRemaining <= 0) {
-      throw new Error('No job submissions remaining for this billing period');
-    }
+    // Job submissions are now unlimited - no allotment check needed
     return dataContext.addJob({
       ...jobData,
       userId: user?.id || '',
@@ -67,7 +64,8 @@ export const useClientData = () => {
   };
 
   const canSubmitJob = (): boolean => {
-    return userProfile.jobsRemaining > 0;
+    // Job submissions are now unlimited
+    return true;
   };
 
   const canRequestCandidates = (count: number): boolean => {
@@ -75,7 +73,8 @@ export const useClientData = () => {
   };
 
   const needsUpgrade = (): boolean => {
-    return userProfile.availableCredits <= 0 || userProfile.jobsRemaining <= 0;
+    // Only check candidate credits for upgrade prompts
+    return userProfile.availableCredits <= 0;
   };
 
   return {
