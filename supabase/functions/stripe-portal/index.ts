@@ -57,24 +57,23 @@ Deno.serve(async (req) => {
 
     console.log(`🔍 Creating portal session for user: ${user.id}`);
 
-    // Get customer ID from database
+    // Get customer ID from user profile
     const { data: customer, error: getCustomerError } = await supabase
-      .from('stripe_customers')
-      .select('customer_id')
-      .eq('user_id', user.id)
-      .is('deleted_at', null)
+      .from('user_profiles')
+      .select('stripe_customer_id')
+      .eq('id', user.id)
       .single();
 
-    if (getCustomerError || !customer) {
+    if (getCustomerError || !customer || !customer.stripe_customer_id) {
       console.error('❌ Error finding customer:', getCustomerError);
       return corsResponse({ error: 'No subscription found for this user' }, 404);
     }
 
-    console.log(`✅ Found customer: ${customer.customer_id}`);
+    console.log(`✅ Found customer: ${customer.stripe_customer_id}`);
 
     // Create portal session
     const session = await stripe.billingPortal.sessions.create({
-      customer: customer.customer_id,
+      customer: customer.stripe_customer_id,
       return_url: `${req.headers.get('origin') || 'http://localhost:3000'}/subscription`,
     });
 

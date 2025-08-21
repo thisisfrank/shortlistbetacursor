@@ -333,16 +333,35 @@ const generateFallbackMatchScore = (matchData: JobMatchData): { score: number; r
     }
   }
   
+  // Skill synonyms for better matching
+  const skillSynonyms: Record<string, string[]> = {
+    'react': ['reactjs', 'react.js'],
+    'javascript': ['js', 'node', 'nodejs', 'node.js'],
+    'python': ['py'],
+    'typescript': ['ts'],
+    'css': ['css3', 'styling'],
+    'html': ['html5', 'markup'],
+    'sql': ['mysql', 'postgresql', 'postgres']
+  };
+  
+  const normalizeSkill = (skill: string): string => {
+    const lower = skill.toLowerCase();
+    for (const [main, synonyms] of Object.entries(skillSynonyms)) {
+      if (synonyms.includes(lower) || lower.includes(main)) return main;
+    }
+    return lower;
+  };
+
   // Check skills overlap
   if (candidateData.skills && candidateData.skills.length > 0 && keySkills.length > 0) {
-    const candidateSkillsLower = candidateData.skills.map(s => s.toLowerCase());
-    const jobSkillsLower = keySkills.map(s => s.toLowerCase());
-    const skillMatches = jobSkillsLower.filter(skill => 
-      candidateSkillsLower.some(cs => cs.includes(skill) || skill.includes(cs))
+    const candidateSkillsNormalized = candidateData.skills.map(s => normalizeSkill(s));
+    const jobSkillsNormalized = keySkills.map(s => normalizeSkill(s));
+    const skillMatches = jobSkillsNormalized.filter(skill => 
+      candidateSkillsNormalized.some(cs => cs.includes(skill) || skill.includes(cs))
     );
     
     if (skillMatches.length > 0) {
-      const skillBonus = Math.min(25, (skillMatches.length / jobSkillsLower.length) * 25);
+      const skillBonus = Math.min(25, (skillMatches.length / jobSkillsNormalized.length) * 25);
       score += skillBonus;
       reasons.push(`${skillMatches.length} matching skills`);
     }

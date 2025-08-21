@@ -874,6 +874,24 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         };
       }
       
+      // Helper function to check if candidate works at the hiring company
+      const candidateWorksAtHiringCompany = (candidateData: any, jobCompanyName: string): boolean => {
+        if (!candidateData.experience || !Array.isArray(candidateData.experience)) {
+          return false;
+        }
+        
+        // Check the most recent job (first in experience array) for company match
+        const mostRecentJob = candidateData.experience[0];
+        if (mostRecentJob?.company) {
+          // Simple case-insensitive comparison, trimming whitespace
+          const candidateCompany = mostRecentJob.company.toLowerCase().trim();
+          const hiringCompany = jobCompanyName.toLowerCase().trim();
+          return candidateCompany === hiringCompany;
+        }
+        
+        return false;
+      };
+
       // Step 1 & 2: Bypass AI scoring if flag is set, or fallback to always accept on error
       const acceptedCandidates: Candidate[] = [];
       const rejectedCandidates: any[] = [];
@@ -889,6 +907,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           skills: (profile.skills && profile.skills.length > 0 ? profile.skills : undefined),
           about: profile.summary || ''
         };
+
+        // Check if candidate already works at the hiring company
+        if (candidateWorksAtHiringCompany(candidateData, job.companyName)) {
+          rejectedCandidates.push({
+            name: `${candidateData.firstName} ${candidateData.lastName}`,
+            score: 0,
+            reasoning: `Candidate currently works at ${job.companyName} (hiring company). Cannot submit current employees as candidates.`
+          });
+          continue; // Skip this candidate
+        }
         if (BYPASS_AI_SCORING) {
           // Accept all candidates, skip AI
           const candidate: Candidate = {

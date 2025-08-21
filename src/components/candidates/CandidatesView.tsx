@@ -9,7 +9,7 @@ import { generateJobMatchScore } from '../../services/anthropicService';
 import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List } from 'lucide-react';
+import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List, Edit2, Trash2, Save, X } from 'lucide-react';
 
 // Helper function to calculate total years of experience
 const calculateYearsOfExperience = (experience?: Array<{ title: string; company: string; duration: string }>): number => {
@@ -72,11 +72,12 @@ export const CandidatesView: React.FC = () => {
     candidates, 
     getCandidatesByJob, 
     getJobById, 
-    shortlists, 
     getShortlistsByUser, 
-    getCandidatesByShortlist 
+    getCandidatesByShortlist,
+    updateShortlist,
+    deleteShortlist
   } = useData();
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   
   // Add error boundary
@@ -133,6 +134,10 @@ export const CandidatesView: React.FC = () => {
   const [currentView, setCurrentView] = useState<'all' | 'shortlist'>('all');
   const [selectedShortlistId, setSelectedShortlistId] = useState<string>('');
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [editingShortlistId, setEditingShortlistId] = useState<string | null>(null);
+  const [editShortlistName, setEditShortlistName] = useState('');
+  const [editShortlistDescription, setEditShortlistDescription] = useState('');
+  const [isShortlistLoading, setIsShortlistLoading] = useState(false);
   
   // Define currentJobCandidates at component level with shortlist filtering
   const allJobCandidates = selectedJobId ? getCandidatesByJob(selectedJobId) : [];
@@ -335,8 +340,7 @@ export const CandidatesView: React.FC = () => {
         'AI Summary',
         'Experience',
         'Education',
-        'Skills',
-        'Submitted Date'
+        'Skills'
       ];
 
       const csvRows = selectedCandidateData.map(candidate => {
@@ -368,8 +372,7 @@ export const CandidatesView: React.FC = () => {
           `"${(candidate.summary || 'N/A').replace(/"/g, '""')}"`,
           `"${experienceText.replace(/"/g, '""')}"`,
           `"${educationText.replace(/"/g, '""')}"`,
-          `"${skillsText.replace(/"/g, '""')}"`,
-          `"${formatDate(candidate.submittedAt)}"`
+          `"${skillsText.replace(/"/g, '""')}""`
         ];
       });
 
@@ -405,6 +408,78 @@ export const CandidatesView: React.FC = () => {
       });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  // Shortlist management functions
+  const handleEditShortlist = (shortlist: any) => {
+    setEditingShortlistId(shortlist.id);
+    setEditShortlistName(shortlist.name);
+    setEditShortlistDescription(shortlist.description || '');
+  };
+
+  const handleSaveShortlistEdit = async () => {
+    if (!editingShortlistId || !editShortlistName.trim()) return;
+    
+    setIsShortlistLoading(true);
+    try {
+      await updateShortlist(editingShortlistId, {
+        name: editShortlistName.trim(),
+        description: editShortlistDescription.trim() || undefined
+      });
+      setEditingShortlistId(null);
+      setEditShortlistName('');
+      setEditShortlistDescription('');
+    } catch (error) {
+      console.error('Error updating shortlist:', error);
+      setAlertModal({
+        isOpen: true,
+        title: 'Update Error',
+        message: 'Failed to update shortlist. Please try again.',
+        type: 'error'
+      });
+    } finally {
+      setIsShortlistLoading(false);
+    }
+  };
+
+  const handleCancelShortlistEdit = () => {
+    setEditingShortlistId(null);
+    setEditShortlistName('');
+    setEditShortlistDescription('');
+  };
+
+  const handleDeleteShortlist = async (shortlistId: string, shortlistName: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${shortlistName}"? This action cannot be undone.`)) {
+      return;
+    }
+    
+    setIsShortlistLoading(true);
+    try {
+      await deleteShortlist(shortlistId);
+      
+      // If we're viewing the deleted shortlist, switch back to all candidates
+      if (selectedShortlistId === shortlistId) {
+        setCurrentView('all');
+        setSelectedShortlistId('');
+      }
+      
+      setAlertModal({
+        isOpen: true,
+        title: 'Shortlist Deleted',
+        message: `"${shortlistName}" has been successfully deleted.`,
+        type: 'warning'
+      });
+    } catch (error) {
+      console.error('Error deleting shortlist:', error);
+      setAlertModal({
+        isOpen: true,
+        title: 'Delete Error',
+        message: 'Failed to delete shortlist. Please try again.',
+        type: 'error'
+      });
+    } finally {
+      setIsShortlistLoading(false);
     }
   };
 
@@ -446,7 +521,11 @@ export const CandidatesView: React.FC = () => {
           <div className="mb-8">
             <Button 
               variant="outline" 
-              onClick={() => setSelectedJobId(null)}
+              onClick={() => {
+                setSelectedJobId(null);
+                setIsShortlistModalOpen(false); // Close modal when navigating back
+                setSelectedCandidates(new Set()); // Clear selections when navigating back
+              }}
               className="flex items-center gap-2"
             >
               ← BACK TO JOBS
@@ -462,7 +541,7 @@ export const CandidatesView: React.FC = () => {
                     <div className="flex items-center gap-4">
                       <List className="text-supernova" size={20} />
                       <span className="text-white-knight font-jakarta font-semibold">
-                        View Options:
+                        Views:
                       </span>
                     </div>
                     
@@ -483,11 +562,12 @@ export const CandidatesView: React.FC = () => {
                           .filter(candidate => 
                             allJobCandidates.some(jobCandidate => jobCandidate.id === candidate.id)
                           ).length;
+                        const isActive = currentView === 'shortlist' && selectedShortlistId === shortlist.id;
                         
                         return (
                           <Button
                             key={shortlist.id}
-                            variant={currentView === 'shortlist' && selectedShortlistId === shortlist.id ? 'primary' : 'outline'}
+                            variant={isActive ? 'primary' : 'outline'}
                             size="sm"
                             onClick={() => {
                               setCurrentView('shortlist');
@@ -588,12 +668,86 @@ export const CandidatesView: React.FC = () => {
           ) : (
             <Card>
               <CardContent className="p-8">
-                <h3 className="text-2xl font-anton text-white-knight mb-8 uppercase tracking-wide">
-                  {currentView === 'shortlist' && selectedShortlistId
-                    ? `${currentJobCandidates.length} Candidate${currentJobCandidates.length !== 1 ? 's' : ''} in ${userShortlists.find(sl => sl.id === selectedShortlistId)?.name || 'Shortlist'}`
-                    : `${currentJobCandidates.length} Candidate${currentJobCandidates.length !== 1 ? 's' : ''} Submitted`
-                  }
-                </h3>
+                <div className="flex items-center justify-between mb-8">
+                  <h3 className="text-2xl font-anton text-white-knight uppercase tracking-wide">
+                    {currentView === 'shortlist' && selectedShortlistId
+                      ? userShortlists.find(sl => sl.id === selectedShortlistId)?.name || 'Shortlist'
+                      : 'All Candidates'
+                    }
+                  </h3>
+                  
+                  {/* Edit/Delete buttons for shortlist view */}
+                  {currentView === 'shortlist' && selectedShortlistId && (
+                    <div className="flex items-center gap-3">
+                      {editingShortlistId === selectedShortlistId ? (
+                        <div className="flex items-center gap-2 bg-shadowforce/50 border border-guardian/30 rounded-lg p-2">
+                          <input
+                            type="text"
+                            value={editShortlistName}
+                            onChange={(e) => setEditShortlistName(e.target.value)}
+                            className="px-2 py-1 bg-shadowforce text-white-knight border border-guardian/30 rounded text-sm font-jakarta"
+                            placeholder="Shortlist name"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleSaveShortlistEdit}
+                            disabled={!editShortlistName.trim() || isShortlistLoading}
+                            className="p-1"
+                          >
+                            <Save size={14} />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleCancelShortlistEdit}
+                            className="p-1"
+                          >
+                            <X size={14} />
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="text-guardian font-jakarta text-sm">
+                            {currentJobCandidates.length} candidate{currentJobCandidates.length !== 1 ? 's' : ''}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const shortlist = userShortlists.find(sl => sl.id === selectedShortlistId);
+                              if (shortlist) handleEditShortlist(shortlist);
+                            }}
+                            className="p-2"
+                            title="Edit shortlist"
+                          >
+                            <Edit2 size={16} />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const shortlist = userShortlists.find(sl => sl.id === selectedShortlistId);
+                              if (shortlist) handleDeleteShortlist(shortlist.id, shortlist.name);
+                            }}
+                            className="p-2 text-red-400 hover:text-red-300"
+                            title="Delete shortlist"
+                            disabled={isShortlistLoading}
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Show candidate count for all candidates view */}
+                  {currentView === 'all' && (
+                    <span className="text-guardian font-jakarta text-sm">
+                      {currentJobCandidates.length} candidate{currentJobCandidates.length !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
                 
                 <div className="space-y-6">
                   {sortedCurrentJobCandidates.map(candidate => (
@@ -696,11 +850,11 @@ export const CandidatesView: React.FC = () => {
                               
                               <div>
                                 <div className="flex items-center mb-2">
-                                  <Calendar size={16} className="text-supernova mr-2" />
-                                  <span className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Submitted</span>
+                                  <Briefcase size={16} className="text-supernova mr-2" />
+                                  <span className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Experience</span>
                                 </div>
                                 <p className="text-white-knight font-jakarta font-medium">
-                                  {formatDate(candidate.submittedAt)}
+                                  {calculateYearsOfExperience(candidate.experience)} years
                                 </p>
                               </div>
                             </div>
@@ -878,6 +1032,17 @@ export const CandidatesView: React.FC = () => {
               </CardContent>
             </Card>
           )}
+          
+          {/* ShortlistModal - only show when in candidates view */}
+          <ShortlistModal
+            isOpen={isShortlistModalOpen}
+            onClose={() => setIsShortlistModalOpen(false)}
+            selectedCandidateIds={Array.from(selectedCandidates)}
+            onCandidatesAddedToShortlist={() => {
+              setSelectedCandidates(new Set());
+              setIsShortlistModalOpen(false);
+            }}
+          />
         </div>
       </div>
     );
@@ -893,7 +1058,6 @@ export const CandidatesView: React.FC = () => {
 
   // Ensure we have valid data arrays with fallbacks
   const safeJobs = jobs || [];
-  const safeCandidates = candidates || [];
 
   // Filter jobs to only show those submitted by the current authenticated user
   const userJobs = safeJobs.filter(job => {
@@ -996,7 +1160,6 @@ export const CandidatesView: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 gap-6">
                 {sortedJobs.map(job => {
-                  const jobCandidates = getCandidatesByJob(job.id);
                   const isCompleted = job.status === 'Completed';
                   const clientStatus = isCompleted ? 'COMPLETED' : 'IN PROGRESS';
                   const isExpanded = expandedJobs.has(job.id);
@@ -1299,16 +1462,6 @@ export const CandidatesView: React.FC = () => {
         type={alertModal.type}
         actionLabel={alertModal.actionLabel}
         onAction={alertModal.onAction}
-      />
-
-      <ShortlistModal
-        isOpen={isShortlistModalOpen}
-        onClose={() => setIsShortlistModalOpen(false)}
-        selectedCandidateIds={Array.from(selectedCandidates)}
-        onCandidatesAddedToShortlist={() => {
-          setSelectedCandidates(new Set());
-          setIsShortlistModalOpen(false);
-        }}
       />
 
       {/* Image Zoom Modal */}

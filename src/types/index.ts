@@ -6,6 +6,9 @@ export interface UserProfile {
   tierId: string;
   availableCredits?: number;
   creditsResetDate?: Date | null;
+  stripeCustomerId?: string | null;
+  subscriptionStatus?: string;
+  subscriptionPeriodEnd?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }

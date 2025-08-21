@@ -75,11 +75,10 @@ Deno.serve(async (req) => {
     }
 
     const { data: customer, error: getCustomerError } = await supabase
-      .from('stripe_customers')
-      .select('customer_id')
-      .eq('user_id', user.id)
-      .is('deleted_at', null)
-      .maybeSingle();
+      .from('user_profiles')
+      .select('stripe_customer_id')
+      .eq('id', user.id)
+      .single();
 
     if (getCustomerError) {
       console.error('Failed to fetch customer information from the database', getCustomerError);
@@ -92,7 +91,7 @@ Deno.serve(async (req) => {
     /**
      * In case we don't have a mapping yet, the customer does not exist and we need to create one.
      */
-    if (!customer || !customer.customer_id) {
+    if (!customer || !customer.stripe_customer_id) {
       const newCustomer = await stripe.customers.create({
         email: user.email,
         metadata: {
@@ -102,20 +101,21 @@ Deno.serve(async (req) => {
 
       console.log(`Created new Stripe customer ${newCustomer.id} for user ${user.id}`);
 
-      const { error: createCustomerError } = await supabase.from('stripe_customers').insert({
-        user_id: user.id,
-        customer_id: newCustomer.id,
-      });
+      const { error: createCustomerError } = await supabase
+        .from('user_profiles')
+        .update({
+          stripe_customer_id: newCustomer.id,
+        })
+        .eq('id', user.id);
 
       if (createCustomerError) {
         console.error('Failed to save customer information in the database', createCustomerError);
 
-        // Try to clean up both the Stripe customer and subscription record
+        // Try to clean up Stripe customer on error
         try {
           await stripe.customers.del(newCustomer.id);
-          await supabase.from('stripe_subscriptions').delete().eq('customer_id', newCustomer.id);
         } catch (deleteError) {
-          console.error('Failed to clean up after customer mapping error:', deleteError);
+          console.error('Failed to clean up Stripe customer after database error:', deleteError);
         }
 
         return corsResponse({ error: 'Failed to create customer mapping' }, 500);
@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
 
       console.log(`Successfully set up new customer ${customerId} with subscription record`);
     } else {
-      customerId = customer.customer_id;
+      customerId = customer.stripe_customer_id;
 
       if (mode === 'subscription') {
         // Verify subscription exists for existing customer

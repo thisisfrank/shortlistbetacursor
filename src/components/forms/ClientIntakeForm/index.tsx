@@ -1,448 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent } from '../../ui/Card';
-import { JobTitleStep } from './JobTitleStep';
-import { JobDetailsStep } from './JobDetailsStep';
-import { CompanyInfoStep } from './CompanyInfoStep';
-
-import { SimpleSummaryStep } from './SimpleSummaryStep';
-import { ConfirmationStep } from './ConfirmationStep';
 import { FormStep } from '../../../types';
-import { useData } from '../../../context/DataContext';
-import { useAuth } from '../../../context/AuthContext';
-import { getUserUsageStats } from '../../../utils/userUsageStats';
 import { AlertModal } from '../../ui/AlertModal';
-import { useNavigate } from 'react-router-dom';
-import { ghlService } from '../../../services/ghlService';
+import { ClientIntakeFormProvider, useClientIntakeForm } from './ClientIntakeFormContext';
+import { useFormNavigation } from './useFormNavigation';
+import { useFormSubmission } from './useFormSubmission';
+import { FormStepRenderer } from './FormStepRenderer';
 
 interface ClientIntakeFormProps {
   currentStep: FormStep;
   setCurrentStep: (step: FormStep) => void;
 }
 
-export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({ 
+// Inner component that uses the context
+const ClientIntakeFormContent: React.FC<ClientIntakeFormProps> = ({ 
   currentStep, 
   setCurrentStep 
 }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [alertModal, setAlertModal] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    type?: 'warning' | 'error' | 'upgrade';
-    actionLabel?: string;
-    onAction?: () => void;
-  }>({
-    isOpen: false,
-    title: '',
-    message: ''
-  });
-  
-  const { addJob, jobs, candidates, tiers, creditTransactions } = useData();
-  const { user, userProfile } = useAuth();
-  const navigate = useNavigate();
-  
-  const [formData, setFormData] = useState({
-    companyName: '',
-    contactName: '',
-    email: '',
-    phone: '',
-    title: '',
-    description: '',
-    industry: '',
-    seniorityLevel: '',
-    city: '',
-    state: '',
-    isRemote: false,
-    salaryRangeMin: '',
-    salaryRangeMax: '',
-    mustHaveSkills: [] as string[],
-    candidatesRequested: '1'
-  });
+  const { alertModal, setAlertModal } = useClientIntakeForm();
+  const { goToNextStep, goToPreviousStep } = useFormNavigation({ currentStep, setCurrentStep });
+  const { handleSubmit, handleReset } = useFormSubmission({ setCurrentStep });
 
-  // Debug step changes
-  useEffect(() => {
-    // console.log('🔍 Step changed to:', currentStep);
-    // console.log('🔍 formData.title when step changed:', formData.title);
-  }, [currentStep, formData.title]);
-  
-  // Debug component mounting
-  useEffect(() => {
-    // console.log('🔍 ClientIntakeForm mounted');
-    return () => {
-      // console.log('🔍 ClientIntakeForm unmounted');
-    };
-  }, []);
-  
-  // Wrap setFormData with debugging
-  const setFormDataWithDebug = (newData: any) => {
-    // console.log('🔍 setFormData called with:', newData);
-    // console.log('🔍 Previous title:', formData.title);
-    // console.log('🔍 New title:', newData.title);
-    setFormData(newData);
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type, checked } = e.target as HTMLInputElement;
-    const fieldValue = type === 'checkbox' ? checked : value;
-    
-    // console.log('🔍 Form input change:', { name, value: fieldValue, currentTitle: formData.title });
-    
-    setFormDataWithDebug({ ...formData, [name]: fieldValue });
-    
-    // Clear error for this field if it exists
-    if (errors[name]) {
-      const newErrors = { ...errors };
-      delete newErrors[name];
-      setErrors(newErrors);
-    }
-  };
-
-  const handleSkillsChange = (skills: string[]) => {
-    setFormDataWithDebug({ ...formData, mustHaveSkills: skills });
-    if (errors.mustHaveSkills) {
-      const newErrors = { ...errors };
-      delete newErrors.mustHaveSkills;
-      setErrors(newErrors);
-    }
-  };
-
-  const validateCompanyInfo = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.companyName.trim()) {
-      newErrors.companyName = 'Company name is required';
-    }
-    
-    if (!formData.contactName.trim()) {
-      newErrors.contactName = 'Contact name is required';
-    }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-    
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone is required';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateJobTitle = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.title.trim()) {
-      newErrors.title = 'Job title is required';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const validateJobDetails = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.description.trim()) {
-      newErrors.description = 'Job description is required';
-    }
-    
-    if (!formData.seniorityLevel) {
-      newErrors.seniorityLevel = 'Seniority level is required';
-    }
-    
-    // Only validate city and state if not remote
-    if (!formData.isRemote) {
-      if (!formData.city.trim()) {
-        newErrors.city = 'City is required';
-      }
-      
-      if (!formData.state) {
-        newErrors.state = 'State is required';
-      }
-    }
-    
-    if (!formData.salaryRangeMin) {
-      newErrors.salaryRangeMin = 'Minimum salary is required';
-    }
-    
-    if (!formData.salaryRangeMax) {
-      newErrors.salaryRangeMax = 'Maximum salary is required';
-    } else if (
-      extractNumericValue(formData.salaryRangeMax) <= extractNumericValue(formData.salaryRangeMin)
-    ) {
-      newErrors.salaryRangeMax = 'Maximum salary must be greater than minimum salary';
-    }
-    
-    if (formData.mustHaveSkills.length === 0) {
-      newErrors.mustHaveSkills = 'At least one skill is required';
-    } else if (formData.mustHaveSkills.length > 3) {
-      newErrors.mustHaveSkills = 'No more than 3 skills allowed';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-
-
-  const goToNextStep = () => {
-    // console.log('🔍 Before validation - current title:', formData.title);
-    let isValid = false;
-    
-    switch (currentStep) {
-      case 'job-title':
-        isValid = validateJobTitle();
-        // console.log('🔍 After job-title validation - title:', formData.title);
-        if (isValid) setCurrentStep('job-details');
-        break;
-        
-      case 'job-details':
-        isValid = validateJobDetails();
-        // console.log('🔍 After job-details validation - title:', formData.title);
-        if (isValid) setCurrentStep('company-info');
-        break;
-        
-      case 'company-info':
-        isValid = validateCompanyInfo();
-        // console.log('🔍 After company-info validation - title:', formData.title);
-        if (isValid) setCurrentStep('summary');
-        break;
-        
-      default:
-        break;
-    }
-  };
-
-  const goToPreviousStep = () => {
-    switch (currentStep) {
-      case 'job-details':
-        setCurrentStep('job-title');
-        break;
-        
-      case 'company-info':
-        setCurrentStep('job-details');
-        break;
-        
-      case 'summary':
-        setCurrentStep('company-info');
-        break;
-        
-      default:
-        break;
-    }
-  };
-
-  // Helper function to extract numeric value from formatted currency
-  const extractNumericValue = (formattedValue: string): number => {
-    const numericString = formattedValue.replace(/[$,]/g, '');
-    return parseInt(numericString) || 0;
-  };
-
-  const handleSubmit = async () => {
-    // console.log('🎯 REAL job submission started...');
-    // console.log('🔍 Complete form data at submission:', formData);
-    setIsSubmitting(true);
-    
-    try {
-      if (!user?.id) {
-        throw new Error('User not authenticated');
-      }
-
-      // Check candidate credit limits before submission (job limits removed)
-      const stats = getUserUsageStats(userProfile as any, jobs, candidates, tiers, creditTransactions);
-      const requestedCandidates = parseInt(formData.candidatesRequested) || 1;
-      
-      // Only check candidate limit, job submissions are now unlimited
-      const candidateLimitReached = stats && stats.candidatesRemaining < requestedCandidates;
-      
-      if (candidateLimitReached) {
-        setAlertModal({
-          isOpen: true,
-          title: 'Insufficient Candidate Credits',
-          message: `You need ${requestedCandidates} candidate credit${requestedCandidates > 1 ? 's' : ''} but only have ${stats.candidatesRemaining} remaining. Upgrade your plan to get more candidate credits.`,
-          type: 'upgrade',
-          actionLabel: 'Upgrade Plan',
-          onAction: () => navigate('/subscription')
-        });
-        return;
-      }
-
-      // Combine city and state into location for backend
-      const location = formData.isRemote ? 'Remote' : `${formData.city}, ${formData.state}`;
-
-      // Create the job data to submit
-      const jobData = {
-        userId: user.id,
-        companyName: formData.companyName,
-        title: formData.title,
-        description: formData.description,
-        seniorityLevel: formData.seniorityLevel as 'Junior' | 'Mid' | 'Senior' | 'Executive',
-        location: location,
-        salaryRangeMin: extractNumericValue(formData.salaryRangeMin),
-        salaryRangeMax: extractNumericValue(formData.salaryRangeMax),
-        mustHaveSkills: formData.mustHaveSkills,
-        candidatesRequested: parseInt(formData.candidatesRequested)
-      };
-
-      // console.log('🔍 Form data title before job creation:', formData.title);
-      // console.log('📋 REAL job data to submit:', jobData);
-      
-      // Use the actual DataContext addJob function
-      const newJob = await addJob(jobData);
-      
-      // console.log('✅ REAL job created successfully:', newJob);
-      
-      // Send job submission confirmation to Go High Level webhook
-      if (userProfile && newJob) {
-        try {
-          await ghlService.sendJobSubmissionConfirmation(newJob, userProfile);
-          console.log('✅ Job submission confirmation sent to GHL');
-        } catch (ghlError) {
-          console.warn('⚠️ GHL Job Submission Confirmation webhook failed:', ghlError);
-          // Don't fail the job submission if GHL webhook fails
-        }
-      }
-      
-      // Move to confirmation step
-      setCurrentStep('confirmation');
-    } catch (error) {
-      // console.error('💥 Error submitting REAL job:', error);
-      setAlertModal({
-        isOpen: true,
-        title: 'Submission Failed',
-        message: error instanceof Error ? error.message : 'An unknown error occurred. Please try again.',
-        type: 'error'
-      });
-    } finally {
-      // console.log('🏁 REAL job submission process complete');
-      setIsSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormDataWithDebug({
-      companyName: '',
-      contactName: '',
-      email: '',
-      phone: '',
-      title: '',
-      description: '',
-      seniorityLevel: '',
-      city: '',
-      state: '',
-      isRemote: false,
-      salaryRangeMin: '',
-      salaryRangeMax: '',
-      mustHaveSkills: [],
-      candidatesRequested: '1'
-    });
-    setErrors({});
-    setCurrentStep('job-title');
+  const handleCloseModal = () => {
+    setAlertModal(prev => ({ ...prev, isOpen: false }));
   };
 
   return (
     <>
     <Card className="max-w-4xl mx-auto glow-supernova">
       <CardContent className="py-12">
-        {(() => {
-          // console.log(`🔍 Rendering step: ${currentStep}, formData.title: "${formData.title}"`);
-          return null;
-        })()}
-        
-        {currentStep === 'job-title' && (
-          <JobTitleStep
-            formData={{
-              title: formData.title
-            }}
-            onChange={handleInputChange}
-            onNext={goToNextStep}
-            errors={errors}
-          />
-        )}
-        
-        {currentStep === 'job-details' && (
-          <JobDetailsStep
-            formData={{
-              title: formData.title,
-              description: formData.description,
-              industry: formData.industry,
-              seniorityLevel: formData.seniorityLevel,
-              city: formData.city,
-              state: formData.state,
-              isRemote: formData.isRemote,
-              salaryRangeMin: formData.salaryRangeMin,
-              salaryRangeMax: formData.salaryRangeMax,
-              mustHaveSkills: formData.mustHaveSkills,
-              candidatesRequested: formData.candidatesRequested
-            }}
-            onChange={handleInputChange}
-            onSkillsChange={handleSkillsChange}
+          <FormStepRenderer
+            currentStep={currentStep}
             onNext={goToNextStep}
             onBack={goToPreviousStep}
-            errors={errors}
-          />
-        )}
-        
-        {currentStep === 'company-info' && (
-          <CompanyInfoStep
-            formData={{
-              title: formData.title,
-              companyName: formData.companyName,
-              contactName: formData.contactName,
-              email: formData.email,
-              phone: formData.phone
-            }}
-            onChange={handleInputChange}
-            onNext={goToNextStep}
-            onBack={goToPreviousStep}
-            errors={errors}
-          />
-        )}
-        
-
-        
-        {currentStep === 'summary' && (
-          <SimpleSummaryStep
-            formData={{
-              companyName: formData.companyName,
-              contactName: formData.contactName,
-              email: formData.email,
-              phone: formData.phone,
-              title: formData.title,
-              description: formData.description,
-              industry: formData.industry,
-              seniorityLevel: formData.seniorityLevel,
-              city: formData.city,
-              state: formData.state,
-              isRemote: formData.isRemote,
-              salaryRangeMin: formData.salaryRangeMin,
-              salaryRangeMax: formData.salaryRangeMax,
-              mustHaveSkills: formData.mustHaveSkills,
-              candidatesRequested: formData.candidatesRequested
-            }}
-            onChange={handleInputChange}
             onSubmit={handleSubmit}
-            onBack={goToPreviousStep}
-            isSubmitting={isSubmitting}
+            onReset={handleReset}
           />
-        )}
-        
-        {currentStep === 'confirmation' && (
-          <ConfirmationStep onReset={resetForm} />
-        )}
-        
       </CardContent>
     </Card>
 
     <AlertModal
       isOpen={alertModal.isOpen}
-      onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        onClose={handleCloseModal}
       title={alertModal.title}
       message={alertModal.message}
       type={alertModal.type}
@@ -450,5 +49,14 @@ export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = ({
       onAction={alertModal.onAction}
     />
   </>
+  );
+};
+
+// Main exported component with provider
+export const ClientIntakeForm: React.FC<ClientIntakeFormProps> = (props) => {
+  return (
+    <ClientIntakeFormProvider>
+      <ClientIntakeFormContent {...props} />
+    </ClientIntakeFormProvider>
   );
 };

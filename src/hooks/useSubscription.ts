@@ -1,99 +1,37 @@
-import { useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
 import { getProductByPriceId } from '../stripe-config';
 
+// Simplified subscription interface based on user profile data
 export interface UserSubscription {
-  customer_id: string;
-  subscription_id: string | null;
-  subscription_status: 'not_started' | 'incomplete' | 'incomplete_expired' | 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'paused';
-  price_id: string | null;
-  current_period_start: number | null;
-  current_period_end: number | null;
-  cancel_at_period_end: boolean;
-  payment_method_brand: string | null;
-  payment_method_last4: string | null;
+  subscription_status: string;
+  stripe_customer_id: string | null;
+  subscription_period_end: Date | null;
 }
 
 export const useSubscription = () => {
-  const { user } = useAuth();
-  const [subscription, setSubscription] = useState<UserSubscription | null>(null);
-  const [loading, setLoading] = useState(false); // Start false to prevent flicker
-  const [error, setError] = useState<string | null>(null);
-  const currentFetchRef = useRef<string | null>(null);
+  const { userProfile } = useAuth();
 
-  useEffect(() => {
-    if (!user?.id) {
-      setSubscription(null);
-      setLoading(false);
-      setError(null);
-      currentFetchRef.current = null;
-      return;
-    }
+  // Create a subscription object from user profile data
+  const subscription: UserSubscription | null = userProfile ? {
+    subscription_status: userProfile.subscriptionStatus || 'free',
+    stripe_customer_id: userProfile.stripeCustomerId || null,
+    subscription_period_end: userProfile.subscriptionPeriodEnd || null
+  } : null;
 
-    const fetchSubscription = async () => {
-      const fetchId = user.id + '-' + Date.now();
-      currentFetchRef.current = fetchId;
-      
-      try {
-        setLoading(true);
-        setError(null);
-        
-        console.log('🎫 Fetching subscription for user:', user.id);
-
-        // Add timeout to prevent infinite loading
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Subscription fetch timeout')), 10000);
-        });
-        
-        const fetchPromise = supabase
-          .from('stripe_user_subscriptions')
-          .select('*')
-          .eq('customer_id', user.id)
-          .maybeSingle();
-
-        const { data, error: fetchError } = await Promise.race([fetchPromise, timeoutPromise]) as any;
-
-        // Check if this fetch is still current (not superseded by a newer one)
-        if (currentFetchRef.current !== fetchId) {
-          console.log('🎫 Fetch superseded, ignoring result');
-          return;
-        }
-
-        if (fetchError) {
-          console.error('❌ Error fetching subscription:', fetchError);
-          // Don't set error for missing subscription - user might not have one
-          setSubscription(null);
-        } else {
-          console.log('✅ Subscription fetched:', data ? 'found' : 'none');
-          setSubscription(data);
-        }
-      } catch (err) {
-        // Check if this fetch is still current
-        if (currentFetchRef.current !== fetchId) {
-          console.log('🎫 Fetch superseded during error, ignoring');
-          return;
-        }
-        
-        console.error('💥 Subscription fetch error:', err);
-        setSubscription(null);
-        if (err instanceof Error && err.message.includes('timeout')) {
-          setError('Unable to load subscription status. Please refresh the page.');
-        }
-      } finally {
-        // Only update loading if this is still the current fetch
-        if (currentFetchRef.current === fetchId) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchSubscription();
-  }, [user?.id]); // Use user?.id instead of user to avoid unnecessary re-renders
-
+  // Get subscription plan based on user's tier (simpler approach)
   const getSubscriptionPlan = () => {
-    if (!subscription?.price_id) return null;
-    return getProductByPriceId(subscription.price_id);
+    if (!userProfile?.tierId) return null;
+    
+    // Map tier IDs to subscription plans
+    const tierToPlanMapping: Record<string, string> = {
+      '5841d1d6-20d7-4360-96f8-0444305fac5b': '', // Free tier - no plan
+      '88c433cf-0a8d-44de-82fa-71c7dcbe31ff': 'price_1Rl1MuFPYYAarocke0oZgczA', // Basic
+      'f871eb1b-6756-447d-a1c0-20a373d1d5a2': 'price_1Rl1N5FPYYAarock0dFT7x9Q', // Premium
+      'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd': 'price_1Rl1NJFPYYAarockbgLtNiKk'  // Top Shelf
+    };
+    
+    const priceId = tierToPlanMapping[userProfile.tierId];
+    return priceId ? getProductByPriceId(priceId) : null;
   };
 
   const isActive = () => {
@@ -110,8 +48,8 @@ export const useSubscription = () => {
 
   return {
     subscription,
-    loading,
-    error,
+    loading: false, // No async loading needed - data comes from auth context
+    error: null,    // No separate error state needed
     getSubscriptionPlan,
     isActive,
     isPastDue,

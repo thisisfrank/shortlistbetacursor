@@ -24,25 +24,26 @@ Deno.serve(async (req) => {
 
     console.log('🔄 Starting daily renewal process...');
 
-    // Get all users whose reset date has passed
+    // Get all users whose subscription period has ended (Stripe-synced renewals)
     const { data: expiredUsers, error } = await supabase
       .from('user_profiles')
       .select(`
         id,
         email,
         credits_reset_date,
-
+        subscription_period_end,
+        subscription_status,
         available_credits,
         tier_id,
         tiers!inner(
           id,
           name,
-
           monthly_candidate_allotment
         )
       `)
-      .lt('credits_reset_date', new Date().toISOString())
-      .eq('role', 'client');
+      .lt('subscription_period_end', new Date().toISOString())
+      .eq('role', 'client')
+      .eq('subscription_status', 'active');
 
     if (error) {
       console.error('❌ Error fetching expired clients:', error);
@@ -57,17 +58,20 @@ Deno.serve(async (req) => {
       details: [] as any[]
     };
 
-    // Update allotments for each expired user
+    // Update allotments for each expired user whose subscription period has ended
     for (const user of expiredUsers || []) {
       try {
-        const resetDate = new Date();
-        resetDate.setDate(resetDate.getDate() + 30);
+        // For active subscribers, the next period end should come from Stripe webhooks
+        // For now, set a placeholder that will be updated by the next webhook
+        const nextResetDate = new Date();
+        nextResetDate.setDate(nextResetDate.getDate() + 30); // Fallback period
 
         const { error: updateError } = await supabase
           .from('user_profiles')
           .update({
             available_credits: user.tiers.monthly_candidate_allotment,
-            credits_reset_date: resetDate.toISOString()
+            credits_reset_date: nextResetDate.toISOString(),
+            subscription_period_end: nextResetDate.toISOString() // Will be updated by Stripe webhook
           })
           .eq('id', user.id);
 

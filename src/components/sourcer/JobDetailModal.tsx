@@ -193,7 +193,14 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
       }
       
       // Show a success message and reset form, do not close modal
-      setSuccessMessage(`✅ ${result.acceptedCount} candidate${result.acceptedCount === 1 ? '' : 's'} submitted successfully!`);
+      let message = `✅ ${result.acceptedCount} candidate${result.acceptedCount === 1 ? '' : 's'} submitted successfully!`;
+      
+      // Add rejection information if any candidates were rejected
+      if (result.rejectedCount > 0) {
+        message += ` (${result.rejectedCount} rejected - may include current employees of ${job.companyName})`;
+      }
+      
+      setSuccessMessage(message);
       setError('');
       setLinkedinUrls(['']);
       setCsvFile(null);

@@ -12,8 +12,10 @@ function mapDbProfileToUserProfile(profile: any): UserProfile {
     role: profile.role,
     tierId: profile.tier_id || '5841d1d6-20d7-4360-96f8-0444305fac5b', // Free tier ID from production
     availableCredits: profile.available_credits,
-
     creditsResetDate: profile.credits_reset_date ? new Date(profile.credits_reset_date) : null,
+    stripeCustomerId: profile.stripe_customer_id,
+    subscriptionStatus: profile.subscription_status || 'free',
+    subscriptionPeriodEnd: profile.subscription_period_end ? new Date(profile.subscription_period_end) : null,
     createdAt: profile.created_at ? new Date(profile.created_at) : new Date(),
     updatedAt: profile.updated_at ? new Date(profile.updated_at) : new Date(),
   };

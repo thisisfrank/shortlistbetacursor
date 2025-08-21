@@ -23,7 +23,7 @@ const PRICE_TO_TIER_MAPPING: Record<string, string> = {
 const FREE_TIER_ID = '5841d1d6-20d7-4360-96f8-0444305fac5b';
 
 // Function to update user tier based on subscription
-async function updateUserTier(customerId: string, priceId: string | null, subscriptionStatus: string) {
+async function updateUserTier(customerId: string, priceId: string | null, subscriptionStatus: string, subscription: any = null) {
   try {
     console.log(`🎯 Updating user tier for customer: ${customerId}, price: ${priceId}, status: ${subscriptionStatus}`);
     
@@ -33,11 +33,11 @@ async function updateUserTier(customerId: string, priceId: string | null, subscr
       console.log(`🗺️ Current mapping:`, JSON.stringify(PRICE_TO_TIER_MAPPING, null, 2));
     }
     
-    // Get user ID from stripe_customers table
+    // Get user ID from user_profiles table
     const { data: customerData, error: customerError } = await supabase
-      .from('stripe_customers')
-      .select('user_id')
-      .eq('customer_id', customerId)
+      .from('user_profiles')
+      .select('id')
+      .eq('stripe_customer_id', customerId)
       .single();
 
     if (customerError) {
@@ -50,7 +50,7 @@ async function updateUserTier(customerId: string, priceId: string | null, subscr
       return;
     }
 
-    const userId = customerData.user_id;
+    const userId = customerData.id;
     console.log(`👤 Found user ID: ${userId} for customer: ${customerId}`);
     
     let targetTierId: string;
@@ -90,7 +90,12 @@ async function updateUserTier(customerId: string, priceId: string | null, subscr
       console.log(`✅ Successfully updated user ${userId} to tier ${targetTierId}. Updated data:`, updateData[0]);
       
       // Update allotments for the new tier
-      await updateUserAllotments(userId, targetTierId, subscriptionStatus === 'active');
+      // Use provided subscription data or create a minimal object
+      const subscriptionData = subscription || {
+        status: subscriptionStatus,
+        current_period_end: null // Will use fallback logic
+      };
+      await updateUserAllotments(userId, targetTierId, subscriptionData, customerId);
     } else {
       console.warn(`⚠️ No rows were updated for user ${userId}. User might not be a client or doesn't exist.`);
     }
@@ -100,10 +105,10 @@ async function updateUserTier(customerId: string, priceId: string | null, subscr
   }
 }
 
-// Function to update user allotments based on tier
-async function updateUserAllotments(userId: string, tierId: string, isNewSubscription: boolean = false) {
+// Function to update user allotments based on tier and Stripe subscription
+async function updateUserAllotments(userId: string, tierId: string, subscription: any, customerId: string) {
   try {
-    console.log(`🎯 Updating allotments for user: ${userId}, tier: ${tierId}, new subscription: ${isNewSubscription}`);
+    console.log(`🎯 Updating allotments for user: ${userId}, tier: ${tierId}`);
     
     // Get tier details
     const { data: tierData, error: tierError } = await supabase
@@ -117,29 +122,70 @@ async function updateUserAllotments(userId: string, tierId: string, isNewSubscri
       return;
     }
 
-    // Calculate reset date (30 days from now)
-    const resetDate = new Date();
-    resetDate.setDate(resetDate.getDate() + 30);
+    // Get current user state to handle upgrades/downgrades
+    const { data: currentUser, error: userError } = await supabase
+      .from('user_profiles')
+      .select('tier_id, available_credits, subscription_status')
+      .eq('id', userId)
+      .single();
 
-    // Update user allotments (jobs are now unlimited)
+    if (userError) {
+      console.error('❌ Error getting current user state:', userError);
+      return;
+    }
+
+    let newCredits = tierData.monthly_candidate_allotment;
+    const isUpgrade = currentUser && currentUser.tier_id !== tierId;
+    
+    // Handle mid-cycle upgrades - give additional credits immediately
+    if (isUpgrade && subscription.status === 'active') {
+      console.log(`🔄 Processing tier upgrade for user ${userId}`);
+      
+      // Get previous tier to calculate credit difference
+      const { data: previousTierData } = await supabase
+        .from('tiers')
+        .select('monthly_candidate_allotment')
+        .eq('id', currentUser.tier_id)
+        .single();
+
+      if (previousTierData) {
+        const creditDifference = tierData.monthly_candidate_allotment - previousTierData.monthly_candidate_allotment;
+        if (creditDifference > 0) {
+          // Add the difference to current credits (immediate upgrade benefit)
+          newCredits = currentUser.available_credits + creditDifference;
+          console.log(`✨ Upgrade bonus: ${creditDifference} additional credits added immediately`);
+        }
+      }
+    }
+
+    // Use Stripe's billing period for credit reset date
+    const subscriptionPeriodEnd = subscription.current_period_end 
+      ? new Date(subscription.current_period_end * 1000)
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // Fallback to 30 days
+
+    // Update user profile with Stripe sync
     const { data: updateData, error: updateError } = await supabase
       .from('user_profiles')
       .update({
-        available_credits: tierData.monthly_candidate_allotment,
-        credits_reset_date: resetDate.toISOString()
+        available_credits: newCredits,
+        credits_reset_date: subscriptionPeriodEnd.toISOString(),
+        stripe_customer_id: customerId,
+        subscription_status: subscription.status,
+        subscription_period_end: subscriptionPeriodEnd.toISOString()
       })
       .eq('id', userId)
-      .select('id, available_credits, credits_reset_date');
+      .select('id, available_credits, credits_reset_date, subscription_status');
 
     if (updateError) {
-      console.error('❌ Error updating client allotments:', updateError);
-      throw new Error(`Failed to update allotments: ${updateError.message}`);
+      console.error('❌ Error updating user profile:', updateError);
+      throw new Error(`Failed to update user profile: ${updateError.message}`);
     }
 
     if (updateData && updateData.length > 0) {
-      console.log(`✅ Successfully updated allotments for user ${userId}:`, updateData[0]);
+      console.log(`✅ Successfully updated user ${userId}:`, updateData[0]);
+      console.log(`📅 Credits reset on: ${subscriptionPeriodEnd.toISOString()}`);
     } else {
-      console.warn(`⚠️ No client record found for user ${userId}`);
+      console.warn(`⚠️ No user record found for user ${userId}`);
     }
   } catch (error) {
     console.error(`💥 Error in updateUserAllotments:`, error);
@@ -356,7 +402,7 @@ async function syncCustomerFromStripe(customerId: string) {
 
     // Update user tier based on the subscription
     const priceId = subscription.items.data[0].price.id;
-    await updateUserTier(customerId, priceId, subscription.status);
+    await updateUserTier(customerId, priceId, subscription.status, subscription);
     
     console.info(`Successfully synced subscription for customer: ${customerId}`);
   } catch (error) {
