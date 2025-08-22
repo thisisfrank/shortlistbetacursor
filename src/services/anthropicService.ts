@@ -477,15 +477,16 @@ export const reviewMessageGrammar = async (message: string): Promise<GrammarRevi
         messages: [
           {
             role: 'user',
-            content: `Please review this LinkedIn outreach message for grammar mistakes, inconsistencies, and overall quality. Provide a corrected version if needed and specific suggestions for improvement.
+            content: `Please review this LinkedIn outreach message for grammar mistakes, inconsistencies, and overall quality. Provide a corrected version and specific suggestions for improvement.
 
 MESSAGE TO REVIEW:
 "${message}"
 
-Please respond with a JSON object in this exact format:
+IMPORTANT: Respond with ONLY a valid JSON object in this exact format. Do not add any text before or after the JSON:
+
 {
   "hasIssues": boolean,
-  "correctedMessage": "corrected version if changes needed, otherwise null",
+  "correctedMessage": "corrected version of the message (always provide this, even if just minor improvements)",
   "suggestions": ["list of specific suggestions"],
   "score": number from 1-10 for message quality
 }
@@ -495,7 +496,11 @@ Focus on:
 - Awkward phrasing or unclear sentences
 - Professional tone consistency
 - Flow and readability
-- Personalization effectiveness`
+- Personalization effectiveness
+
+IMPORTANT: Always provide a correctedMessage, even if the original message is already good. Make at least minor improvements for clarity or professionalism.
+
+Remember: Return ONLY the JSON object, no additional text or explanations.`
           }
         ]
       })
@@ -509,10 +514,27 @@ Focus on:
     
     if (data.content && data.content[0] && data.content[0].text) {
       try {
-        const reviewResult = JSON.parse(data.content[0].text);
-        return reviewResult;
+        const aiResponse = data.content[0].text.trim();
+        
+        // Try to extract JSON from the response, handling cases where AI adds extra text
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const reviewResult = JSON.parse(jsonMatch[0]);
+          
+          // Validate the required fields
+          if (typeof reviewResult.hasIssues === 'boolean' && 
+              Array.isArray(reviewResult.suggestions) && 
+              typeof reviewResult.score === 'number') {
+            return reviewResult;
+          } else {
+            throw new Error('Missing required fields in review result');
+          }
+        } else {
+          throw new Error('No JSON found in AI response');
+        }
       } catch (parseError) {
         console.error('Failed to parse grammar review response:', parseError);
+        console.log('Raw AI response:', data.content[0].text);
         throw new Error('Invalid review response format');
       }
     } else {

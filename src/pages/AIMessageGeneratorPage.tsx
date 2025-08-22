@@ -246,10 +246,10 @@ Best regards,
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
-      <div className="flex h-screen">
-        {/* Left Panel - Jobs List */}
-        <div className="w-1/3 bg-shadowforce-light/30 border-r border-guardian/20 p-6 overflow-y-auto">
+         <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
+       <div className="flex min-h-screen">
+         {/* Left Panel - Jobs List */}
+         <div className="w-1/3 bg-shadowforce-light/30 border-r border-guardian/20 p-6 overflow-y-auto">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-white-knight font-jakarta mb-2">
               LinkedIn Message Generator
@@ -329,9 +329,9 @@ Best regards,
           )}
         </div>
 
-        {/* Right Panel - Message Template */}
-        <div className="flex-1 p-6">
-          <div className="max-w-4xl mx-auto">
+                 {/* Right Panel - Message Template */}
+         <div className="flex-1 p-6">
+           <div className="max-w-4xl mx-auto">
 
 
               <div className="space-y-6">
@@ -408,9 +408,9 @@ Best regards,
                   </div>
                 </Card>
 
-                {/* Grammar Review Results */}
-                {showReviewResults && reviewResult && (
-                  <Card className="p-6 border-l-4 border-l-blue-500">
+                                 {/* Grammar Review Results */}
+                 {showReviewResults && reviewResult && (
+                   <Card className="p-6 border-l-4 border-l-supernova mb-8">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         {reviewResult.hasIssues ? (
@@ -425,14 +425,14 @@ Best regards,
                           </p>
                         </div>
                       </div>
-                      <Button
-                        onClick={() => setShowReviewResults(false)}
-                        variant="outline"
-                        size="sm"
-                        className="text-guardian"
-                      >
-                        ×
-                      </Button>
+                                             <Button
+                         onClick={() => setShowReviewResults(false)}
+                         variant="outline"
+                         size="sm"
+                         className="text-guardian"
+                       >
+                         ×
+                       </Button>
                     </div>
 
                     {reviewResult.suggestions.length > 0 && (
