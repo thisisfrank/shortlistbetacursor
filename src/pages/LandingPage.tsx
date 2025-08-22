@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 import BoltIcon from '../assets/v2.png';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Check, Target, MapPin, Briefcase, Zap, GraduationCap } from 'lucide-react';
 import Image3 from '../assets/image (3).png';
 import Image4 from '../assets/image (4).png';
 import Image5 from '../assets/image (5).png';
@@ -44,58 +44,156 @@ export const LandingPage: React.FC = () => {
     <div className="min-h-screen">
       {/* Hero + Choose Role + Testimonial Section (shared gradient) */}
       <div className="bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
-        <div className="relative py-12 px-4 overflow-hidden">
+        <div className="relative py-8 px-4 overflow-hidden">
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-12 items-stretch">
             {/* Left: Hero */}
             <div className="flex-1 flex flex-col justify-center items-start text-left">
-              <div className="mb-8">
+              <div className="mb-6">
                 <img
                   src={BoltIcon}
                   alt="Lightning Bolt"
                   className="animate-pulse"
-                  style={{ width: '180px', height: '74px', filter: 'drop-shadow(0 0 16px #FFD600)', objectFit: 'contain' }}
+                  style={{ width: '150px', height: '62px', filter: 'drop-shadow(0 0 16px #FFD600)', objectFit: 'contain' }}
                 />
               </div>
-              <h1 className="text-5xl md:text-7xl font-anton text-white-knight mb-6 leading-tight">
-                AI-POWERED
-                <span className="block text-supernova">RECRUITMENT</span>
+              <h1 className="text-4xl md:text-6xl font-anton text-white-knight mb-4 leading-tight">
+              GET HIGH-QUALITY
+                <span className="block text-supernova">CANDIDATES, FAST!</span>
               </h1>
-              <p className="text-xl md:text-2xl text-guardian max-w-3xl mb-12 font-jakarta leading-relaxed">
-                Transform your hiring process with cutting-edge AI technology. 
-                Get premium candidates delivered in 
-                <span className="text-supernova font-bold"> 24 hours or less</span>.
+              <p className="text-lg md:text-xl text-guardian max-w-3xl mb-6 font-jakarta leading-relaxed">
+              For people who need to hire 
+                <span className="text-supernova font-bold"> top talent</span>.
               </p>
+              <div className="flex flex-col gap-2 mb-8 max-w-2xl">
+                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Submit job requirements</span></div>
+                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Get detailed candidate profiles </span></div>
+                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Interview candidates not active on job boards</span></div>
+              </div>
               <div className="flex flex-col sm:flex-row gap-6 mb-4">
-                <Button 
-                  onClick={() => window.location.href = '/signup'}
-                  size="lg"
-                  className="glow-supernova text-xl px-12 py-6"
-                >
-                  SIGN UP FOR FREE CANDIDATES
-                </Button>
+                <div className="flex flex-col items-center gap-4">
+                  <Button 
+                    onClick={() => window.location.href = '/signup'}
+                    size="lg"
+                    className="glow-supernova text-xl px-12 py-6"
+                  >
+                    Get My First Candidate List Free
+                  </Button>
+                  
+                  {/* Quality Guarantee Badge */}
+                  <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-supernova/20 to-supernova/10 border border-supernova/30 rounded-full">
+                    <Check className="text-supernova mr-2" size={16} />
+                    <span className="text-supernova font-jakarta font-semibold text-sm uppercase tracking-wide">
+                      100% Quality Guaranteed
+                    </span>
+                  </div>
+                  
+                  <a 
+                    href="/login" 
+                    className="text-supernova hover:text-supernova/80 font-jakarta text-lg transition-colors duration-200"
+                  >
+                    Sign In
+                  </a>
+                </div>
               </div>
             </div>
-            {/* Right: Features */}
-            <div className="flex-1 flex flex-col justify-center max-w-md mx-auto">
-              <Card className="hover:shadow-2xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-br from-supernova/20 to-supernova/10 border-supernova/30">
-                <CardContent className="p-6 md:p-8">
-                  <div className="text-center mb-4">
-                    <div className="flex justify-center mb-6">
-                      <img
-                        src={Illustration18}
-                        alt="AI Recruitment Illustration"
-                        className="max-w-full h-48 object-contain"
-                      />
+            {/* Right: Detailed Candidate Preview */}
+            <div className="flex-1 flex flex-col justify-center max-w-lg mx-auto">
+              <div className="space-y-2">
+                {/* Preview Header */}
+                <div className="text-center mb-2">
+                  <h3 className="text-base font-anton text-supernova mb-1 uppercase tracking-wide">
+                    What You'll Get
+                  </h3>
+                </div>
+                
+                {/* Detailed Candidate Card */}
+                <Card className="transform transition-all duration-1000 hover:scale-105 border-l-4 border-l-supernova bg-gradient-to-r from-shadowforce to-shadowforce-light animate-fade-in-up">
+                  <CardContent className="p-3">
+                    {/* Header with Match Score and Name */}
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center">
+                        <Target className="text-supernova mr-2" size={14} />
+                        <div className="text-lg font-anton text-supernova">94%</div>
+                        <div className="text-xs text-guardian font-jakarta ml-1">MATCH</div>
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-2 mt-4 items-center">
-                      <div className="flex items-center"><ArrowRight className="text-supernova mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Submit job requirements</span></div>
-                      <div className="flex items-center"><ArrowRight className="text-supernova mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Get AI-matched candidates</span></div>
-                      <div className="flex items-center"><ArrowRight className="text-supernova mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">Receive detailed profiles</span></div>
-                      <div className="flex items-center"><ArrowRight className="text-supernova mr-2 flex-shrink-0" size={16} /><span className="text-white-knight font-jakarta">24-hour delivery guarantee</span></div>
+                    
+                    <h4 className="text-lg font-anton text-white-knight mb-2 uppercase tracking-wide">
+                      Sarah Chen
+                    </h4>
+                    
+                    {/* Basic Info Grid */}
+                    <div className="grid grid-cols-2 gap-2 mb-3 p-2 bg-shadowforce rounded-lg">
+                      <div>
+                        <div className="flex items-center mb-1">
+                          <Briefcase size={10} className="text-supernova mr-1" />
+                          <span className="text-xs font-jakarta font-semibold text-supernova uppercase tracking-wide">Role</span>
+                        </div>
+                        <p className="text-white-knight font-jakarta text-xs font-medium">
+                          Sr Engineer at Google
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <div className="flex items-center mb-1">
+                          <MapPin size={10} className="text-supernova mr-1" />
+                          <span className="text-xs font-jakarta font-semibold text-supernova uppercase tracking-wide">Location</span>
+                        </div>
+                        <p className="text-white-knight font-jakarta text-xs font-medium">
+                          San Francisco, CA
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    
+                    {/* AI Summary */}
+                    <div className="mb-3">
+                      <div className="flex items-center mb-1">
+                        <Zap size={10} className="text-blue-400 mr-1 transition-transform duration-300 hover:scale-110" />
+                        <p className="text-xs font-jakarta font-semibold text-blue-400 uppercase tracking-wide">AI Summary</p>
+                      </div>
+                      <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20 p-2 rounded-lg hover:from-blue-500/15 hover:to-blue-500/8 hover:border-blue-500/30 transition-all duration-300 hover:scale-102 cursor-pointer hover:shadow-lg">
+                        <div className="text-white-knight font-jakarta text-xs leading-relaxed">
+                          Full-stack engineer with React/Node.js expertise. Led 3 product launches at Google, scaling to 10M+ users.
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Recent Experience */}
+                    <div className="mb-3">
+                      <div className="flex items-center mb-1">
+                        <Briefcase size={10} className="text-green-400 mr-1 transition-transform duration-300 hover:scale-110" />
+                        <p className="text-xs font-jakarta font-semibold text-green-400 uppercase tracking-wide">Experience</p>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 p-2 rounded-lg hover:from-green-500/15 hover:to-green-500/8 hover:border-green-500/30 transition-all duration-300 hover:scale-102 cursor-pointer hover:shadow-lg">
+                          <p className="font-jakarta font-medium text-white-knight text-xs">Google • 2021 - Present</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 p-2 rounded-lg hover:from-green-500/15 hover:to-green-500/8 hover:border-green-500/30 transition-all duration-300 hover:scale-102 cursor-pointer hover:shadow-lg">
+                          <p className="font-jakarta font-medium text-white-knight text-xs">Facebook • 2019 - 2021</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Education */}
+                    <div>
+                      <div className="flex items-center mb-1">
+                        <GraduationCap size={10} className="text-purple-400 mr-1 transition-transform duration-300 hover:scale-110" />
+                        <p className="text-xs font-jakarta font-semibold text-purple-400 uppercase tracking-wide">Education</p>
+                      </div>
+                      <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 p-2 rounded-lg hover:from-purple-500/15 hover:to-purple-500/8 hover:border-purple-500/30 transition-all duration-300 hover:scale-102 cursor-pointer hover:shadow-lg">
+                        <p className="font-jakarta font-medium text-white-knight text-xs">MS Computer Science, Stanford</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Description below the card */}
+                <div className="text-center mt-3">
+                  <p className="text-guardian font-jakarta text-xs">
+                    Detailed candidate profiles in 24 hours
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -103,13 +201,113 @@ export const LandingPage: React.FC = () => {
         <div className="py-16 px-4">
           <div className="max-w-6xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-anton text-white-knight mb-10 uppercase tracking-wide">
-              Trusted by professionals
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-items-center">
-              <img src={Image3} alt="Testimonial 1" className="max-w-xs object-contain shadow-lg rounded-lg" />
-              <img src={Image4} alt="Testimonial 2" className="max-w-xs object-contain shadow-lg rounded-lg" />
-              <img src={Image5} alt="Testimonial 3" className="max-w-xs object-contain shadow-lg rounded-lg" />
-            </div>
+            TRUSTED BY RECRUITERS, FOUNDERS, AND HIRING MANAGERS            </h2>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-items-center mb-12">
+                <img src={Image3} alt="Testimonial 1" className="max-w-xs object-contain shadow-lg rounded-lg" />
+                <img src={Image4} alt="Testimonial 2" className="max-w-xs object-contain shadow-lg rounded-lg" />
+                <img src={Image5} alt="Testimonial 3" className="max-w-xs object-contain shadow-lg rounded-lg" />
+              </div>
+              
+              {/* Why You'll Love It Section */}
+              <div className="max-w-4xl mx-auto">
+                <h3 className="text-2xl md:text-3xl font-anton text-white-knight mb-8 uppercase tracking-wide">
+                  Why You'll Love It
+                </h3>
+                <div className="space-y-6 text-left">
+                  <div className="flex items-start">
+                    <Check className="text-supernova mr-3 flex-shrink-0 mt-1" size={20} />
+                    <p className="text-lg text-white font-jakarta leading-relaxed">
+                      Get high-quality candidates delivered directly to your inbox for your opening for any opening.
+                    </p>
+                  </div>
+                  <div className="flex items-start">
+                    <Check className="text-supernova mr-3 flex-shrink-0 mt-1" size={20} />
+                    <p className="text-lg text-white font-jakarta leading-relaxed">
+                      Skip hours of candidate research, list building, and LinkedIn doom scrolling.
+                    </p>
+                  </div>
+                  <div className="flex items-start">
+                    <Check className="text-supernova mr-3 flex-shrink-0 mt-1" size={20} />
+                    <p className="text-lg text-white font-jakarta leading-relaxed">
+                      Save thousands of dollars on linkedIn recruiter & job board fees.
+                    </p>
+                  </div>
+                  <div className="flex items-start">
+                    <Check className="text-supernova mr-3 flex-shrink-0 mt-1" size={20} />
+                    <p className="text-lg text-white font-jakarta leading-relaxed">
+                      Focus on choosing the right candidate for your role.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* FAQ Section */}
+              <div className="max-w-4xl mx-auto mt-16">
+                <h3 className="text-2xl md:text-3xl font-anton text-white-knight mb-8 uppercase tracking-wide text-center">
+                  FAQs
+                </h3>
+                <div className="space-y-6">
+                  {/* FAQ Item 1 */}
+                  <div className="border-b border-guardian/20 pb-6">
+                    <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
+                      How does Super Recruiter improve your hiring process?
+                    </h4>
+                    <p className="text-white font-jakarta leading-relaxed">
+                      We use AI to score and prioritize candidates - helping you find talent your job ads will never reach. It also gives you proven email and LinkedIn copy to turn those candidates into interviews.
+                    </p>
+                  </div>
+                  
+                  {/* FAQ Item 2 */}
+                  <div className="border-b border-guardian/20 pb-6">
+                    <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
+                      Can I try it for free?
+                    </h4>
+                    <p className="text-white font-jakarta leading-relaxed">
+                      Yes, your first 20 candidates are on us.
+                    </p>
+                  </div>
+                  
+                  {/* FAQ Item 3 */}
+                  <div className="border-b border-guardian/20 pb-6">
+                    <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
+                      Who is Super Recruiter best for?
+                    </h4>
+                    <p className="text-white font-jakarta leading-relaxed">
+                      Anyone hiring who wants high-quality, sourced candidates daily for their exact opening(s) - without wasting time on job boards or sifting through AI-generated resumes.
+                    </p>
+                  </div>
+                  
+                  {/* FAQ Item 4 */}
+                  <div className="border-b border-guardian/20 pb-6">
+                    <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
+                      How fast can you start?
+                    </h4>
+                    <p className="text-white font-jakarta leading-relaxed">
+                      Today. Get your first 20 FREE candidates now - and start interviewing talent your job postings will never reach.
+                    </p>
+                  </div>
+                  
+                  {/* FAQ Item 5 */}
+                  <div className="border-b border-guardian/20 pb-6">
+                    <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
+                      Can Super Recruiter cut time-to-hire and costs?
+                    </h4>
+                    <p className="text-white font-jakarta leading-relaxed">
+                      Absolutely. We help you identify, engage, and convert the right candidates - without relying on job ads or employee referrals - cutting down your time-to-hire and recruiting spend.
+                    </p>
+                  </div>
+                  
+                  {/* FAQ Item 6 */}
+                  <div className="pb-6">
+                    <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
+                      How do you protect candidate data?
+                    </h4>
+                    <p className="text-white font-jakarta leading-relaxed">
+                      We follow strict security standards. Your data and candidate data is never shared or sold.
+                    </p>
+                  </div>
+                </div>
+              </div>
           </div>
         </div>
       </div>
@@ -127,8 +325,18 @@ export const LandingPage: React.FC = () => {
             size="lg"
             className="glow-supernova text-xl px-12 py-6"
           >
-            SIGN UP FOR FREE CANDIDATES
+            Get My First Candidate List Free
           </Button>
+          
+          {/* Quality Guarantee Badge */}
+          <div className="mt-4">
+            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-supernova/20 to-supernova/10 border border-supernova/30 rounded-full">
+              <Check className="text-supernova mr-2" size={16} />
+              <span className="text-supernova font-jakarta font-semibold text-sm uppercase tracking-wide">
+                100% Quality Guaranteed
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
