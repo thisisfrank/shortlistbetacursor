@@ -9,7 +9,7 @@ import { generateJobMatchScore } from '../../services/anthropicService';
 import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List, Edit2, Trash2, Save, X } from 'lucide-react';
+import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List, Edit2, Trash2, Save, X, MessageSquare } from 'lucide-react';
 
 // Helper function to calculate total years of experience
 const calculateYearsOfExperience = (experience?: Array<{ title: string; company: string; duration: string }>): number => {
@@ -1009,19 +1009,43 @@ export const CandidatesView: React.FC = () => {
                             </div>
                             
                             <div className="mt-6 pt-6 border-t border-guardian/20">
-                              <Button 
-                                variant="primary" 
-                                size="lg" 
-                                fullWidth
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.open(candidate.linkedinUrl, '_blank');
-                                }}
-                                className="flex items-center justify-center gap-2 glow-supernova"
-                              >
-                                <ExternalLink size={16} />
-                                VIEW FULL LINKEDIN PROFILE
-                              </Button>
+                              <div className="flex gap-3">
+                                <Button 
+                                  variant="primary" 
+                                  size="lg" 
+                                  className="flex-1 flex items-center justify-center gap-2 glow-supernova"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.open(candidate.linkedinUrl, '_blank');
+                                  }}
+                                >
+                                  <ExternalLink size={16} />
+                                  VIEW LINKEDIN PROFILE
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="lg" 
+                                  className="flex-1 flex items-center justify-center gap-2"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const candidateData = encodeURIComponent(JSON.stringify({
+                                      id: candidate.id,
+                                      firstName: candidate.firstName,
+                                      lastName: candidate.lastName,
+                                      headline: candidate.headline,
+                                      location: candidate.location,
+                                      skills: candidate.skills,
+                                      experience: candidate.experience,
+                                      linkedinUrl: candidate.linkedinUrl,
+                                      jobId: candidate.jobId
+                                    }));
+                                    navigate(`/ai-message-generator?candidate=${candidateData}`);
+                                  }}
+                                >
+                                  <MessageSquare size={16} />
+                                  GENERATE MESSAGE
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         )}

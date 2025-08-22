@@ -448,3 +448,84 @@ const generateFallbackSummary = (candidateData: CandidateData): string => {
   
   return summary;
 };
+
+export interface GrammarReviewResult {
+  hasIssues: boolean;
+  correctedMessage?: string;
+  suggestions: string[];
+  score: number; // 1-10 score for message quality
+}
+
+export const reviewMessageGrammar = async (message: string): Promise<GrammarReviewResult> => {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  
+  if (!supabaseUrl) {
+    throw new Error('Supabase URL not configured');
+  }
+
+  try {
+    // Call our anthropic-proxy function
+    const response = await fetch(`${supabaseUrl}/functions/v1/anthropic-proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 1000,
+        messages: [
+          {
+            role: 'user',
+            content: `Please review this LinkedIn outreach message for grammar mistakes, inconsistencies, and overall quality. Provide a corrected version if needed and specific suggestions for improvement.
+
+MESSAGE TO REVIEW:
+"${message}"
+
+Please respond with a JSON object in this exact format:
+{
+  "hasIssues": boolean,
+  "correctedMessage": "corrected version if changes needed, otherwise null",
+  "suggestions": ["list of specific suggestions"],
+  "score": number from 1-10 for message quality
+}
+
+Focus on:
+- Grammar and spelling errors
+- Awkward phrasing or unclear sentences
+- Professional tone consistency
+- Flow and readability
+- Personalization effectiveness`
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Grammar review failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.content && data.content[0] && data.content[0].text) {
+      try {
+        const reviewResult = JSON.parse(data.content[0].text);
+        return reviewResult;
+      } catch (parseError) {
+        console.error('Failed to parse grammar review response:', parseError);
+        throw new Error('Invalid review response format');
+      }
+    } else {
+      throw new Error('Invalid response format from grammar review');
+    }
+  } catch (error) {
+    console.warn('Grammar review failed:', error);
+    
+    // Return a fallback response
+    return {
+      hasIssues: false,
+      suggestions: ['Grammar review service temporarily unavailable'],
+      score: 8
+    };
+  }
+};

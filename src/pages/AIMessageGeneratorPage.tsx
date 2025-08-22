@@ -1,16 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { ChevronDown, ChevronRight, Copy, Edit, Check, User, Briefcase } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { ChevronDown, ChevronRight, Copy, Edit, Check, User, Briefcase, FileCheck, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { reviewMessageGrammar, GrammarReviewResult } from '../services/anthropicService';
 
 interface Candidate {
   id: string;
-  name: string;
-  title?: string;
-  company?: string;
+  firstName: string;
+  lastName: string;
+  headline?: string;
+  location?: string;
   skills?: string[];
+  experience?: Array<{
+    title: string;
+    company: string;
+    duration: string;
+  }>;
+  linkedinUrl: string;
+  jobId: string;
 }
 
 interface Job {
@@ -24,45 +34,53 @@ interface Job {
 export const AIMessageGeneratorPage: React.FC = () => {
   const { user, userProfile } = useAuth();
   const dataContext = useData();
+  const [searchParams] = useSearchParams();
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [copiedSubject, setCopiedSubject] = useState(false);
   const [copiedBody, setCopiedBody] = useState(false);
-  const [editingSubject, setEditingSubject] = useState(false);
   const [editingBody, setEditingBody] = useState(false);
-  const [subjectLine, setSubjectLine] = useState('');
   const [bodyText, setBodyText] = useState('');
+  const [prefilledCandidate, setPrefilledCandidate] = useState<Candidate | null>(null);
+  const [prefilledJob, setPrefilledJob] = useState<Job | null>(null);
+  const [isReviewing, setIsReviewing] = useState(false);
+  const [reviewResult, setReviewResult] = useState<GrammarReviewResult | null>(null);
+  const [showReviewResults, setShowReviewResults] = useState(false);
 
-  // Sample template - will be replaced with your templates
+  // Enhanced template using detailed candidate information
   const getMessageTemplate = (candidate?: Candidate, job?: Job) => {
-    const subject = candidate && job 
-      ? `Exciting ${job.title} opportunity at ${job.company_name}`
-      : `Exciting {job_title} opportunity at {company_name}`;
+    const candidateFirstName = candidate ? candidate.firstName : '{first_name}';
+    const currentRole = candidate?.headline || candidate?.experience?.[0]?.title || '{current_role}';
+    const topSkills = candidate?.skills?.slice(0, 3).join(', ') || '{candidate_skills}';
+    const recentCompany = candidate?.experience?.[0]?.company || '{recent_company}';
       
     const body = candidate && job
-      ? `Hi ${candidate.name},
+      ? `Hi ${candidateFirstName},
 
-I hope this message finds you well! I came across your profile and was impressed by your background in ${candidate.skills?.[0] || 'your field'}.
+I hope this message finds you well! I came across your LinkedIn profile and was impressed by your background as ${currentRole}${recentCompany !== '{recent_company}' ? ` at ${recentCompany}` : ''}.
 
-We have an exciting ${job.title} position at ${job.company_name} that I think would be a perfect fit for your expertise. ${job.location ? `The role is based in ${job.location}.` : ''}
+Your experience with ${topSkills} caught my attention, and I believe you'd be an excellent fit for an exciting ${job.title} position we have at ${job.company_name}. ${job.location ? `The role is based in ${job.location}.` : ''}
 
-Would you be open to a brief conversation about this opportunity? I'd love to share more details about the role and learn about your career goals.
+${candidate.experience && candidate.experience.length > 0 ? `Given your ${candidate.experience.length}+ years of experience in the industry, ` : ''}I think this opportunity would be a great next step in your career.
+
+Would you be open to a brief conversation about this role? I'd love to share more details and learn about your career goals.
 
 Best regards,
 ${userProfile?.name || 'Your Name'}`
-      : `Hi {candidate_name},
+      : `Hi {first_name},
 
-I hope this message finds you well! I came across your profile and was impressed by your background in {candidate_skills}.
+I hope this message finds you well! I came across your LinkedIn profile and was impressed by your background as {current_role} at {recent_company}.
 
-We have an exciting {job_title} position at {company_name} that I think would be a perfect fit for your expertise. The role is based in {job_location}.
+Your experience with {candidate_skills} caught my attention, and I believe you'd be an excellent fit for an exciting {job_title} position we have at {company_name}. The role is based in {job_location}.
 
-Would you be open to a brief conversation about this opportunity? I'd love to share more details about the role and learn about your career goals.
+Given your experience in the industry, I think this opportunity would be a great next step in your career.
+
+Would you be open to a brief conversation about this role? I'd love to share more details and learn about your career goals.
 
 Best regards,
 {your_name}`;
 
-    return { subject, body };
+    return body;
   };
 
   // Get user's jobs based on role
@@ -102,6 +120,10 @@ Best regards,
       setSelectedCandidate(null);
       setSelectedJob(null);
     } else {
+      // Clear prefilled data when manually selecting a job
+      setPrefilledCandidate(null);
+      setPrefilledJob(null);
+      
       setExpandedJobId(job.id);
       setSelectedJob(job);
       setSelectedCandidate(null);
@@ -109,50 +131,105 @@ Best regards,
   };
 
   const handleCandidateClick = (candidate: Candidate) => {
-    if (selectedJob) {
+    // Find the job this candidate belongs to
+    const job = completedJobsWithCandidates.find(j => j.candidates?.some(c => c.id === candidate.id));
+    if (job) {
+      // Clear prefilled data when manually selecting a candidate
+      setPrefilledCandidate(null);
+      setPrefilledJob(null);
+      
       setSelectedCandidate(candidate);
-      const message = getMessageTemplate(candidate, selectedJob);
-      setSubjectLine(message.subject);
-      setBodyText(message.body);
-      setEditingSubject(false);
+      setSelectedJob(job);
+      const message = getMessageTemplate(candidate, job);
+      setBodyText(message);
       setEditingBody(false);
     }
   };
 
+  // Handle URL parameters for pre-filled candidate data
+  React.useEffect(() => {
+    const candidateParam = searchParams.get('candidate');
+    if (candidateParam) {
+      try {
+        const candidateData = JSON.parse(decodeURIComponent(candidateParam));
+        setPrefilledCandidate(candidateData);
+        
+        // Find the associated job
+        const job = dataContext.jobs.find(j => j.id === candidateData.jobId);
+        if (job) {
+          setPrefilledJob(job);
+          // Expand the job in the left panel and set selections
+          setExpandedJobId(job.id);
+          setSelectedJob(job);
+          setSelectedCandidate(candidateData);
+        }
+      } catch (error) {
+        console.error('Error parsing candidate data from URL:', error);
+      }
+    }
+  }, [searchParams, dataContext.jobs]);
+
   // Initialize template - always show template
   React.useEffect(() => {
-    if (selectedJob && selectedCandidate) {
+    // Prioritize prefilled data from URL params
+    const candidate = prefilledCandidate || selectedCandidate;
+    const job = prefilledJob || selectedJob;
+    
+    if (candidate && job) {
       // Job + candidate selected: filled template
-      const message = getMessageTemplate(selectedCandidate, selectedJob);
-      setSubjectLine(message.subject);
-      setBodyText(message.body);
+      const message = getMessageTemplate(candidate, job);
+      setBodyText(message);
     } else {
       // No job or no candidate: show unfilled template
       const message = getMessageTemplate();
-      setSubjectLine(message.subject);
-      setBodyText(message.body);
+      setBodyText(message);
     }
-  }, [selectedJob, selectedCandidate]);
+  }, [selectedJob, selectedCandidate, prefilledCandidate, prefilledJob]);
 
   // Initialize template on page load
   React.useEffect(() => {
     const message = getMessageTemplate();
-    setSubjectLine(message.subject);
-    setBodyText(message.body);
+    setBodyText(message);
   }, []);
 
-  const copyToClipboard = async (text: string, type: 'subject' | 'body') => {
+  const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      if (type === 'subject') {
-        setCopiedSubject(true);
-        setTimeout(() => setCopiedSubject(false), 2000);
-      } else {
-        setCopiedBody(true);
-        setTimeout(() => setCopiedBody(false), 2000);
-      }
+      setCopiedBody(true);
+      setTimeout(() => setCopiedBody(false), 2000);
     } catch (err) {
       console.error('Failed to copy text: ', err);
+    }
+  };
+
+  const handleReviewMessage = async () => {
+    if (!bodyText.trim()) return;
+    
+    setIsReviewing(true);
+    setShowReviewResults(false);
+    
+    try {
+      const result = await reviewMessageGrammar(bodyText);
+      setReviewResult(result);
+      setShowReviewResults(true);
+    } catch (error) {
+      console.error('Review failed:', error);
+      setReviewResult({
+        hasIssues: false,
+        suggestions: ['Review service temporarily unavailable. Please check your message manually.'],
+        score: 8
+      });
+      setShowReviewResults(true);
+    } finally {
+      setIsReviewing(false);
+    }
+  };
+
+  const applyCorrectedMessage = () => {
+    if (reviewResult?.correctedMessage) {
+      setBodyText(reviewResult.correctedMessage);
+      setShowReviewResults(false);
+      setReviewResult(null);
     }
   };
 
@@ -219,21 +296,24 @@ Best regards,
                         <Card
                           key={candidate.id}
                           className={`p-3 cursor-pointer transition-all hover:bg-supernova/10 ${
-                            selectedCandidate?.id === candidate.id 
+                            selectedCandidate?.id === candidate.id
                               ? 'bg-supernova/20 border-supernova/50' 
                               : 'bg-shadowforce/10'
                           }`}
-                          onClick={() => handleCandidateClick(candidate)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCandidateClick(candidate);
+                          }}
                         >
                           <div className="flex items-center gap-3">
                             <User size={16} className="text-supernova" />
                             <div>
                               <p className="text-white-knight text-sm font-medium">
-                                {candidate.name}
+                                {`${candidate.firstName} ${candidate.lastName}`}
                               </p>
-                              {candidate.title && (
+                              {candidate.headline && (
                                 <p className="text-guardian text-xs">
-                                  {candidate.title}
+                                  {candidate.headline}
                                 </p>
                               )}
                             </div>
@@ -251,142 +331,149 @@ Best regards,
         {/* Right Panel - Message Template */}
         <div className="flex-1 p-6">
           <div className="max-w-4xl mx-auto">
-            {selectedCandidate && selectedJob && (
-              <div className="mb-6">
-                <h2 className="text-xl font-bold text-white-knight font-jakarta mb-2">
-                  LinkedIn Message for {selectedCandidate.name}
-                </h2>
-                <p className="text-guardian text-sm">
-                  {selectedJob.title} at {selectedJob.company_name}
-                </p>
-              </div>
-            )}
+
 
               <div className="space-y-6">
-                {/* Subject Line */}
+                {/* Message Body */}
                 <Card className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white-knight">Subject Line</h3>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => setEditingSubject(!editingSubject)}
-                        className="bg-guardian/30 hover:bg-guardian/50 text-white-knight"
-                        size="sm"
-                      >
-                        <Edit size={14} />
-                      </Button>
-                      <Button
-                        onClick={() => copyToClipboard(subjectLine, 'subject')}
-                        className="bg-supernova hover:bg-supernova/90 text-shadowforce"
-                        size="sm"
-                      >
-                        {copiedSubject ? <Check size={14} /> : <Copy size={14} />}
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {editingSubject ? (
-                    <textarea
-                      value={subjectLine}
-                      onChange={(e) => setSubjectLine(e.target.value)}
-                      className="w-full p-3 bg-shadowforce border border-guardian/30 rounded-lg text-white-knight resize-none"
-                      rows={2}
-                    />
-                  ) : (
-                    <div className="p-3 bg-shadowforce/50 rounded-lg text-white-knight">
-                      {subjectLine}
-                    </div>
-                  )}
-                </Card>
-
-                {/* Body Copy */}
-                <Card className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white-knight">Message Body</h3>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => setEditingBody(!editingBody)}
-                        className="bg-guardian/30 hover:bg-guardian/50 text-white-knight"
-                        size="sm"
-                      >
-                        <Edit size={14} />
-                      </Button>
-                      <Button
-                        onClick={() => copyToClipboard(bodyText, 'body')}
-                        className="bg-supernova hover:bg-supernova/90 text-shadowforce"
-                        size="sm"
-                      >
-                        {copiedBody ? <Check size={14} /> : <Copy size={14} />}
-                      </Button>
-                    </div>
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-white-knight mb-2">Message Body</h3>
+                    <p className="text-guardian text-sm">
+                      Review and customize your personalized LinkedIn message below. You can edit the content, check for grammar issues, or copy the final message.
+                    </p>
                   </div>
                   
                   {editingBody ? (
                     <textarea
                       value={bodyText}
                       onChange={(e) => setBodyText(e.target.value)}
-                      className="w-full p-3 bg-shadowforce border border-guardian/30 rounded-lg text-white-knight resize-none"
+                      className="w-full p-3 bg-shadowforce border border-guardian/30 rounded-lg text-white-knight resize-none mb-4"
                       rows={12}
+                      placeholder="Your personalized message will appear here..."
                     />
                   ) : (
-                    <div className="p-3 bg-shadowforce/50 rounded-lg text-white-knight whitespace-pre-wrap">
+                    <div className="p-3 bg-shadowforce/50 rounded-lg text-white-knight whitespace-pre-wrap mb-4">
                       {bodyText}
                     </div>
                   )}
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap gap-3 pt-4 border-t border-guardian/20">
+                    <Button
+                      onClick={() => setEditingBody(!editingBody)}
+                      className="bg-guardian/30 hover:bg-guardian/50 text-black flex items-center gap-2"
+                      size="sm"
+                    >
+                      <Edit size={16} />
+                      {editingBody ? 'Preview' : 'Edit Manually'}
+                    </Button>
+                    
+                    <Button
+                      onClick={handleReviewMessage}
+                      disabled={isReviewing || !bodyText.trim()}
+                      className="bg-guardian-600 hover:bg-blue-700 text-black disabled:opacity-50 flex items-center gap-2"
+                      size="sm"
+                    >
+                      {isReviewing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Reviewing...
+                        </>
+                      ) : (
+                        <>
+                          <FileCheck size={16} />
+                          Edit with AI
+                        </>
+                      )}
+                    </Button>
+                    
+                    <Button
+                      onClick={() => copyToClipboard(bodyText)}
+                      className="bg-supernova hover:bg-supernova/90 text-shadowforce flex items-center gap-2"
+                      size="sm"
+                    >
+                      {copiedBody ? (
+                        <>
+                          <Check size={16} />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={16} />
+                          Copy Message
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </Card>
+
+                {/* Grammar Review Results */}
+                {showReviewResults && reviewResult && (
+                  <Card className="p-6 border-l-4 border-l-blue-500">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        {reviewResult.hasIssues ? (
+                          <AlertCircle size={20} className="text-yellow-500" />
+                        ) : (
+                          <CheckCircle size={20} className="text-green-500" />
+                        )}
+                        <div>
+                          <h3 className="text-lg font-semibold text-white-knight">Grammar Review</h3>
+                          <p className="text-guardian text-sm">
+                            Quality Score: {reviewResult.score}/10
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => setShowReviewResults(false)}
+                        variant="outline"
+                        size="sm"
+                        className="text-guardian"
+                      >
+                        ×
+                      </Button>
+                    </div>
+
+                    {reviewResult.suggestions.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="text-white-knight font-medium mb-2">Suggestions:</h4>
+                        <ul className="space-y-1">
+                          {reviewResult.suggestions.map((suggestion, index) => (
+                            <li key={index} className="text-guardian text-sm flex items-start gap-2">
+                              <span className="text-supernova">•</span>
+                              {suggestion}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {reviewResult.correctedMessage && (
+                      <div className="mt-4 p-4 bg-shadowforce rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-white-knight font-medium">Suggested Correction:</h4>
+                          <Button
+                            onClick={applyCorrectedMessage}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            Apply Changes
+                          </Button>
+                        </div>
+                        <div className="text-guardian text-sm whitespace-pre-wrap">
+                          {reviewResult.correctedMessage}
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                )}
               </div>
             </div>
         </div>
       </div>
 
-      {/* Results Section */}
-      <div className="bg-shadowforce-light/30 border-t border-guardian/20 py-16">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-white-knight font-jakarta mb-4">
-              Our messaging brings client results like these
-            </h2>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-6 max-w-6xl mx-auto">
-            {[
-              {
-                index: 1,
-                caption: "👉 In just 8 months, Super Recruiter helped Peak Activity make 27 hires - with a 58% candidate submit-to-hire ratio."
-              },
-              {
-                index: 2,
-                caption: "👉 With an average open rate of double industry average, Super Recruiter delivered the critical talent Phalcon USA needed to scale in the fast-moving data center sector."
-              },
-              {
-                index: 3,
-                caption: "👉 Super Recruiter helped Forterra cut their cost per hire by over 70% compared to their previous hiring solutions."
-              },
-              {
-                index: 4,
-                caption: "👉 Over 10 months, Super Recruiter saved Credo more than $300K in forecasted hiring spend while achieving a 62% candidate submit-to-hire ratio."
-              }
-            ].map((item) => (
-              <div key={item.index} className="group">
-                <div className="bg-shadowforce rounded-lg p-4 transition-transform hover:scale-105 h-full flex flex-col">
-                  <div className="mb-4">
-                    <p className="text-white-knight text-sm leading-relaxed">
-                      {item.caption}
-                    </p>
-                  </div>
-                  <div className="flex-1">
-                    <img
-                      src={`/screenshots/instantly results ${item.index}.png`}
-                      alt={`Client result example ${item.index}`}
-                      className="w-full h-full object-cover rounded-lg shadow-lg"
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 };
+
