@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Copy, Edit, Check, User, Briefcase, FileCheck, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { Tooltip } from '../components/ui/Tooltip';
 import { reviewMessageGrammar, GrammarReviewResult } from '../services/anthropicService';
 
 interface Candidate {
@@ -26,7 +27,7 @@ interface Candidate {
 interface Job {
   id: string;
   title: string;
-  company_name: string;
+  companyName: string;
   location?: string;
   candidates?: Candidate[];
 }
@@ -59,7 +60,7 @@ export const AIMessageGeneratorPage: React.FC = () => {
 
 I hope this message finds you well! I came across your LinkedIn profile and was impressed by your background as ${currentRole}${recentCompany !== '{recent_company}' ? ` at ${recentCompany}` : ''}.
 
-Your experience with ${topSkills} caught my attention, and I believe you'd be an excellent fit for an exciting ${job.title} position we have at ${job.company_name}. ${job.location ? `The role is based in ${job.location}.` : ''}
+Your experience with ${topSkills} caught my attention, and I believe you'd be an excellent fit for an exciting ${job.title} position we have at ${job.companyName}. ${job.location ? `The role is based in ${job.location}.` : ''}
 
 ${candidate.experience && candidate.experience.length > 0 ? `Given your ${candidate.experience.length}+ years of experience in the industry, ` : ''}I think this opportunity would be a great next step in your career.
 
@@ -275,9 +276,9 @@ Best regards,
                         <h3 className="font-semibold text-white-knight text-sm mb-1">
                           {job.title}
                         </h3>
-                        <p className="text-guardian text-xs">
-                          {job.company_name} • {job.candidates?.length || 0} candidates
-                        </p>
+                                                 <p className="text-guardian text-xs">
+                           {job.companyName} • {job.candidates?.length || 0} candidates
+                         </p>
                       </div>
                       <div className="text-guardian">
                         {expandedJobId === job.id ? (
@@ -336,12 +337,6 @@ Best regards,
               <div className="space-y-6">
                 {/* Message Body */}
                 <Card className="p-6">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-white-knight mb-2">Message Body</h3>
-                    <p className="text-guardian text-sm">
-                      Review and customize your personalized LinkedIn message below. You can edit the content, check for grammar issues, or copy the final message.
-                    </p>
-                  </div>
                   
                   {editingBody ? (
                     <textarea
@@ -359,51 +354,57 @@ Best regards,
 
                   {/* Action Buttons */}
                   <div className="flex flex-wrap gap-3 pt-4 border-t border-guardian/20">
-                    <Button
-                      onClick={() => setEditingBody(!editingBody)}
-                      className="bg-guardian/30 hover:bg-guardian/50 text-black flex items-center gap-2"
-                      size="sm"
-                    >
-                      <Edit size={16} />
-                      {editingBody ? 'Preview' : 'Edit Manually'}
-                    </Button>
-                    
-                    <Button
-                      onClick={handleReviewMessage}
-                      disabled={isReviewing || !bodyText.trim()}
-                      className="bg-guardian-600 hover:bg-blue-700 text-black disabled:opacity-50 flex items-center gap-2"
-                      size="sm"
-                    >
-                      {isReviewing ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          Reviewing...
-                        </>
-                      ) : (
-                        <>
-                          <FileCheck size={16} />
-                          Edit with AI
-                        </>
-                      )}
-                    </Button>
-                    
-                    <Button
-                      onClick={() => copyToClipboard(bodyText)}
-                      className="bg-supernova hover:bg-supernova/90 text-shadowforce flex items-center gap-2"
-                      size="sm"
-                    >
-                      {copiedBody ? (
-                        <>
-                          <Check size={16} />
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={16} />
-                          Copy Message
-                        </>
-                      )}
-                    </Button>
+                                         <Tooltip content="Directly edit the message to fine tune your message">
+                       <Button
+                         onClick={() => setEditingBody(!editingBody)}
+                         className="bg-guardian/30 hover:bg-guardian/50 text-black flex items-center gap-2"
+                         size="sm"
+                       >
+                         <Edit size={16} />
+                         {editingBody ? 'Save' : 'Edit Manually'}
+                       </Button>
+                     </Tooltip>
+                     
+                     <Tooltip content="Let AI offer suggestions that you can implement with one click">
+                       <Button
+                         onClick={handleReviewMessage}
+                         disabled={isReviewing || !bodyText.trim()}
+                         className="bg-guardian-600 hover:bg-blue-700 text-black disabled:opacity-50 flex items-center gap-2"
+                         size="sm"
+                       >
+                         {isReviewing ? (
+                           <>
+                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                             Reviewing...
+                           </>
+                         ) : (
+                           <>
+                             <FileCheck size={16} />
+                             Edit with AI
+                           </>
+                         )}
+                       </Button>
+                     </Tooltip>
+                     
+                     <Tooltip content="Copy the message to use in LinkedIn or any other messenger to get in contact with your candidate">
+                       <Button
+                         onClick={() => copyToClipboard(bodyText)}
+                         className="bg-supernova hover:bg-supernova/90 text-shadowforce flex items-center gap-2"
+                         size="sm"
+                       >
+                         {copiedBody ? (
+                           <>
+                             <Check size={16} />
+                             Copied!
+                           </>
+                       ) : (
+                           <>
+                             <Copy size={16} />
+                             Copy Message
+                           </>
+                         )}
+                       </Button>
+                     </Tooltip>
                   </div>
                 </Card>
 
