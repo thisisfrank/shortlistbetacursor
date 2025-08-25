@@ -180,7 +180,7 @@ export const useAuth = () => {
                   const { error: createError } = await supabase.from('user_profiles').upsert({
                     id: currentUser.id,
                     email: currentUser.email,
-                    name: currentUser.email?.split('@')[0] || 'User',
+                    name: '', // Leave name empty for user to set
                     role: 'client',
                     tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                     available_credits: 20,
@@ -196,7 +196,7 @@ export const useAuth = () => {
                     setUserProfile({
                       id: currentUser.id,
                       email: currentUser.email || '',
-                      name: currentUser.email?.split('@')[0] || 'User',
+                      name: '', // Leave name empty for user to set
                       role: 'client',
                       tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                       availableCredits: 20,
@@ -274,7 +274,7 @@ export const useAuth = () => {
               const { error: createError } = await supabase.from('user_profiles').upsert({
                 id: currentUser.id,
                 email: currentUser.email,
-                name: currentUser.email?.split('@')[0] || 'User',
+                name: '', // Leave name empty for user to set
                 role: 'client',
                 tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                 available_credits: 20,
@@ -290,7 +290,7 @@ export const useAuth = () => {
                 setUserProfile({
                   id: currentUser.id,
                   email: currentUser.email || '',
-                  name: currentUser.email?.split('@')[0] || 'User',
+                  name: '', // Leave name empty for user to set
                   role: 'client',
                   tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                   availableCredits: 20,

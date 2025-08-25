@@ -192,26 +192,41 @@ export const Header: React.FC = () => {
             </nav>
           )}
 
-          {/* Sign up and Sign in buttons - positioned absolutely to the right, only for unauthenticated users on landing page */}
-          {!userProfile && location.pathname === '/' && (
-            <div className="absolute right-0 flex items-center gap-3">
-              <Button
-                onClick={() => navigate('/signup')}
-                size="sm"
-                className="glow-supernova"
-              >
-                SIGN UP
-              </Button>
-              <Button
-                onClick={() => navigate('/login')}
-                variant="ghost"
-                size="sm"
-                className="text-guardian hover:text-supernova"
-              >
-                SIGN IN
-              </Button>
-            </div>
-          )}
+          {/* User info and Sign up/Sign in buttons - positioned absolutely to the right */}
+          <div className="absolute right-0 flex items-center gap-3">
+            {/* Show user name when authenticated */}
+            {userProfile && (
+              <div className="flex items-center gap-2 text-guardian">
+                <span className="text-sm font-jakarta">Welcome,</span>
+                <span className="text-white-knight font-semibold">
+                  {userProfile.name && userProfile.name.trim() !== '' 
+                    ? userProfile.name 
+                    : 'User'}
+                </span>
+              </div>
+            )}
+            
+            {/* Show auth buttons only for unauthenticated users on landing page */}
+            {!userProfile && location.pathname === '/' && (
+              <>
+                <Button
+                  onClick={() => navigate('/signup')}
+                  size="sm"
+                  className="glow-supernova"
+                >
+                  SIGN UP
+                </Button>
+                <Button
+                  onClick={() => navigate('/login')}
+                  variant="ghost"
+                  size="sm"
+                  className="text-guardian hover:text-supernova"
+                >
+                  SIGN IN
+                </Button>
+              </>
+            )}
+          </div>
 
         </div>
       </div>

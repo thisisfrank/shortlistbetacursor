@@ -1,16 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { getUserUsageStats } from '../utils/userUsageStats';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
-import { Users, Clock, Briefcase, Calendar, CreditCard, LogOut, Crown, User } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { Users, Clock, Briefcase, Calendar, CreditCard, LogOut, Crown, User, Edit3, Check, X } from 'lucide-react';
 
 export const AccountPage: React.FC = () => {
-  const { userProfile, signOut } = useAuth();
+  const { userProfile, signOut, refreshProfile } = useAuth();
   const { jobs, candidates, tiers, creditTransactions } = useData();
   const navigate = useNavigate();
+  
+  // Name editing state
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [name, setName] = useState(userProfile?.name || '');
+  const [nameLoading, setNameLoading] = useState(false);
+  const [nameError, setNameError] = useState('');
+
+  // Update local name state when userProfile changes
+  React.useEffect(() => {
+    setName(userProfile?.name || '');
+  }, [userProfile?.name]);
 
   const stats = getUserUsageStats(userProfile as any, jobs, candidates, tiers, creditTransactions);
 
@@ -20,6 +32,47 @@ export const AccountPage: React.FC = () => {
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  const handleSaveName = async () => {
+    if (!userProfile || !name.trim()) return;
+    
+    setNameLoading(true);
+    setNameError('');
+    
+    try {
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({ name: name.trim() })
+        .eq('id', userProfile.id);
+      
+      if (updateError) {
+        throw updateError;
+      }
+      
+      setIsEditingName(false);
+      
+      // Refresh the profile to get updated data
+      if (refreshProfile) {
+        await refreshProfile();
+      }
+      
+    } catch (err: any) {
+      setNameError(err.message || 'Failed to update name');
+    } finally {
+      setNameLoading(false);
+    }
+  };
+
+  const handleCancelName = () => {
+    setName(userProfile?.name || '');
+    setIsEditingName(false);
+    setNameError('');
+  };
+
+  const handleEditName = () => {
+    setIsEditingName(true);
+    setNameError('');
   };
 
   if (!userProfile) {
@@ -43,9 +96,55 @@ export const AccountPage: React.FC = () => {
             <User size={32} className="text-shadowforce" />
           </div>
           <div>
-            <h3 className="font-jakarta font-bold text-white-knight text-2xl mb-1">
-              {userProfile.companyName || userProfile.firstName || 'Client'}
-            </h3>
+            <div className="flex items-center gap-3 mb-1">
+              {!isEditingName ? (
+                <>
+                  <h3 className="font-jakarta font-bold text-white-knight text-2xl">
+                    {userProfile.name && userProfile.name.trim() !== '' 
+                      ? userProfile.name 
+                      : 'Complete Your Profile'}
+                  </h3>
+                  <button
+                    onClick={handleEditName}
+                    className="p-1 text-guardian hover:text-supernova transition-colors flex items-end"
+                    title="Edit name"
+                  >
+                    <Edit3 size={16} />
+                  </button>
+                </>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="font-jakarta font-bold text-white-knight text-2xl bg-transparent border-b-2 border-supernova focus:outline-none focus:border-supernova-light"
+                    placeholder="Enter your name"
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleSaveName}
+                      disabled={!name.trim() || nameLoading}
+                      className="p-1 bg-supernova text-shadowforce rounded text-sm font-semibold hover:bg-supernova-light disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Save name"
+                    >
+                      {nameLoading ? '...' : <Check size={16} />}
+                    </button>
+                    <button
+                      onClick={handleCancelName}
+                      className="p-1 bg-guardian/20 text-guardian rounded text-sm font-semibold hover:bg-guardian/30"
+                      title="Cancel"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            {nameError && (
+              <p className="text-red-400 text-sm mb-2">{nameError}</p>
+            )}
             <p className="text-guardian text-lg">{userProfile.email}</p>
           </div>
         </div>

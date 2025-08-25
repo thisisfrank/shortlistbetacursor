@@ -13,7 +13,8 @@ export const useSourcerData = () => {
 
   // Get sourcer name from localStorage or profile
   const getSourcerName = (): string => {
-    return localStorage.getItem('sourcerName') || userProfile.email?.split('@')[0] || 'Unknown Sourcer';
+    return localStorage.getItem('sourcerName') || 
+           (userProfile.name && userProfile.name.trim() !== '' ? userProfile.name : 'Unknown Sourcer');
   };
 
   // Sourcer-specific data access
@@ -64,7 +65,7 @@ export const useSourcerData = () => {
       successRate: getMyCompletedJobs().length > 0 
         ? Math.round((getMyCompletedJobs().length / (getMyClaimedJobs().length + getMyCompletedJobs().length)) * 100)
         : 0,
-      sourcerName: userProfile.email?.split('@')[0] || 'Unknown Sourcer',
+      sourcerName: userProfile.name && userProfile.name.trim() !== '' ? userProfile.name : 'Unknown Sourcer',
     };
   };
 
@@ -124,7 +125,7 @@ export const useSourcerData = () => {
 
   return {
     // Sourcer identity
-    sourcerName: userProfile.email?.split('@')[0] || 'Unknown Sourcer',
+    sourcerName: userProfile.name && userProfile.name.trim() !== '' ? userProfile.name : 'Unknown Sourcer',
     
     // Filtered data access
     availableJobs: getAvailableJobs(),
