@@ -18,19 +18,19 @@ const marketplaceItems: MarketplaceItem[] = [
   {
     id: 'ai-message-generator',
     title: 'AI Message Generator',
-    description: 'Generate personalized outreach messages for candidates using AI',
+    description: 'Personalize your outreach in seconds - with messages that actually get replies.',
     points: 'FREE',
-    unlockCondition: 'Free with first job entry',
+    unlockCondition: 'Free with your first job entry',
     icon: Zap,
     category: 'free',
     isLocked: false
   },
   {
     id: 'clay-table-emails',
-    title: 'Clay Table To Get Emails',
-    description: 'Advanced email discovery tool for candidate outreach',
+    title: 'Get Candidate Emails',
+    description: 'Unlock a Clay table with verified candidate emails to power your outreach.',
     points: 'FREE',
-    unlockCondition: 'Free with first purchase',
+    unlockCondition: 'Free with your first purchase',
     icon: Download,
     category: 'free',
     isLocked: true
@@ -38,9 +38,9 @@ const marketplaceItems: MarketplaceItem[] = [
   {
     id: 'bonus-candidates',
     title: 'Bonus 20 Candidates',
-    description: 'Extra candidate credits to expand your talent pool',
+    description: 'Get an extra 20 FREE candidates on the house!',
     points: 'FREE',
-    unlockCondition: 'After first purchase of more candidates',
+    unlockCondition: 'Unlocked after your first purchase',
     icon: Gift,
     category: 'free',
     isLocked: true
@@ -48,7 +48,7 @@ const marketplaceItems: MarketplaceItem[] = [
   {
     id: 'employee-retention-kit',
     title: 'Employee Retention Kit',
-    description: 'Comprehensive guide and tools for employee retention strategies',
+    description: 'Proven strategies to keep your best people longer and reduce costly turnover.',
     points: 150,
     icon: Users,
     category: 'starter',
@@ -57,7 +57,7 @@ const marketplaceItems: MarketplaceItem[] = [
   {
     id: 'ai-recruiter-kit',
     title: 'AI Recruiter Kit',
-    description: 'Advanced AI tools and templates for modern recruiting',
+    description: 'Automate your recruiting with AI-driven workflows and tools.',
     points: 150,
     icon: Zap,
     category: 'starter',
@@ -66,7 +66,7 @@ const marketplaceItems: MarketplaceItem[] = [
   {
     id: 'candidate-conversion-kit',
     title: 'Candidate Conversion Kit',
-    description: 'Proven strategies to convert candidates into hires',
+    description: 'Turn passive, high-quality candidates into interviews with these strategies and ready-to-use templates.',
     points: 150,
     icon: Target,
     category: 'starter',
@@ -75,7 +75,7 @@ const marketplaceItems: MarketplaceItem[] = [
   {
     id: 'candidate-conversion-kit-agency',
     title: 'Candidate Conversion Kit (Agency Edition)',
-    description: 'Agency-specific strategies for candidate conversion',
+    description: 'Make more placements with these strategies and ready-to-use templates.',
     points: 150,
     icon: Target,
     category: 'starter',
@@ -84,7 +84,7 @@ const marketplaceItems: MarketplaceItem[] = [
   {
     id: 'cost-per-hire-calculator',
     title: 'Cost Per Hire Calculator',
-    description: 'Calculate and optimize your recruitment costs',
+    description: 'See your true cost per hire - and how you can save money and time.',
     points: 150,
     icon: Calculator,
     category: 'starter',
@@ -93,7 +93,7 @@ const marketplaceItems: MarketplaceItem[] = [
   {
     id: 'infrastructure-build',
     title: 'Infrastructure Build',
-    description: 'Complete recruitment infrastructure setup guide',
+    description: 'Get the complete playbook to set up a scalable, world-class recruiting operation from the ground up.',
     points: 1000,
     icon: Building,
     category: 'starter',
@@ -102,7 +102,7 @@ const marketplaceItems: MarketplaceItem[] = [
   {
     id: 'outbound-pipelines',
     title: 'Outbound Candidate Pipelines That Scale',
-    description: 'Scalable outbound recruiting pipeline strategies',
+    description: 'Build repeatable pipelines to consistently reach and convert top talent - without relying on job boards, referrals, or staffing firms.',
     points: 2500,
     icon: Users,
     category: 'enterprise',
@@ -110,8 +110,8 @@ const marketplaceItems: MarketplaceItem[] = [
   },
   {
     id: 'outbound-pipelines-agency',
-    title: 'Outbound Candidate Pipelines That Scale (Agency Edition)',
-    description: 'Agency-focused scalable outbound recruiting strategies',
+    title: '100x Recruiter Stack (Agency Edition)',
+    description: 'An agency-focused recruiting stack to cut costs, scale outreach, and make more placements.',
     points: 2500,
     icon: Users,
     category: 'enterprise',
@@ -119,8 +119,8 @@ const marketplaceItems: MarketplaceItem[] = [
   },
   {
     id: 'end-to-end-guide',
-    title: 'End To End Recruiter Guide',
-    description: 'Complete comprehensive guide for modern recruitment',
+    title: 'End-to-End Recruiter Guide',
+    description: 'Master modern recruiting with a complete playbook that covers every step - from sourcing to hire.',
     points: 5000,
     icon: BookOpen,
     category: 'enterprise',
@@ -140,8 +140,8 @@ const getCategoryColor = (category: string) => {
 const getCategoryLabel = (category: string) => {
   switch (category) {
     case 'free': return 'Free Unlocks';
-    case 'starter': return 'Starter Tools';
-    case 'enterprise': return 'Enterprise';
+    case 'starter': return 'Starter Kits';
+    case 'enterprise': return 'Advanced Recruiting Playbooks';
     default: return category;
   }
 };
@@ -176,13 +176,43 @@ export const MarketplacePage: React.FC = () => {
             Marketplace
           </h1>
           <p className="text-xl text-guardian mb-6">
-            Unlock powerful tools and resources by earning points through platform usage
+          Turn your activity into rewards - get premium hiring tools and resources just by using the platform
           </p>
           <div className="inline-flex items-center gap-2 bg-supernova/20 border border-supernova px-6 py-3 rounded-lg">
             <Star className="text-supernova" size={24} />
             <span className="text-white-knight font-semibold">
               Current Points: {currentPoints.toLocaleString()}
             </span>
+          </div>
+        </div>
+
+        {/* How to Earn Points Section */}
+        <div className="mb-12 p-8 bg-shadowforce-light/30 border border-guardian/20 rounded-lg">
+          <h2 className="text-2xl font-bold text-white-knight font-jakarta mb-4">
+            How to Earn Points
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="text-center p-4">
+              <div className="w-12 h-12 bg-supernova/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <Users size={24} className="text-supernova" />
+              </div>
+              <h3 className="text-white-knight mb-2">Enter Jobs</h3>
+              <p className="text-guardian text-sm">Earn points every time you post a job</p>
+            </div>
+            <div className="text-center p-4">
+              <div className="w-12 h-12 bg-supernova/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <Target size={24} className="text-supernova" />
+              </div>
+              <h3 className="text-white-knight mb-2">Activity</h3>
+              <p className="text-guardian text-sm">Get rewarded for consistent platform use</p>
+            </div>
+            <div className="text-center p-4">
+              <div className="w-12 h-12 bg-supernova/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <Star size={24} className="text-supernova" />
+              </div>
+              <h3 className="text-white-knight mb-2">Achievements</h3>
+              <p className="text-guardian text-sm">Unlock bonus points as you hit milestones</p>
+            </div>
           </div>
         </div>
 
@@ -250,7 +280,7 @@ export const MarketplacePage: React.FC = () => {
                         }`}
                       >
                         {item.isLocked ? (
-                          <div className="flex items-center gap-2">
+                          <div className={`flex items-center gap-2 ${typeof item.points === 'number' && !canAfford ? 'justify-center' : ''}`}>
                             <Lock size={14} />
                             <span className="text-sm">
                               {typeof item.points === 'number' && !canAfford ? 'Insufficient Points' : 'Locked'}
@@ -280,35 +310,7 @@ export const MarketplacePage: React.FC = () => {
           </div>
         ))}
 
-        {/* How to Earn Points Section */}
-        <div className="mt-16 p-8 bg-shadowforce-light/30 border border-guardian/20 rounded-lg">
-          <h2 className="text-2xl font-bold text-white-knight font-jakarta mb-4">
-            How to Earn Points
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="text-center p-4">
-              <div className="w-12 h-12 bg-supernova/20 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <Users size={24} className="text-supernova" />
-              </div>
-              <h3 className="font-semibold text-white-knight mb-2">Complete Jobs</h3>
-              <p className="text-guardian text-sm">Earn points for every successful job completion</p>
-            </div>
-            <div className="text-center p-4">
-              <div className="w-12 h-12 bg-supernova/20 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <Target size={24} className="text-supernova" />
-              </div>
-              <h3 className="font-semibold text-white-knight mb-2">Platform Activity</h3>
-              <p className="text-guardian text-sm">Regular platform usage and engagement</p>
-            </div>
-            <div className="text-center p-4">
-              <div className="w-12 h-12 bg-supernova/20 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <Star size={24} className="text-supernova" />
-              </div>
-              <h3 className="font-semibold text-white-knight mb-2">Achievements</h3>
-              <p className="text-guardian text-sm">Unlock bonus points through milestones</p>
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
   );
