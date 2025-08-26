@@ -22,6 +22,7 @@ import { ClientPage } from './pages/ClientPage';
 import { SourcerPage } from './pages/SourcerPage';
 import { CandidatesPage } from './pages/CandidatesPage';
 import { AccountPage } from './pages/AccountPage';
+import { SourcerAccountPage } from './pages/SourcerAccountPage';
 import { MarketplacePage } from './pages/MarketplacePage';
 import { AIMessageGeneratorPage } from './pages/AIMessageGeneratorPage';
 
@@ -90,6 +91,7 @@ function App() {
                     
                     {/* Account & Settings Routes - All Authenticated Users */}
                     <Route path="/account" element={<AuthenticatedRoute><AccountPage /></AuthenticatedRoute>} />
+                    <Route path="/sourcer/account" element={<SourcerRoute><SourcerAccountPage /></SourcerRoute>} />
                     <Route path="/marketplace" element={<AuthenticatedRoute><MarketplacePage /></AuthenticatedRoute>} />
                     <Route path="/ai-message-generator" element={<AuthenticatedRoute><AIMessageGeneratorPage /></AuthenticatedRoute>} />
                     

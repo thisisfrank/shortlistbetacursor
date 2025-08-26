@@ -27,11 +27,9 @@ export const JobTitleStep: React.FC<JobTitleStepProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 animate-fadeIn">
-      <h2 className="text-3xl font-anton text-guardian mb-12 uppercase tracking-wide">Job Title</h2>
-      
+    <form onSubmit={handleSubmit} className="space-y-1 animate-fadeIn">
       <FormInput
-        label="Job Title"
+        label=""
         name="title"
         value={formData.title}
         onChange={onChange}
@@ -40,7 +38,7 @@ export const JobTitleStep: React.FC<JobTitleStepProps> = ({
         placeholder="Enter the job title"
       />
 
-      <div className="pt-8">
+      <div className="pt-0">
         <Button 
           type="submit"
           fullWidth

@@ -61,8 +61,8 @@ export const LandingPage: React.FC = () => {
                 <span className="block text-supernova">CANDIDATES, FAST!</span>
               </h1>
               <p className="text-lg md:text-xl text-guardian max-w-3xl mb-6 font-jakarta leading-relaxed">
-              For people who need to hire 
-                <span className="text-supernova font-bold"> top talent</span>.
+              Hire faster. Hire smarter. Cut costs 
+                <span className="text-supernova font-bold"> - all without lifting a finger</span>.
               </p>
               <div className="flex flex-col gap-2 mb-8 max-w-2xl">
                 <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Submit job requirements</span></div>
@@ -211,31 +211,31 @@ export const LandingPage: React.FC = () => {
               {/* Why You'll Love It Section */}
               <div className="max-w-4xl mx-auto">
                 <h3 className="text-2xl md:text-3xl font-anton text-white-knight mb-8 uppercase tracking-wide">
-                  Why You'll Love It
+                Why You’ll Love The Shortlist
                 </h3>
                 <div className="space-y-6 text-left">
                   <div className="flex items-start">
                     <Check className="text-supernova mr-3 flex-shrink-0 mt-1" size={20} />
                     <p className="text-lg text-white font-jakarta leading-relaxed">
-                      Get high-quality candidates delivered directly to your inbox for your opening for any opening.
+                    Get high-quality candidates delivered straight to your inbox - for any role.
                     </p>
                   </div>
                   <div className="flex items-start">
                     <Check className="text-supernova mr-3 flex-shrink-0 mt-1" size={20} />
                     <p className="text-lg text-white font-jakarta leading-relaxed">
-                      Skip hours of candidate research, list building, and LinkedIn doom scrolling.
+                    Skip the hours of research, list building, and endless LinkedIn scrolling.
                     </p>
                   </div>
                   <div className="flex items-start">
                     <Check className="text-supernova mr-3 flex-shrink-0 mt-1" size={20} />
                     <p className="text-lg text-white font-jakarta leading-relaxed">
-                      Save thousands of dollars on linkedIn recruiter & job board fees.
+                    Save thousands on tools, job boards, and LinkedIn Recruiter.
                     </p>
                   </div>
                   <div className="flex items-start">
                     <Check className="text-supernova mr-3 flex-shrink-0 mt-1" size={20} />
                     <p className="text-lg text-white font-jakarta leading-relaxed">
-                      Focus on choosing the right candidate for your role.
+                    Focus your time on choosing the right candidate, not finding them.
                     </p>
                   </div>
                 </div>
@@ -244,16 +244,16 @@ export const LandingPage: React.FC = () => {
               {/* FAQ Section */}
               <div className="max-w-4xl mx-auto mt-16">
                 <h3 className="text-2xl md:text-3xl font-anton text-white-knight mb-8 uppercase tracking-wide text-center">
-                  FAQs
+                  Frequently Asked Questions
                 </h3>
                 <div className="space-y-6">
                   {/* FAQ Item 1 */}
                   <div className="border-b border-guardian/20 pb-6">
                     <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
-                      How does Super Recruiter improve your hiring process?
+                    How does the Shortlist improve my hiring process?
                     </h4>
                     <p className="text-white font-jakarta leading-relaxed">
-                      We use AI to score and prioritize candidates - helping you find talent your job ads will never reach. It also gives you proven email and LinkedIn copy to turn those candidates into interviews.
+                    We source, score, and prioritize candidates your job ads will never reach – then we arm you with proven email and LinkedIn copy to turn those candidates into interviews.
                     </p>
                   </div>
                   
@@ -270,10 +270,10 @@ export const LandingPage: React.FC = () => {
                   {/* FAQ Item 3 */}
                   <div className="border-b border-guardian/20 pb-6">
                     <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
-                      Who is Super Recruiter best for?
+                      Who is the Shorlist best for?
                     </h4>
                     <p className="text-white font-jakarta leading-relaxed">
-                      Anyone hiring who wants high-quality, sourced candidates daily for their exact opening(s) - without wasting time on job boards or sifting through AI-generated resumes.
+                    Hiring managers, recruiters, and founders who want high-quality candidates - without wasting time on job boards or sifting through AI-generated resumes.
                     </p>
                   </div>
                   
@@ -283,27 +283,66 @@ export const LandingPage: React.FC = () => {
                       How fast can you start?
                     </h4>
                     <p className="text-white font-jakarta leading-relaxed">
-                      Today. Get your first 20 FREE candidates now - and start interviewing talent your job postings will never reach.
+                    Immediately. Get your first 20 free candidates today and start interviewing talent your competitors can’t reach.
                     </p>
                   </div>
                   
                   {/* FAQ Item 5 */}
                   <div className="border-b border-guardian/20 pb-6">
                     <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
-                      Can Super Recruiter cut time-to-hire and costs?
+                    Can the Shortlist save me time and lower my cost per hire?
                     </h4>
                     <p className="text-white font-jakarta leading-relaxed">
-                      Absolutely. We help you identify, engage, and convert the right candidates - without relying on job ads or employee referrals - cutting down your time-to-hire and recruiting spend.
+                    Absolutely. By helping you identify, engage, and convert the right candidates - without job boards or referrals - we cut both your time-to-hire and recruiting spend.
                     </p>
                   </div>
                   
                   {/* FAQ Item 6 */}
-                  <div className="pb-6">
+                  <div className="border-b border-guardian/20 pb-6">
                     <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
-                      How do you protect candidate data?
+                    How do you protect candidate data?
                     </h4>
                     <p className="text-white font-jakarta leading-relaxed">
-                      We follow strict security standards. Your data and candidate data is never shared or sold.
+                    We follow strict security standards. Your data and candidate information is never shared or sold.                    </p>
+                  </div>
+                  
+                  {/* FAQ Item 7 */}
+                  <div className="border-b border-guardian/20 pb-6">
+                    <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
+                      How long does it take to receive candidates?
+                    </h4>
+                    <p className="text-white font-jakarta leading-relaxed">
+                      Most users get a shortlist in under 12 hours. You'll also receive an email the moment your list is ready.
+                    </p>
+                  </div>
+                  
+                  {/* FAQ Item 8 */}
+                  <div className="border-b border-guardian/20 pb-6">
+                    <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
+                      How many candidates will I receive?
+                    </h4>
+                    <p className="text-white font-jakarta leading-relaxed">
+                      It depends on how many you request when entering your position - you have complete control over the number of candidates you get.
+                    </p>
+                  </div>
+                  
+                  {/* FAQ Item 9 */}
+                  <div className="border-b border-guardian/20 pb-6">
+                    <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
+                      What if I'm not seeing the right candidates?
+                    </h4>
+                    <p className="text-white font-jakarta leading-relaxed">
+                      Provide feedback, adjust your job description, or update keywords. The more details you share, the better your results.
+                    </p>
+                  </div>
+                  
+                  {/* FAQ Item 10 */}
+                  <div className="pb-6">
+                    <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
+                      How do I know when new candidates are submitted?
+                    </h4>
+                    <p className="text-white font-jakarta leading-relaxed">
+                      You'll get an email notification right away, and you can always check your dashboard to view the latest profiles and their match scores.
                     </p>
                   </div>
                 </div>
@@ -318,7 +357,7 @@ export const LandingPage: React.FC = () => {
             READY TO GET STARTED?
           </h2>
           <p className="text-xl text-guardian mb-8 font-jakarta">
-            Join thousands of companies and recruiters using AI to transform their hiring process
+            Start using AI to transform their hiring process
           </p>
           <Button 
             onClick={() => window.location.href = '/signup'}

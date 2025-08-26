@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { User, Store } from 'lucide-react';
+import { User, Store, Zap } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 interface LeftPanelProps {
   isOpen: boolean;
@@ -11,21 +12,39 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const panelRef = useRef<HTMLDivElement>(null);
+  const { userProfile } = useAuth();
 
-  const navigationItems = [
-    {
-      icon: User,
-      label: 'Account',
-      path: '/account',
-      description: 'View your profile and usage stats'
-    },
-    {
-      icon: Store,
-      label: 'Marketplace',
-      path: '/marketplace',
-      description: 'Browse services and solutions'
+  // Define navigation items based on user role
+  const getNavigationItems = () => {
+    if (userProfile?.role === 'sourcer') {
+      return [
+        {
+          icon: Zap,
+          label: 'Sourcer Account',
+          path: '/sourcer/account',
+          description: 'View your profile and sourcer stats'
+        }
+      ];
     }
-  ];
+    
+    // Default navigation for clients and admins
+    return [
+      {
+        icon: User,
+        label: 'Account',
+        path: '/account',
+        description: 'View your profile and usage stats'
+      },
+      {
+        icon: Store,
+        label: 'Marketplace',
+        path: '/marketplace',
+        description: 'Browse services and solutions'
+      }
+    ];
+  };
+
+  const navigationItems = getNavigationItems();
 
   const isActive = (path: string) => location.pathname === path;
 

@@ -28,7 +28,7 @@ const ClientIntakeFormContent: React.FC<ClientIntakeFormProps> = ({
   return (
     <>
     <Card className="max-w-4xl mx-auto glow-supernova">
-      <CardContent className="py-12">
+      <CardContent className="py-6">
           <FormStepRenderer
             currentStep={currentStep}
             onNext={goToNextStep}

@@ -103,7 +103,7 @@ export const Header: React.FC = () => {
       const isOnSubscriptionPath = location.pathname.startsWith('/subscription');
       const isOnAuthPath = location.pathname === '/login' || location.pathname === '/signup' || 
                           location.pathname === '/forgot-password' || location.pathname === '/reset-password';
-      const isOnSideNavPath = location.pathname === '/account' || location.pathname === '/marketplace' || location.pathname === '/ai-message-generator';
+      const isOnSideNavPath = location.pathname === '/account' || location.pathname === '/sourcer/account' || location.pathname === '/marketplace' || location.pathname === '/ai-message-generator';
       
       // Only navigate if we're not already on a valid path and not on auth/subscription/sidenav pages
       if (location.pathname !== roleHomePath && !isOnValidPath && !isOnSubscriptionPath && !isOnAuthPath && !isOnSideNavPath) {
@@ -133,8 +133,8 @@ export const Header: React.FC = () => {
   
   return (
     <>
-      {/* Left Panel - only show for client users */}
-      {userProfile?.role === 'client' && (
+      {/* Left Panel - show for client and sourcer users */}
+      {(userProfile?.role === 'client' || userProfile?.role === 'sourcer') && (
         <LeftPanel 
           isOpen={leftPanelOpen}
           onClose={() => setLeftPanelOpen(false)}
@@ -146,8 +146,8 @@ export const Header: React.FC = () => {
         <div className="flex items-center justify-center h-20 relative">
           {/* Menu Toggle and Logo - positioned absolutely to the left */}
           <div className="absolute left-0 flex items-center gap-4">
-            {/* Menu Toggle Button - Only for Clients */}
-            {userProfile?.role === 'client' && (
+            {/* Menu Toggle Button - for Clients and Sourcers */}
+            {(userProfile?.role === 'client' || userProfile?.role === 'sourcer') && (
               <button
                 onClick={handleMenuToggle}
                 className="flex items-center justify-center w-8 h-8 bg-shadowforce-light hover:bg-supernova hover:text-shadowforce text-guardian rounded-lg transition-colors"

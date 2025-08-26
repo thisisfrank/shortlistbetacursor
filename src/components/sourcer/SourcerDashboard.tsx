@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Job } from '../../types';
 import { JobCard } from './JobCard';
 import { JobDetailModal } from './JobDetailModal';
@@ -11,6 +12,7 @@ import { ghlService } from '../../services/ghlService';
 const SourcerDashboard: React.FC = () => {
   const { jobs, updateJob, loading, loadUserData, loadError, getCandidatesByJob, getUserProfileById } = useData();
   const { userProfile } = useAuth();
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'unclaimed' | 'claimed' | 'completed'>('unclaimed');
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -299,9 +301,17 @@ const SourcerDashboard: React.FC = () => {
           
           {sourcerName && (
             <div className="bg-supernova/10 border border-supernova/30 p-4 rounded-lg mb-6">
-              <p className="text-supernova font-jakarta">
-                Sourcing as: <span className="font-anton text-white-knight text-lg">{sourcerName.toUpperCase()}</span>
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-supernova font-jakarta">
+                  Sourcing as: <span className="font-anton text-white-knight text-lg">{sourcerName.toUpperCase()}</span>
+                </p>
+                <button
+                  onClick={() => navigate('/sourcer/account')}
+                  className="text-supernova hover:text-white-knight transition-colors text-sm font-semibold px-3 py-1 rounded border border-supernova/30 hover:border-supernova"
+                >
+                  My Account
+                </button>
+              </div>
             </div>
           )}
           

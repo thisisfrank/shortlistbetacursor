@@ -1154,7 +1154,7 @@ export const CandidatesView: React.FC = () => {
                 Select Job to View Candidates
                 {jobs && jobs.length > 0 && (
                   <span className="block text-base font-jakarta text-supernova mt-2 md:mt-0 md:ml-4 normal-case font-normal">
-                    Total Requested Candidates: {jobs.reduce((sum, job) => sum + (job.candidatesRequested || 0), 0)}
+                    
                   </span>
                 )}
               </h2>
@@ -1397,52 +1397,7 @@ export const CandidatesView: React.FC = () => {
           </div>
         </div>
         
-        {/* FAQ Section */}
-        <div className="mt-16">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-anton text-white-knight mb-4 uppercase tracking-wide">
-              Frequently Asked Questions
-            </h2>
-          </div>
-          
-          <div className="max-w-4xl mx-auto space-y-6">
-            <div className="bg-shadowforce border border-guardian/30 rounded-xl p-6 hover:border-supernova/50 transition-colors duration-300">
-              <h3 className="text-xl font-anton text-supernova mb-3 uppercase tracking-wide">
-                How long does it take to receive candidates?
-              </h3>
-              <p className="text-guardian font-jakarta leading-relaxed">
-                Most jobs receive initial candidate submissions within 24 hours. Complex or highly specialized roles may take 2-3 days. Active sourcers are notified immediately when you post a job.
-              </p>
-            </div>
-            
-            <div className="bg-shadowforce border border-guardian/30 rounded-xl p-6 hover:border-supernova/50 transition-colors duration-300">
-              <h3 className="text-xl font-anton text-supernova mb-3 uppercase tracking-wide">
-                How many candidates will I receive?
-              </h3>
-              <p className="text-guardian font-jakarta leading-relaxed">
-                This depends on your credit package and job requirements. More detailed job descriptions typically attract higher-quality submissions.
-              </p>
-            </div>
-            
-            <div className="bg-shadowforce border border-guardian/30 rounded-xl p-6 hover:border-supernova/50 transition-colors duration-300">
-              <h3 className="text-xl font-anton text-supernova mb-3 uppercase tracking-wide">
-                What if I'm not seeing the right candidates?
-              </h3>
-              <p className="text-guardian font-jakarta leading-relaxed">
-                Try adding more specific requirements, skills, or company culture details to your job description. You can also message sourcers directly to clarify what you're looking for.
-              </p>
-            </div>
-            
-            <div className="bg-shadowforce border border-guardian/30 rounded-xl p-6 hover:border-supernova/50 transition-colors duration-300">
-              <h3 className="text-xl font-anton text-supernova mb-3 uppercase tracking-wide">
-                How do I know when new candidates are submitted?
-              </h3>
-              <p className="text-guardian font-jakarta leading-relaxed">
-                You'll receive email notifications for new candidate submissions. You can also check your dashboard anytime to see the latest profiles and their match scores.
-              </p>
-            </div>
-          </div>
-        </div>
+
         
         {/* Upgrade CTA */}
         <div className="mt-12">
