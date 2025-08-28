@@ -38,7 +38,7 @@ export interface Job {
   companyName: string; // Production uses company_name (string field)
   title: string;
   description: string;
-  seniorityLevel: 'Junior' | 'Mid' | 'Senior' | 'Executive';
+  seniorityLevel: 'Junior' | 'Mid' | 'Senior' | 'Super Senior';
   workArrangement?: 'Remote' | 'On-site' | 'Hybrid'; // Made optional
   location: string;
   salaryRangeMin: number;

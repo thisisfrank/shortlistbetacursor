@@ -99,12 +99,7 @@ export const LandingPage: React.FC = () => {
             {/* Right: Detailed Candidate Preview */}
             <div className="flex-1 flex flex-col justify-center max-w-lg mx-auto">
               <div className="space-y-2">
-                {/* Preview Header */}
-                <div className="text-center mb-2">
-                  <h3 className="text-base font-anton text-supernova mb-1 uppercase tracking-wide">
-                    What You'll Get
-                  </h3>
-                </div>
+
                 
                 {/* Detailed Candidate Card */}
                 <Card className="transform transition-all duration-1000 hover:scale-105 border-l-4 border-l-supernova bg-gradient-to-r from-shadowforce to-shadowforce-light animate-fade-in-up">
@@ -187,12 +182,7 @@ export const LandingPage: React.FC = () => {
                   </CardContent>
                 </Card>
                 
-                {/* Description below the card */}
-                <div className="text-center mt-3">
-                  <p className="text-guardian font-jakarta text-xs">
-                    Detailed candidate profiles in 24 hours
-                  </p>
-                </div>
+
               </div>
             </div>
           </div>

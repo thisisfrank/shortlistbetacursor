@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../../context/AuthContext';
-import { useData } from '../../../context/DataContext';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../../ui/Button';
 import { Badge } from '../../ui/Badge';
 import { Users } from 'lucide-react';
@@ -8,7 +8,6 @@ import { Users } from 'lucide-react';
 interface SimpleSummaryStepProps {
   formData: {
     companyName: string;
-    contactName: string;
     email: string;
     phone: string;
     title: string;
@@ -39,8 +38,8 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
   onBack,
   isSubmitting
 }) => {
-  const { user } = useAuth();
-  const { tiers } = useData();
+  const { userProfile } = useAuth();
+  const navigate = useNavigate();
   
   // Helper function to extract numeric value from formatted currency
   const extractNumericValue = (formattedValue: string): number => {
@@ -48,13 +47,37 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
     return parseInt(numericString) || 0;
   };
   
-  // Get free tier for displaying limits
-  const freeTier = tiers.find(tier => tier.name === 'Free');
-  const maxCandidates = freeTier?.monthlyCandidateAllotment || 20;
+  // Get user's actual available credits
+  const userAvailableCredits = userProfile?.availableCredits || 0;
   const candidatesRequested = parseInt(formData.candidatesRequested) || 1;
   
-  // Check if request exceeds available credits
-  const exceedsCredits = candidatesRequested > maxCandidates;
+  // Slider snap points
+  const snapPoints = [1, 20, 40, 60, 100];
+  
+  // Handle slider changes with snapping
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const snapIndex = parseInt(e.target.value);
+    const snapValue = snapPoints[snapIndex];
+    
+    // Create synthetic event with snapped value
+    const syntheticEvent = {
+      target: {
+        name: 'candidatesRequested',
+        value: snapValue.toString()
+      }
+    } as React.ChangeEvent<HTMLInputElement>;
+    
+    onChange(syntheticEvent);
+  };
+  
+  // Find which snap point we're currently at for slider display
+  const getCurrentSnapIndex = () => {
+    const currentSnap = snapPoints.find(point => point === candidatesRequested) || snapPoints[0];
+    return snapPoints.indexOf(currentSnap);
+  };
+  
+  // Check if request exceeds user's available credits
+  const exceedsCredits = candidatesRequested > userAvailableCredits;
   
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -63,55 +86,121 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
       <div className="bg-shadowforce border border-guardian/30 p-8 rounded-xl text-center">
         <div className="flex items-center justify-center mb-6">
           <Users className="text-supernova mr-3" size={32} />
-          <h3 className="text-2xl font-anton text-white uppercase tracking-wide">How Many Candidate Credits Do You Need for this Job?</h3>
+          <h3 className="text-2xl font-anton text-white uppercase tracking-wide">How many candidates are you looking for?</h3>
         </div>
         
         <div className="mb-6">
           <p className="text-white-knight font-jakarta text-sm mb-4">
-            <strong>How it works:</strong> You can use candidate credits to get a complete profile including their name, 
-            LinkedIn URL, and a comprehensive info card with their experience, education, skills, and AI-generated summary.
+            <strong>Choose the number of candidates you want - each comes with a full profile, LinkedIn, and summary</strong>
+      
           </p>
         </div>
         
         <div className="mb-6">
           <div className="relative">
-            <input
-              type="range"
-              name="candidatesRequested"
-              min="1"
-              max={maxCandidates}
-              value={candidatesRequested}
-              onChange={onChange}
-              className="w-full h-2 bg-shadowforce rounded-full appearance-none cursor-pointer 
-                [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 
-                [&::-webkit-slider-thumb]:bg-supernova [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer
-                [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:shadow-lg
-                [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-supernova 
-                [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:border-0"
-              style={{
-                background: `linear-gradient(to right, #FFCF00 0%, #FFCF00 ${((candidatesRequested - 1) / (maxCandidates - 1)) * 100}%, #111111 ${((candidatesRequested - 1) / (maxCandidates - 1)) * 100}%, #111111 100%)`
-              }}
-            />
-            <div className="flex justify-between text-xs text-guardian font-jakarta mt-2">
-              <span>1</span>
-              <span>{Math.floor((maxCandidates - 1) * 0.25) + 1}</span>
-              <span>{Math.floor((maxCandidates - 1) * 0.5) + 1}</span>
-              <span>{Math.floor((maxCandidates - 1) * 0.75) + 1}</span>
-              <span>{maxCandidates}</span>
+            <style>{`
+              .diamond-slider {
+                background: transparent;
+              }
+              .diamond-slider::-webkit-slider-thumb {
+                appearance: none;
+                width: 28px;
+                height: 28px;
+                background: #FFCF00;
+                cursor: pointer;
+                border: 0;
+                box-shadow: 0 6px 20px rgba(255, 207, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+                transform: rotate(45deg);
+                border-radius: 4px;
+                position: relative;
+                z-index: 10;
+                margin-top: -8px;
+              }
+              .diamond-slider::-moz-range-thumb {
+                width: 28px;
+                height: 28px;
+                background: #FFCF00;
+                cursor: pointer;
+                border: 0;
+                border-radius: 4px;
+                transform: rotate(45deg);
+                box-shadow: 0 6px 20px rgba(255, 207, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+                position: relative;
+              }
+              .diamond-slider::-webkit-slider-track {
+                width: 100%;
+                height: 12px;
+                background: transparent;
+                border-radius: 6px;
+              }
+              .diamond-slider::-moz-range-track {
+                width: 100%;
+                height: 12px;
+                background: transparent;
+                border-radius: 6px;
+                border: none;
+              }
+            `}</style>
+            <div className="relative">
+              {/* Custom track background */}
+              <div 
+                className="absolute top-1/2 transform -translate-y-1/2 w-full h-3 bg-shadowforce rounded-full"
+                style={{
+                  background: `linear-gradient(to right, #FFCF00 0%, #FFCF00 ${(getCurrentSnapIndex() / (snapPoints.length - 1)) * 100}%, #111111 ${(getCurrentSnapIndex() / (snapPoints.length - 1)) * 100}%, #111111 100%)`
+                }}
+              />
+              <input
+                type="range"
+                name="candidatesRequested"
+                min="0"
+                max={snapPoints.length - 1}
+                step="1"
+                value={getCurrentSnapIndex()}
+                onChange={handleSliderChange}
+                className="diamond-slider relative w-full h-3 appearance-none cursor-pointer bg-transparent"
+              />
+            </div>
+            <div className="relative mt-2">
+              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: 'calc(0% + 14px)'}}>1</div>
+              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: 'calc(25% + 7px)'}}>20</div>
+              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: '50%'}}>40</div>
+              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: 'calc(75% - 7px)'}}>60</div>
+              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: 'calc(100% - 14px)'}}>100</div>
             </div>
           </div>
           
-          <div className="text-center mt-4">
-            <span className="text-2xl font-anton text-supernova">{candidatesRequested}</span>
-            <span className="text-guardian font-jakarta ml-2">/ {maxCandidates} credits</span>
+          <div className="text-center mt-8">
+            <div className="flex items-center justify-center gap-3">
+              <input
+                type="number"
+                name="candidatesRequested"
+                min="1"
+                max="999"
+                value={candidatesRequested}
+                onChange={onChange}
+                className="w-24 px-3 py-2 bg-shadowforce border border-guardian/30 rounded-lg text-white-knight font-jakarta text-center text-xl font-bold focus:border-supernova focus:outline-none"
+                placeholder="#"
+              />
+              <span className="text-guardian font-jakarta">/ {userAvailableCredits} credits available</span>
+            </div>
           </div>
           
           {exceedsCredits && (
-            <div className="mt-4">
+            <div className="mt-4 space-y-4">
               <p className="text-red-400 font-jakarta font-semibold">
-                ⚠️ You've requested {candidatesRequested} candidates but only have {maxCandidates} credits available. 
+                You've requested {candidatesRequested} candidates but only have {userAvailableCredits} credits available. <br/>
                 Please reduce your request or upgrade to a paid tier for more credits.
               </p>
+              <div className="text-center">
+                <Button
+                  type="button"
+                  onClick={() => navigate('/subscription')}
+                  className="bg-supernova hover:bg-supernova/90 text-shadowforce font-anton px-6 py-2"
+                  size="sm"
+                >
+                  GET MORE CREDITS
+                </Button>
+              </div>
             </div>
           )}
         </div>
@@ -125,10 +214,7 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
               <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Company</p>
               <p className="text-lg text-white-knight font-jakarta font-medium">{formData.companyName}</p>
             </div>
-            <div>
-              <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Contact</p>
-              <p className="text-lg text-white-knight font-jakarta font-medium">{formData.contactName}</p>
-            </div>
+
           </div>
           <div className="grid grid-cols-2 gap-6">
             <div>
@@ -147,7 +233,7 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
         <h3 className="text-xl font-anton text-supernova mb-6 uppercase tracking-wide">Job Details</h3>
         <div className="space-y-6">
           <div>
-            <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Title</p>
+            <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Position Title</p>
             <p className="text-2xl font-anton text-white-knight">{formData.title}</p>
           </div>
           
@@ -178,7 +264,7 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
       </div>
       
       <div className="bg-shadowforce border border-guardian/30 p-8 rounded-xl">
-        <h3 className="text-xl font-anton text-supernova mb-6 uppercase tracking-wide">Key Selling Points</h3>
+        <h3 className="text-xl font-anton text-supernova mb-6 uppercase tracking-wide">Key Skills</h3>
         <ul className="space-y-3">
           {formData.mustHaveSkills.map((point, index) => (
             <li key={index} className="flex items-start">
@@ -211,7 +297,7 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
         >
           {isSubmitting ? 'PROCESSING...' : 
            exceedsCredits ? 'INSUFFICIENT CREDITS' : 
-           'SUBMIT JOB REQUEST'}
+           'SUBMIT FOR CANDIDATE SOURCING'}
         </Button>
       </div>
     </div>

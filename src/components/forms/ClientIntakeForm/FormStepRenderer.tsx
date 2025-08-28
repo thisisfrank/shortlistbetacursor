@@ -67,7 +67,6 @@ export const FormStepRenderer: React.FC<FormStepRendererProps> = ({
           formData={{
             title: formData.title,
             companyName: formData.companyName,
-            contactName: formData.contactName,
             email: formData.email,
             phone: formData.phone
           }}
@@ -83,7 +82,6 @@ export const FormStepRenderer: React.FC<FormStepRendererProps> = ({
         <SimpleSummaryStep
           formData={{
             companyName: formData.companyName,
-            contactName: formData.contactName,
             email: formData.email,
             phone: formData.phone,
             title: formData.title,

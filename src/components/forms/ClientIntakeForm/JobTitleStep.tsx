@@ -35,7 +35,7 @@ export const JobTitleStep: React.FC<JobTitleStepProps> = ({
         onChange={onChange}
         error={errors.title}
         required
-        placeholder="Enter the job title"
+        placeholder="Enter the position title"
       />
 
       <div className="pt-0">

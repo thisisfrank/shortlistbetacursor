@@ -37,7 +37,9 @@ export const FormInput: React.FC<FormInputProps> = ({
     <div className="mb-8">
       <label 
         htmlFor={inputId} 
-        className="block text-sm font-jakarta font-semibold text-guardian mb-3 uppercase tracking-wide"
+        className={`block text-sm font-jakarta font-semibold mb-3 uppercase tracking-wide ${
+          props.disabled ? 'text-guardian/40' : 'text-guardian'
+        }`}
       >
         {label}
       </label>
@@ -47,9 +49,10 @@ export const FormInput: React.FC<FormInputProps> = ({
           type={inputType}
           className={`
             block w-full border-0 border-b-2 px-0 py-4 text-lg
-            bg-transparent text-white-knight placeholder-guardian/60 font-jakarta
+            bg-transparent font-jakarta
             focus:ring-0 focus:border-supernova transition-colors duration-200
-            ${error ? 'border-red-500' : 'border-guardian/40 hover:border-guardian/60'}
+            ${props.disabled ? 'text-guardian/40 placeholder-guardian/30 cursor-not-allowed border-guardian/20' : 'text-white-knight placeholder-guardian/60'}
+            ${error ? 'border-red-500' : props.disabled ? 'border-guardian/20' : 'border-guardian/40 hover:border-guardian/60'}
             ${showPasswordToggle ? 'pr-12' : ''}
             ${className}
           `}
@@ -161,7 +164,9 @@ export const FormSelect: React.FC<FormSelectProps> = ({
     <div className="mb-8">
       <label 
         htmlFor={inputId} 
-        className="block text-sm font-jakarta font-semibold text-guardian mb-3 uppercase tracking-wide"
+        className={`block text-sm font-jakarta font-semibold mb-3 uppercase tracking-wide ${
+          props.disabled ? 'text-guardian/40' : 'text-guardian'
+        }`}
       >
         {label}
       </label>
@@ -171,8 +176,8 @@ export const FormSelect: React.FC<FormSelectProps> = ({
           block w-full border-0 border-b-2 px-0 py-4 text-lg
           bg-transparent font-jakarta
           focus:ring-0 focus:border-supernova transition-colors duration-200
-          ${props.disabled ? 'text-guardian/60 cursor-not-allowed' : 'text-white-knight'}
-          ${error ? 'border-red-500' : 'border-guardian/40 hover:border-guardian/60'}
+          ${props.disabled ? 'text-guardian/40 cursor-not-allowed' : 'text-white-knight'}
+          ${error ? 'border-red-500' : props.disabled ? 'border-guardian/20' : 'border-guardian/40 hover:border-guardian/60'}
           ${className}
         `}
         {...props}

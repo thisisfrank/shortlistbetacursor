@@ -1,12 +1,12 @@
 import React from 'react';
 import { FormInput } from '../FormInput';
+import { PhoneInput } from '../PhoneInput';
 import { Button } from '../../ui/Button';
 
 interface CompanyInfoStepProps {
   formData: {
     title: string;
     companyName: string;
-    contactName: string;
     email: string;
     phone: string;
   };
@@ -43,35 +43,26 @@ export const CompanyInfoStep: React.FC<CompanyInfoStepProps> = ({
         placeholder="Enter your company name"
       />
       
-      <FormInput
-        label="Contact Name"
-        name="contactName"
-        value={formData.contactName}
-        onChange={onChange}
-        error={errors.contactName}
-        required
-        placeholder="Enter your full name"
-      />
-      
+
       <FormInput
         label="Email Address"
         name="email"
         type="email"
         value={formData.email}
         onChange={onChange}
+        error={errors.email}
         required
         placeholder="Enter your email address"
       />
       
-      <FormInput
+      <PhoneInput
         label="Phone Number"
         name="phone"
-        type="tel"
         value={formData.phone}
         onChange={onChange}
         error={errors.phone}
         required
-        placeholder="Enter your phone number"
+        placeholder="Enter phone number"
       />
 
       <div className="pt-8 flex gap-4">
@@ -81,7 +72,7 @@ export const CompanyInfoStep: React.FC<CompanyInfoStepProps> = ({
           </Button>
         )}
         <Button type="submit" size="lg" className="flex-1">
-          CONTINUE TO REQUIREMENTS
+          CONFIRM YOUR CANDIDATE SEARCH
         </Button>
       </div>
     </form>

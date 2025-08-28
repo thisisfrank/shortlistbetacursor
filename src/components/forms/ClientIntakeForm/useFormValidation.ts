@@ -16,7 +16,7 @@ export const useFormValidation = () => {
     const errors: ValidationErrors = {};
     
     if (!formData.title.trim()) {
-      errors.title = 'Job title is required';
+      errors.title = 'Position title is required';
     }
     
     return errors;
@@ -27,6 +27,10 @@ export const useFormValidation = () => {
     
     if (!formData.description.trim()) {
       errors.description = 'Job description is required';
+    }
+    
+    if (!formData.industry.trim()) {
+      errors.industry = 'Industry is required';
     }
     
     if (!formData.seniorityLevel) {
@@ -56,8 +60,8 @@ export const useFormValidation = () => {
       errors.salaryRangeMax = 'Maximum salary must be greater than minimum salary';
     }
     
-    if (formData.mustHaveSkills.length === 0) {
-      errors.mustHaveSkills = 'At least one skill is required';
+    if (formData.mustHaveSkills.length < 3) {
+      errors.mustHaveSkills = `${3 - formData.mustHaveSkills.length} more skill${3 - formData.mustHaveSkills.length > 1 ? 's' : ''} required`;
     } else if (formData.mustHaveSkills.length > 3) {
       errors.mustHaveSkills = 'No more than 3 skills allowed';
     }
@@ -72,9 +76,7 @@ export const useFormValidation = () => {
       errors.companyName = 'Company name is required';
     }
     
-    if (!formData.contactName.trim()) {
-      errors.contactName = 'Contact name is required';
-    }
+
     
     if (!formData.email.trim()) {
       errors.email = 'Email is required';
@@ -83,7 +85,13 @@ export const useFormValidation = () => {
     }
     
     if (!formData.phone.trim()) {
-      errors.phone = 'Phone is required';
+      errors.phone = 'Phone number is required';
+    } else {
+      // Phone should be in format: +X XXXXXXXXXX
+      const phoneRegex = /^\+\d{1,4}\s\d{5,15}$/;
+      if (!phoneRegex.test(formData.phone)) {
+        errors.phone = 'Please enter a valid phone number';
+      }
     }
     
     return errors;

@@ -334,7 +334,7 @@ export const JobManagement: React.FC = () => {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-jakarta font-semibold text-guardian mb-2 uppercase tracking-wide">
-                    Job Title
+                    Position Title
                   </label>
                   <input
                     type="text"

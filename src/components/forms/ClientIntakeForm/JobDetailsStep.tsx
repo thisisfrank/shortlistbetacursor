@@ -164,7 +164,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
     { value: 'Junior', label: 'Junior (1-3 years)' },
     { value: 'Mid', label: 'Mid (4-6 years)' },
     { value: 'Senior', label: 'Senior (7-10 years)' },
-    { value: 'Executive', label: 'Executive (10+ years)' }
+    { value: 'Super Senior', label: 'Super Senior (10+ years)' }
   ];
 
 
@@ -191,7 +191,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
         onChange={onChange}
         error={errors.industry}
         placeholder="e.g., Technology, Healthcare, Finance, Manufacturing"
-        required={false}
+        required
       />
       
       {/* Experience Required */}
@@ -226,8 +226,10 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
             </button>
           ))}
         </div>
-        {errors.seniorityLevel && (
-          <p className="text-red-400 text-sm mt-2">{errors.seniorityLevel}</p>
+        {(errors.seniorityLevel || !formData.seniorityLevel) && (
+          <p className="text-red-400 text-sm mt-2">
+            {errors.seniorityLevel || 'Experience level is required'}
+          </p>
         )}
       </div>
       
@@ -300,7 +302,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
       {/* Must Have Skills */}
       <div className="mb-8">
         <label className="block text-sm font-jakarta font-semibold text-guardian mb-3 uppercase tracking-wide">
-          Must Have Skills
+          Must Have Skills (3+ required)
         </label>
         <div className="flex gap-3">
           <input
@@ -308,7 +310,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
             value={newSkill}
             onChange={(e) => setNewSkill(e.target.value)}
             onKeyDown={handleSkillKeyDown}
-            placeholder="Add up to 3 must-have skills"
+            placeholder="Enter skills here"
             className="flex-1 border-0 border-b-2 px-0 py-4 text-lg bg-transparent text-white-knight placeholder-guardian/60 font-jakarta focus:ring-0 focus:border-supernova transition-colors duration-200 border-guardian/40 hover:border-guardian/60"
           />
           <Button
@@ -323,8 +325,10 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
             ADD
           </Button>
         </div>
-        {errors.mustHaveSkills && (
-          <p className="mt-2 text-sm text-red-400 font-jakarta font-medium">{errors.mustHaveSkills}</p>
+        {(errors.mustHaveSkills || formData.mustHaveSkills.length < 3) && (
+          <p className="mt-2 text-sm text-red-400 font-jakarta font-medium">
+            {errors.mustHaveSkills || `${3 - formData.mustHaveSkills.length} more skill${3 - formData.mustHaveSkills.length > 1 ? 's' : ''} required`}
+          </p>
         )}
         {formData.mustHaveSkills.length > 0 && (
           <div className="mt-6 space-y-3">
@@ -355,15 +359,15 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
           className="flex-1"
           size="lg"
         >
-          BACK TO JOB TITLE
+          BACK TO POSITION TITLE
         </Button>
         <Button 
           type="submit"
           className="flex-1"
           size="lg"
-          disabled={formData.mustHaveSkills.length === 0}
+          disabled={formData.mustHaveSkills.length < 3}
         >
-          CONTINUE TO COMPANY INFO
+          CONTINUE
         </Button>
       </div>
     </form>

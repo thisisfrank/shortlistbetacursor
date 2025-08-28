@@ -491,19 +491,19 @@ export const SubscriptionPlans: React.FC = () => {
 
         {/* Premium Service Offering */}
         <div className="mb-12">
-          <Card className="max-w-4xl mx-auto bg-gradient-to-r from-purple-500/20 to-purple-500/10 border-purple-500/30">
+          <Card className="max-w-4xl mx-auto bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 border-yellow-500/30">
             <CardContent className="p-8">
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center mb-4">
                   <div className="relative">
-                    <Crown size={48} className="text-purple-400 fill-current" />
-                    <div className="absolute inset-0 bg-purple-400/30 blur-xl rounded-full"></div>
+                    <Crown size={48} className="text-yellow-400 fill-current" />
+                    <div className="absolute inset-0 bg-yellow-400/30 blur-xl rounded-full"></div>
                   </div>
                 </div>
                 <h3 className="text-3xl font-anton text-white-knight mb-4 uppercase tracking-wide">
                 CANDIDATE ACCELERATOR PROGRAM
                 </h3>
-                <p className="text-xl text-purple-300 font-jakarta mb-6">
+                <p className="text-xl text-yellow-300 font-jakarta mb-6">
                   We build and manage your outbound candidate pipeline so you're not stuck relying on referrals or job boards to make great hires.
                 </p>
               </div>
@@ -514,43 +514,43 @@ export const SubscriptionPlans: React.FC = () => {
                  </h4>
                  <div className="space-y-4 max-w-2xl mx-auto">
                    <div className="flex items-center justify-center">
-                     <CheckCircle className="text-purple-400 mr-4 flex-shrink-0" size={20} />
+                     <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
                      <span className="text-guardian font-jakarta text-left">
                        Your personal Super Recruiter
                      </span>
                    </div>
                    <div className="flex items-center justify-center">
-                     <CheckCircle className="text-purple-400 mr-4 flex-shrink-0" size={20} />
+                     <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
                      <span className="text-guardian font-jakarta text-left">
                        High-quality candidate sourcing for every role
                      </span>
                    </div>
                    <div className="flex items-center justify-center">
-                     <CheckCircle className="text-purple-400 mr-4 flex-shrink-0" size={20} />
+                     <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
                      <span className="text-guardian font-jakarta text-left">
                        Create and manage your outbound candidate pipelines
                      </span>
                    </div>
                    <div className="flex items-center justify-center">
-                     <CheckCircle className="text-purple-400 mr-4 flex-shrink-0" size={20} />
+                     <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
                      <span className="text-guardian font-jakarta text-left">
                        Weekly reports with actionable recruiting insights
                      </span>
                    </div>
                    <div className="flex items-center justify-center">
-                     <CheckCircle className="text-purple-400 mr-4 flex-shrink-0" size={20} />
+                     <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
                      <span className="text-guardian font-jakarta text-left">
                        A/B message testing to maximize candidate conversions
                      </span>
                    </div>
                    <div className="flex items-center justify-center">
-                     <CheckCircle className="text-purple-400 mr-4 flex-shrink-0" size={20} />
+                     <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
                      <span className="text-guardian font-jakarta text-left">
                        Custom candidate pitch deck to sell your company
                      </span>
                    </div>
                    <div className="flex items-center justify-center">
-                     <CheckCircle className="text-purple-400 mr-4 flex-shrink-0" size={20} />
+                     <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
                      <span className="text-guardian font-jakarta text-left">
                        100% ownership of all candidate data
                      </span>
@@ -559,7 +559,7 @@ export const SubscriptionPlans: React.FC = () => {
                </div>
 
                <div className="text-center mb-8">
-                 <div className="text-4xl font-anton text-purple-300 mb-6">
+                 <div className="text-4xl font-anton text-yellow-300 mb-6">
                    STARTING AT $999<span className="text-lg">/month</span>
                  </div>
                  
@@ -567,7 +567,7 @@ export const SubscriptionPlans: React.FC = () => {
                    onClick={() => window.open('https://calendly.com/superrecruiter/outboundcandidatepipelines', '_blank')}
                    variant="primary"
                    size="lg"
-                   className="bg-purple-500 hover:bg-purple-600 text-white font-anton uppercase tracking-wide px-8 py-4"
+                   className="bg-black hover:bg-gray-800 text-white font-anton uppercase tracking-wide px-8 py-4"
                  >
                    BOOK DISCOVERY CALL
                  </Button>
@@ -576,7 +576,7 @@ export const SubscriptionPlans: React.FC = () => {
                  </p>
                </div>
 
-              <div className="text-center border-t border-purple-500/20 pt-6">
+              <div className="text-center border-t border-yellow-500/20 pt-6">
                 <p className="text-guardian font-jakarta">
                   <strong className="text-white-knight">Perfect for:</strong> Hiring managers, recruiters, and founders who want high-quality candidates delivered straight to their calendars - without lifting a finger.
                 </p>

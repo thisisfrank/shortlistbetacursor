@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useData } from '../../context/DataContext';
 import { LeftPanel } from './LeftPanel';
 import { Menu } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { getUserUsageStats } from '../../utils/userUsageStats';
 
 export const Header: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { userProfile, loading } = useAuth();
+  const { jobs, candidates, tiers, creditTransactions } = useData();
   const [leftPanelOpen, setLeftPanelOpen] = useState(false);
   
   const handleMenuToggle = (e: React.MouseEvent) => {
@@ -90,6 +93,10 @@ export const Header: React.FC = () => {
   };
 
   const navItems = getNavItems();
+  
+  // Calculate user credits using the sophisticated stats function
+  const userStats = getUserUsageStats(userProfile as any, jobs, candidates, tiers, creditTransactions);
+  const availableCredits = userStats?.candidatesRemaining ?? userProfile?.availableCredits ?? 0;
   
   // Auto-navigate to role home when role changes - with debouncing to prevent flashing
   React.useEffect(() => {
@@ -194,15 +201,24 @@ export const Header: React.FC = () => {
 
           {/* User info and Sign up/Sign in buttons - positioned absolutely to the right */}
           <div className="absolute right-0 flex items-center gap-3">
-            {/* Show user name when authenticated */}
+            {/* Show user name and credits when authenticated */}
             {userProfile && (
-              <div className="flex items-center gap-2 text-guardian">
-                <span className="text-sm font-jakarta">Welcome,</span>
-                <span className="text-white-knight font-semibold">
-                  {userProfile.name && userProfile.name.trim() !== '' 
-                    ? userProfile.name 
-                    : 'User'}
-                </span>
+              <div className="flex items-center gap-3 text-guardian">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-jakarta">Welcome,</span>
+                  <span className="text-white-knight font-semibold">
+                    {userProfile.name && userProfile.name.trim() !== '' 
+                      ? userProfile.name 
+                      : 'User'}
+                  </span>
+                </div>
+                {/* Credits display */}
+                <div className="flex items-center gap-1 bg-shadowforce-light/50 px-3 py-1 rounded-lg border border-guardian/20">
+                  <span className="text-xs font-jakarta text-guardian">Credits:</span>
+                  <span className="text-sm font-semibold text-supernova">
+                    {availableCredits}
+                  </span>
+                </div>
               </div>
             )}
             

@@ -55,7 +55,7 @@ export const useFormSubmission = ({ setCurrentStep }: UseFormSubmissionProps) =>
         companyName: formData.companyName,
         title: formData.title,
         description: formData.description,
-        seniorityLevel: formData.seniorityLevel as 'Junior' | 'Mid' | 'Senior' | 'Executive',
+        seniorityLevel: formData.seniorityLevel as 'Junior' | 'Mid' | 'Senior' | 'Super Senior',
         location: location,
         salaryRangeMin: extractNumericValue(formData.salaryRangeMin),
         salaryRangeMax: extractNumericValue(formData.salaryRangeMax),

@@ -110,7 +110,7 @@ export const generateCandidateSummary = async (candidateData: CandidateData): Pr
         messages: [
           {
             role: 'user',
-            content: `Based on the following candidate information, write a professional summary in exactly 2-3 sentences maximum that highlights their key qualifications, experience, and value proposition. IMPORTANT: Include their total years of experience and list their other industries/companies as bullet points.
+            content: `Based on the following candidate information, write a professional summary in exactly 2-3 sentences maximum that highlights their key qualifications, experience, and value proposition. IMPORTANT: Include their total years of experience.
 
 Name: ${candidateData.firstName} ${candidateData.lastName}
 Current Role: ${candidateData.headline || 'N/A'}
@@ -138,11 +138,7 @@ ${candidateData.skills && candidateData.skills.length > 0
 About:
 ${candidateData.about || 'No about section available'}
 
-Format your response as follows:
-[2-3 sentence professional summary that mentions their ${yearsOfExperience} years of experience]
-
-Other Industries/Companies:
-${industries.length > 0 ? industries.map(company => `• ${company}`).join('\n') : '• No additional companies listed'}`
+Provide a 2-3 sentence professional summary that mentions their ${yearsOfExperience} years of experience.`
           }
         ]
       })
@@ -439,12 +435,7 @@ const generateFallbackSummary = (candidateData: CandidateData): string => {
     summary += ` They hold a ${latestEducation.degree} from ${latestEducation.school}.`;
   }
   
-  // Add industries section
-  if (industries.length > 0) {
-    summary += `\n\nOther Industries/Companies:\n${industries.map(company => `• ${company}`).join('\n')}`;
-  } else {
-    summary += '\n\nOther Industries/Companies:\n• No additional companies listed';
-  }
+
   
   return summary;
 };

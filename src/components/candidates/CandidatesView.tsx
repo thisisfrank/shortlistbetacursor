@@ -9,7 +9,7 @@ import { generateJobMatchScore } from '../../services/anthropicService';
 import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List, Edit2, Trash2, Save, X, MessageSquare } from 'lucide-react';
+import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List, Edit2, Trash2, Save, X, MessageSquare, CheckCircle } from 'lucide-react';
 
 // Helper function to calculate total years of experience
 const calculateYearsOfExperience = (experience?: Array<{ title: string; company: string; duration: string }>): number => {
@@ -808,7 +808,7 @@ export const CandidatesView: React.FC = () => {
                               type="checkbox"
                               checked={selectedCandidates.has(candidate.id)}
                               onChange={() => toggleCandidateSelection(candidate.id)}
-                              className="w-5 h-5 text-supernova bg-gray-700 border-gray-600 rounded focus:ring-supernova focus:ring-2"
+                              className="w-5 h-5 text-supernova bg-gray-700 border-gray-600 rounded focus:ring-0 focus:outline-none"
                             />
                           </div>
                         </div>
@@ -1005,46 +1005,47 @@ export const CandidatesView: React.FC = () => {
                                     </div>
                                   </div>
                                 )}
-                              </div>
-                            </div>
-                            
-                            <div className="mt-6 pt-6 border-t border-guardian/20">
-                              <div className="flex gap-3">
-                                <Button 
-                                  variant="primary" 
-                                  size="lg" 
-                                  className="flex-1 flex items-center justify-center gap-2 glow-supernova"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    window.open(candidate.linkedinUrl, '_blank');
-                                  }}
-                                >
-                                  <ExternalLink size={16} />
-                                  VIEW LINKEDIN PROFILE
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="lg" 
-                                  className="flex-1 flex items-center justify-center gap-2"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const candidateData = encodeURIComponent(JSON.stringify({
-                                      id: candidate.id,
-                                      firstName: candidate.firstName,
-                                      lastName: candidate.lastName,
-                                      headline: candidate.headline,
-                                      location: candidate.location,
-                                      skills: candidate.skills,
-                                      experience: candidate.experience,
-                                      linkedinUrl: candidate.linkedinUrl,
-                                      jobId: candidate.jobId
-                                    }));
-                                    navigate(`/ai-message-generator?candidate=${candidateData}`);
-                                  }}
-                                >
-                                  <MessageSquare size={16} />
-                                  GENERATE MESSAGE
-                                </Button>
+                                
+                                {/* Action Buttons - Moved here after Key Skills */}
+                                <div className="mt-6 pt-6 border-t border-guardian/20">
+                                  <div className="flex flex-col gap-3">
+                                    <Button 
+                                      variant="primary" 
+                                      size="lg" 
+                                      className="w-full flex items-center justify-center gap-2 glow-supernova"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.open(candidate.linkedinUrl, '_blank');
+                                      }}
+                                    >
+                                      <ExternalLink size={16} />
+                                      VIEW LINKEDIN PROFILE
+                                    </Button>
+                                    <Button 
+                                      variant="outline" 
+                                      size="lg" 
+                                      className="w-full flex items-center justify-center gap-2"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const candidateData = encodeURIComponent(JSON.stringify({
+                                          id: candidate.id,
+                                          firstName: candidate.firstName,
+                                          lastName: candidate.lastName,
+                                          headline: candidate.headline,
+                                          location: candidate.location,
+                                          skills: candidate.skills,
+                                          experience: candidate.experience,
+                                          linkedinUrl: candidate.linkedinUrl,
+                                          jobId: candidate.jobId
+                                        }));
+                                        navigate(`/ai-message-generator?candidate=${candidateData}`);
+                                      }}
+                                    >
+                                      <MessageSquare size={16} />
+                                      GENERATE MESSAGE
+                                    </Button>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -1274,7 +1275,7 @@ export const CandidatesView: React.FC = () => {
                                     {job.seniorityLevel === 'Junior' ? 'Junior (1-3 years)' :
                                      job.seniorityLevel === 'Mid' ? 'Mid (4-6 years)' :
                                      job.seniorityLevel === 'Senior' ? 'Senior (7-10 years)' :
-                                     job.seniorityLevel === 'Executive' ? 'Executive (10+ years)' :
+                                     job.seniorityLevel === 'Super Senior' ? 'Super Senior (10+ years)' :
                                      job.seniorityLevel || 'Not specified'}
                                   </p>
                                 </div>
@@ -1349,6 +1350,102 @@ export const CandidatesView: React.FC = () => {
           </CardContent>
         </Card>
         
+        {/* Candidate Accelerator Program */}
+        <div className="mt-12">
+          <Card className="max-w-4xl mx-auto bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 border-yellow-500/30">
+            <CardContent className="p-8">
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="relative">
+                    <Crown size={48} className="text-yellow-400 fill-current" />
+                    <div className="absolute inset-0 bg-yellow-400/30 blur-xl rounded-full"></div>
+                  </div>
+                </div>
+                <h3 className="text-3xl font-anton text-white-knight mb-4 uppercase tracking-wide">
+                CANDIDATE ACCELERATOR PROGRAM
+                </h3>
+                <p className="text-xl text-yellow-300 font-jakarta mb-6">
+                  We build and manage your outbound candidate pipeline so you're not stuck relying on referrals or job boards to make great hires.
+                </p>
+              </div>
+
+              <div className="text-center mb-8">
+                <h4 className="text-xl font-anton text-white-knight uppercase tracking-wide mb-6">
+                  What's Included:
+                </h4>
+                <div className="space-y-4 max-w-2xl mx-auto">
+                  <div className="flex items-center justify-center">
+                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta text-left">
+                      Your personal Super Recruiter
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta text-left">
+                      High-quality candidate sourcing for every role
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta text-left">
+                      Create and manage your outbound candidate pipelines
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta text-left">
+                      Weekly reports with actionable recruiting insights
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta text-left">
+                      A/B message testing to maximize candidate conversions
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta text-left">
+                      Custom candidate pitch deck to sell your company
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta text-left">
+                      100% ownership of all candidate data
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center mb-8">
+                <div className="text-4xl font-anton text-yellow-300 mb-6">
+                  STARTING AT $999<span className="text-lg">/month</span>
+                </div>
+                
+                <Button 
+                  onClick={() => window.open('https://calendly.com/superrecruiter/outboundcandidatepipelines', '_blank')}
+                  variant="primary"
+                  size="lg"
+                  className="bg-black hover:bg-gray-800 text-white font-anton uppercase tracking-wide px-8 py-4"
+                >
+                  BOOK DISCOVERY CALL
+                </Button>
+                <p className="text-guardian font-jakarta text-sm mt-2">
+                Lower your cost per hire by over 30% in 90 days or pay nothing
+                </p>
+              </div>
+
+              <div className="text-center border-t border-yellow-500/20 pt-6">
+                <p className="text-guardian font-jakarta">
+                  <strong className="text-white-knight">Perfect for:</strong> Hiring managers, recruiters, and founders who want high-quality candidates delivered straight to their calendars - without lifting a finger.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
         {/* Screenshots Section */}
         <div className="mt-12">
           {/* Headlines */}
@@ -1357,7 +1454,7 @@ export const CandidatesView: React.FC = () => {
               You're in Good Hands
             </h2>
             <p className="text-xl text-guardian font-jakarta max-w-2xl mx-auto">
-              Some thoughts from current and former clients
+          
             </p>
           </div>
           
