@@ -9,7 +9,7 @@ import { generateJobMatchScore } from '../../services/anthropicService';
 import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List, Edit2, Trash2, Save, X, MessageSquare, CheckCircle } from 'lucide-react';
+import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List, Edit2, Trash2, Save, X, MessageSquare, CheckCircle, ArrowDown, MessageCircle } from 'lucide-react';
 
 // Helper function to calculate total years of experience
 const calculateYearsOfExperience = (experience?: Array<{ title: string; company: string; duration: string }>): number => {
@@ -75,9 +75,10 @@ export const CandidatesView: React.FC = () => {
     getShortlistsByUser, 
     getCandidatesByShortlist,
     updateShortlist,
-    deleteShortlist
+    deleteShortlist,
+    updateJob
   } = useData();
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const navigate = useNavigate();
   
   // Add error boundary
@@ -138,6 +139,26 @@ export const CandidatesView: React.FC = () => {
   const [editShortlistName, setEditShortlistName] = useState('');
   const [editShortlistDescription, setEditShortlistDescription] = useState('');
   const [isShortlistLoading, setIsShortlistLoading] = useState(false);
+  const [requestMoreModal, setRequestMoreModal] = useState<{
+    isOpen: boolean;
+    jobId: string | null;
+    additionalCandidates: number;
+  }>({
+    isOpen: false,
+    jobId: null,
+    additionalCandidates: 5
+  });
+  const [showGenerateMessageTip, setShowGenerateMessageTip] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    feedback: string;
+    isSubmitting: boolean;
+  }>({
+    isOpen: false,
+    feedback: '',
+    isSubmitting: false
+  });
+
   
   // Define currentJobCandidates at component level with shortlist filtering
   const allJobCandidates = selectedJobId ? getCandidatesByJob(selectedJobId) : [];
@@ -172,6 +193,21 @@ export const CandidatesView: React.FC = () => {
   useEffect(() => {
     matchScoresRef.current = matchScores;
   }, [matchScores]);
+
+  // Check if user has seen the generate message tip before
+  useEffect(() => {
+    if (selectedJobId && currentJobCandidates.length > 0) {
+      const hasSeenTip = localStorage.getItem('hasSeenGenerateMessageTip');
+      if (!hasSeenTip) {
+        // Show tip after a brief delay to ensure UI is rendered
+        setTimeout(() => {
+          setShowGenerateMessageTip(true);
+        }, 1000);
+      }
+    }
+  }, [selectedJobId, currentJobCandidates.length]);
+
+
   
   // Format date
   const formatDate = (date: Date) => {
@@ -288,6 +324,66 @@ export const CandidatesView: React.FC = () => {
       });
     } finally {
       setIsCreatingCheckout(false);
+    }
+  };
+
+  const handleRequestMoreCandidates = (jobId: string) => {
+    const job = getJobById(jobId);
+    if (!job) {
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: 'Job not found'
+      });
+      return;
+    }
+
+    setRequestMoreModal({
+      isOpen: true,
+      jobId: jobId,
+      additionalCandidates: 5
+    });
+  };
+
+  const handleConfirmRequestMore = async () => {
+    if (!requestMoreModal.jobId) return;
+
+    try {
+      const job = getJobById(requestMoreModal.jobId);
+      if (!job) {
+        setAlertModal({
+          isOpen: true,
+          title: 'Error',
+          message: 'Job not found'
+        });
+        return;
+      }
+
+      const newCandidatesRequested = job.candidatesRequested + requestMoreModal.additionalCandidates;
+      
+      await updateJob(requestMoreModal.jobId, {
+        candidatesRequested: newCandidatesRequested,
+        status: 'Unclaimed' // Set back to unclaimed so sourcers can pick it up
+      });
+
+      setRequestMoreModal({
+        isOpen: false,
+        jobId: null,
+        additionalCandidates: 5
+      });
+
+      setAlertModal({
+        isOpen: true,
+        title: 'Request Submitted',
+        message: `Successfully requested ${requestMoreModal.additionalCandidates} additional candidates for "${job.title}". Your job has been added back to the sourcer queue.`
+      });
+    } catch (error) {
+      console.error('Error requesting more candidates:', error);
+      setAlertModal({
+        isOpen: true,
+        title: 'Request Failed',
+        message: 'Failed to request more candidates. Please try again.'
+      });
     }
   };
 
@@ -483,13 +579,107 @@ export const CandidatesView: React.FC = () => {
     }
   };
 
+  const handleDismissGenerateMessageTip = () => {
+    setShowGenerateMessageTip(false);
+    localStorage.setItem('hasSeenGenerateMessageTip', 'true');
+  };
+
+  const handleOpenFeedbackModal = () => {
+    setFeedbackModal({
+      isOpen: true,
+      feedback: '',
+      isSubmitting: false
+    });
+  };
+
+  const handleCloseFeedbackModal = () => {
+    setFeedbackModal({
+      isOpen: false,
+      feedback: '',
+      isSubmitting: false
+    });
+  };
+
+  const handleFeedbackChange = (feedback: string) => {
+    setFeedbackModal(prev => ({
+      ...prev,
+      feedback
+    }));
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!feedbackModal.feedback.trim()) return;
+    
+    setFeedbackModal(prev => ({ ...prev, isSubmitting: true }));
+    
+    try {
+      const selectedJob = selectedJobId ? getJobById(selectedJobId) : null;
+      
+      // Prepare feedback data for webhook
+      const feedbackData = {
+        feedback: feedbackModal.feedback.trim(),
+        timestamp: new Date().toISOString(),
+        user: {
+          id: user?.id,
+          email: user?.email,
+          role: userProfile?.role,
+          name: userProfile?.name
+        },
+        context: {
+          jobId: selectedJobId,
+          jobTitle: selectedJob?.title,
+          companyName: selectedJob?.companyName,
+          candidateCount: currentJobCandidates.length,
+          currentView: currentView,
+          selectedShortlistId: currentView === 'shortlist' ? selectedShortlistId : null
+        },
+        page: 'candidates'
+      };
+
+      // Submit to Make.com webhook
+      const response = await fetch('https://hook.us1.make.com/ohs8r24la92v5bl7pvb03pzyikh28wy2', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(feedbackData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Webhook failed with status: ${response.status}`);
+      }
+      
+      setAlertModal({
+        isOpen: true,
+        title: 'Feedback Submitted',
+        message: 'Thank you for your feedback! We appreciate your input.',
+        type: 'warning'
+      });
+      
+      handleCloseFeedbackModal();
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      setAlertModal({
+        isOpen: true,
+        title: 'Submission Failed',
+        message: 'Failed to submit feedback. Please try again.',
+        type: 'error'
+      });
+    } finally {
+      setFeedbackModal(prev => ({ ...prev, isSubmitting: false }));
+    }
+  };
+
+
+
   // If a job is selected, show candidates for that job
   if (selectedJobId) {
     const selectedJob = getJobById(selectedJobId);
     const companyName = selectedJob?.companyName || 'Unknown Company';
     
-    // Only show candidates if job is completed
-    if (selectedJob?.status !== 'Completed') {
+    // Only show candidates if there are actually candidates for this job
+    const jobCandidates = getCandidatesByJob(selectedJobId);
+    if (!selectedJob || jobCandidates.length === 0) {
       setSelectedJobId(null);
       return null;
     }
@@ -525,6 +715,7 @@ export const CandidatesView: React.FC = () => {
                 setSelectedJobId(null);
                 setIsShortlistModalOpen(false); // Close modal when navigating back
                 setSelectedCandidates(new Set()); // Clear selections when navigating back
+                handleCloseFeedbackModal(); // Close feedback modal when navigating back
               }}
               className="flex items-center gap-2"
             >
@@ -1008,7 +1199,7 @@ export const CandidatesView: React.FC = () => {
                                 
                                 {/* Action Buttons - Moved here after Key Skills */}
                                 <div className="mt-6 pt-6 border-t border-guardian/20">
-                                  <div className="flex flex-col gap-3">
+                                  <div className="flex flex-col gap-3 relative">
                                     <Button 
                                       variant="primary" 
                                       size="lg" 
@@ -1021,29 +1212,53 @@ export const CandidatesView: React.FC = () => {
                                       <ExternalLink size={16} />
                                       VIEW LINKEDIN PROFILE
                                     </Button>
-                                    <Button 
-                                      variant="outline" 
-                                      size="lg" 
-                                      className="w-full flex items-center justify-center gap-2"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const candidateData = encodeURIComponent(JSON.stringify({
-                                          id: candidate.id,
-                                          firstName: candidate.firstName,
-                                          lastName: candidate.lastName,
-                                          headline: candidate.headline,
-                                          location: candidate.location,
-                                          skills: candidate.skills,
-                                          experience: candidate.experience,
-                                          linkedinUrl: candidate.linkedinUrl,
-                                          jobId: candidate.jobId
-                                        }));
-                                        navigate(`/ai-message-generator?candidate=${candidateData}`);
-                                      }}
-                                    >
-                                      <MessageSquare size={16} />
-                                      GENERATE MESSAGE
-                                    </Button>
+                                    <div className="relative">
+                                      <Button 
+                                        variant="outline" 
+                                        size="lg" 
+                                        className="w-full flex items-center justify-center gap-2"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDismissGenerateMessageTip(); // Dismiss tip when button is clicked
+                                          const candidateData = encodeURIComponent(JSON.stringify({
+                                            id: candidate.id,
+                                            firstName: candidate.firstName,
+                                            lastName: candidate.lastName,
+                                            headline: candidate.headline,
+                                            location: candidate.location,
+                                            skills: candidate.skills,
+                                            experience: candidate.experience,
+                                            linkedinUrl: candidate.linkedinUrl,
+                                            jobId: candidate.jobId
+                                          }));
+                                          navigate(`/ai-message-generator?candidate=${candidateData}`);
+                                        }}
+                                      >
+                                        <MessageSquare size={16} />
+                                        GENERATE MESSAGE
+                                      </Button>
+                                      
+                                      {/* Generate Message Tip - only show on first expanded candidate */}
+                                      {showGenerateMessageTip && expandedCandidates.has(candidate.id) && sortedCurrentJobCandidates.indexOf(candidate) === 0 && (
+                                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 z-50 w-full max-w-sm mt-2">
+                                          <div className="bg-supernova text-shadowforce px-4 py-3 rounded-lg shadow-2xl text-center relative border-2 border-shadowforce/20">
+                                            {/* Arrow pointing up to button */}
+                                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1">
+                                              <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-b-[12px] border-l-transparent border-r-transparent border-b-supernova"></div>
+                                            </div>
+                                            <button
+                                              onClick={handleDismissGenerateMessageTip}
+                                              className="absolute -top-2 -right-2 bg-shadowforce text-supernova rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold hover:bg-shadowforce/80 transition-colors shadow-lg"
+                                            >
+                                              ×
+                                            </button>
+                                            <p className="text-xs font-jakarta leading-relaxed">
+                                              Click here to generate personalized LinkedIn messages for this candidate
+                                            </p>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -1053,6 +1268,24 @@ export const CandidatesView: React.FC = () => {
                       </CardContent>
                     </Card>
                   ))}
+                </div>
+                
+                {/* Feedback Button - underneath all candidates */}
+                <div className="mt-8 pt-6 border-t border-guardian/20">
+                  <div className="flex justify-center">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={handleOpenFeedbackModal}
+                      className="flex items-center gap-3 px-8 py-4 text-guardian hover:text-white-knight border-guardian/30 hover:border-supernova/50 transition-all duration-300"
+                    >
+                      <MessageCircle size={20} />
+                      SUBMIT FEEDBACK
+                    </Button>
+                  </div>
+                  <p className="text-center text-guardian/60 text-sm mt-2 font-jakarta">
+                    Help us improve by sharing your thoughts on these candidates
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -1068,6 +1301,67 @@ export const CandidatesView: React.FC = () => {
               setIsShortlistModalOpen(false);
             }}
           />
+
+          {/* Feedback Modal - only show when in candidates view */}
+          {feedbackModal.isOpen && (
+            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+              <div className="bg-shadowforce border border-guardian/30 rounded-lg p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-2xl font-anton text-white-knight uppercase tracking-wide">
+                    Submit Feedback
+                  </h3>
+                  <button
+                    onClick={handleCloseFeedbackModal}
+                    className="text-guardian hover:text-white-knight transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+                
+                <div className="mb-6">
+                  <label className="block text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide mb-3">
+                    Your Feedback
+                  </label>
+                  <textarea
+                    value={feedbackModal.feedback}
+                    onChange={(e) => handleFeedbackChange(e.target.value)}
+                    placeholder="Please share your thoughts on the candidates, suggestions for improvement, or any other feedback..."
+                    className="w-full p-4 bg-shadowforce-light border border-guardian/30 rounded-lg text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta resize-vertical min-h-[120px]"
+                    rows={6}
+                  />
+                  <div className="mt-2 text-right">
+                    <span className={`text-xs font-jakarta ${
+                      feedbackModal.feedback.length > 1000 ? 'text-red-400' : 'text-guardian/60'
+                    }`}>
+                      {feedbackModal.feedback.length}/1000 characters
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 justify-end">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={handleCloseFeedbackModal}
+                    disabled={feedbackModal.isSubmitting}
+                    className="px-6"
+                  >
+                    CANCEL
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={handleSubmitFeedback}
+                    disabled={!feedbackModal.feedback.trim() || feedbackModal.isSubmitting || feedbackModal.feedback.length > 1000}
+                    isLoading={feedbackModal.isSubmitting}
+                    className="px-8 glow-supernova"
+                  >
+                    {feedbackModal.isSubmitting ? 'SUBMITTING...' : 'SUBMIT FEEDBACK'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1184,10 +1478,13 @@ export const CandidatesView: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-6">
-                {sortedJobs.map(job => {
-                  const isCompleted = job.status === 'Completed';
-                  const clientStatus = isCompleted ? 'COMPLETED' : 'IN PROGRESS';
-                  const isExpanded = expandedJobs.has(job.id);
+                                  {sortedJobs.map(job => {
+                    const isCompleted = job.status === 'Completed';
+                    const jobCandidates = getCandidatesByJob(job.id);
+                    const hasCandidates = jobCandidates.length > 0;
+                    const clientStatus = isCompleted ? 'COMPLETED' : 
+                                         hasCandidates ? 'IN PROGRESS - CANDIDATES AVAILABLE' : 'IN PROGRESS';
+                    const isExpanded = expandedJobs.has(job.id);
                   
                   return (
                     <Card 
@@ -1201,6 +1498,8 @@ export const CandidatesView: React.FC = () => {
                             <div className={`px-3 py-2 rounded-lg border text-sm font-jakarta font-semibold uppercase tracking-wide ${
                               isCompleted 
                                 ? 'bg-green-500/10 border-green-500/30 text-green-400' 
+                                : hasCandidates
+                                ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
                                 : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
                             }`}>
                               {clientStatus}
@@ -1320,21 +1619,36 @@ export const CandidatesView: React.FC = () => {
                           </div>
                         )}
                         
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          fullWidth
-                          disabled={!isCompleted}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (isCompleted) {
-                              setSelectedJobId(job.id);
-                            }
-                          }}
-                          className="flex items-center justify-center gap-2"
-                        >
-                          {isCompleted ? 'SEE CANDIDATES' : 'PENDING COMPLETION'}
-                        </Button>
+                        <div className="flex gap-3">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1"
+                            disabled={!hasCandidates}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (hasCandidates) {
+                                setSelectedJobId(job.id);
+                              }
+                            }}
+                          >
+                            {hasCandidates ? `SEE CANDIDATES (${jobCandidates.length})` : 'PENDING COMPLETION'}
+                          </Button>
+                          
+                          {hasCandidates && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="flex-1 glow-supernova"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRequestMoreCandidates(job.id);
+                              }}
+                            >
+                              REQUEST MORE
+                            </Button>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
                   );
@@ -1554,6 +1868,78 @@ export const CandidatesView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Request More Candidates Modal */}
+      {requestMoreModal.isOpen && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-shadowforce border border-guardian/30 rounded-lg p-8 max-w-md w-full">
+            <h3 className="text-2xl font-anton text-white-knight mb-6 uppercase tracking-wide text-center">
+              Request More Candidates
+            </h3>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide mb-3">
+                Additional Candidates Needed
+              </label>
+              <div className="space-y-4">
+                <div className="relative">
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={requestMoreModal.additionalCandidates}
+                    onChange={(e) => setRequestMoreModal(prev => ({
+                      ...prev,
+                      additionalCandidates: parseInt(e.target.value)
+                    }))}
+                    className="w-full h-2 bg-guardian/30 rounded-lg appearance-none cursor-pointer slider"
+                    style={{
+                      background: `linear-gradient(to right, #FFD700 0%, #FFD700 ${(requestMoreModal.additionalCandidates - 1) / 19 * 100}%, #374151 ${(requestMoreModal.additionalCandidates - 1) / 19 * 100}%, #374151 100%)`
+                    }}
+                  />
+                  <div className="flex justify-between text-xs text-guardian mt-1">
+                    <span>1</span>
+                    <span>10</span>
+                    <span>20</span>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <span className="text-3xl font-anton text-supernova">
+                    {requestMoreModal.additionalCandidates}
+                  </span>
+                  <span className="text-white-knight font-jakarta ml-2">
+                    additional candidate{requestMoreModal.additionalCandidates !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => setRequestMoreModal({
+                  isOpen: false,
+                  jobId: null,
+                  additionalCandidates: 5
+                })}
+              >
+                CANCEL
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1 glow-supernova"
+                onClick={handleConfirmRequestMore}
+              >
+                REQUEST {requestMoreModal.additionalCandidates}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 };

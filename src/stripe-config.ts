@@ -14,7 +14,7 @@ export const stripeProducts: StripeProduct[] = [
     name: 'Top Shelf',
     description: 'Premium tier with unlimited access and priority support',
     mode: 'subscription',
-    price: 120.00
+    price: 199.00
   },
   {
     id: 'prod_SgO9Ov8KJgqfXd',
@@ -22,7 +22,7 @@ export const stripeProducts: StripeProduct[] = [
     name: 'Premium',
     description: 'Enhanced features with professional support',
     mode: 'subscription',
-    price: 50.00
+    price: 49.00
   },
   {
     id: 'prod_SgO9o092ze8mBs',
@@ -30,7 +30,7 @@ export const stripeProducts: StripeProduct[] = [
     name: 'Basic',
     description: 'Essential features to get you started',
     mode: 'subscription',
-    price: 30.00
+    price: 35.00
   }
 ];
 

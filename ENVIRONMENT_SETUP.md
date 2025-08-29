@@ -29,6 +29,7 @@ Create a `.env` file in your project root:
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_APIFY_API_TOKEN=your_apify_token
+VITE_JOB_WEBHOOK_URL=https://hook.us1.make.com/ymemot9h7rnfocccrl8nhedvjlw7mj1l
 
 # Backend Variables (for local edge function testing)
 STRIPE_SECRET_KEY=sk_test_your_stripe_secret
@@ -49,6 +50,7 @@ Required variables:
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY` 
 - `VITE_APIFY_API_TOKEN`
+- `VITE_JOB_WEBHOOK_URL` (optional - for job posting notifications)
 
 #### Supabase Edge Function Secrets
 Navigate to: Supabase Dashboard > Settings > Edge Functions > Secrets
@@ -90,6 +92,7 @@ Required secrets:
 | `VITE_SUPABASE_URL` | Database connection | Netlify | Public |
 | `VITE_SUPABASE_ANON_KEY` | Public database access | Netlify | Public |
 | `VITE_APIFY_API_TOKEN` | LinkedIn scraping | Netlify | Semi-private |
+| `VITE_JOB_WEBHOOK_URL` | Job posting notifications | Netlify | Public |
 
 ### Backend (Server-Only)
 | Variable | Purpose | Platform | Security Level |

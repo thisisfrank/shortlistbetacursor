@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Job, Candidate, Tier, CreditTransaction, UserProfile, Shortlist, ShortlistCandidate } from '../types';
 import { scrapeLinkedInProfiles } from '../services/apifyService';
 import { generateJobMatchScore } from '../services/anthropicService';
+import { webhookService } from '../services/webhookService';
 import { useAuth } from './AuthContext';
 
 interface DataContextType {
@@ -595,6 +596,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           recordCreditTransaction(user?.id, 'candidate', requestedCandidates, newJob.id).catch(error => 
             console.warn('⚠️ Candidate credit transaction failed but job was created:', error)
           );
+
+          // Send webhook notification (non-blocking)
+          if (user) {
+            webhookService.sendJobPostedWebhook(newJob, {
+              id: user.id,
+              email: user.email || '',
+              name: user.user_metadata?.name || user.email?.split('@')[0] || 'Unknown'
+            }).catch(error => 
+              console.warn('⚠️ Job webhook failed but job was created:', error)
+            );
+          }
           
           resolve(newJob);
           return;
@@ -687,6 +699,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           recordCreditTransaction(user?.id, 'candidate', requestedCandidates, newJob.id).catch(error => 
             console.warn('⚠️ Candidate credit transaction failed but job was created:', error)
           );
+
+          // Send webhook notification (non-blocking)
+          if (user) {
+            webhookService.sendJobPostedWebhook(newJob, {
+              id: user.id,
+              email: user.email || '',
+              name: user.user_metadata?.name || user.email?.split('@')[0] || 'Unknown'
+            }).catch(error => 
+              console.warn('⚠️ Job webhook failed but job was created:', error)
+            );
+          }
           
           resolve(newJob);
         } catch (supabaseError) {
@@ -721,6 +744,18 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           });
           
           console.log('✅ Job created in local storage (fallback):', newJob);
+          
+          // Send webhook notification (non-blocking)
+          if (user) {
+            webhookService.sendJobPostedWebhook(newJob, {
+              id: user.id,
+              email: user.email || '',
+              name: user.user_metadata?.name || user.email?.split('@')[0] || 'Unknown'
+            }).catch(error => 
+              console.warn('⚠️ Job webhook failed but job was created:', error)
+            );
+          }
+          
           resolve(newJob);
         }
         

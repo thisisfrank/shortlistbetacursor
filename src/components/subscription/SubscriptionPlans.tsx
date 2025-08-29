@@ -27,12 +27,12 @@ const subscriptionPlans = [
   {
     id: 'basic',
     name: 'Basic',
-    price: 30,
+    price: 35,
     priceId: 'price_1Rl1MuFPYYAarocke0oZgczA', // Real Stripe price ID
     description: 'Perfect for getting started',
     features: {
       jobs: 3,
-      credits: 200,
+      credits: 50,
       companyEmails: false,
       unlimited: false
     },
@@ -42,12 +42,12 @@ const subscriptionPlans = [
   {
     id: 'premium',
     name: 'Premium',
-    price: 50,
+    price: 49,
     priceId: 'price_1Rl1N5FPYYAarock0dFT7x9Q', // Real Stripe price ID
     description: 'Advanced features for scaling businesses',
     features: {
       jobs: 3,
-      credits: 150,
+      credits: 100,
       companyEmails: true,
       unlimited: false
     },
@@ -57,12 +57,12 @@ const subscriptionPlans = [
   {
     id: 'topshelf',
     name: 'Top Shelf',
-    price: 120,
+    price: 199,
     priceId: 'price_1Rl1NJFPYYAarockbgLtNiKk', // Real Stripe price ID
     description: 'Unlimited access for enterprise teams',
     features: {
       jobs: 10,
-      credits: 400,
+      credits: 500,
       companyEmails: true,
       unlimited: true
     },
@@ -309,10 +309,10 @@ export const SubscriptionPlans: React.FC = () => {
                 </h3>
                 <div className="mb-4">
                   {plan.price === 0 ? (
-                    <span className="text-4xl font-anton text-supernova">FREE</span>
+                    <span className="text-2xl font-anton text-supernova">FREE</span>
                   ) : (
                     <>
-                      <span className="text-4xl font-anton text-supernova">${plan.price}</span>
+                      <span className="text-2xl font-anton text-supernova">${plan.price}</span>
                       <span className="text-guardian font-jakarta">/month</span>
                     </>
                   )}
@@ -327,51 +327,13 @@ export const SubscriptionPlans: React.FC = () => {
 
               <CardContent className="pt-0">
                 <div className="space-y-4 mb-8 flex-1">
-                  <div className="flex items-center mt-6">
-                    <CheckCircle className="text-supernova mr-3 flex-shrink-0" size={16} />
-                    <span className="text-white-knight font-jakarta text-sm">
-                      {typeof plan.features.jobs === 'number' 
-                        ? `${plan.features.jobs} job submission${plan.features.jobs !== 1 ? 's' : ''}/month`
-                        : 'Unlimited job submissions'
-                      }
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <CheckCircle className="text-supernova mr-3 flex-shrink-0" size={16} />
-                    <span className="text-white-knight font-jakarta text-sm">
-                      {plan.features.credits} candidate credits/month
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <CheckCircle className="text-supernova mr-3 flex-shrink-0" size={16} />
-                    <span className="text-white-knight font-jakarta text-sm">
-                      Full LinkedIn profile card
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <CheckCircle className="text-supernova mr-3 flex-shrink-0" size={16} />
-                    <span className="text-white-knight font-jakarta text-sm">
-                      AI candidate matching
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <CheckCircle className="text-supernova mr-3 flex-shrink-0" size={16} />
-                    <span className="text-white-knight font-jakarta text-sm">
-                      {plan.id === 'free' ? 'Community support' : 
-                       plan.name === 'Basic' ? 'Email support' :
-                       plan.name === 'Premium' ? 'Priority support' :
-                       'Dedicated account manager'}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    {plan.features.companyEmails ? (
-                      <CheckCircle className="text-supernova mr-3 flex-shrink-0" size={16} />
-                    ) : (
-                      <X className="text-red-400 mr-3 flex-shrink-0" size={16} />
-                    )}
-                    <span className="text-white-knight font-jakarta text-sm">
-                      Company email addresses
-                    </span>
+                  <div className="text-center mt-6">
+                    <div className="text-4xl font-anton text-supernova mb-2">
+                      {plan.features.credits} CREDITS
+                    </div>
+                    <div className="text-sm text-guardian font-jakarta">
+                      per month
+                    </div>
                   </div>
                 </div>
 
@@ -491,7 +453,7 @@ export const SubscriptionPlans: React.FC = () => {
 
         {/* Premium Service Offering */}
         <div className="mb-12">
-          <Card className="max-w-4xl mx-auto bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 border-yellow-500/30">
+          <Card className="max-w-6xl mx-auto bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 border-yellow-500/30">
             <CardContent className="p-8">
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center mb-4">
@@ -504,81 +466,75 @@ export const SubscriptionPlans: React.FC = () => {
                 CANDIDATE ACCELERATOR PROGRAM
                 </h3>
                 <p className="text-xl text-yellow-300 font-jakarta mb-6">
-                  We build and manage your outbound candidate pipeline so you're not stuck relying on referrals or job boards to make great hires.
+                  We build and manage your outbound candidate pipeline so you're not stuck<br/> relying on referrals or job boards to make great hires.
                 </p>
               </div>
 
-                             <div className="text-center mb-8">
-                 <h4 className="text-xl font-anton text-white-knight uppercase tracking-wide mb-6">
-                   What's Included:
-                 </h4>
-                 <div className="space-y-4 max-w-2xl mx-auto">
-                   <div className="flex items-center justify-center">
-                     <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
-                     <span className="text-guardian font-jakarta text-left">
-                       Your personal Super Recruiter
-                     </span>
-                   </div>
-                   <div className="flex items-center justify-center">
-                     <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
-                     <span className="text-guardian font-jakarta text-left">
-                       High-quality candidate sourcing for every role
-                     </span>
-                   </div>
-                   <div className="flex items-center justify-center">
-                     <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
-                     <span className="text-guardian font-jakarta text-left">
-                       Create and manage your outbound candidate pipelines
-                     </span>
-                   </div>
-                   <div className="flex items-center justify-center">
-                     <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
-                     <span className="text-guardian font-jakarta text-left">
-                       Weekly reports with actionable recruiting insights
-                     </span>
-                   </div>
-                   <div className="flex items-center justify-center">
-                     <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
-                     <span className="text-guardian font-jakarta text-left">
-                       A/B message testing to maximize candidate conversions
-                     </span>
-                   </div>
-                   <div className="flex items-center justify-center">
-                     <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
-                     <span className="text-guardian font-jakarta text-left">
-                       Custom candidate pitch deck to sell your company
-                     </span>
-                   </div>
-                   <div className="flex items-center justify-center">
-                     <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
-                     <span className="text-guardian font-jakarta text-left">
-                       100% ownership of all candidate data
-                     </span>
-                   </div>
-                 </div>
-               </div>
+              <div className="text-center mb-8">
+                <div className="text-4xl font-jakarta text-white-knight mb-6">
+                  STARTING AT $999<span className="text-lg">/month</span>
+                </div>
+                
+                <Button 
+                  onClick={() => window.open('https://calendly.com/superrecruiter/outboundcandidatepipelines', '_blank')}
+                  variant="primary"
+                  size="lg"
+                  className="bg-yellow-400 hover:bg-yellow-500 text-black font-anton uppercase tracking-wide px-8 py-4 mb-4"
+                >
+                  BOOK DISCOVERY CALL
+                </Button>
+                <p className="text-guardian font-jakarta text-sm">
+                  Lower your cost per hire by over 30% in 90 days or pay nothing
+                </p>
+              </div>
 
-               <div className="text-center mb-8">
-                 <div className="text-4xl font-anton text-yellow-300 mb-6">
-                   STARTING AT $999<span className="text-lg">/month</span>
-                 </div>
-                 
-                 <Button 
-                   onClick={() => window.open('https://calendly.com/superrecruiter/outboundcandidatepipelines', '_blank')}
-                   variant="primary"
-                   size="lg"
-                   className="bg-black hover:bg-gray-800 text-white font-anton uppercase tracking-wide px-8 py-4"
-                 >
-                   BOOK DISCOVERY CALL
-                 </Button>
-                 <p className="text-guardian font-jakarta text-sm mt-2">
-                 Lower your cost per hire by over 30% in 90 days or pay nothing
-                 </p>
-               </div>
+              <div className="mb-8">
+                <h4 className="text-xl font-anton text-white-knight uppercase tracking-wide mb-6 text-center">
+                  WHAT'S INCLUDED:
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+                  <div className="flex items-start">
+                    <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta">
+                      Your personal Super Recruiter
+                    </span>
+                  </div>
+                  <div className="flex items-start">
+                    <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta">
+                      High-quality candidate sourcing for every role
+                    </span>
+                  </div>
+                  <div className="flex items-start">
+                    <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta">
+                      Create and manage your outbound pipelines
+                    </span>
+                  </div>
+                  <div className="flex items-start">
+                    <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta">
+                      Weekly reports with actionable recruiting insights
+                    </span>
+                  </div>
+                  <div className="flex items-start">
+                    <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta">
+                      A/B message testing to maximize conversions
+                    </span>
+                  </div>
+                  <div className="flex items-start">
+                    <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta">
+                      Custom candidate pitch deck to sell your company
+                    </span>
+                  </div>
+                </div>
+              </div>
 
               <div className="text-center border-t border-yellow-500/20 pt-6">
                 <p className="text-guardian font-jakarta">
-                  <strong className="text-white-knight">Perfect for:</strong> Hiring managers, recruiters, and founders who want high-quality candidates delivered straight to their calendars - without lifting a finger.
+                  <strong className="text-white-knight">Perfect for:</strong> Hiring managers, recruiters, and founders who want high-quality candidates <br/>delivered straight to their calendars - without lifting a finger.
                 </p>
               </div>
             </CardContent>
