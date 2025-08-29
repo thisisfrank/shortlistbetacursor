@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { useSearchParams } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Copy, Edit, Check, User, Sparkles } from 'lucide-react';
+import { useSearchParams, Navigate } from 'react-router-dom';
+import { ChevronDown, ChevronRight, Copy, Edit, Check, User, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Tooltip } from '../components/ui/Tooltip';
@@ -48,6 +48,8 @@ export const AIMessageGeneratorPage: React.FC = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<number>(1);
   const [isGeneratingVariation, setIsGeneratingVariation] = useState(false);
   const [messageType, setMessageType] = useState<'linkedin' | 'email'>('linkedin');
+  const [isReviewing, setIsReviewing] = useState(false);
+  const [reviewResult, setReviewResult] = useState<GrammarReviewResult | null>(null);
 
   // Character limits
   const LINKEDIN_CHAR_LIMIT = 300;
@@ -428,6 +430,15 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
     }
   };
 
+  // Check if client has submitted their first job
+  const hasSubmittedFirstJob = (): boolean => {
+    if (!user || !userProfile || userProfile.role !== 'client') {
+      return true; // Non-clients can access everything
+    }
+    const userJobs = dataContext.jobs.filter(job => job.userId === user.id);
+    return userJobs.length > 0;
+  };
+
   if (!userProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
@@ -437,6 +448,11 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
         </div>
       </div>
     );
+  }
+
+  // Redirect clients who haven't submitted their first job
+  if (userProfile.role === 'client' && !hasSubmittedFirstJob()) {
+    return <Navigate to="/marketplace" replace />;
   }
 
   return (
