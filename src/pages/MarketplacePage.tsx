@@ -2,8 +2,7 @@ import React from 'react';
 import { Lock, Star, Download, Gift, Zap, Calculator, Building, Users, BookOpen, Target } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { useAuth } from '../context/AuthContext';
-import { useData } from '../context/DataContext';
+import { useMarketplaceUnlock } from '../hooks/useMarketplaceUnlock';
 
 interface MarketplaceItem {
   id: string;
@@ -25,7 +24,7 @@ const marketplaceItems: MarketplaceItem[] = [
     unlockCondition: 'Free with your first job entry',
     icon: Zap,
     category: 'free',
-    isLocked: false // Will be updated dynamically in component
+    isLocked: false
   },
   {
     id: 'clay-table-emails',
@@ -149,52 +148,21 @@ const getCategoryLabel = (category: string) => {
 };
 
 export const MarketplacePage: React.FC = () => {
-  const { user, userProfile, loading } = useAuth();
-  const dataContext = useData();
   const currentPoints = 0; // This will be replaced with actual points from context later
+  const { isAIGeneratorUnlocked } = useMarketplaceUnlock();
 
-  // Show loading state
-  if (loading || !userProfile) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-supernova mx-auto mb-4"></div>
-          <p className="text-guardian font-jakarta">Loading marketplace...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // Check if client has submitted their first job
-  const hasSubmittedFirstJob = (): boolean => {
-    if (!user || !userProfile || userProfile.role !== 'client') {
-      return true; // Non-clients can access everything
-    }
-    const userJobs = dataContext.jobs.filter(job => job.userId === user.id);
-    return userJobs.length > 0;
-  };
-  
-  const clientJobCount = user && userProfile?.role === 'client' 
-    ? dataContext.jobs.filter(job => job.userId === user.id).length 
-    : 0;
-
-  // Create dynamic marketplace items with updated lock status
-  const dynamicMarketplaceItems = marketplaceItems.map(item => {
+  // Update AI Generator lock status based on job submissions
+  const updatedMarketplaceItems = marketplaceItems.map(item => {
     if (item.id === 'ai-message-generator') {
       return {
         ...item,
-        unlockCondition: userProfile?.role === 'client' 
-          ? hasSubmittedFirstJob() 
-            ? 'Unlocked! You submitted your first job' 
-            : `Submit your first job to unlock (${clientJobCount}/1 jobs submitted)`
-          : 'Available for all users',
-        isLocked: userProfile?.role === 'client' ? !hasSubmittedFirstJob() : false
+        isLocked: !isAIGeneratorUnlocked()
       };
     }
     return item;
   });
 
-  const groupedItems = dynamicMarketplaceItems.reduce((acc, item) => {
+  const groupedItems = updatedMarketplaceItems.reduce((acc, item) => {
     if (!acc[item.category]) {
       acc[item.category] = [];
     }
@@ -206,9 +174,6 @@ export const MarketplacePage: React.FC = () => {
     // Navigate to AI Message Generator if it's unlocked
     if (item.id === 'ai-message-generator' && !item.isLocked) {
       window.location.href = '/ai-message-generator';
-    } else if (item.id === 'ai-message-generator' && item.isLocked) {
-      // Redirect to client page to encourage job submission
-      window.location.href = '/client';
     } else {
       // This will be implemented when the points system is ready
       console.log('Attempting to unlock:', item.title);
@@ -233,64 +198,6 @@ export const MarketplacePage: React.FC = () => {
             </span>
           </div>
         </div>
-
-        {/* AI Message Generator Status Banner for Clients */}
-        {userProfile?.role === 'client' && (
-          <>
-            {!hasSubmittedFirstJob() ? (
-              <div className="mb-8 p-6 bg-gradient-to-r from-supernova/10 to-orange-500/10 border border-supernova/30 rounded-lg">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-supernova/20 rounded-lg">
-                    <Zap className="text-supernova" size={24} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white-knight mb-2">
-                      🎉 Unlock AI Message Generator
-                    </h3>
-                    <p className="text-guardian mb-3">
-                      Submit your first job to unlock our AI-powered message generator and start crafting personalized outreach messages that get replies!
-                    </p>
-                    <div className="flex items-center gap-4">
-                      <div className="text-sm text-guardian">
-                        Progress: {clientJobCount}/1 jobs submitted
-                      </div>
-                      <Button
-                        onClick={() => window.location.href = '/client'}
-                        className="bg-supernova hover:bg-supernova/90 text-shadowforce font-semibold px-4 py-2"
-                        size="sm"
-                      >
-                        Submit Your First Job →
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="mb-8 p-6 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-lg">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-green-500/20 rounded-lg">
-                    <Gift className="text-green-500" size={24} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white-knight mb-2">
-                      ✅ AI Message Generator Unlocked!
-                    </h3>
-                    <p className="text-guardian mb-3">
-                      Congratulations! You've submitted {clientJobCount} job{clientJobCount !== 1 ? 's' : ''} and unlocked the AI Message Generator. Start creating personalized outreach messages now!
-                    </p>
-                    <Button
-                      onClick={() => window.location.href = '/ai-message-generator'}
-                      className="bg-green-500 hover:bg-green-600 text-white font-semibold px-4 py-2"
-                      size="sm"
-                    >
-                      Open AI Message Generator →
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
-        )}
 
         {/* How to Earn Points Section */}
         <div className="mb-12 p-8 bg-shadowforce-light/30 border border-guardian/20 rounded-lg">
@@ -389,17 +296,15 @@ export const MarketplacePage: React.FC = () => {
                           <div className={`flex items-center gap-2 ${typeof item.points === 'number' && !canAfford ? 'justify-center' : ''}`}>
                             <Lock size={14} />
                             <span className="text-sm">
-                              {item.id === 'ai-message-generator' 
-                                ? 'Submit First Job' 
-                                : typeof item.points === 'number' && !canAfford 
-                                  ? 'Insufficient Points' 
-                                  : 'Locked'}
+                              {typeof item.points === 'number' && !canAfford ? 'Insufficient Points' : 'Locked'}
                             </span>
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
                             <Download size={14} />
-                            <span className="text-sm">Download</span>
+                            <span className="text-sm">
+                              {item.id === 'ai-message-generator' ? 'Use Now' : 'Download'}
+                            </span>
                           </div>
                         )}
                       </Button>

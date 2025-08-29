@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useSearchParams, Navigate } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Copy, Edit, Check, User, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, Copy, Edit, Check, User, Sparkles } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Tooltip } from '../components/ui/Tooltip';
 import { reviewMessageGrammar, GrammarReviewResult } from '../services/anthropicService';
+import { useMarketplaceUnlock } from '../hooks/useMarketplaceUnlock';
 
 interface Candidate {
   id: string;
@@ -36,6 +37,7 @@ export const AIMessageGeneratorPage: React.FC = () => {
   const { user, userProfile } = useAuth();
   const dataContext = useData();
   const [searchParams] = useSearchParams();
+  const { isAIGeneratorUnlocked, isDataLoading } = useMarketplaceUnlock();
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -430,15 +432,6 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
     }
   };
 
-  // Check if client has submitted their first job
-  const hasSubmittedFirstJob = (): boolean => {
-    if (!user || !userProfile || userProfile.role !== 'client') {
-      return true; // Non-clients can access everything
-    }
-    const userJobs = dataContext.jobs.filter(job => job.userId === user.id);
-    return userJobs.length > 0;
-  };
-
   if (!userProfile) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
@@ -450,8 +443,20 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
     );
   }
 
-  // Redirect clients who haven't submitted their first job
-  if (userProfile.role === 'client' && !hasSubmittedFirstJob()) {
+  // Show loading state if data is still loading
+  if (isDataLoading()) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-supernova mx-auto mb-4"></div>
+          <p className="text-guardian font-jakarta">Loading your data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to marketplace if AI Generator is locked for client users
+  if (userProfile.role === 'client' && !isAIGeneratorUnlocked()) {
     return <Navigate to="/marketplace" replace />;
   }
 
@@ -483,7 +488,7 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-white-knight text-sm mb-1">
+                        <h3 className="text-white-knight text-sm mb-1 uppercase">
                           {job.title}
                         </h3>
                                                  <p className="text-guardian text-xs">
@@ -548,7 +553,7 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                 {/* Message Type Toggle */}
                 <Card className="p-4">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white-knight">Message Type</h3>
+                    <h3 className="text-2xl font-bold text-white-knight font-jakarta">Message Type</h3>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -579,7 +584,7 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                 {/* Template Selector */}
                 <Card className="p-4">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white-knight">
+                    <h3 className="text-2xl font-bold text-white-knight font-jakarta">
                       {messageType === 'linkedin' ? 'LinkedIn' : 'Email'} Templates
                     </h3>
                     <div className="text-sm text-guardian">

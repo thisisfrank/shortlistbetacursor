@@ -13,6 +13,8 @@ interface DataContextType {
   creditTransactions: CreditTransaction[];
   shortlists: Shortlist[];
   shortlistCandidates: ShortlistCandidate[];
+  loading: boolean;
+  loadError: string | null;
   addJob: (job: Omit<Job, 'id' | 'status' | 'sourcerName' | 'completionLink' | 'createdAt' | 'updatedAt'>) => Promise<Job>;
   addCandidate: (candidate: Omit<Candidate, 'id' | 'submittedAt'>) => Promise<Candidate>;
   addCandidatesFromLinkedIn: (jobId: string, linkedinUrls: string[]) => Promise<{ 

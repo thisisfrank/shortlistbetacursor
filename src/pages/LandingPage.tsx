@@ -45,9 +45,9 @@ export const LandingPage: React.FC = () => {
       {/* Hero + Choose Role + Testimonial Section (shared gradient) */}
       <div className="bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
         <div className="relative py-8 px-4 overflow-hidden">
-          <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-12 items-stretch">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8 items-stretch">
             {/* Left: Hero */}
-            <div className="flex-1 flex flex-col justify-center items-start text-left">
+            <div className="flex-[1] flex flex-col justify-center items-start text-left">
               <div className="mb-6">
                 <img
                   src={BoltIcon}
@@ -61,7 +61,7 @@ export const LandingPage: React.FC = () => {
                 <span className="block text-supernova">CANDIDATES, FAST!</span>
               </h1>
               <p className="text-lg md:text-xl text-guardian max-w-3xl mb-6 font-jakarta leading-relaxed">
-              Hire faster. Hire smarter. Cut costs 
+              Hire faster. Hire smarter. <br/>Cut costs 
                 <span className="text-supernova font-bold"> - all without lifting a finger</span>.
               </p>
               <div className="flex flex-col gap-2 mb-8 max-w-2xl">
@@ -96,93 +96,50 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            {/* Right: Detailed Candidate Preview */}
-            <div className="flex-1 flex flex-col justify-center max-w-lg mx-auto">
-              <div className="space-y-2">
-
+            {/* Right: Demo Video */}
+            <div className="flex-[1.5] flex flex-col justify-center w-full">
+              <div className="space-y-4">
+                {/* Video Container */}
+                <div className="relative bg-gradient-to-r from-shadowforce to-shadowforce-light rounded-lg overflow-hidden border-l-4 border-l-supernova shadow-2xl">
+                  {/* Video Player */}
+                  <div className="aspect-video">
+                    <video
+                      className="w-full h-full object-cover"
+                      controls
+                      poster="/screenshots/screenshot1.png"
+                      preload="metadata"
+                    >
+                      <source src="/screenshots/Shortlist Promo 2 Audio.mp4" type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                  
+                  {/* Video Overlay Info */}
+                  <div className="absolute top-0 left-0 bg-gradient-to-b from-shadowforce/90 to-transparent p-4">
+                    <h3 className="text-lg font-anton text-supernova mb-1 uppercase tracking-wide">
+                      See The Shortlist In Action
+                    </h3>
+                    <p className="text-sm text-white-knight font-jakarta">
+                      Watch how we deliver high-quality candidates in under 12 hours
+                    </p>
+                  </div>
+                </div>
                 
-                {/* Detailed Candidate Card */}
-                <Card className="transform transition-all duration-1000 hover:scale-105 border-l-4 border-l-supernova bg-gradient-to-r from-shadowforce to-shadowforce-light animate-fade-in-up">
-                  <CardContent className="p-3">
-                    {/* Header with Match Score and Name */}
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center">
-                        <Target className="text-supernova mr-2" size={14} />
-                        <div className="text-lg font-anton text-supernova">94%</div>
-                        <div className="text-xs text-guardian font-jakarta ml-1">MATCH</div>
-                      </div>
-                    </div>
-                    
-                    <h4 className="text-lg font-anton text-white-knight mb-2 uppercase tracking-wide">
-                      Sarah Chen
-                    </h4>
-                    
-                    {/* Basic Info Grid */}
-                    <div className="grid grid-cols-2 gap-2 mb-3 p-2 bg-shadowforce rounded-lg">
-                      <div>
-                        <div className="flex items-center mb-1">
-                          <Briefcase size={10} className="text-supernova mr-1" />
-                          <span className="text-xs font-jakarta font-semibold text-supernova uppercase tracking-wide">Role</span>
-                        </div>
-                        <p className="text-white-knight font-jakarta text-xs font-medium">
-                          Sr Engineer at Google
-                        </p>
-                      </div>
-                      
-                      <div>
-                        <div className="flex items-center mb-1">
-                          <MapPin size={10} className="text-supernova mr-1" />
-                          <span className="text-xs font-jakarta font-semibold text-supernova uppercase tracking-wide">Location</span>
-                        </div>
-                        <p className="text-white-knight font-jakarta text-xs font-medium">
-                          San Francisco, CA
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {/* AI Summary */}
-                    <div className="mb-3">
-                      <div className="flex items-center mb-1">
-                        <Zap size={10} className="text-blue-400 mr-1 transition-transform duration-300 hover:scale-110" />
-                        <p className="text-xs font-jakarta font-semibold text-blue-400 uppercase tracking-wide">AI Summary</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20 p-2 rounded-lg hover:from-blue-500/15 hover:to-blue-500/8 hover:border-blue-500/30 transition-all duration-300 hover:scale-102 cursor-pointer hover:shadow-lg">
-                        <div className="text-white-knight font-jakarta text-xs leading-relaxed">
-                          Full-stack engineer with React/Node.js expertise. Led 3 product launches at Google, scaling to 10M+ users.
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Recent Experience */}
-                    <div className="mb-3">
-                      <div className="flex items-center mb-1">
-                        <Briefcase size={10} className="text-green-400 mr-1 transition-transform duration-300 hover:scale-110" />
-                        <p className="text-xs font-jakarta font-semibold text-green-400 uppercase tracking-wide">Experience</p>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 p-2 rounded-lg hover:from-green-500/15 hover:to-green-500/8 hover:border-green-500/30 transition-all duration-300 hover:scale-102 cursor-pointer hover:shadow-lg">
-                          <p className="font-jakarta font-medium text-white-knight text-xs">Google • 2021 - Present</p>
-                        </div>
-                        <div className="bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 p-2 rounded-lg hover:from-green-500/15 hover:to-green-500/8 hover:border-green-500/30 transition-all duration-300 hover:scale-102 cursor-pointer hover:shadow-lg">
-                          <p className="font-jakarta font-medium text-white-knight text-xs">Facebook • 2019 - 2021</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Education */}
-                    <div>
-                      <div className="flex items-center mb-1">
-                        <GraduationCap size={10} className="text-purple-400 mr-1 transition-transform duration-300 hover:scale-110" />
-                        <p className="text-xs font-jakarta font-semibold text-purple-400 uppercase tracking-wide">Education</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 p-2 rounded-lg hover:from-purple-500/15 hover:to-purple-500/8 hover:border-purple-500/30 transition-all duration-300 hover:scale-102 cursor-pointer hover:shadow-lg">
-                        <p className="font-jakarta font-medium text-white-knight text-xs">MS Computer Science, Stanford</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-
+                {/* Alternative: YouTube/Vimeo Embed (commented out) */}
+                {/* 
+                <div className="relative bg-gradient-to-r from-shadowforce to-shadowforce-light rounded-lg overflow-hidden border-l-4 border-l-supernova shadow-2xl">
+                  <div className="aspect-video">
+                    <iframe
+                      className="w-full h-full"
+                      src="https://www.youtube.com/embed/YOUR_VIDEO_ID"
+                      title="The Shortlist Demo"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+                </div>
+                */}
               </div>
             </div>
           </div>

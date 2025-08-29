@@ -168,7 +168,15 @@ export const LoginPage: React.FC = () => {
             </Button>
           </form>
 
-          <div className="mt-8 text-center">
+          <div className="mt-8 text-center space-y-4">
+            <div>
+              <Link
+                to="/forgot-password"
+                className="text-guardian hover:text-supernova font-jakarta transition-colors text-sm"
+              >
+                Forgot your password?
+              </Link>
+            </div>
             <p className="text-guardian font-jakarta">
               Don't have an account?{' '}
               <Link

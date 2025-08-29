@@ -149,6 +149,7 @@ export const CandidatesView: React.FC = () => {
     additionalCandidates: 5
   });
   const [showGenerateMessageTip, setShowGenerateMessageTip] = useState(false);
+  const [showCandidateListPopup, setShowCandidateListPopup] = useState(false);
   const [feedbackModal, setFeedbackModal] = useState<{
     isOpen: boolean;
     feedback: string;
@@ -203,6 +204,19 @@ export const CandidatesView: React.FC = () => {
         setTimeout(() => {
           setShowGenerateMessageTip(true);
         }, 1000);
+      }
+    }
+  }, [selectedJobId, currentJobCandidates.length]);
+
+  // Check if user has seen the candidate list popup before - show only on first candidate list view
+  useEffect(() => {
+    if (selectedJobId && currentJobCandidates.length > 0) {
+      const hasSeenPopup = localStorage.getItem('hasSeenCandidateListPopup');
+      if (!hasSeenPopup) {
+        // Show popup after a brief delay to ensure UI is rendered
+        setTimeout(() => {
+          setShowCandidateListPopup(true);
+        }, 1500);
       }
     }
   }, [selectedJobId, currentJobCandidates.length]);
@@ -582,6 +596,11 @@ export const CandidatesView: React.FC = () => {
   const handleDismissGenerateMessageTip = () => {
     setShowGenerateMessageTip(false);
     localStorage.setItem('hasSeenGenerateMessageTip', 'true');
+  };
+
+  const handleDismissCandidateListPopup = () => {
+    setShowCandidateListPopup(false);
+    localStorage.setItem('hasSeenCandidateListPopup', 'true');
   };
 
   const handleOpenFeedbackModal = () => {
@@ -1358,6 +1377,46 @@ export const CandidatesView: React.FC = () => {
                   >
                     {feedbackModal.isSubmitting ? 'SUBMITTING...' : 'SUBMIT FEEDBACK'}
                   </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Candidate List First Time Popup */}
+          {showCandidateListPopup && (
+            <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+              <div className="bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce border border-supernova/30 rounded-lg p-8 max-w-2xl w-full relative shadow-2xl">
+                <button
+                  onClick={handleDismissCandidateListPopup}
+                  className="absolute top-4 right-4 text-guardian hover:text-white-knight transition-colors"
+                >
+                  <X size={24} />
+                </button>
+                
+                <div className="text-center">
+                  <h2 className="text-3xl md:text-4xl font-anton text-supernova mb-6 leading-tight uppercase tracking-wide">
+                    Want qualified candidates booked on your calendar - without lifting a finger?
+                  </h2>
+                  
+                  <div className="mb-8">
+                    <Button
+                      onClick={() => {
+                        handleDismissCandidateListPopup();
+                        window.open('https://calendly.com/superrecruiter/outboundcandidatepipelines', '_blank');
+                      }}
+                      variant="primary"
+                      size="lg"
+                      className="bg-supernova hover:bg-supernova/90 text-shadowforce font-anton text-xl px-12 py-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg glow-supernova uppercase tracking-wide"
+                    >
+                      Book My Call
+                    </Button>
+                  </div>
+                  
+                  <p className="text-supernova text-lg md:text-xl font-jakarta font-medium">
+                    You'll get the 100x Recruiter Stack Guide ($197 value) - 
+                    <br />
+                    <span className="text-white-knight font-bold">FREE, just for showing up.</span>
+                  </p>
                 </div>
               </div>
             </div>

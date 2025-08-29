@@ -29,6 +29,8 @@ import { AIMessageGeneratorPage } from './pages/AIMessageGeneratorPage';
 // Auth Pages
 import { LoginPage } from './components/auth/LoginPage';
 import { SignupPage } from './components/auth/SignupPage';
+import { ForgotPasswordPage } from './components/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from './components/auth/ResetPasswordPage';
 
 // Legal Pages
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
@@ -69,6 +71,8 @@ function App() {
               {/* Public Routes - no layout wrapper to avoid auth loading issues */}
               <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
+              <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+              <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
               
               {/* Legal Pages - completely independent, no auth required */}
               <Route path="/privacy" element={<PrivacyPolicyPage />} />

@@ -41,9 +41,12 @@ class GHLService {
   private jobCompletionNotificationWebhookUrl: string;
 
   constructor() {
-    this.signupThankYouWebhookUrl = import.meta.env.VITE_SIGNUP_THANK_YOU_URL || '';
-    this.jobSubmissionConfirmationWebhookUrl = import.meta.env.VITE_GHL_JOB_SUBMISSION_CONFIRMATION_WEBHOOK_URL || '';
-    this.jobCompletionNotificationWebhookUrl = import.meta.env.VITE_GHL_JOB_COMPLETION_NOTIFICATION_WEBHOOK_URL || '';
+    // Hardcoded signup webhook URL - triggers when someone first signs up
+    this.signupThankYouWebhookUrl = 'https://services.leadconnectorhq.com/hooks/QekUNBmcxjsxAKXluQc0/webhook-trigger/cecc5aea-aa4b-4c1a-9f45-4bff80833367';
+    // Hardcoded job submission webhook URL - triggers when a job is submitted
+    this.jobSubmissionConfirmationWebhookUrl = 'https://services.leadconnectorhq.com/hooks/QekUNBmcxjsxAKXluQc0/webhook-trigger/543083ea-d7ab-4ef5-8f87-dc35b3ed868b';
+    // Hardcoded job completion webhook URL - triggers when a job is completed
+    this.jobCompletionNotificationWebhookUrl = 'https://services.leadconnectorhq.com/hooks/QekUNBmcxjsxAKXluQc0/webhook-trigger/2c183ff3-08a7-4fcc-bc4d-aa0d55a9f636';
   }
 
   async sendSignupThankYouNotification(userProfile: UserProfile, signupSource?: string): Promise<void> {
