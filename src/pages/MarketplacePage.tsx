@@ -16,21 +16,16 @@ interface MarketplaceItem {
   isLocked: boolean;
 }
 
-  // Create marketplace items with dynamic lock status
-  const createMarketplaceItems = (): MarketplaceItem[] => [
+const marketplaceItems: MarketplaceItem[] = [
   {
     id: 'ai-message-generator',
     title: 'AI Message Generator',
     description: 'Personalize your outreach in seconds - with messages that actually get replies.',
     points: 'FREE',
-    unlockCondition: userProfile?.role === 'client' 
-      ? hasSubmittedFirstJob() 
-        ? 'Unlocked! You submitted your first job' 
-        : `Submit your first job to unlock (${clientJobCount}/1 jobs submitted)`
-      : 'Available for all users',
+    unlockCondition: 'Free with your first job entry',
     icon: Zap,
     category: 'free',
-    isLocked: userProfile?.role === 'client' ? !hasSubmittedFirstJob() : false
+    isLocked: false // Will be updated dynamically in component
   },
   {
     id: 'clay-table-emails',
@@ -154,9 +149,21 @@ const getCategoryLabel = (category: string) => {
 };
 
 export const MarketplacePage: React.FC = () => {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const dataContext = useData();
   const currentPoints = 0; // This will be replaced with actual points from context later
+
+  // Show loading state
+  if (loading || !userProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-supernova mx-auto mb-4"></div>
+          <p className="text-guardian font-jakarta">Loading marketplace...</p>
+        </div>
+      </div>
+    );
+  }
   
   // Check if client has submitted their first job
   const hasSubmittedFirstJob = (): boolean => {
@@ -171,8 +178,23 @@ export const MarketplacePage: React.FC = () => {
     ? dataContext.jobs.filter(job => job.userId === user.id).length 
     : 0;
 
-  const marketplaceItems = createMarketplaceItems();
-  const groupedItems = marketplaceItems.reduce((acc, item) => {
+  // Create dynamic marketplace items with updated lock status
+  const dynamicMarketplaceItems = marketplaceItems.map(item => {
+    if (item.id === 'ai-message-generator') {
+      return {
+        ...item,
+        unlockCondition: userProfile?.role === 'client' 
+          ? hasSubmittedFirstJob() 
+            ? 'Unlocked! You submitted your first job' 
+            : `Submit your first job to unlock (${clientJobCount}/1 jobs submitted)`
+          : 'Available for all users',
+        isLocked: userProfile?.role === 'client' ? !hasSubmittedFirstJob() : false
+      };
+    }
+    return item;
+  });
+
+  const groupedItems = dynamicMarketplaceItems.reduce((acc, item) => {
     if (!acc[item.category]) {
       acc[item.category] = [];
     }
