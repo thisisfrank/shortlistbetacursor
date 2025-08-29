@@ -319,7 +319,12 @@ Requirements:
 - Maintain the salary question element
 ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concise but can be longer than LinkedIn'}
 - Use slightly different wording while keeping the same meaning
-- Keep the same overall tone`;
+- Keep the same overall tone
+- NO fluff at the start (skip "I hope this message finds you well" or "hope you're having a good day" - get straight to the point)
+- Be concise and to the point
+- Put the candidate as the hero of the message
+- Use one sentence per line for better readability
+- Each sentence should stand on its own`;
 
       const result = await reviewMessageGrammar(prompt);
       if (result.correctedMessage) {
