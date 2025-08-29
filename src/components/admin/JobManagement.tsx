@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
 import { JobDetailModal } from '../sourcer/JobDetailModal';
 import { JobTimer } from '../ui/JobTimer';
-import { Card, CardContent } from '../ui/Card';
+import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { FormInput, FormTextarea, FormSelect } from '../forms/FormInput';
-import { Search, CalendarDays, Filter, Edit, X, Save } from 'lucide-react';
+import { Search, CalendarDays, Filter, Edit, X, Save, Briefcase, Target } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export const JobManagement: React.FC = () => {
@@ -199,6 +199,37 @@ export const JobManagement: React.FC = () => {
             </select>
           </div>
         </div>
+      </div>
+
+      {/* Job Statistics Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="bg-gradient-to-br from-supernova/20 to-supernova/10 border-supernova/30">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-anton text-lg text-supernova uppercase tracking-wide">Total Jobs</h3>
+                <p className="text-3xl font-anton text-white-knight">{jobs.length}</p>
+              </div>
+              <Briefcase className="text-supernova" size={32} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-green-500/20 to-green-500/10 border-green-500/30">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-anton text-lg text-green-400 uppercase tracking-wide">Completion Rate</h3>
+                <p className="text-3xl font-anton text-white-knight">
+                  {jobs.length > 0 
+                    ? Math.round((jobs.filter(job => job.status === 'Completed').length / jobs.length) * 100)
+                    : 0}%
+                </p>
+              </div>
+              <Target className="text-green-400" size={32} />
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
       {/* Job List */}

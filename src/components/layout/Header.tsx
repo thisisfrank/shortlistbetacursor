@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
-import { LeftPanel } from './LeftPanel';
-import { Menu } from 'lucide-react';
+
 import { Button } from '../ui/Button';
 import { getUserUsageStats } from '../../utils/userUsageStats';
 
@@ -12,13 +11,7 @@ export const Header: React.FC = () => {
   const navigate = useNavigate();
   const { userProfile, loading } = useAuth();
   const { jobs, candidates, tiers, creditTransactions } = useData();
-  const [leftPanelOpen, setLeftPanelOpen] = useState(false);
-  
-  const handleMenuToggle = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setLeftPanelOpen(!leftPanelOpen);
-  };
+
   
   // Get the role-appropriate home path
   const getRoleHomePath = (role: string): string => {
@@ -75,7 +68,8 @@ export const Header: React.FC = () => {
       case 'client':
         return [
           { path: '/client', label: 'GET CANDIDATES', key: 'submit' },
-          { path: '/candidates', label: 'MY OPEN JOBS', key: 'candidates' }
+          { path: '/candidates', label: 'MY OPEN JOBS', key: 'candidates' },
+          { path: '/marketplace', label: 'MARKETPLACE', key: 'marketplace' }
         ];
       case 'sourcer':
         return [
@@ -139,31 +133,11 @@ export const Header: React.FC = () => {
   }, [userProfile?.role, userProfile, loading, navigate, location.pathname, navItems]);
   
   return (
-    <>
-      {/* Left Panel - show for client and sourcer users */}
-      {(userProfile?.role === 'client' || userProfile?.role === 'sourcer') && (
-        <LeftPanel 
-          isOpen={leftPanelOpen}
-          onClose={() => setLeftPanelOpen(false)}
-        />
-      )}
-      
-      <header className="bg-shadowforce border-b border-guardian/20 shadow-lg">
+    <header className="bg-shadowforce border-b border-guardian/20 shadow-lg">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-center h-20 relative">
-          {/* Menu Toggle and Logo - positioned absolutely to the left */}
-          <div className="absolute left-0 flex items-center gap-4">
-            {/* Menu Toggle Button - for Clients and Sourcers */}
-            {(userProfile?.role === 'client' || userProfile?.role === 'sourcer') && (
-              <button
-                onClick={handleMenuToggle}
-                className="flex items-center justify-center w-8 h-8 bg-shadowforce-light hover:bg-supernova hover:text-shadowforce text-guardian rounded-lg transition-colors"
-                title="Toggle Navigation Menu"
-              >
-                <Menu size={16} />
-              </button>
-            )}
-            
+          {/* Logo - positioned absolutely to the left */}
+          <div className="absolute left-0 flex items-center">
             <Link to="/" className="flex items-center text-supernova hover:text-supernova-light transition-colors">
               <div className="sr-logo">
                 <span className="text-supernova">SUPER</span>
@@ -206,11 +180,14 @@ export const Header: React.FC = () => {
               <div className="flex items-center gap-3 text-guardian">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-jakarta">Welcome,</span>
-                  <span className="text-white-knight font-semibold">
+                  <Link 
+                    to="/account"
+                    className="text-white-knight font-semibold hover:text-supernova transition-colors cursor-pointer"
+                  >
                     {userProfile.name && userProfile.name.trim() !== '' 
                       ? userProfile.name 
                       : 'User'}
-                  </span>
+                  </Link>
                 </div>
                 {/* Credits display */}
                 <div className="flex items-center gap-1 bg-shadowforce-light/50 px-3 py-1 rounded-lg border border-guardian/20">
@@ -247,6 +224,5 @@ export const Header: React.FC = () => {
         </div>
       </div>
     </header>
-    </>
   );
 };

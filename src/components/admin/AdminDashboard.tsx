@@ -1,41 +1,18 @@
 import React, { useState } from 'react';
-import { useData } from '../../context/DataContext';
-import { AdminStats } from './AdminStats';
 import { JobManagement } from './JobManagement';
 import { ClientManagement } from './ClientManagement';
 import { SourcerManagement } from './SourcerManagement';
-import { UserManagement } from './UserManagement';
-import { SystemControls } from './SystemControls';
-import { AnalyticsDashboard } from './AnalyticsDashboard';
-import { BarChart3, Users, Briefcase, Settings, TrendingUp, Shield } from 'lucide-react';
+import { BarChart3, Users, Briefcase } from 'lucide-react';
 import { Button } from '../ui/Button';
 import BoltIcon from '../../assets/v2.png';
 
 export const AdminDashboard: React.FC = () => {
-  const { jobs, candidates, getCandidatesByJob } = useData();
-  const [activeTab, setActiveTab] = useState<'analytics' | 'jobs' | 'clients' | 'sourcers' | 'users'>('analytics');
-  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
-
-  // Calculate date range for filtering
-  const getDateRange = () => {
-    const now = new Date();
-    const ranges = {
-      '7d': new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
-      '30d': new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000),
-      '90d': new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000),
-      'all': new Date(0)
-    };
-    return ranges[timeRange];
-  };
-  const startDate = getDateRange();
-  const filteredJobs = jobs.filter(job => new Date(job.createdAt) >= startDate);
+  const [activeTab, setActiveTab] = useState<'jobs' | 'clients' | 'sourcers'>('jobs');
 
   const tabs = [
-    { id: 'analytics', label: 'ANALYTICS', icon: TrendingUp },
     { id: 'jobs', label: 'JOBS', icon: Briefcase },
     { id: 'clients', label: 'CLIENTS', icon: Users },
     { id: 'sourcers', label: 'SOURCERS', icon: BarChart3 },
-    { id: 'users', label: 'USERS', icon: Shield },
   ] as const;
 
   return (
@@ -84,35 +61,9 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'analytics' && (
-          <div className="space-y-8">
-            {/* Time Range Selector */}
-            <div className="flex justify-center">
-              <div className="bg-shadowforce rounded-lg p-2 border border-guardian/20">
-                <div className="flex space-x-1">
-                  {(['7d', '30d', '90d', 'all'] as const).map(range => (
-                    <Button
-                      key={range}
-                      variant={timeRange === range ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => setTimeRange(range)}
-                      className="text-xs"
-                    >
-                      {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : range === '90d' ? '90 Days' : 'All Time'}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            {/* Job Status Boxes */}
-            <AdminStats jobs={filteredJobs} />
-            <AnalyticsDashboard jobs={filteredJobs} candidates={candidates} getCandidatesByJob={getCandidatesByJob} timeRange={timeRange} setTimeRange={setTimeRange} />
-          </div>
-        )}
         {activeTab === 'jobs' && <JobManagement />}
         {activeTab === 'clients' && <ClientManagement />}
         {activeTab === 'sourcers' && <SourcerManagement />}
-        {activeTab === 'users' && <UserManagement />}
       </div>
     </div>
   );
