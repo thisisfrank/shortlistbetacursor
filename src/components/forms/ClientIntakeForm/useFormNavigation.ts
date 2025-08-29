@@ -10,7 +10,7 @@ interface UseFormNavigationProps {
 
 export const useFormNavigation = ({ currentStep, setCurrentStep }: UseFormNavigationProps) => {
   const { formData, setErrors } = useClientIntakeForm();
-  const { validateJobTitle, validateJobDetails, validateCompanyInfo } = useFormValidation();
+  const { validateJobTitle, validateJobDetails } = useFormValidation();
 
   const goToNextStep = useCallback(() => {
     let validationErrors: Record<string, string> = {};
@@ -29,14 +29,6 @@ export const useFormNavigation = ({ currentStep, setCurrentStep }: UseFormNaviga
         validationErrors = validateJobDetails(formData);
         isValid = Object.keys(validationErrors).length === 0;
         if (isValid) {
-          setCurrentStep('company-info');
-        }
-        break;
-        
-      case 'company-info':
-        validationErrors = validateCompanyInfo(formData);
-        isValid = Object.keys(validationErrors).length === 0;
-        if (isValid) {
           setCurrentStep('summary');
         }
         break;
@@ -47,7 +39,7 @@ export const useFormNavigation = ({ currentStep, setCurrentStep }: UseFormNaviga
     
     setErrors(validationErrors);
     return isValid;
-  }, [currentStep, formData, setCurrentStep, setErrors, validateJobTitle, validateJobDetails, validateCompanyInfo]);
+  }, [currentStep, formData, setCurrentStep, setErrors, validateJobTitle, validateJobDetails]);
 
   const goToPreviousStep = useCallback(() => {
     switch (currentStep) {
@@ -55,12 +47,8 @@ export const useFormNavigation = ({ currentStep, setCurrentStep }: UseFormNaviga
         setCurrentStep('job-title');
         break;
         
-      case 'company-info':
-        setCurrentStep('job-details');
-        break;
-        
       case 'summary':
-        setCurrentStep('company-info');
+        setCurrentStep('job-details');
         break;
         
       default:

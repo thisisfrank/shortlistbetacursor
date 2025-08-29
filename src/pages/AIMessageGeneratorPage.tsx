@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useSearchParams } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Copy, Edit, Check, User, Briefcase, FileCheck, AlertCircle, CheckCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, Copy, Edit, Check, User, Sparkles } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Tooltip } from '../components/ui/Tooltip';
@@ -44,44 +44,182 @@ export const AIMessageGeneratorPage: React.FC = () => {
   const [bodyText, setBodyText] = useState('');
   const [prefilledCandidate, setPrefilledCandidate] = useState<Candidate | null>(null);
   const [prefilledJob, setPrefilledJob] = useState<Job | null>(null);
-  const [isReviewing, setIsReviewing] = useState(false);
-  const [reviewResult, setReviewResult] = useState<GrammarReviewResult | null>(null);
   const [showReviewResults, setShowReviewResults] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<number>(1);
+  const [isGeneratingVariation, setIsGeneratingVariation] = useState(false);
+  const [messageType, setMessageType] = useState<'linkedin' | 'email'>('linkedin');
 
-  // Enhanced template using detailed candidate information
-  const getMessageTemplate = (candidate?: Candidate, job?: Job) => {
-    const candidateFirstName = candidate ? candidate.firstName : '{first_name}';
-    const currentRole = candidate?.headline || candidate?.experience?.[0]?.title || '{current_role}';
-    const topSkills = candidate?.skills?.slice(0, 3).join(', ') || '{candidate_skills}';
-    const recentCompany = candidate?.experience?.[0]?.company || '{recent_company}';
-      
-    const body = candidate && job
-      ? `Hi ${candidateFirstName},
+  // Character limits
+  const LINKEDIN_CHAR_LIMIT = 300;
+  const EMAIL_CHAR_LIMIT = 2000; // Reasonable email limit
+  const currentLimit = messageType === 'linkedin' ? LINKEDIN_CHAR_LIMIT : EMAIL_CHAR_LIMIT;
+  const characterCount = bodyText.length;
+  const isOverLimit = characterCount > currentLimit;
+  const isNearLimit = characterCount > currentLimit * 0.9; // 90% of limit
 
-I hope this message finds you well! I came across your LinkedIn profile and was impressed by your background as ${currentRole}${recentCompany !== '{recent_company}' ? ` at ${recentCompany}` : ''}.
+  // Predefined templates
+  const templates = {
+    linkedin: {
+      1: {
+        name: "Template 1 - Direct & Professional",
+        template: `Super impressive background, {{firstname}}.
 
-Your experience with ${topSkills} caught my attention, and I believe you'd be an excellent fit for an exciting ${job.title} position we have at ${job.companyName}. ${job.location ? `The role is based in ${job.location}.` : ''}
+We're hiring a {{job_opening}} to join {{company_name}} - you look like a great fit.
 
-${candidate.experience && candidate.experience.length > 0 ? `Given your ${candidate.experience.length}+ years of experience in the industry, ` : ''}I think this opportunity would be a great next step in your career.
+Curious, what salary would you target to consider a move?
 
-Would you be open to a brief conversation about this role? I'd love to share more details and learn about your career goals.
+Thank you,
 
-Best regards,
-${userProfile?.name || 'Your Name'}`
-      : `Hi {first_name},
+{{your_name}}`
+      },
+      2: {
+        name: "Template 2 - Skills Focused",
+        template: `Hey {{firstname}}, 
 
-I hope this message finds you well! I came across your LinkedIn profile and was impressed by your background as {current_role} at {recent_company}.
+We're hiring a {{job_opening}} at {{company_name}} - your {{skillone}} and {{skilltwo}} background looks like a great match.
 
-Your experience with {candidate_skills} caught my attention, and I believe you'd be an excellent fit for an exciting {job_title} position we have at {company_name}. The role is based in {job_location}.
+Mind if I ask what your target salary is to consider a move?`
+      },
+      3: {
+        name: "Template 3 - Casual & Engaging",
+        template: `Hi {{firstname}},
 
-Given your experience in the industry, I think this opportunity would be a great next step in your career.
+Love your background with {{skillone}} and {{skilltwo}}.
 
-Would you be open to a brief conversation about this role? I'd love to share more details and learn about your career goals.
+Mind if I ask what your target salary is to consider a move?
 
-Best regards,
-{your_name}`;
+We have a {{job_opening}} I'd love to share with you.
 
-    return body;
+{{your_name}}`
+      }
+    },
+    email: {
+      1: {
+        name: "Email 1 - High-Paying Opening",
+        template: `Subject: (high-paying) {{job_opening}} opening
+
+Hi {{firstname}},
+
+Saw your LinkedIn, looks like you've done some great work at {{company_name}}.
+
+We're looking for a {{job_opening}} like you - with a strong background in {{skilltwo}} and {{skillone}}.
+
+You can look forward to:
+
+- Perk 1
+- Perk 2
+- Perk 3
+
+The {{job_opening}} offers a (flexible) salary of $\{{salary}}K with excellent benefits.
+
+Want to see a full job description?
+
+Let me know!
+
+Thank you,
+{{your_name}}`
+      },
+      2: {
+        name: "Email 2 - Nice LinkedIn",
+        template: `Subject: Nice LinkedIn, {{firstname}}
+
+Hey {{firstname}},
+
+Great background - I saw your LinkedIn today.
+
+You look perfect for our {{job_opening}} opening at {{company_name}}.
+
+We [1-line description of what you do] - example: *AV systems for commercial and defense applications*.
+
+- Perk 1
+- Perk 2
+- Perk 3
+
+The {{job_opening}} offers a flexible salary of ~$\{{salary}}K with excellent benefits.
+
+Open to checking out the job description?
+
+All the best,
+
+{{your_name}}`
+      },
+      3: {
+        name: "Email 3 - Salary Focused",
+        template: `Subject: {{job_opening}} opportunity - $\{{salary}}K+
+
+Hi {{firstname}},
+
+Your experience with {{skillone}} and {{skilltwo}} caught my attention on LinkedIn.
+
+We have an exciting {{job_opening}} role at {{company_name}} that matches your background perfectly.
+
+What you'll get:
+
+- [Benefit 1]
+- [Benefit 2]
+- [Benefit 3]
+
+Compensation: $\{{salary}}K base + benefits package
+
+Interested in checking out the full job description?
+
+Best,
+{{your_name}}`
+      },
+      4: {
+        name: "Email 4 - LinkedIn Follow Up",
+        template: `Subject: Linkedin follow up
+
+Hey {{firstname}},
+
+Hope you're doing well!
+
+Just checked out your LinkedIn - really solid background in {{skillone}} and {{skilltwo}}.
+
+We've got this {{job_opening}} position that seems right up your alley.
+
+We have a great team at {{company_name}} and we're looking for someone exactly like you.
+
+Here's some addition perks about the company:
+
+- [Perk 1]
+- [Perk 2]
+- [Perk 3]
+
+Compensation: $\{{salary}}K base + benefits package
+
+Interested in checking out the full job description?
+
+Cheers,
+{{your_name}}`
+      }
+    }
+  };
+
+  // Fill template with candidate and job data
+  const getMessageTemplate = (templateId: number = selectedTemplate, candidate?: Candidate, job?: Job) => {
+    const templateGroup = templates[messageType];
+    const template = templateGroup[templateId as keyof typeof templateGroup];
+    if (!template) return '';
+
+    const candidateFirstName = candidate ? candidate.firstName : '{{firstname}}';
+    const currentRole = candidate?.headline || candidate?.experience?.[0]?.title || '{{current_role}}';
+    const jobTitle = job ? job.title : '{{job_opening}}';
+    const companyName = job ? job.companyName : '{{company_name}}';
+    const skillOne = candidate?.skills?.[0] || '{{skillone}}';
+    const skillTwo = candidate?.skills?.[1] || '{{skilltwo}}';
+    const userName = userProfile?.name || '{{your_name}}';
+    const salary = '{{salary}}'; // Placeholder for user to fill in
+
+    return template.template
+      .replace(/\{\{firstname\}\}/g, candidateFirstName)
+      .replace(/\{\{current_role\}\}/g, currentRole)
+      .replace(/\{\{job_opening\}\}/g, jobTitle)
+      .replace(/\{\{company_name\}\}/g, companyName)
+      .replace(/\{\{skillone\}\}/g, skillOne)
+      .replace(/\{\{skilltwo\}\}/g, skillTwo)
+      .replace(/\{\{your_name\}\}/g, userName)
+      .replace(/\\\{\{salary\}\}/g, salary);
   };
 
   // Get user's jobs based on role
@@ -141,9 +279,73 @@ Best regards,
       
       setSelectedCandidate(candidate);
       setSelectedJob(job);
-      const message = getMessageTemplate(candidate, job);
+      const message = getMessageTemplate(selectedTemplate, candidate, job);
       setBodyText(message);
       setEditingBody(false);
+    }
+  };
+
+  const handleTemplateChange = (templateId: number) => {
+    setSelectedTemplate(templateId);
+    const candidate = prefilledCandidate || selectedCandidate;
+    const job = prefilledJob || selectedJob;
+    const message = getMessageTemplate(templateId, candidate, job);
+    setBodyText(message);
+    setEditingBody(false);
+  };
+
+  const handleMessageTypeChange = (type: 'linkedin' | 'email') => {
+    setMessageType(type);
+    const candidate = prefilledCandidate || selectedCandidate;
+    const job = prefilledJob || selectedJob;
+    const message = getMessageTemplate(selectedTemplate, candidate, job);
+    setBodyText(message);
+    setEditingBody(false);
+  };
+
+  const generateAIVariation = async () => {
+    if (!bodyText.trim()) return;
+    
+    setIsGeneratingVariation(true);
+    
+    try {
+      // Use the anthropic service to generate a variation
+      const prompt = `Create a professional variation of this ${messageType} recruitment message that ${messageType === 'linkedin' ? 'stays under 300 characters' : 'is concise and professional'} and maintains the same structure and intent:
+
+${bodyText}
+
+Requirements:
+- Keep it professional and direct
+- Maintain the salary question element
+${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concise but can be longer than LinkedIn'}
+- Use slightly different wording while keeping the same meaning
+- Keep the same overall tone`;
+
+      const result = await reviewMessageGrammar(prompt);
+      if (result.correctedMessage) {
+        setBodyText(result.correctedMessage);
+      } else {
+        // Fallback: simple word variations
+        const variations = bodyText
+          .replace(/Super impressive/gi, 'Really impressive')
+          .replace(/Hey /gi, 'Hi ')
+          .replace(/Mind if I ask/gi, 'Could I ask')
+          .replace(/Curious,/gi, 'Quick question,')
+          .replace(/Love your/gi, 'Impressed by your');
+        setBodyText(variations);
+      }
+    } catch (error) {
+      console.error('AI variation generation failed:', error);
+      // Fallback: simple word variations
+      const variations = bodyText
+        .replace(/Super impressive/gi, 'Really impressive')
+        .replace(/Hey /gi, 'Hi ')
+        .replace(/Mind if I ask/gi, 'Could I ask')
+        .replace(/Curious,/gi, 'Quick question,')
+        .replace(/Love your/gi, 'Impressed by your');
+      setBodyText(variations);
+    } finally {
+      setIsGeneratingVariation(false);
     }
   };
 
@@ -176,22 +378,9 @@ Best regards,
     const candidate = prefilledCandidate || selectedCandidate;
     const job = prefilledJob || selectedJob;
     
-    if (candidate && job) {
-      // Job + candidate selected: filled template
-      const message = getMessageTemplate(candidate, job);
-      setBodyText(message);
-    } else {
-      // No job or no candidate: show unfilled template
-      const message = getMessageTemplate();
-      setBodyText(message);
-    }
-  }, [selectedJob, selectedCandidate, prefilledCandidate, prefilledJob]);
-
-  // Initialize template on page load
-  React.useEffect(() => {
-    const message = getMessageTemplate();
+    const message = getMessageTemplate(selectedTemplate, candidate, job);
     setBodyText(message);
-  }, []);
+  }, [selectedJob, selectedCandidate, prefilledCandidate, prefilledJob, selectedTemplate, messageType, userProfile]);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -335,26 +524,162 @@ Best regards,
 
 
               <div className="space-y-6">
+                {/* Message Type Toggle */}
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white-knight">Message Type</h3>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleMessageTypeChange('linkedin')}
+                      className={`${
+                        messageType === 'linkedin'
+                          ? 'bg-supernova text-shadowforce'
+                          : 'bg-shadowforce/30 text-guardian hover:bg-shadowforce/50'
+                      }`}
+                      size="sm"
+                    >
+                      📱 LinkedIn
+                    </Button>
+                    <Button
+                      onClick={() => handleMessageTypeChange('email')}
+                      className={`${
+                        messageType === 'email'
+                          ? 'bg-supernova text-shadowforce'
+                          : 'bg-shadowforce/30 text-guardian hover:bg-shadowforce/50'
+                      }`}
+                      size="sm"
+                    >
+                      ✉️ Email
+                    </Button>
+                  </div>
+                </Card>
+
+                {/* Template Selector */}
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white-knight">
+                      {messageType === 'linkedin' ? 'LinkedIn' : 'Email'} Templates
+                    </h3>
+                    <div className="text-sm text-guardian">
+                      {messageType === 'linkedin' ? 'LinkedIn' : 'Email'} Character Limit: {currentLimit.toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(templates[messageType]).map(([id, template]) => (
+                      <Button
+                        key={id}
+                        onClick={() => handleTemplateChange(Number(id))}
+                        className={`text-xs ${
+                          selectedTemplate === Number(id)
+                            ? 'bg-supernova text-shadowforce'
+                            : 'bg-shadowforce/30 text-guardian hover:bg-shadowforce/50'
+                        }`}
+                        size="sm"
+                      >
+                        {template.name}
+                      </Button>
+                    ))}
+                  </div>
+                </Card>
+
                 {/* Message Body */}
                 <Card className="p-6">
                   
                   {editingBody ? (
-                    <textarea
-                      value={bodyText}
-                      onChange={(e) => setBodyText(e.target.value)}
-                      className="w-full p-3 bg-shadowforce border border-guardian/30 rounded-lg text-white-knight resize-none mb-4"
-                      rows={12}
-                      placeholder="Your personalized message will appear here..."
-                    />
+                    <div>
+                      <textarea
+                        value={bodyText}
+                        onChange={(e) => setBodyText(e.target.value)}
+                        className={`w-full p-3 bg-shadowforce border rounded-lg text-white-knight resize-none mb-2 ${
+                          isOverLimit 
+                            ? 'border-red-500 border-2' 
+                            : isNearLimit 
+                              ? 'border-yellow-500 border-2' 
+                              : 'border-guardian/30'
+                        }`}
+                        rows={12}
+                        placeholder="Your personalized message will appear here..."
+                      />
+                      {/* Character Counter */}
+                      <div className="flex justify-between items-center mb-4">
+                        <div className={`text-sm font-medium ${
+                          isOverLimit 
+                            ? 'text-red-400' 
+                            : isNearLimit 
+                              ? 'text-yellow-400' 
+                              : 'text-guardian'
+                        }`}>
+                          {characterCount}/{currentLimit} characters
+                        </div>
+                        {isOverLimit && (
+                          <div className="text-red-400 text-xs">
+                            ⚠️ Message exceeds {messageType === 'linkedin' ? 'LinkedIn' : 'email'} character limit
+                          </div>
+                        )}
+                        {isNearLimit && !isOverLimit && (
+                          <div className="text-yellow-400 text-xs">
+                            ⚠️ Approaching character limit
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   ) : (
-                    <div className="p-3 bg-shadowforce/50 rounded-lg text-white-knight whitespace-pre-wrap mb-4">
-                      {bodyText}
+                    <div>
+                      <div className={`p-3 bg-shadowforce/50 rounded-lg text-white-knight whitespace-pre-wrap mb-2 ${
+                        isOverLimit ? 'border-l-4 border-red-500' : isNearLimit ? 'border-l-4 border-yellow-500' : ''
+                      }`}>
+                        {bodyText}
+                      </div>
+                      {/* Character Counter in view mode */}
+                      <div className="flex justify-between items-center mb-4">
+                        <div className={`text-sm font-medium ${
+                          isOverLimit 
+                            ? 'text-red-400' 
+                            : isNearLimit 
+                              ? 'text-yellow-400' 
+                              : 'text-guardian'
+                        }`}>
+                          {characterCount}/{currentLimit} characters
+                        </div>
+                        {isOverLimit && (
+                          <div className="text-red-400 text-xs">
+                            ⚠️ Message exceeds {messageType === 'linkedin' ? 'LinkedIn' : 'email'} character limit
+                          </div>
+                        )}
+                        {isNearLimit && !isOverLimit && (
+                          <div className="text-yellow-400 text-xs">
+                            ⚠️ Approaching character limit
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
                   {/* Action Buttons */}
                   <div className="flex flex-wrap gap-3 pt-4 border-t border-guardian/20">
-                                         <Tooltip content="Directly edit the message to fine tune your message">
+                     <Tooltip content="Generate an AI variation of the current message">
+                       <Button
+                         onClick={generateAIVariation}
+                         disabled={isGeneratingVariation || !bodyText.trim()}
+                         className="bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50 flex items-center gap-2"
+                         size="sm"
+                       >
+                         {isGeneratingVariation ? (
+                           <>
+                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                             Generating...
+                           </>
+                         ) : (
+                           <>
+                             <Sparkles size={16} />
+                             AI Variation
+                           </>
+                         )}
+                       </Button>
+                     </Tooltip>
+
+                     <Tooltip content="Directly edit the message to fine tune your message">
                        <Button
                          onClick={() => setEditingBody(!editingBody)}
                          className="bg-guardian/30 hover:bg-guardian/50 text-black flex items-center gap-2"
@@ -365,31 +690,15 @@ Best regards,
                        </Button>
                      </Tooltip>
                      
-                     <Tooltip content="Let AI offer suggestions that you can implement with one click">
-                       <Button
-                         onClick={handleReviewMessage}
-                         disabled={isReviewing || !bodyText.trim()}
-                         className="bg-guardian-600 hover:bg-blue-700 text-black disabled:opacity-50 flex items-center gap-2"
-                         size="sm"
-                       >
-                         {isReviewing ? (
-                           <>
-                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                             Reviewing...
-                           </>
-                         ) : (
-                           <>
-                             <FileCheck size={16} />
-                             Edit with AI
-                           </>
-                         )}
-                       </Button>
-                     </Tooltip>
-                     
-                     <Tooltip content="Copy the message to use in LinkedIn or any other messenger to get in contact with your candidate">
+                     <Tooltip content={isOverLimit ? `Message exceeds ${messageType === 'linkedin' ? 'LinkedIn' : 'email'} character limit` : `Copy the message to use in ${messageType === 'linkedin' ? 'LinkedIn' : 'email'} to contact your candidate`}>
                        <Button
                          onClick={() => copyToClipboard(bodyText)}
-                         className="bg-supernova hover:bg-supernova/90 text-shadowforce flex items-center gap-2"
+                         disabled={messageType === 'linkedin' && isOverLimit}
+                         className={`flex items-center gap-2 ${
+                           messageType === 'linkedin' && isOverLimit
+                             ? 'bg-gray-500 cursor-not-allowed opacity-50 text-white' 
+                             : 'bg-supernova hover:bg-supernova/90 text-shadowforce'
+                         }`}
                          size="sm"
                        >
                          {copiedBody ? (
@@ -400,7 +709,7 @@ Best regards,
                        ) : (
                            <>
                              <Copy size={16} />
-                             Copy Message
+                             {messageType === 'linkedin' && isOverLimit ? 'Exceeds Limit' : 'Copy Message'}
                            </>
                          )}
                        </Button>

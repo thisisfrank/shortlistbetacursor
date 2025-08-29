@@ -1150,17 +1150,17 @@ export const CandidatesView: React.FC = () => {
         {/* Search and Job List */}
         <Card className="mb-12">
           <CardContent className="p-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-              <h2 className="text-2xl font-anton text-white-knight uppercase tracking-wide">
-                Select Job to View Candidates
+            <div className="mb-8">
+              <h2 className="text-2xl font-anton text-white-knight uppercase tracking-wide mb-6">
+               
                 {jobs && jobs.length > 0 && (
-                  <span className="block text-base font-jakarta text-supernova mt-2 md:mt-0 md:ml-4 normal-case font-normal">
+                  <span className="block text-base font-jakarta text-supernova mt-2 normal-case font-normal">
                     
                   </span>
                 )}
               </h2>
               
-              <div className="relative">
+              <div className="relative w-full">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search size={18} className="text-guardian" />
                 </div>
@@ -1192,47 +1192,41 @@ export const CandidatesView: React.FC = () => {
                   return (
                     <Card 
                       key={job.id} 
-                      className={`hover:shadow-2xl transition-all duration-300 transform hover:scale-105 ${isCompleted ? 'cursor-pointer' : 'cursor-default opacity-75'}`}
+                      className={`hover:shadow-2xl transition-all duration-300 ${isCompleted ? 'cursor-pointer' : 'cursor-default opacity-75'}`}
                     >
                       <CardContent className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <h3 className="text-xl font-anton text-white-knight mb-2 uppercase tracking-wide line-clamp-2">
-                              {job.title}
-                            </h3>
-                            <Badge 
-                              variant={isCompleted ? 'success' : 'warning'}
-                              className="mb-3"
-                            >
+                        <div className="mb-4 p-3 rounded-lg flex items-center justify-between">
+                          <p className="text-white-knight font-anton text-3xl uppercase tracking-wide">{job.title}</p>
+                          <div className="flex items-center gap-3">
+                            <div className={`px-3 py-2 rounded-lg border text-sm font-jakarta font-semibold uppercase tracking-wide ${
+                              isCompleted 
+                                ? 'bg-green-500/10 border-green-500/30 text-green-400' 
+                                : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400'
+                            }`}>
                               {clientStatus}
-                            </Badge>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleJobExpansion(job.id);
+                              }}
+                              className="flex items-center gap-2"
+                            >
+                              {isExpanded ? (
+                                <>
+                                  <ChevronDown size={16} />
+                                  COLLAPSE
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronRight size={16} />
+                                  EXPAND
+                                </>
+                              )}
+                            </Button>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleJobExpansion(job.id);
-                            }}
-                            className="flex items-center gap-2"
-                          >
-                            {isExpanded ? (
-                              <>
-                                <ChevronDown size={16} />
-                                COLLAPSE
-                              </>
-                            ) : (
-                              <>
-                                <ChevronRight size={16} />
-                                EXPAND
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                        
-                        <div className="mb-4 p-3 bg-supernova/10 border border-supernova/30 rounded-lg">
-                          <p className="text-sm font-jakarta font-semibold text-supernova">Company</p>
-                          <p className="text-white-knight font-jakarta font-bold">{job.companyName}</p>
                         </div>
                         
                         <div className="space-y-3 mb-6">
@@ -1352,7 +1346,7 @@ export const CandidatesView: React.FC = () => {
         
         {/* Candidate Accelerator Program */}
         <div className="mt-12">
-          <Card className="max-w-4xl mx-auto bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 border-yellow-500/30">
+          <Card className="bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 border-yellow-500/30">
             <CardContent className="p-8">
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center mb-4">
@@ -1365,62 +1359,12 @@ export const CandidatesView: React.FC = () => {
                 CANDIDATE ACCELERATOR PROGRAM
                 </h3>
                 <p className="text-xl text-yellow-300 font-jakarta mb-6">
-                  We build and manage your outbound candidate pipeline so you're not stuck relying on referrals or job boards to make great hires.
+                  We build and manage your outbound candidate pipeline so <br/>you're not stuck relying on referrals or job boards to make great hires.
                 </p>
               </div>
 
               <div className="text-center mb-8">
-                <h4 className="text-xl font-anton text-white-knight uppercase tracking-wide mb-6">
-                  What's Included:
-                </h4>
-                <div className="space-y-4 max-w-2xl mx-auto">
-                  <div className="flex items-center justify-center">
-                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
-                    <span className="text-guardian font-jakarta text-left">
-                      Your personal Super Recruiter
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
-                    <span className="text-guardian font-jakarta text-left">
-                      High-quality candidate sourcing for every role
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
-                    <span className="text-guardian font-jakarta text-left">
-                      Create and manage your outbound candidate pipelines
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
-                    <span className="text-guardian font-jakarta text-left">
-                      Weekly reports with actionable recruiting insights
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
-                    <span className="text-guardian font-jakarta text-left">
-                      A/B message testing to maximize candidate conversions
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
-                    <span className="text-guardian font-jakarta text-left">
-                      Custom candidate pitch deck to sell your company
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
-                    <span className="text-guardian font-jakarta text-left">
-                      100% ownership of all candidate data
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-center mb-8">
-                <div className="text-4xl font-anton text-yellow-300 mb-6">
+                <div className="text-4xl font-white text-white mb-6">
                   STARTING AT $999<span className="text-lg">/month</span>
                 </div>
                 
@@ -1428,14 +1372,60 @@ export const CandidatesView: React.FC = () => {
                   onClick={() => window.open('https://calendly.com/superrecruiter/outboundcandidatepipelines', '_blank')}
                   variant="primary"
                   size="lg"
-                  className="bg-black hover:bg-gray-800 text-white font-anton uppercase tracking-wide px-8 py-4"
+                  className="bg-black hover:bg-gray-800 text-white font-anton uppercase tracking-wide px-8 py-4 mb-4"
                 >
                   BOOK DISCOVERY CALL
                 </Button>
-                <p className="text-guardian font-jakarta text-sm mt-2">
+                <p className="text-guardian font-jakarta text-lg">
                 Lower your cost per hire by over 30% in 90 days or pay nothing
                 </p>
               </div>
+
+              <div className="text-center mb-8">
+                <h4 className="text-xl font-anton text-white-knight uppercase tracking-wide mb-6">
+                  What's Included:
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+                  <div className="flex items-center">
+                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta text-left">
+                      Your personal Super Recruiter
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta text-left">
+                      High-quality candidate sourcing for every role
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta text-left">
+                      Create and manage your outbound pipelines
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta text-left">
+                      Weekly reports with actionable recruiting insights
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta text-left">
+                      A/B message testing to maximize conversions
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <CheckCircle className="text-yellow-400 mr-4 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta text-left">
+                      Custom candidate pitch deck to sell your company
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+
 
               <div className="text-center border-t border-yellow-500/20 pt-6">
                 <p className="text-guardian font-jakarta">

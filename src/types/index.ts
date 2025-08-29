@@ -77,7 +77,6 @@ export interface Candidate {
 export type FormStep = 
   | 'job-title'
   | 'job-details' 
-  | 'company-info' 
   | 'requirements' 
   | 'summary' 
   | 'confirmation';

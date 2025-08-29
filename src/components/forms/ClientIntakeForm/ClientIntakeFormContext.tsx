@@ -3,8 +3,6 @@ import { FormStep } from '../../../types';
 
 export interface FormData {
   companyName: string;
-  email: string;
-  phone: string;
   title: string;
   description: string;
   industry: string;
@@ -56,8 +54,6 @@ const ClientIntakeFormContext = createContext<ClientIntakeFormContextType | unde
 
 const initialFormData: FormData = {
   companyName: '',
-  email: '',
-  phone: '',
   title: '',
   description: '',
   industry: '',

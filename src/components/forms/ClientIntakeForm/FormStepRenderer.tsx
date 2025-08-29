@@ -2,7 +2,6 @@ import React from 'react';
 import { FormStep } from '../../../types';
 import { JobTitleStep } from './JobTitleStep';
 import { JobDetailsStep } from './JobDetailsStep';
-import { CompanyInfoStep } from './CompanyInfoStep';
 import { SimpleSummaryStep } from './SimpleSummaryStep';
 import { ConfirmationStep } from './ConfirmationStep';
 import { useClientIntakeForm } from './ClientIntakeFormContext';
@@ -42,6 +41,7 @@ export const FormStepRenderer: React.FC<FormStepRendererProps> = ({
         <JobDetailsStep
           formData={{
             title: formData.title,
+            companyName: formData.companyName,
             description: formData.description,
             industry: formData.industry,
             seniorityLevel: formData.seniorityLevel,
@@ -61,29 +61,11 @@ export const FormStepRenderer: React.FC<FormStepRendererProps> = ({
         />
       );
 
-    case 'company-info':
-      return (
-        <CompanyInfoStep
-          formData={{
-            title: formData.title,
-            companyName: formData.companyName,
-            email: formData.email,
-            phone: formData.phone
-          }}
-          onChange={handleInputChange}
-          onNext={onNext}
-          onBack={onBack}
-          errors={errors}
-        />
-      );
-
     case 'summary':
       return (
         <SimpleSummaryStep
           formData={{
             companyName: formData.companyName,
-            email: formData.email,
-            phone: formData.phone,
             title: formData.title,
             description: formData.description,
             industry: formData.industry,

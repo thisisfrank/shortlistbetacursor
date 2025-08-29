@@ -8,8 +8,6 @@ import { Users } from 'lucide-react';
 interface SimpleSummaryStepProps {
   formData: {
     companyName: string;
-    email: string;
-    phone: string;
     title: string;
     description: string;
     industry: string;
@@ -207,34 +205,16 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
       </div>
       
       <div className="bg-shadowforce border border-guardian/30 p-8 rounded-xl">
-        <h3 className="text-xl font-anton text-supernova mb-6 uppercase tracking-wide">Company Information</h3>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Company</p>
-              <p className="text-lg text-white-knight font-jakarta font-medium">{formData.companyName}</p>
-            </div>
-
-          </div>
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Email</p>
-              <p className="text-lg text-white-knight font-jakarta font-medium">{formData.email}</p>
-            </div>
-            <div>
-              <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Phone</p>
-              <p className="text-lg text-white-knight font-jakarta font-medium">{formData.phone}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="bg-shadowforce border border-guardian/30 p-8 rounded-xl">
-        <h3 className="text-xl font-anton text-supernova mb-6 uppercase tracking-wide">Job Details</h3>
+        <h3 className="text-xl font-anton text-supernova mb-6 uppercase tracking-wide">Details</h3>
         <div className="space-y-6">
           <div>
             <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Position Title</p>
             <p className="text-2xl font-anton text-white-knight">{formData.title}</p>
+          </div>
+          
+          <div>
+            <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Company</p>
+            <p className="text-lg text-white-knight font-jakarta font-medium">{formData.companyName}</p>
           </div>
           
           <div>
@@ -249,9 +229,26 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
             </div>
           )}
           
-          <div className="flex gap-3">
-            <Badge>{formData.seniorityLevel}</Badge>
-            <Badge>{formData.isRemote ? 'Remote' : `${formData.city}, ${formData.state}`}</Badge>
+          <div>
+            <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Experience Level</p>
+            <p className="text-lg text-white-knight font-jakarta font-medium">{formData.seniorityLevel}</p>
+          </div>
+          
+          <div>
+            <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Location</p>
+            <p className="text-lg text-white-knight font-jakarta font-medium">{formData.isRemote ? 'Remote' : `${formData.city}, ${formData.state}`}</p>
+          </div>
+          
+          <div>
+            <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Key Skills</p>
+            <ul className="space-y-2 mt-2">
+              {formData.mustHaveSkills.map((point, index) => (
+                <li key={index} className="flex items-start">
+                  <span className="text-supernova mr-3 font-bold">•</span>
+                  <span className="text-white-knight font-jakarta">{point}</span>
+                </li>
+              ))}
+            </ul>
           </div>
           
           <div>
@@ -261,18 +258,6 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
             </p>
           </div>
         </div>
-      </div>
-      
-      <div className="bg-shadowforce border border-guardian/30 p-8 rounded-xl">
-        <h3 className="text-xl font-anton text-supernova mb-6 uppercase tracking-wide">Key Skills</h3>
-        <ul className="space-y-3">
-          {formData.mustHaveSkills.map((point, index) => (
-            <li key={index} className="flex items-start">
-              <span className="text-supernova mr-3 font-bold">•</span>
-              <span className="text-white-knight font-jakarta">{point}</span>
-            </li>
-          ))}
-        </ul>
       </div>
       
       <div className="flex pt-8 gap-6">

@@ -7,6 +7,7 @@ import { X, Plus } from 'lucide-react';
 interface JobDetailsStepProps {
   formData: {
     title: string;
+    companyName: string;
     description: string;
     industry: string;
     seniorityLevel: string;
@@ -172,6 +173,16 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-6 animate-fadeIn">
       <h2 className="text-3xl font-anton text-guardian mb-12 uppercase tracking-wide">Job Details & Requirements</h2>
+      
+      <FormInput
+        label="Company Name"
+        name="companyName"
+        value={formData.companyName}
+        onChange={onChange}
+        error={errors.companyName}
+        required
+        placeholder="Enter your company name"
+      />
       
       <FormTextarea
         label="Job Description"

@@ -25,6 +25,10 @@ export const useFormValidation = () => {
   const validateJobDetails = useCallback((formData: FormData): ValidationErrors => {
     const errors: ValidationErrors = {};
     
+    if (!formData.companyName.trim()) {
+      errors.companyName = 'Company name is required';
+    }
+    
     if (!formData.description.trim()) {
       errors.description = 'Job description is required';
     }
