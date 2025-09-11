@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import BoltIcon from '../assets/v2.png';
-import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { ArrowRight, Check, Target, MapPin, Briefcase, Zap, GraduationCap } from 'lucide-react';
+import { Check } from 'lucide-react';
 import Image3 from '../assets/image (3).png';
 import Image4 from '../assets/image (4).png';
 import Image5 from '../assets/image (5).png';
-import Illustration18 from '../assets/18 ILLUSTRATION (1) (1).png';
 
 export const LandingPage: React.FC = () => {
   const { user, userProfile, loading } = useAuth();
@@ -60,14 +58,10 @@ export const LandingPage: React.FC = () => {
               GET HIGH-QUALITY
                 <span className="block text-supernova">CANDIDATES, FAST!</span>
               </h1>
-              <p className="text-lg md:text-xl text-guardian max-w-3xl mb-6 font-jakarta leading-relaxed">
-              Hire faster. Hire smarter. <br/>Cut costs 
-                <span className="text-supernova font-bold"> - all without lifting a finger</span>.
-              </p>
               <div className="flex flex-col gap-2 mb-8 max-w-2xl">
                 <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Submit job requirements</span></div>
-                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Get detailed candidate profiles </span></div>
-                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Interview candidates not active on job boards</span></div>
+                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Get high-quality candidates sent to you</span></div>
+                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Interview quality people not active on job boards</span></div>
               </div>
               <div className="flex flex-col sm:flex-row gap-6 mb-4">
                 <div className="flex flex-col items-center gap-4">
@@ -106,7 +100,7 @@ export const LandingPage: React.FC = () => {
                     <video
                       className="w-full h-full object-cover"
                       controls
-                      poster="/screenshots/screenshot1.png"
+                      poster="/screenshots/videoframe_1000.png"
                       preload="metadata"
                     >
                       <source src="/screenshots/Shortlist Promo 2 Audio.mp4" type="video/mp4" />
@@ -114,15 +108,6 @@ export const LandingPage: React.FC = () => {
                     </video>
                   </div>
                   
-                  {/* Video Overlay Info */}
-                  <div className="absolute top-0 left-0 bg-gradient-to-b from-shadowforce/90 to-transparent p-4">
-                    <h3 className="text-lg font-anton text-supernova mb-1 uppercase tracking-wide">
-                      See The Shortlist In Action
-                    </h3>
-                    <p className="text-sm text-white-knight font-jakarta">
-                      Watch how we deliver high-quality candidates in under 12 hours
-                    </p>
-                  </div>
                 </div>
                 
                 {/* Alternative: YouTube/Vimeo Embed (commented out) */}
@@ -160,27 +145,27 @@ export const LandingPage: React.FC = () => {
                 <h3 className="text-2xl md:text-3xl font-anton text-white-knight mb-8 uppercase tracking-wide">
                 Why You’ll Love The Shortlist
                 </h3>
-                <div className="space-y-6 text-left">
-                  <div className="flex items-start">
-                    <Check className="text-supernova mr-3 flex-shrink-0 mt-1" size={20} />
+                <div className="space-y-6 text-center">
+                  <div className="flex items-center justify-center">
+                    <Check className="text-supernova mr-3 flex-shrink-0" size={20} />
                     <p className="text-lg text-white font-jakarta leading-relaxed">
                     Get high-quality candidates delivered straight to your inbox - for any role.
                     </p>
                   </div>
-                  <div className="flex items-start">
-                    <Check className="text-supernova mr-3 flex-shrink-0 mt-1" size={20} />
+                  <div className="flex items-center justify-center">
+                    <Check className="text-supernova mr-3 flex-shrink-0" size={20} />
                     <p className="text-lg text-white font-jakarta leading-relaxed">
                     Skip the hours of research, list building, and endless LinkedIn scrolling.
                     </p>
                   </div>
-                  <div className="flex items-start">
-                    <Check className="text-supernova mr-3 flex-shrink-0 mt-1" size={20} />
+                  <div className="flex items-center justify-center">
+                    <Check className="text-supernova mr-3 flex-shrink-0" size={20} />
                     <p className="text-lg text-white font-jakarta leading-relaxed">
                     Save thousands on tools, job boards, and LinkedIn Recruiter.
                     </p>
                   </div>
-                  <div className="flex items-start">
-                    <Check className="text-supernova mr-3 flex-shrink-0 mt-1" size={20} />
+                  <div className="flex items-center justify-center">
+                    <Check className="text-supernova mr-3 flex-shrink-0" size={20} />
                     <p className="text-lg text-white font-jakarta leading-relaxed">
                     Focus your time on choosing the right candidate, not finding them.
                     </p>
@@ -200,7 +185,7 @@ export const LandingPage: React.FC = () => {
                     How does the Shortlist improve my hiring process?
                     </h4>
                     <p className="text-white font-jakarta leading-relaxed">
-                    We source, score, and prioritize candidates your job ads will never reach – then we arm you with proven email and LinkedIn copy to turn those candidates into interviews.
+                    You get high-quality candidates sourced, scored, and sent directly to you so you don't have to rely on job boards and referrals.
                     </p>
                   </div>
                   
@@ -210,7 +195,7 @@ export const LandingPage: React.FC = () => {
                       Can I try it for free?
                     </h4>
                     <p className="text-white font-jakarta leading-relaxed">
-                      Yes, your first 20 candidates are on us.
+                      Yes, your first 20 candidates are on us!
                     </p>
                   </div>
                   
@@ -224,26 +209,6 @@ export const LandingPage: React.FC = () => {
                     </p>
                   </div>
                   
-                  {/* FAQ Item 4 */}
-                  <div className="border-b border-guardian/20 pb-6">
-                    <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
-                      How fast can you start?
-                    </h4>
-                    <p className="text-white font-jakarta leading-relaxed">
-                    Immediately. Get your first 20 free candidates today and start interviewing talent your competitors can’t reach.
-                    </p>
-                  </div>
-                  
-                  {/* FAQ Item 5 */}
-                  <div className="border-b border-guardian/20 pb-6">
-                    <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
-                    Can the Shortlist save me time and lower my cost per hire?
-                    </h4>
-                    <p className="text-white font-jakarta leading-relaxed">
-                    Absolutely. By helping you identify, engage, and convert the right candidates - without job boards or referrals - we cut both your time-to-hire and recruiting spend.
-                    </p>
-                  </div>
-                  
                   {/* FAQ Item 6 */}
                   <div className="border-b border-guardian/20 pb-6">
                     <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
@@ -251,16 +216,6 @@ export const LandingPage: React.FC = () => {
                     </h4>
                     <p className="text-white font-jakarta leading-relaxed">
                     We follow strict security standards. Your data and candidate information is never shared or sold.                    </p>
-                  </div>
-                  
-                  {/* FAQ Item 7 */}
-                  <div className="border-b border-guardian/20 pb-6">
-                    <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
-                      How long does it take to receive candidates?
-                    </h4>
-                    <p className="text-white font-jakarta leading-relaxed">
-                      Most users get a shortlist in under 12 hours. You'll also receive an email the moment your list is ready.
-                    </p>
                   </div>
                   
                   {/* FAQ Item 8 */}
@@ -286,12 +241,13 @@ export const LandingPage: React.FC = () => {
                   {/* FAQ Item 10 */}
                   <div className="pb-6">
                     <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
-                      How do I know when new candidates are submitted?
+                      Can the Shortlist save me time and lower my cost per hire?
                     </h4>
                     <p className="text-white font-jakarta leading-relaxed">
-                      You'll get an email notification right away, and you can always check your dashboard to view the latest profiles and their match scores.
+                      Absolutely. By helping you identify, engage, and convert the right candidates - without job boards or referrals - we cut both your time-to-hire and recruiting spend.
                     </p>
                   </div>
+                  
                 </div>
               </div>
           </div>
@@ -304,7 +260,7 @@ export const LandingPage: React.FC = () => {
             READY TO GET STARTED?
           </h2>
           <p className="text-xl text-guardian mb-8 font-jakarta">
-            Start using AI to transform their hiring process
+          Get your first candidates on us
           </p>
           <Button 
             onClick={() => window.location.href = '/signup'}
