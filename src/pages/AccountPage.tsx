@@ -189,7 +189,7 @@ export const AccountPage: React.FC = () => {
             className="flex items-center justify-center gap-3 py-4 text-lg font-semibold bg-supernova text-shadowforce hover:bg-supernova-light glow-supernova"
           >
             <Crown size={20} />
-            UPGRADE PLAN
+            GET MORE CANDIDATES
           </Button>
         </div>
       </div>
@@ -237,7 +237,8 @@ export const AccountPage: React.FC = () => {
         {/* Credit Usage Progress Bar */}
         {stats && stats.candidatesLimit > 0 && (
           <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10">
-            <div className="flex items-center justify-end mb-4">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-guardian text-lg font-semibold">Credits Remaining</span>
               <span className="text-white-knight text-lg font-semibold">
                 {stats.candidatesUsed || 20} / {stats.candidatesLimit || 150}
               </span>

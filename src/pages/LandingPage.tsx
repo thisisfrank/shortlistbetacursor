@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import BoltIcon from '../assets/v2.png';
 import { Button } from '../components/ui/Button';
-import { Check } from 'lucide-react';
+import { Check, Play } from 'lucide-react';
 import Image3 from '../assets/image (3).png';
 import Image4 from '../assets/image (4).png';
 import Image5 from '../assets/image (5).png';
 
 export const LandingPage: React.FC = () => {
   const { user, userProfile, loading } = useAuth();
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
   // Show loading state
   if (loading) {
@@ -96,16 +97,32 @@ export const LandingPage: React.FC = () => {
                 {/* Video Container */}
                 <div className="relative bg-gradient-to-r from-shadowforce to-shadowforce-light rounded-lg overflow-hidden border-l-4 border-l-supernova shadow-2xl">
                   {/* Video Player */}
-                  <div className="aspect-video">
+                  <div className="aspect-video relative">
                     <video
                       className="w-full h-full object-cover"
                       controls
                       poster="/screenshots/videoframe_1000.png"
                       preload="metadata"
+                      onPlay={() => setIsVideoPlaying(true)}
+                      onPause={() => setIsVideoPlaying(false)}
+                      onEnded={() => setIsVideoPlaying(false)}
                     >
                       <source src="/screenshots/Shortlist Promo 2 Audio.mp4" type="video/mp4" />
                       Your browser does not support the video tag.
                     </video>
+                    
+                    {/* Play Icon Overlay */}
+                    {!isVideoPlaying && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/30 transition-colors duration-200 cursor-pointer"
+                           onClick={(e) => {
+                             const video = e.currentTarget.previousElementSibling as HTMLVideoElement;
+                             video?.play();
+                           }}>
+                        <div className="bg-supernova/90 hover:bg-supernova rounded-full p-4 shadow-lg transform hover:scale-110 transition-transform duration-200">
+                          <Play className="text-shadowforce" size={48} fill="currentColor" />
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                 </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lock, Star, Download, Gift, Zap, Calculator, Building, Users, BookOpen, Target } from 'lucide-react';
+import { Lock, Star, Download, Gift, Zap, Calculator, Building, Users, BookOpen, Target, Play } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { useMarketplaceUnlock } from '../hooks/useMarketplaceUnlock';
@@ -37,12 +37,12 @@ const marketplaceItems: MarketplaceItem[] = [
     isLocked: true
   },
   {
-    id: 'bonus-candidates',
-    title: 'Bonus 20 Candidates',
-    description: 'Get an extra 20 FREE candidates on the house!',
+    id: 'super-recruiter',
+    title: 'Super Recruiter: Convert your candidate list into real interviews',
+    description: 'Free outbound implementation meeting with your first job entry.',
     points: 'FREE',
-    unlockCondition: 'Unlocked after your first purchase',
-    icon: Gift,
+    unlockCondition: 'Free with your first job entry',
+    icon: Target,
     category: 'free',
     isLocked: true
   },
@@ -75,7 +75,7 @@ const marketplaceItems: MarketplaceItem[] = [
   },
   {
     id: 'candidate-conversion-kit-agency',
-    title: 'Candidate Conversion Kit (Agency Edition)',
+    title: 'Candidate Conversion Kit\n(Agency Edition)',
     description: 'Make more placements with these strategies and ready-to-use templates.',
     points: 150,
     icon: Target,
@@ -102,7 +102,7 @@ const marketplaceItems: MarketplaceItem[] = [
   },
   {
     id: 'outbound-pipelines',
-    title: 'Outbound Candidate Pipelines That Scale',
+    title: '100x Recruiter Stack',
     description: 'Build repeatable pipelines to consistently reach and convert top talent - without relying on job boards, referrals, or staffing firms.',
     points: 2500,
     icon: Users,
@@ -111,7 +111,7 @@ const marketplaceItems: MarketplaceItem[] = [
   },
   {
     id: 'outbound-pipelines-agency',
-    title: '100x Recruiter Stack (Agency Edition)',
+    title: '100x Recruiter Stack\n(Agency Edition)',
     description: 'An agency-focused recruiting stack to cut costs, scale outreach, and make more placements.',
     points: 2500,
     icon: Users,
@@ -201,27 +201,27 @@ export const MarketplacePage: React.FC = () => {
 
         {/* How to Earn Points Section */}
         <div className="mb-12 p-8 bg-shadowforce-light/30 border border-guardian/20 rounded-lg">
-          <h2 className="text-2xl font-bold text-white-knight font-jakarta mb-4">
+          <h2 className="text-2xl font-bold text-white-knight font-jakarta mb-4 text-center">
             How to Earn Points
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="text-center p-4">
-              <div className="w-12 h-12 bg-supernova/20 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <Users size={24} className="text-supernova" />
+              <div className="w-16 h-16 bg-supernova/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <Users size={32} className="text-supernova" />
               </div>
               <h3 className="text-white-knight mb-2">Enter Jobs</h3>
               <p className="text-guardian text-sm">Earn points every time you post a job</p>
             </div>
             <div className="text-center p-4">
-              <div className="w-12 h-12 bg-supernova/20 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <Target size={24} className="text-supernova" />
+              <div className="w-16 h-16 bg-supernova/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <Target size={32} className="text-supernova" />
               </div>
               <h3 className="text-white-knight mb-2">Activity</h3>
               <p className="text-guardian text-sm">Get rewarded for consistent platform use</p>
             </div>
             <div className="text-center p-4">
-              <div className="w-12 h-12 bg-supernova/20 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <Star size={24} className="text-supernova" />
+              <div className="w-16 h-16 bg-supernova/20 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <Star size={32} className="text-supernova" />
               </div>
               <h3 className="text-white-knight mb-2">Achievements</h3>
               <p className="text-guardian text-sm">Unlock bonus points as you hit milestones</p>
@@ -247,7 +247,7 @@ export const MarketplacePage: React.FC = () => {
                         <Icon size={24} className="text-supernova" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-white-knight font-jakarta mb-2">
+                        <h3 className="text-lg font-semibold text-white-knight font-jakarta mb-2 whitespace-pre-line">
                           {item.title}
                         </h3>
                         <p className="text-guardian text-sm">
@@ -301,9 +301,14 @@ export const MarketplacePage: React.FC = () => {
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
-                            <Download size={14} />
+                            {item.id === 'ai-message-generator' ? (
+                              <Play size={14} />
+                            ) : (
+                              <Download size={14} />
+                            )}
                             <span className="text-sm">
-                              {item.id === 'ai-message-generator' ? 'Use Now' : 'Download'}
+                              {item.id === 'ai-message-generator' ? 'Use Now' : 
+                               item.id === 'super-recruiter' ? 'Schedule My Strategy Session' : 'Download'}
                             </span>
                           </div>
                         )}

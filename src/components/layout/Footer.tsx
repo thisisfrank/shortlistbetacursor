@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-shadowforce border-t border-guardian/20 py-12">
+    <footer className="bg-shadowforce border-t border-guardian/20 py-6">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center">
-          <div className="mb-6 md:mb-0">
+          <div className="mb-4 md:mb-0">
             <div className="sr-logo text-xl mb-2">
               <span className="text-supernova">SUPER</span>
               <span className="text-white-knight ml-1">RECRUITER</span>

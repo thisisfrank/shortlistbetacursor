@@ -49,29 +49,9 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
   const userAvailableCredits = userProfile?.availableCredits || 0;
   const candidatesRequested = parseInt(formData.candidatesRequested) || 1;
   
-  // Slider snap points
-  const snapPoints = [1, 20, 40, 60, 100];
-  
-  // Handle slider changes with snapping
+  // Handle slider changes with continuous values
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const snapIndex = parseInt(e.target.value);
-    const snapValue = snapPoints[snapIndex];
-    
-    // Create synthetic event with snapped value
-    const syntheticEvent = {
-      target: {
-        name: 'candidatesRequested',
-        value: snapValue.toString()
-      }
-    } as React.ChangeEvent<HTMLInputElement>;
-    
-    onChange(syntheticEvent);
-  };
-  
-  // Find which snap point we're currently at for slider display
-  const getCurrentSnapIndex = () => {
-    const currentSnap = snapPoints.find(point => point === candidatesRequested) || snapPoints[0];
-    return snapPoints.indexOf(currentSnap);
+    onChange(e);
   };
   
   // Check if request exceeds user's available credits
@@ -144,16 +124,16 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
               <div 
                 className="absolute top-1/2 transform -translate-y-1/2 w-full h-3 bg-shadowforce rounded-full"
                 style={{
-                  background: `linear-gradient(to right, #FFCF00 0%, #FFCF00 ${(getCurrentSnapIndex() / (snapPoints.length - 1)) * 100}%, #111111 ${(getCurrentSnapIndex() / (snapPoints.length - 1)) * 100}%, #111111 100%)`
+                  background: `linear-gradient(to right, #FFCF00 0%, #FFCF00 ${((candidatesRequested - 1) / 99) * 100}%, #111111 ${((candidatesRequested - 1) / 99) * 100}%, #111111 100%)`
                 }}
               />
               <input
                 type="range"
                 name="candidatesRequested"
-                min="0"
-                max={snapPoints.length - 1}
+                min="1"
+                max="100"
                 step="1"
-                value={getCurrentSnapIndex()}
+                value={candidatesRequested}
                 onChange={handleSliderChange}
                 className="diamond-slider relative w-full h-3 appearance-none cursor-pointer bg-transparent"
               />
@@ -208,39 +188,39 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
         <h3 className="text-xl font-anton text-supernova mb-6 uppercase tracking-wide">Details</h3>
         <div className="space-y-6">
           <div>
-            <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Position Title</p>
+            <p className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Position Title</p>
             <p className="text-2xl font-anton text-white-knight">{formData.title}</p>
           </div>
           
           <div>
-            <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Company</p>
+            <p className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Company</p>
             <p className="text-lg text-white-knight font-jakarta font-medium">{formData.companyName}</p>
           </div>
           
           <div>
-            <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Description</p>
+            <p className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Description</p>
             <p className="text-white-knight font-jakarta leading-relaxed whitespace-pre-line">{formData.description}</p>
           </div>
           
           {formData.industry && (
             <div>
-              <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Industry</p>
+              <p className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Industry</p>
               <p className="text-lg text-white-knight font-jakarta font-medium">{formData.industry}</p>
             </div>
           )}
           
           <div>
-            <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Experience Level</p>
+            <p className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Experience Level</p>
             <p className="text-lg text-white-knight font-jakarta font-medium">{formData.seniorityLevel}</p>
           </div>
           
           <div>
-            <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Location</p>
+            <p className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Location</p>
             <p className="text-lg text-white-knight font-jakarta font-medium">{formData.isRemote ? 'Remote' : `${formData.city}, ${formData.state}`}</p>
           </div>
           
           <div>
-            <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Key Skills</p>
+            <p className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Key Skills</p>
             <ul className="space-y-2 mt-2">
               {formData.mustHaveSkills.map((point, index) => (
                 <li key={index} className="flex items-start">
@@ -252,8 +232,8 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
           </div>
           
           <div>
-            <p className="text-sm font-jakarta font-semibold text-guardian/80 uppercase tracking-wide">Salary Range</p>
-            <p className="text-xl font-jakarta font-bold text-supernova">
+            <p className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Salary Range</p>
+            <p className="text-xl font-jakarta font-bold text-white-knight">
               ${extractNumericValue(formData.salaryRangeMin).toLocaleString()} - ${extractNumericValue(formData.salaryRangeMax).toLocaleString()} USD
             </p>
           </div>

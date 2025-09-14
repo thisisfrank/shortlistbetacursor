@@ -171,31 +171,23 @@ Best,
 {{your_name}}`
       },
       4: {
-        name: "Email 4 - LinkedIn Follow Up",
-        template: `Subject: Linkedin follow up
+        name: "Email 4 – Short and sweet",
+        template: `Subject: salary bump
 
-Hey {{firstname}},
+Hi {{firstname}},
 
-Hope you're doing well!
+Saw your LinkedIn today – super solid background.
 
-Just checked out your LinkedIn - really solid background in {{skillone}} and {{skilltwo}}.
+We have a {{job_opening}} role open right now you look great for.
 
-We've got this {{job_opening}} position that seems right up your alley.
+The salary is around $\{{salary}}k base + benefits.
 
-We have a great team at {{company_name}} and we're looking for someone exactly like you.
+Is that in your range to consider a move?
 
-Here's some addition perks about the company:
+Let me know and I can share the full job description.
 
-- [Perk 1]
-- [Perk 2]
-- [Perk 3]
-
-Compensation: $\{{salary}}K base + benefits package
-
-Interested in checking out the full job description?
-
-Cheers,
-{{your_name}}`
+Thank you,
+Alex`
       }
     }
   };
@@ -467,11 +459,68 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
          <div className="w-1/3 bg-shadowforce-light/30 border-r border-guardian/20 p-6 overflow-y-auto">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-white-knight font-jakarta mb-2">
-              LinkedIn Message Generator
+              Message Generator
             </h1>
             <p className="text-guardian text-sm">
-              Select a completed job to generate personalized LinkedIn messages for candidates
+              Select a completed job to generate personalized messages for candidates
             </p>
+          </div>
+
+          {/* Message Type Toggle */}
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-white-knight font-jakarta mb-2">Message Type</h3>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => handleMessageTypeChange('linkedin')}
+                className={`${
+                  messageType === 'linkedin'
+                    ? 'bg-supernova text-shadowforce'
+                    : 'bg-transparent text-white-knight hover:bg-supernova hover:text-shadowforce'
+                }`}
+                size="sm"
+              >
+                📱 LinkedIn
+              </Button>
+              <Button
+                onClick={() => handleMessageTypeChange('email')}
+                className={`${
+                  messageType === 'email'
+                    ? 'bg-supernova text-shadowforce'
+                    : 'bg-transparent text-white-knight hover:bg-supernova hover:text-shadowforce'
+                }`}
+                size="sm"
+              >
+                ✉️ Email
+              </Button>
+            </div>
+          </div>
+
+          {/* Template Selector */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-white-knight font-jakarta">
+                {messageType === 'linkedin' ? 'LinkedIn' : 'Email'} Templates
+              </h3>
+              <div className="text-xs text-guardian">
+                Limit: {currentLimit.toLocaleString()}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(templates[messageType]).map(([id, template]) => (
+                <Button
+                  key={id}
+                  onClick={() => handleTemplateChange(Number(id))}
+                  className={`text-xs ${
+                    selectedTemplate === Number(id)
+                      ? 'bg-supernova text-shadowforce'
+                      : 'bg-transparent text-white-knight hover:bg-supernova hover:text-shadowforce'
+                  }`}
+                  size="sm"
+                >
+                  {template.name}
+                </Button>
+              ))}
+            </div>
           </div>
 
           {completedJobsWithCandidates.length === 0 ? (
@@ -545,150 +594,19 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
         </div>
 
                  {/* Right Panel - Message Template */}
-         <div className="flex-1 p-6">
-           <div className="max-w-4xl mx-auto">
-
-
-              <div className="space-y-6">
-                {/* Message Type Toggle */}
-                <Card className="p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-2xl font-bold text-white-knight font-jakarta">Message Type</h3>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleMessageTypeChange('linkedin')}
-                      className={`${
-                        messageType === 'linkedin'
-                          ? 'bg-supernova text-shadowforce'
-                          : 'bg-shadowforce/30 text-guardian hover:bg-shadowforce/50'
-                      }`}
-                      size="sm"
-                    >
-                      📱 LinkedIn
-                    </Button>
-                    <Button
-                      onClick={() => handleMessageTypeChange('email')}
-                      className={`${
-                        messageType === 'email'
-                          ? 'bg-supernova text-shadowforce'
-                          : 'bg-shadowforce/30 text-guardian hover:bg-shadowforce/50'
-                      }`}
-                      size="sm"
-                    >
-                      ✉️ Email
-                    </Button>
-                  </div>
-                </Card>
-
-                {/* Template Selector */}
-                <Card className="p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-2xl font-bold text-white-knight font-jakarta">
-                      {messageType === 'linkedin' ? 'LinkedIn' : 'Email'} Templates
-                    </h3>
-                    <div className="text-sm text-guardian">
-                      {messageType === 'linkedin' ? 'LinkedIn' : 'Email'} Character Limit: {currentLimit.toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.entries(templates[messageType]).map(([id, template]) => (
-                      <Button
-                        key={id}
-                        onClick={() => handleTemplateChange(Number(id))}
-                        className={`text-xs ${
-                          selectedTemplate === Number(id)
-                            ? 'bg-supernova text-shadowforce'
-                            : 'bg-shadowforce/30 text-guardian hover:bg-shadowforce/50'
-                        }`}
-                        size="sm"
-                      >
-                        {template.name}
-                      </Button>
-                    ))}
-                  </div>
-                </Card>
+         <div className="flex-1 p-6 flex flex-col">
+           <div className="max-w-4xl mx-auto flex-1 flex flex-col">
 
                 {/* Message Body */}
-                <Card className="p-6">
+                <Card className="p-6 flex-1 flex flex-col">
                   
-                  {editingBody ? (
-                    <div>
-                      <textarea
-                        value={bodyText}
-                        onChange={(e) => setBodyText(e.target.value)}
-                        className={`w-full p-3 bg-shadowforce border rounded-lg text-white-knight resize-none mb-2 ${
-                          isOverLimit 
-                            ? 'border-red-500 border-2' 
-                            : isNearLimit 
-                              ? 'border-yellow-500 border-2' 
-                              : 'border-guardian/30'
-                        }`}
-                        rows={12}
-                        placeholder="Your personalized message will appear here..."
-                      />
-                      {/* Character Counter */}
-                      <div className="flex justify-between items-center mb-4">
-                        <div className={`text-sm font-medium ${
-                          isOverLimit 
-                            ? 'text-red-400' 
-                            : isNearLimit 
-                              ? 'text-yellow-400' 
-                              : 'text-guardian'
-                        }`}>
-                          {characterCount}/{currentLimit} characters
-                        </div>
-                        {isOverLimit && (
-                          <div className="text-red-400 text-xs">
-                            ⚠️ Message exceeds {messageType === 'linkedin' ? 'LinkedIn' : 'email'} character limit
-                          </div>
-                        )}
-                        {isNearLimit && !isOverLimit && (
-                          <div className="text-yellow-400 text-xs">
-                            ⚠️ Approaching character limit
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className={`p-3 bg-shadowforce/50 rounded-lg text-white-knight whitespace-pre-wrap mb-2 ${
-                        isOverLimit ? 'border-l-4 border-red-500' : isNearLimit ? 'border-l-4 border-yellow-500' : ''
-                      }`}>
-                        {bodyText}
-                      </div>
-                      {/* Character Counter in view mode */}
-                      <div className="flex justify-between items-center mb-4">
-                        <div className={`text-sm font-medium ${
-                          isOverLimit 
-                            ? 'text-red-400' 
-                            : isNearLimit 
-                              ? 'text-yellow-400' 
-                              : 'text-guardian'
-                        }`}>
-                          {characterCount}/{currentLimit} characters
-                        </div>
-                        {isOverLimit && (
-                          <div className="text-red-400 text-xs">
-                            ⚠️ Message exceeds {messageType === 'linkedin' ? 'LinkedIn' : 'email'} character limit
-                          </div>
-                        )}
-                        {isNearLimit && !isOverLimit && (
-                          <div className="text-yellow-400 text-xs">
-                            ⚠️ Approaching character limit
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-3 pt-4 border-t border-guardian/20">
+                  <div className="flex flex-wrap gap-3 pb-4 mb-4 border-b border-guardian/20">
                      <Tooltip content="Generate an AI variation of the current message">
                        <Button
                          onClick={generateAIVariation}
                          disabled={isGeneratingVariation || !bodyText.trim()}
-                         className="bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50 flex items-center gap-2"
+                         className="bg-purple-600 hover:bg-purple-700 text-black disabled:opacity-50 flex items-center gap-2"
                          size="sm"
                        >
                          {isGeneratingVariation ? (
@@ -741,11 +659,85 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                        </Button>
                      </Tooltip>
                   </div>
+                  
+                  {editingBody ? (
+                    <div className="flex-1 flex flex-col">
+                      <textarea
+                        value={bodyText}
+                        onChange={(e) => setBodyText(e.target.value)}
+                        className={`w-full p-3 bg-shadowforce border-2 rounded-lg text-white-knight resize-none mb-2 flex-1 ${
+                          isOverLimit 
+                            ? 'border-red-500' 
+                            : isNearLimit 
+                              ? 'border-yellow-500' 
+                              : 'border-guardian/30'
+                        }`}
+                        placeholder="Your personalized message will appear here..."
+                      />
+                      {/* Character Counter */}
+                      <div className="flex justify-between items-center mb-4">
+                        <div className={`text-sm font-medium ${
+                          isOverLimit 
+                            ? 'text-red-400' 
+                            : isNearLimit 
+                              ? 'text-yellow-400' 
+                              : 'text-guardian'
+                        }`}>
+                          {characterCount}/{currentLimit} characters
+                        </div>
+                        {isOverLimit && (
+                          <div className="text-red-400 text-xs">
+                            ⚠️ Message exceeds {messageType === 'linkedin' ? 'LinkedIn' : 'email'} character limit
+                          </div>
+                        )}
+                        {isNearLimit && !isOverLimit && (
+                          <div className="text-yellow-400 text-xs">
+                            ⚠️ Approaching character limit
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col">
+                      <div className={`p-3 bg-shadowforce/50 border-2 rounded-lg text-white-knight whitespace-pre-wrap mb-2 flex-1 overflow-y-auto ${
+                        isOverLimit 
+                          ? 'border-red-500' 
+                          : isNearLimit 
+                            ? 'border-yellow-500' 
+                            : 'border-transparent'
+                      }`}>
+                        {bodyText}
+                      </div>
+                      {/* Character Counter in view mode */}
+                      <div className="flex justify-between items-center mb-4">
+                        <div className={`text-sm font-medium ${
+                          isOverLimit 
+                            ? 'text-red-400' 
+                            : isNearLimit 
+                              ? 'text-yellow-400' 
+                              : 'text-guardian'
+                        }`}>
+                          {characterCount}/{currentLimit} characters
+                        </div>
+                        {isOverLimit && (
+                          <div className="text-red-400 text-xs">
+                            ⚠️ Message exceeds {messageType === 'linkedin' ? 'LinkedIn' : 'email'} character limit
+                          </div>
+                        )}
+                        {isNearLimit && !isOverLimit && (
+                          <div className="text-yellow-400 text-xs">
+                            ⚠️ Approaching character limit
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                 </Card>
 
                                  {/* Grammar Review Results */}
                  {showReviewResults && reviewResult && (
-                   <Card className="p-6 border-l-4 border-l-supernova mb-8">
+                   <Card className="p-6 border-l-4 border-l-supernova mt-4">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         {reviewResult.hasIssues ? (
@@ -803,7 +795,6 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                     )}
                   </Card>
                 )}
-              </div>
             </div>
         </div>
       </div>
