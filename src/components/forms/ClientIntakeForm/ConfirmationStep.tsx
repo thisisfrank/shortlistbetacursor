@@ -37,8 +37,8 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ onReset }) =
             <div className="text-center relative">
               <div className="bg-supernova rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-4 relative z-10 border-2 border-shadowforce">
               </div>
-              <h4 className="font-anton text-white-knight mb-2 text-lg">AI ANALYSIS</h4>
-              <p className="text-guardian font-jakarta text-xs">Requirements processed and candidate profiles identified</p>
+              <h4 className="font-anton text-white-knight mb-2 text-lg">ANALYZE</h4>
+              <p className="text-guardian font-jakarta text-xs">Process your requirements and define ideal profiles</p>
             </div>
             
             {/* Hour 6 */}
@@ -46,7 +46,7 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ onReset }) =
               <div className="bg-supernova rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-4 relative z-10 border-2 border-shadowforce">
               </div>
               <h4 className="font-anton text-white-knight mb-2 text-lg">SOURCING</h4>
-              <p className="text-guardian font-jakarta text-xs">Expert sourcers begin candidate search and screening</p>
+              <p className="text-guardian font-jakarta text-xs">Search 8+ channels to identify top candidates</p>
             </div>
             
             {/* Hour 18 */}
@@ -54,7 +54,7 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ onReset }) =
               <div className="bg-supernova rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-4 relative z-10 border-2 border-shadowforce">
               </div>
               <h4 className="font-anton text-white-knight mb-2 text-lg">CURATION</h4>
-              <p className="text-guardian font-jakarta text-xs">Profiles reviewed and shortlist curated</p>
+              <p className="text-guardian font-jakarta text-xs">Grade, qualify, and remove mismatches</p>
             </div>
             
             {/* Hour 24 */}
@@ -62,7 +62,7 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ onReset }) =
               <div className="bg-supernova rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-4 relative z-10 border-2 border-shadowforce">
               </div>
               <h4 className="font-anton text-white-knight mb-2 text-lg">DELIVERY</h4>
-              <p className="text-guardian font-jakarta text-xs">Complete shortlist delivered to your inbox</p>
+              <p className="text-guardian font-jakarta text-xs">Shortlist of high-quality candidates sent to your inbox</p>
             </div>
           </div>
         </div>

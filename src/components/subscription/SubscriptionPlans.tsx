@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { CheckCircle, Zap, Crown, Star, Mail, Users, Briefcase, X, AlertTriangle, RefreshCw, Settings, CreditCard } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import BoltIcon from '../../assets/v2.png';
 
 // Updated subscription plans based on requirements
 const subscriptionPlans = [
@@ -269,10 +270,14 @@ export const SubscriptionPlans: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-12">
         {/* Header */}
         <header className="mb-12 text-center">
-          <div className="flex items-center justify-center mb-6">
+          <div className="flex items-center justify-center mb-6 mt-8">
             <div className="relative">
-              <Crown size={60} className="text-supernova fill-current animate-pulse" />
-              <div className="absolute inset-0 bg-supernova/30 blur-xl rounded-full"></div>
+              <img
+                src={BoltIcon}
+                alt="Super Recruiter Logo"
+                className="animate-pulse"
+                style={{ width: '150px', height: '62px', filter: 'drop-shadow(0 0 16px #FFD600)', objectFit: 'contain' }}
+              />
             </div>
           </div>
           <h1 className="text-5xl md:text-6xl font-anton text-white-knight mb-4 uppercase tracking-wide">
@@ -458,15 +463,18 @@ export const SubscriptionPlans: React.FC = () => {
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center mb-4">
                   <div className="relative">
-                    <Crown size={48} className="text-yellow-400 fill-current" />
-                    <div className="absolute inset-0 bg-yellow-400/30 blur-xl rounded-full"></div>
+                    <img
+                      src={BoltIcon}
+                      alt="Super Recruiter Logo"
+                      style={{ width: '120px', height: '50px', filter: 'drop-shadow(0 0 12px #FACC15)', objectFit: 'contain' }}
+                    />
                   </div>
                 </div>
                 <h3 className="text-3xl font-anton text-white-knight mb-4 uppercase tracking-wide">
                 CANDIDATE ACCELERATOR PROGRAM
                 </h3>
                 <p className="text-xl text-yellow-300 font-jakarta mb-6">
-                  We build and manage your outbound candidate pipeline so you're not stuck<br/> relying on referrals or job boards to make great hires.
+                  Want help turning your candidate lists into real interviews? 
                 </p>
               </div>
 
@@ -481,7 +489,7 @@ export const SubscriptionPlans: React.FC = () => {
                   size="lg"
                   className="bg-yellow-400 hover:bg-yellow-500 text-black font-anton uppercase tracking-wide px-8 py-4 mb-4"
                 >
-                  BOOK DISCOVERY CALL
+                  BOOK YOUR STRATEGY CALL
                 </Button>
                 <p className="text-guardian font-jakarta text-sm">
                   Lower your cost per hire by over 30% in 90 days or pay nothing
@@ -492,38 +500,38 @@ export const SubscriptionPlans: React.FC = () => {
                 <h4 className="text-xl font-anton text-white-knight uppercase tracking-wide mb-6 text-center">
                   WHAT'S INCLUDED:
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-                  <div className="flex items-start">
+                <div className="space-y-4 max-w-2xl mx-auto">
+                  <div className="flex items-start justify-center">
                     <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
                     <span className="text-guardian font-jakarta">
                       Your personal Super Recruiter
                     </span>
                   </div>
-                  <div className="flex items-start">
+                  <div className="flex items-start justify-center">
                     <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
                     <span className="text-guardian font-jakarta">
                       High-quality candidate sourcing for every role
                     </span>
                   </div>
-                  <div className="flex items-start">
+                  <div className="flex items-start justify-center">
                     <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
                     <span className="text-guardian font-jakarta">
                       Create and manage your outbound pipelines
                     </span>
                   </div>
-                  <div className="flex items-start">
+                  <div className="flex items-start justify-center">
                     <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
                     <span className="text-guardian font-jakarta">
                       Weekly reports with actionable recruiting insights
                     </span>
                   </div>
-                  <div className="flex items-start">
+                  <div className="flex items-start justify-center">
                     <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
                     <span className="text-guardian font-jakarta">
                       A/B message testing to maximize conversions
                     </span>
                   </div>
-                  <div className="flex items-start">
+                  <div className="flex items-start justify-center">
                     <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
                     <span className="text-guardian font-jakarta">
                       Custom candidate pitch deck to sell your company
