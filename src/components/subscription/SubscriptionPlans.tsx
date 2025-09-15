@@ -4,17 +4,17 @@ import { useSubscription } from '../../hooks/useSubscription';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { CheckCircle, Zap, Crown, Star, Mail, Users, Briefcase, X, AlertTriangle, RefreshCw, Settings, CreditCard } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { CheckCircle, Zap, Crown, Star, Mail, Users, Briefcase } from 'lucide-react';
 import BoltIcon from '../../assets/v2.png';
 
-// Updated subscription plans based on requirements
+// Updated subscription plans with payment links
 const subscriptionPlans = [
   {
     id: 'free',
     name: 'Free',
     price: 0,
     priceId: null,
+    paymentLink: null,
     description: 'Perfect for trying out our platform',
     features: {
       jobs: 1,
@@ -29,7 +29,8 @@ const subscriptionPlans = [
     id: 'basic',
     name: 'Basic',
     price: 35,
-    priceId: 'price_1Rl1MuFPYYAarocke0oZgczA', // Real Stripe price ID
+    priceId: 'price_1S7TO3Hb6LdHADWYvWMTutrj', // Updated Stripe price ID
+    paymentLink: 'https://buy.stripe.com/test_fZu7sLaoK9lN1oRfap9R600', // Tier One
     description: 'Perfect for getting started',
     features: {
       jobs: 3,
@@ -44,7 +45,8 @@ const subscriptionPlans = [
     id: 'premium',
     name: 'Premium',
     price: 49,
-    priceId: 'price_1Rl1N5FPYYAarock0dFT7x9Q', // Real Stripe price ID
+    priceId: 'price_1S7TOGHb6LdHADWYAu8g3h3f', // Updated Stripe price ID
+    paymentLink: 'https://buy.stripe.com/test_eVq14n1SegOf8Rj3rH9R601', // Tier Two
     description: 'Advanced features for scaling businesses',
     features: {
       jobs: 3,
@@ -59,7 +61,8 @@ const subscriptionPlans = [
     id: 'topshelf',
     name: 'Top Shelf',
     price: 199,
-    priceId: 'price_1Rl1NJFPYYAarockbgLtNiKk', // Real Stripe price ID
+    priceId: 'price_1S7TPaHb6LdHADWYhMgRw3YY', // Updated Stripe price ID
+    paymentLink: 'https://buy.stripe.com/test_4gMdR90OacxZ7Nf0fv9R602', // Tier Three
     description: 'Unlimited access for enterprise teams',
     features: {
       jobs: 10,
@@ -75,10 +78,7 @@ const subscriptionPlans = [
 export const SubscriptionPlans: React.FC = () => {
   const { userProfile } = useAuth();
   const { subscription, getSubscriptionPlan, isActive, loading: subscriptionLoading, error: subscriptionError } = useSubscription();
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
-  const [refreshingProfile, setRefreshingProfile] = useState(false);
-  const { refreshProfile } = useAuth();
 
   const currentPlan = getSubscriptionPlan();
 
@@ -102,150 +102,17 @@ export const SubscriptionPlans: React.FC = () => {
   // Show error state inline instead of full screen loading
   const hasSubscriptionError = subscriptionError && !subscriptionLoading;
 
-  const handleSubscribe = async (priceId: string) => {
-    if (!priceId) {
-      // Handle free tier - no Stripe checkout needed
+  const handleSubscribe = (paymentLink: string | null) => {
+    if (!paymentLink) {
+      // Handle free tier - no payment needed
       alert('You are already on the Free Tier. Choose a paid plan to upgrade.');
       return;
     }
 
-    // Validate environment variables
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.error('Missing Supabase environment variables:', {
-        hasUrl: !!supabaseUrl,
-        hasKey: !!supabaseAnonKey
-      });
-      alert('Configuration error: Supabase connection not properly configured. Please check environment variables.');
-      return;
-    }
-
-    // Get user session for authentication
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError || !sessionData.session) {
-      console.error('No active session:', sessionError);
-      alert('Please log in to upgrade your subscription.');
-      return;
-    }
-
-    setLoadingPlan(priceId);
-
-    try {
-      // Call our stripe-checkout function instead of direct links
-      const functionUrl = `${supabaseUrl}/functions/v1/stripe-checkout`;
-      console.log('Calling Supabase Edge Function:', functionUrl);
-      
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionData.session.access_token}`,
-        },
-        body: JSON.stringify({
-          price_id: priceId,
-          mode: 'subscription',
-          success_url: `${window.location.origin}/subscription/success`,
-          cancel_url: `${window.location.origin}/subscription`,
-        }),
-      });
-
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-      
-      const responseText = await response.text();
-      console.log('Response text:', responseText);
-
-      if (!response.ok) {
-        let errorData;
-        try {
-          errorData = JSON.parse(responseText);
-        } catch {
-          errorData = { error: `HTTP ${response.status}: ${responseText}` };
-        }
-        throw new Error(errorData.error || 'Failed to create checkout session');
-      }
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch {
-        throw new Error('Invalid response format from server');
-      }
-      
-      const { url } = data;
-      
-      if (url) {
-        window.open(url, '_blank'); // Open Stripe checkout in new tab
-      } else {
-        throw new Error('No checkout URL received');
-      }
-    } catch (error) {
-      console.error('Subscription error details:', {
-        error,
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      });
-      
-      let errorMessage = 'Failed to open checkout';
-      if (error instanceof Error) {
-        if (error.message.includes('Failed to fetch')) {
-          errorMessage = 'Unable to connect to payment service. Please check your internet connection and try again.';
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      
-      alert(`Error: ${errorMessage}`);
-    } finally {
-      setLoadingPlan(null);
-    }
+    // Redirect to Stripe Payment Link - no authentication required
+    window.open(paymentLink, '_blank');
   };
 
-  const handleRefreshProfile = async () => {
-    setRefreshingProfile(true);
-    try {
-      await refreshProfile();
-      console.log('✅ Profile refreshed manually');
-    } catch (error) {
-      console.error('❌ Error refreshing profile:', error);
-    } finally {
-      setRefreshingProfile(false);
-    }
-  };
-
-  // Handle subscription management (Stripe Customer Portal)
-  const handleManageSubscription = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        alert('Please log in to manage your subscription');
-        return;
-      }
-
-      const response = await fetch('/functions/v1/stripe-portal', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create portal session');
-      }
-
-      const { url } = await response.json();
-      if (url) {
-        window.location.href = url;
-      }
-    } catch (error) {
-      console.error('Error opening customer portal:', error);
-      alert('Unable to open subscription management. Please try again.');
-    }
-  };
 
   const getPlanIcon = (planName: string) => {
     switch (planName) {
@@ -347,16 +214,13 @@ export const SubscriptionPlans: React.FC = () => {
                   fullWidth
                   size="lg"
                   variant={isCurrentPlan(plan.id) ? 'outline' : 'primary'}
-                  onClick={() => handleSubscribe(plan.priceId || '')}
-                  disabled={
-                    // Disable all except Free plan
-                    plan.id !== 'free' || isCurrentPlan(plan.id) || loadingPlan === (plan.priceId || '') || !plan.priceId
-                  }
-                  isLoading={loadingPlan === (plan.priceId || '')}
+                  onClick={() => handleSubscribe(plan.paymentLink)}
+                  disabled={isCurrentPlan(plan.id)}
+                  isLoading={false}
                 >
-                  {plan.id === 'free'
-                    ? (isCurrentPlan(plan.id) ? 'CURRENT PLAN' : 'UPGRADE')
-                    : 'OUT OF STOCK'}
+                  {isCurrentPlan(plan.id) 
+                    ? 'CURRENT PLAN' 
+                    : (plan.id === 'free' ? 'CURRENT PLAN' : 'SUBSCRIBE NOW')}
                   </Button>
                 </div>
               </CardContent>
@@ -364,97 +228,6 @@ export const SubscriptionPlans: React.FC = () => {
           ))}
         </div>
 
-        {/* Current Subscription Management */}
-        {currentTierPlan && currentTierPlan.id !== 'free' && (
-          <div className="mb-12">
-            <Card className="max-w-4xl mx-auto bg-gradient-to-r from-green-500/20 to-green-500/10 border-green-500/30">
-              <CardContent className="p-8">
-                <div className="text-center mb-6">
-                  <div className="flex items-center justify-center mb-4">
-                    <div className="relative">
-                      <CreditCard size={48} className="text-green-400 fill-current" />
-                      <div className="absolute inset-0 bg-green-400/30 blur-xl rounded-full"></div>
-                    </div>
-                  </div>
-                  <h3 className="text-3xl font-anton text-white-knight mb-4 uppercase tracking-wide">
-                    MANAGE YOUR SUBSCRIPTION
-                  </h3>
-                  <p className="text-xl text-green-300 font-jakarta mb-6">
-                    Current Plan: <span className="text-white-knight font-anton">{currentTierPlan.name}</span>
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                  <div className="space-y-4">
-                    <h4 className="text-xl font-anton text-white-knight uppercase tracking-wide">
-                      Subscription Actions:
-                    </h4>
-                    <div className="space-y-3">
-                      <div className="flex items-start">
-                        <Settings className="text-green-400 mr-3 mt-1 flex-shrink-0" size={20} />
-                        <span className="text-guardian font-jakarta">
-                          <strong className="text-white-knight">Update Payment Method:</strong> Change your billing information
-                        </span>
-                      </div>
-                      <div className="flex items-start">
-                        <RefreshCw className="text-green-400 mr-3 mt-1 flex-shrink-0" size={20} />
-                        <span className="text-guardian font-jakarta">
-                          <strong className="text-white-knight">Upgrade/Downgrade:</strong> Change your plan anytime
-                        </span>
-                      </div>
-                      <div className="flex items-start">
-                        <X className="text-green-400 mr-3 mt-1 flex-shrink-0" size={20} />
-                        <span className="text-guardian font-jakarta">
-                          <strong className="text-white-knight">Cancel Subscription:</strong> Stop billing at end of period
-                        </span>
-                      </div>
-                      <div className="flex items-start">
-                        <CheckCircle className="text-green-400 mr-3 mt-1 flex-shrink-0" size={20} />
-                        <span className="text-guardian font-jakarta">
-                          <strong className="text-white-knight">View Billing History:</strong> Access all past invoices
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h4 className="text-xl font-anton text-white-knight uppercase tracking-wide">
-                      Quick Actions:
-                    </h4>
-                    <div className="space-y-4">
-                      <Button 
-                        onClick={handleManageSubscription}
-                        variant="primary"
-                        size="lg"
-                        className="w-full bg-green-500 hover:bg-green-600 text-white font-anton uppercase tracking-wide px-8 py-4"
-                      >
-                        <CreditCard className="mr-2" size={20} />
-                        MANAGE SUBSCRIPTION
-                      </Button>
-                      
-                      <Button 
-                        onClick={handleRefreshProfile}
-                        variant="outline"
-                        size="lg"
-                        className="w-full border-green-500/30 text-green-400 hover:bg-green-500/10 font-anton uppercase tracking-wide px-8 py-4"
-                        disabled={refreshingProfile}
-                      >
-                        <RefreshCw className={`mr-2 ${refreshingProfile ? 'animate-spin' : ''}`} size={20} />
-                        {refreshingProfile ? 'REFRESHING...' : 'REFRESH PROFILE'}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-center border-t border-green-500/20 pt-6">
-                  <p className="text-guardian font-jakarta">
-                    <strong className="text-white-knight">Need help?</strong> Contact support for any subscription-related questions or issues.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
 
         {/* Premium Service Offering */}
         <div className="mb-12">

@@ -179,6 +179,7 @@ export const AccountPage: React.FC = () => {
             variant="secondary"
             size="lg"
             className="flex items-center justify-center gap-3 py-4 text-lg font-semibold"
+            onClick={() => window.open('https://billing.stripe.com/p/login/test_fZu7sLaoK9lN1oRfap9R600', '_blank')}
           >
             <CreditCard size={20} />
             MANAGE CREDITS

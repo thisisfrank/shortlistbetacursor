@@ -25,9 +25,9 @@ export const useSubscription = () => {
     // Map tier IDs to subscription plans
     const tierToPlanMapping: Record<string, string> = {
       '5841d1d6-20d7-4360-96f8-0444305fac5b': '', // Free tier - no plan
-      '88c433cf-0a8d-44de-82fa-71c7dcbe31ff': 'price_1Rl1MuFPYYAarocke0oZgczA', // Basic
-      'f871eb1b-6756-447d-a1c0-20a373d1d5a2': 'price_1Rl1N5FPYYAarock0dFT7x9Q', // Premium
-      'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd': 'price_1Rl1NJFPYYAarockbgLtNiKk'  // Top Shelf
+      '88c433cf-0a8d-44de-82fa-71c7dcbe31ff': 'price_1S7TO3Hb6LdHADWYvWMTutrj', // Basic
+      'f871eb1b-6756-447d-a1c0-20a373d1d5a2': 'price_1S7TOGHb6LdHADWYAu8g3h3f', // Premium
+      'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd': 'price_1S7TPaHb6LdHADWYhMgRw3YY'  // Top Shelf
     };
     
     const priceId = tierToPlanMapping[userProfile.tierId];
