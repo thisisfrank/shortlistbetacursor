@@ -151,26 +151,57 @@ export const AccountPage: React.FC = () => {
 
         {/* Current Plan Section */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="font-anton text-lg text-white-knight uppercase tracking-wide">
-              CURRENT PLAN
-            </h4>
-            <Badge variant="outline" className="flex items-center gap-2 px-4 py-2">
-              <Crown size={16} />
-              <span className="font-semibold">{stats?.tierName || 'TIER 2'}</span>
-            </Badge>
-          </div>
+          <h4 className="font-anton text-lg text-white-knight uppercase tracking-wide mb-4">
+            CURRENT PLAN
+          </h4>
           
-          {stats?.creditsResetDate && (
-            <div className="text-lg">
-              <div className="flex justify-between">
-                <span className="text-guardian">Next Reset:</span>
-                <span className="text-white-knight font-semibold">
-                  {new Date(stats.creditsResetDate).toLocaleDateString()}
-                </span>
+          <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-supernova rounded-full p-2">
+                  <Crown size={20} className="text-shadowforce" />
+                </div>
+                <div>
+                  <div className="font-anton text-xl text-white-knight uppercase tracking-wide">
+                    {stats?.tierName || 'TIER 2'}
+                  </div>
+                  <div className="text-guardian text-sm">
+                    Active Subscription Plan
+                  </div>
+                </div>
               </div>
+              
+              <Badge variant="outline" className="bg-supernova/20 border-supernova text-supernova px-4 py-2 font-semibold">
+                ACTIVE
+              </Badge>
             </div>
-          )}
+            
+            {stats?.creditsResetDate && stats?.tierName !== 'Free' && (
+              <div className="pt-4 border-t border-guardian/20">
+                <div className="flex items-center justify-between">
+                  <span className="text-guardian font-medium">Next Credit Reset:</span>
+                  <span className="text-white-knight font-semibold text-lg">
+                    {new Date(stats.creditsResetDate).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {stats?.tierName === 'Free' && (
+              <div className="pt-4 border-t border-guardian/20">
+                <div className="flex items-center justify-between">
+                  <span className="text-guardian font-medium">Credit Type:</span>
+                  <span className="text-white-knight font-semibold text-lg">
+                    One-time allocation
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Action Buttons */}

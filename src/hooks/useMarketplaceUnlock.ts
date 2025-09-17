@@ -1,32 +1,61 @@
 import { useAuth } from './useAuth';
-import { useData } from '../context/DataContext';
+
+export interface MarketplaceItem {
+  id: string;
+  title: string;
+  description: string;
+  unlockDay: number;
+  sequenceIndex: number;
+  icon: any;
+  category: 'free' | 'starter' | 'enterprise';
+}
 
 export const useMarketplaceUnlock = () => {
-  const { user, userProfile } = useAuth();
-  const { jobs, loading } = useData();
+  const { userProfile } = useAuth();
 
-  const hasSubmittedFirstJob = (): boolean => {
-    if (!user || !userProfile) return false;
-    
-    // Only apply this logic to client users
-    if (userProfile.role !== 'client') return true;
-    
-    // Check if client has submitted at least one job
-    const userJobs = jobs.filter(job => job.userId === user.id);
-    return userJobs.length > 0;
+  const getDaysActive = (): number => {
+    if (!userProfile?.createdAt) return 0;
+    const now = new Date();
+    const created = new Date(userProfile.createdAt);
+    return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
   };
 
+  const getUnlockedItemsCount = (): number => {
+    const daysActive = getDaysActive();
+    return Math.floor(daysActive / 5) + 1; // +1 for immediate unlock (AI Generator)
+  };
+
+  const getDaysUntilNextUnlock = (): number => {
+    const daysActive = getDaysActive();
+    const nextUnlockDay = (Math.floor(daysActive / 5) + 1) * 5;
+    return Math.max(0, nextUnlockDay - daysActive);
+  };
+
+  const isItemUnlocked = (item: MarketplaceItem): boolean => {
+    const unlockedCount = getUnlockedItemsCount();
+    return item.sequenceIndex < unlockedCount;
+  };
+
+  const getNextUnlockItem = (items: MarketplaceItem[]): MarketplaceItem | null => {
+    const unlockedCount = getUnlockedItemsCount();
+    return items.find(item => item.sequenceIndex === unlockedCount) || null;
+  };
+
+  // Keep for backward compatibility with AI Generator
   const isAIGeneratorUnlocked = (): boolean => {
-    return hasSubmittedFirstJob();
+    return getUnlockedItemsCount() > 0;
   };
 
-  // Use DataContext loading state directly
   const isDataLoading = (): boolean => {
-    return loading || !userProfile;
+    return !userProfile;
   };
 
   return {
-    hasSubmittedFirstJob,
+    getDaysActive,
+    getUnlockedItemsCount,
+    getDaysUntilNextUnlock,
+    isItemUnlocked,
+    getNextUnlockItem,
     isAIGeneratorUnlocked,
     isDataLoading,
   };
