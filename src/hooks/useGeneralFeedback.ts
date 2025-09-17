@@ -90,8 +90,8 @@ export const useGeneralFeedback = (currentContext?: string) => {
       
       setAlertModal({
         isOpen: true,
-        title: 'General Feedback Submitted',
-        message: 'Thank you for your general feedback! We appreciate your input.',
+        title: 'Feedback Submitted',
+        message: 'Thank you for your feedback! We appreciate your input.',
         type: 'warning'
       });
       
@@ -101,7 +101,7 @@ export const useGeneralFeedback = (currentContext?: string) => {
       setAlertModal({
         isOpen: true,
         title: 'Submission Failed',
-        message: 'Failed to submit general feedback. Please try again.',
+        message: 'Failed to submit feedback. Please try again.',
         type: 'error'
       });
     } finally {

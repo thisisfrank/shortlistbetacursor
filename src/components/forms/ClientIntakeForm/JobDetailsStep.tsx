@@ -172,7 +172,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 animate-fadeIn">
-      <h2 className="text-3xl font-anton text-guardian mb-12 uppercase tracking-wide">Job Details & Requirements</h2>
+      <h2 className="text-3xl font-anton text-supernova mb-12 uppercase tracking-wide">Job Details & Requirements</h2>
       
       <FormInput
         label="Company Name"
@@ -207,7 +207,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
       
       {/* Experience Required */}
       <div className="space-y-3">
-        <label className="block text-sm font-jakarta font-semibold text-guardian mb-3 uppercase tracking-wide">
+        <label className="block text-sm font-jakarta font-semibold text-supernova mb-3 uppercase tracking-wide">
           Experience Required <span className="text-red-400">*</span>
         </label>
         <div className="space-y-3">
@@ -279,7 +279,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
             onChange={onChange}
             className="w-5 h-5 text-supernova bg-gray-700 border-gray-600 rounded focus:ring-supernova focus:ring-2"
           />
-          <label htmlFor="isRemote" className="ml-3 text-sm font-jakarta font-semibold text-guardian uppercase tracking-wide">
+          <label htmlFor="isRemote" className="ml-3 text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">
             Remote Position
           </label>
         </div>
@@ -312,7 +312,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
       
       {/* Must Have Skills */}
       <div className="mb-8">
-        <label className="block text-sm font-jakarta font-semibold text-guardian mb-3 uppercase tracking-wide">
+        <label className="block text-sm font-jakarta font-semibold text-supernova mb-3 uppercase tracking-wide">
           Must Have Skills (3+ required)
         </label>
         <div className="flex gap-3">

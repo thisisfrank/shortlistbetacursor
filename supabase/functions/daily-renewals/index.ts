@@ -25,6 +25,9 @@ Deno.serve(async (req) => {
     console.log('🔄 Starting daily renewal process...');
 
     // Get all users whose subscription period has ended (Stripe-synced renewals)
+    // EXCLUDE FREE TIER from renewals - they get one-time credits only
+    const FREE_TIER_ID = '5841d1d6-20d7-4360-96f8-0444305fac5b';
+    
     const { data: expiredUsers, error } = await supabase
       .from('user_profiles')
       .select(`
@@ -43,7 +46,8 @@ Deno.serve(async (req) => {
       `)
       .lt('subscription_period_end', new Date().toISOString())
       .eq('role', 'client')
-      .eq('subscription_status', 'active');
+      .eq('subscription_status', 'active')
+      .neq('tier_id', FREE_TIER_ID); // Exclude free tier users
 
     if (error) {
       console.error('❌ Error fetching expired clients:', error);

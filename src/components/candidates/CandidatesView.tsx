@@ -9,7 +9,7 @@ import { generateJobMatchScore } from '../../services/anthropicService';
 import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List, Edit2, Trash2, Save, X, MessageSquare, CheckCircle, ArrowDown, MessageCircle } from 'lucide-react';
+import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List, Edit2, Trash2, Save, X, MessageSquare, CheckCircle, ArrowDown, MessageCircle, Eye, EyeOff, Minus, Plus } from 'lucide-react';
 
 // Helper function to calculate total years of experience
 const calculateYearsOfExperience = (experience?: Array<{ title: string; company: string; duration: string }>): number => {
@@ -159,6 +159,8 @@ export const CandidatesView: React.FC = () => {
     feedback: '',
     isSubmitting: false
   });
+  const [showHidden, setShowHidden] = useState(false);
+  const [hiddenJobIds, setHiddenJobIds] = useState<Set<string>>(new Set());
 
   
   // Define currentJobCandidates at component level with shortlist filtering
@@ -624,6 +626,18 @@ export const CandidatesView: React.FC = () => {
       ...prev,
       feedback
     }));
+  };
+
+  const handleHideJob = (jobId: string) => {
+    setHiddenJobIds(prev => new Set([...prev, jobId]));
+  };
+
+  const handleUnhideJob = (jobId: string) => {
+    setHiddenJobIds(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(jobId);
+      return newSet;
+    });
   };
 
   const handleSubmitFeedback = async () => {
@@ -1464,13 +1478,25 @@ export const CandidatesView: React.FC = () => {
   }
   
   const filteredJobs = userJobs.filter(job => {
+    // Apply search filter
     if (search) {
       const searchLower = search.toLowerCase();
-      return (
+      const matchesSearch = (
         job.title.toLowerCase().includes(searchLower) ||
         (job.companyName && job.companyName.toLowerCase().includes(searchLower))
       );
+      if (!matchesSearch) return false;
     }
+    
+    // Apply individual job hiding filter
+    const isJobHidden = hiddenJobIds.has(job.id);
+    if (!showHidden && isJobHidden) {
+      return false; // Hide jobs that are in hiddenJobIds when not showing hidden
+    }
+    if (showHidden && !isJobHidden) {
+      return false; // Only show hidden jobs when showHidden is true
+    }
+    
     return true;
   });
   
@@ -1478,6 +1504,9 @@ export const CandidatesView: React.FC = () => {
   const sortedJobs = [...filteredJobs].sort((a, b) => {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
+  
+  // Calculate how many jobs are hidden
+  const hiddenJobsCount = hiddenJobIds.size;
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
@@ -1513,19 +1542,55 @@ export const CandidatesView: React.FC = () => {
                 )}
               </h2>
               
-              <div className="relative w-full">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search size={18} className="text-guardian" />
+              <div className="flex gap-4 items-center">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search size={18} className="text-guardian" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search jobs by title or company..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10 block w-full rounded-lg border-guardian/30 bg-shadowforce text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta"
+                  />
                 </div>
-                <input
-                  type="text"
-                  placeholder=""
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10 block w-full rounded-lg border-guardian/30 bg-shadowforce text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta"
-                />
+                
+                <Button
+                  variant={showHidden ? "primary" : "outline"}
+                  size="sm"
+                  onClick={() => setShowHidden(!showHidden)}
+                  className="flex items-center gap-2 whitespace-nowrap"
+                  disabled={hiddenJobsCount === 0}
+                >
+                  {showHidden ? <Eye size={16} /> : <EyeOff size={16} />}
+                  SHOW HIDDEN ({hiddenJobsCount})
+                </Button>
               </div>
             </div>
+            
+            {/* Hidden jobs indicator */}
+            {showHidden && hiddenJobsCount > 0 && (
+              <div className="mb-4 p-3 bg-supernova/10 border border-supernova/20 rounded-lg">
+                <div className="flex items-center justify-center gap-2 text-supernova">
+                  <Eye size={16} />
+                  <span className="text-sm font-jakarta">
+                    Showing {hiddenJobsCount} hidden job{hiddenJobsCount !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {!showHidden && hiddenJobsCount > 0 && (
+              <div className="mb-4 p-3 bg-guardian/10 border border-guardian/20 rounded-lg">
+                <div className="flex items-center justify-center gap-2 text-guardian">
+                  <EyeOff size={16} />
+                  <span className="text-sm font-jakarta">
+                    {hiddenJobsCount} job{hiddenJobsCount !== 1 ? 's' : ''} hidden
+                  </span>
+                </div>
+              </div>
+            )}
             
             {sortedJobs.length === 0 ? (
               <div className="text-center py-16">
@@ -1533,7 +1598,14 @@ export const CandidatesView: React.FC = () => {
                   <Briefcase size={64} className="text-guardian/40 mx-auto" />
                 </div>
                 <h3 className="font-anton text-2xl text-guardian mb-2">NO JOBS FOUND</h3>
-                <p className="text-guardian/80 font-jakarta">No jobs match your current search criteria.</p>
+                <p className="text-guardian/80 font-jakarta">
+                  {showHidden
+                    ? 'No hidden jobs match your search criteria.'
+                    : hiddenJobsCount > 0
+                    ? `No jobs match your current search criteria. ${hiddenJobsCount} job${hiddenJobsCount !== 1 ? 's are' : ' is'} currently hidden.`
+                    : 'No jobs match your current search criteria.'
+                  }
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-6">
@@ -1544,11 +1616,12 @@ export const CandidatesView: React.FC = () => {
                     const clientStatus = isCompleted ? 'COMPLETED' : 
                                          hasCandidates ? 'IN PROGRESS - CANDIDATES AVAILABLE' : 'IN PROGRESS';
                     const isExpanded = expandedJobs.has(job.id);
+                    const isJobHidden = hiddenJobIds.has(job.id);
                   
                   return (
                     <Card 
                       key={job.id} 
-                      className={`hover:shadow-2xl transition-all duration-300 ${isCompleted ? 'cursor-pointer' : 'cursor-default opacity-75'}`}
+                      className={`hover:shadow-2xl transition-all duration-300 ${isCompleted ? 'cursor-pointer' : 'cursor-default opacity-75'} ${isJobHidden && showHidden ? 'border-orange-500/50 bg-orange-500/5' : ''}`}
                     >
                       <CardContent className="p-6">
                         <div className="mb-4 p-3 rounded-lg flex items-center justify-between">
@@ -1581,6 +1654,31 @@ export const CandidatesView: React.FC = () => {
                                 <>
                                   <ChevronRight size={16} />
                                   EXPAND
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (showHidden) {
+                                  handleUnhideJob(job.id);
+                                } else {
+                                  handleHideJob(job.id);
+                                }
+                              }}
+                              className={`flex items-center gap-2 ${isJobHidden && showHidden ? 'text-orange-400 border-orange-400' : ''}`}
+                            >
+                              {showHidden && isJobHidden ? (
+                                <>
+                                  <Plus size={16} />
+                                  UNHIDE
+                                </>
+                              ) : (
+                                <>
+                                  <Minus size={16} />
+                                  HIDE
                                 </>
                               )}
                             </Button>

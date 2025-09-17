@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { useSubscription } from '../../hooks/useSubscription';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { CheckCircle, Zap, Crown, Star, Mail, Users, Briefcase } from 'lucide-react';
+import { CheckCircle, Zap, Crown, Star, Users } from 'lucide-react';
 import BoltIcon from '../../assets/v2.png';
 
 // Updated subscription plans with payment links
@@ -15,7 +14,7 @@ const subscriptionPlans = [
     price: 0,
     priceId: null,
     paymentLink: null,
-    description: 'Perfect for trying out our platform',
+    description: 'One-time credits to try our platform',
     features: {
       jobs: 1,
       credits: 20,
@@ -27,14 +26,14 @@ const subscriptionPlans = [
   },
   {
     id: 'basic',
-    name: 'Basic',
-    price: 35,
+    name: 'Starter',
+    price: 29.99,
     priceId: 'price_1S7TO3Hb6LdHADWYvWMTutrj', // Updated Stripe price ID
     paymentLink: 'https://buy.stripe.com/test_fZu7sLaoK9lN1oRfap9R600', // Tier One
     description: 'Perfect for getting started',
     features: {
       jobs: 3,
-      credits: 50,
+      credits: 100,
       companyEmails: false,
       unlimited: false
     },
@@ -43,14 +42,14 @@ const subscriptionPlans = [
   },
   {
     id: 'premium',
-    name: 'Premium',
-    price: 49,
+    name: 'Pro',
+    price: 99.99,
     priceId: 'price_1S7TOGHb6LdHADWYAu8g3h3f', // Updated Stripe price ID
     paymentLink: 'https://buy.stripe.com/test_eVq14n1SegOf8Rj3rH9R601', // Tier Two
     description: 'Advanced features for scaling businesses',
     features: {
       jobs: 3,
-      credits: 100,
+      credits: 400,
       companyEmails: true,
       unlimited: false
     },
@@ -59,14 +58,14 @@ const subscriptionPlans = [
   },
   {
     id: 'topshelf',
-    name: 'Top Shelf',
-    price: 199,
+    name: 'Beast Mode',
+    price: 699,
     priceId: 'price_1S7TPaHb6LdHADWYhMgRw3YY', // Updated Stripe price ID
     paymentLink: 'https://buy.stripe.com/test_4gMdR90OacxZ7Nf0fv9R602', // Tier Three
     description: 'Unlimited access for enterprise teams',
     features: {
       jobs: 10,
-      credits: 500,
+      credits: 2500,
       companyEmails: true,
       unlimited: true
     },
@@ -77,10 +76,6 @@ const subscriptionPlans = [
 
 export const SubscriptionPlans: React.FC = () => {
   const { userProfile } = useAuth();
-  const { subscription, getSubscriptionPlan, isActive, loading: subscriptionLoading, error: subscriptionError } = useSubscription();
-  const [retryKey, setRetryKey] = useState(0);
-
-  const currentPlan = getSubscriptionPlan();
 
   // Map tier IDs to plan IDs for accurate current plan detection
   const tierIdToPlanId: Record<string, string> = {
@@ -99,9 +94,6 @@ export const SubscriptionPlans: React.FC = () => {
 
   const currentTierPlan = getCurrentPlanFromTier();
 
-  // Show error state inline instead of full screen loading
-  const hasSubscriptionError = subscriptionError && !subscriptionLoading;
-
   const handleSubscribe = (paymentLink: string | null) => {
     if (!paymentLink) {
       // Handle free tier - no payment needed
@@ -116,11 +108,11 @@ export const SubscriptionPlans: React.FC = () => {
 
   const getPlanIcon = (planName: string) => {
     switch (planName) {
-      case 'Top Shelf':
+      case 'Beast Mode':
         return <Crown className="text-supernova" size={32} />;
-      case 'Premium':
+      case 'Pro':
         return <Star className="text-blue-400" size={32} />;
-      case 'Basic':
+      case 'Starter':
         return <Zap className="text-green-400" size={32} />;
       default:
         return <Users className="text-guardian" size={32} />;
@@ -190,7 +182,7 @@ export const SubscriptionPlans: React.FC = () => {
                   )}
                 </div>
                 <p className="text-guardian font-jakarta text-sm">
-                  {plan.id === 'free' && 'Try the platform free'}
+                  {plan.id === 'free' && 'One-time credits - no renewal'}
                   {plan.id === 'basic' && 'For growing teams'}
                   {plan.id === 'premium' && 'For scaling businesses'}
                   {plan.id === 'topshelf' && 'Unlimited access for enterprise'}
@@ -204,7 +196,7 @@ export const SubscriptionPlans: React.FC = () => {
                       {plan.features.credits} CREDITS
                     </div>
                     <div className="text-sm text-guardian font-jakarta">
-                      per month
+                      {plan.id === 'free' ? 'one-time only' : 'per month'}
                     </div>
                   </div>
                 </div>
@@ -231,7 +223,7 @@ export const SubscriptionPlans: React.FC = () => {
 
         {/* Premium Service Offering */}
         <div className="mb-12">
-          <Card className="max-w-6xl mx-auto bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 border-yellow-500/30">
+          <Card className="bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 border-yellow-500/30">
             <CardContent className="p-8">
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center mb-4">
@@ -265,7 +257,7 @@ export const SubscriptionPlans: React.FC = () => {
                   BOOK YOUR STRATEGY CALL
                 </Button>
                 <p className="text-guardian font-jakarta text-sm">
-                  Lower your cost per hire by over 30% in 90 days or pay nothing
+                  Lower your cost per hire by over 30% in 60 days or pay nothing.
                 </p>
               </div>
 

@@ -26,7 +26,7 @@ export const GeneralFeedbackModal: React.FC<GeneralFeedbackModalProps> = ({
       <div className="bg-shadowforce border border-guardian/30 rounded-lg p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-anton text-white-knight uppercase tracking-wide">
-            Submit General Feedback
+            Submit Feedback
           </h3>
           <button
             onClick={onClose}
@@ -74,7 +74,7 @@ export const GeneralFeedbackModal: React.FC<GeneralFeedbackModalProps> = ({
             isLoading={isSubmitting}
             className="px-8 glow-supernova"
           >
-            {isSubmitting ? 'SUBMITTING...' : 'SUBMIT GENERAL FEEDBACK'}
+            {isSubmitting ? 'SUBMITTING...' : 'SUBMIT FEEDBACK'}
           </Button>
         </div>
       </div>

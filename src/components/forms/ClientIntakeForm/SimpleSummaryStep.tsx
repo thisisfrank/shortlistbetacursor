@@ -167,7 +167,10 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
             <div className="mt-4 space-y-4">
               <p className="text-red-400 font-jakarta font-semibold">
                 You've requested {candidatesRequested} candidates but only have {userAvailableCredits} credits available. <br/>
-                Please reduce your request or upgrade to a paid tier for more credits.
+                {userProfile?.tierId === '5841d1d6-20d7-4360-96f8-0444305fac5b' 
+                  ? 'Free tier credits are one-time only - upgrade to a paid plan for monthly credits.'
+                  : 'Please reduce your request or upgrade to a paid tier for more credits.'
+                }
               </p>
               <div className="text-center">
                 <Button
@@ -176,7 +179,7 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
                   className="bg-supernova hover:bg-supernova/90 text-shadowforce font-anton px-6 py-2"
                   size="sm"
                 >
-                  GET MORE CREDITS
+                  {userProfile?.tierId === '5841d1d6-20d7-4360-96f8-0444305fac5b' ? 'UPGRADE PLAN' : 'GET MORE CREDITS'}
                 </Button>
               </div>
             </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useSearchParams, Navigate } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Copy, Edit, Check, User, Sparkles } from 'lucide-react';
+import { ChevronDown, ChevronRight, Copy, Edit, Check, User, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Tooltip } from '../components/ui/Tooltip';
@@ -52,6 +52,7 @@ export const AIMessageGeneratorPage: React.FC = () => {
   const [messageType, setMessageType] = useState<'linkedin' | 'email'>('linkedin');
   const [isReviewing, setIsReviewing] = useState(false);
   const [reviewResult, setReviewResult] = useState<GrammarReviewResult | null>(null);
+  const [showVariationModal, setShowVariationModal] = useState(false);
 
   // Character limits
   const LINKEDIN_CHAR_LIMIT = 300;
@@ -299,14 +300,36 @@ Alex`
     setEditingBody(false);
   };
 
-  const generateAIVariation = async () => {
+  const generateAIVariation = async (variationType: string) => {
     if (!bodyText.trim()) return;
     
     setIsGeneratingVariation(true);
+    setShowVariationModal(false);
     
     try {
-      // Use the anthropic service to generate a variation
-      const prompt = `Create a professional variation of this ${messageType} recruitment message that ${messageType === 'linkedin' ? 'stays under 300 characters' : 'is concise and professional'} and maintains the same structure and intent:
+      let specificPrompt = '';
+      
+      switch (variationType) {
+        case 'longer':
+          specificPrompt = `Make this ${messageType} recruitment message longer and more detailed while keeping it professional. Add more context about the role or company benefits, but maintain the core message and salary question:`;
+          break;
+        case 'shorter':
+          specificPrompt = `Make this ${messageType} recruitment message shorter and more concise while keeping all essential information. Remove any unnecessary words but maintain the professional tone and salary question:`;
+          break;
+        case 'more_casual':
+          specificPrompt = `Make this ${messageType} recruitment message more casual and friendly while keeping it professional. Use a warmer, more conversational tone:`;
+          break;
+        case 'more_formal':
+          specificPrompt = `Make this ${messageType} recruitment message more formal and professional while keeping it engaging. Use more business-like language:`;
+          break;
+        case 'different_approach':
+          specificPrompt = `Rewrite this ${messageType} recruitment message using a completely different approach while maintaining the same goal and salary question. Try a different opening or structure:`;
+          break;
+        default:
+          specificPrompt = `Create a professional variation of this ${messageType} recruitment message that ${messageType === 'linkedin' ? 'stays under 300 characters' : 'is concise and professional'} and maintains the same structure and intent:`;
+      }
+
+      const fullPrompt = `${specificPrompt}
 
 ${bodyText}
 
@@ -314,15 +337,13 @@ Requirements:
 - Keep it professional and direct
 - Maintain the salary question element
 ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concise but can be longer than LinkedIn'}
-- Use slightly different wording while keeping the same meaning
-- Keep the same overall tone
+- Keep the same overall intent
 - NO fluff at the start (skip "I hope this message finds you well" or "hope you're having a good day" - get straight to the point)
-- Be concise and to the point
 - Put the candidate as the hero of the message
 - Use one sentence per line for better readability
 - Each sentence should stand on its own`;
 
-      const result = await reviewMessageGrammar(prompt);
+      const result = await reviewMessageGrammar(fullPrompt);
       if (result.correctedMessage) {
         setBodyText(result.correctedMessage);
       } else {
@@ -461,9 +482,6 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
             <h1 className="text-2xl font-bold text-white-knight font-jakarta mb-2">
               Message Generator
             </h1>
-            <p className="text-guardian text-sm">
-              Select a completed job to generate personalized messages for candidates
-            </p>
           </div>
 
           {/* Message Type Toggle */}
@@ -472,7 +490,7 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
             <div className="flex gap-2">
               <Button
                 onClick={() => handleMessageTypeChange('linkedin')}
-                className={`${
+                className={`border border-supernova ${
                   messageType === 'linkedin'
                     ? 'bg-supernova text-shadowforce'
                     : 'bg-transparent text-white-knight hover:bg-supernova hover:text-shadowforce'
@@ -483,7 +501,7 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
               </Button>
               <Button
                 onClick={() => handleMessageTypeChange('email')}
-                className={`${
+                className={`border border-supernova ${
                   messageType === 'email'
                     ? 'bg-supernova text-shadowforce'
                     : 'bg-transparent text-white-knight hover:bg-supernova hover:text-shadowforce'
@@ -501,16 +519,13 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
               <h3 className="text-lg font-semibold text-white-knight font-jakarta">
                 {messageType === 'linkedin' ? 'LinkedIn' : 'Email'} Templates
               </h3>
-              <div className="text-xs text-guardian">
-                Limit: {currentLimit.toLocaleString()}
-              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               {Object.entries(templates[messageType]).map(([id, template]) => (
                 <Button
                   key={id}
                   onClick={() => handleTemplateChange(Number(id))}
-                  className={`text-xs ${
+                  className={`text-xs border border-supernova ${
                     selectedTemplate === Number(id)
                       ? 'bg-supernova text-shadowforce'
                       : 'bg-transparent text-white-knight hover:bg-supernova hover:text-shadowforce'
@@ -595,7 +610,7 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
 
                  {/* Right Panel - Message Template */}
          <div className="flex-1 p-6 flex flex-col">
-           <div className="max-w-4xl mx-auto flex-1 flex flex-col">
+           <div className="flex-1 flex flex-col">
 
                 {/* Message Body */}
                 <Card className="p-6 flex-1 flex flex-col">
@@ -604,7 +619,7 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                   <div className="flex flex-wrap gap-3 pb-4 mb-4 border-b border-guardian/20">
                      <Tooltip content="Generate an AI variation of the current message">
                        <Button
-                         onClick={generateAIVariation}
+                         onClick={() => setShowVariationModal(true)}
                          disabled={isGeneratingVariation || !bodyText.trim()}
                          className="bg-purple-600 hover:bg-purple-700 text-black disabled:opacity-50 flex items-center gap-2"
                          size="sm"
@@ -799,6 +814,66 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
         </div>
       </div>
 
+      {/* AI Variation Modal */}
+      {showVariationModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowVariationModal(false)}>
+          <div className="bg-shadowforce border border-guardian/30 rounded-lg p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-semibold text-white-knight font-jakarta mb-4">
+              Choose AI Variation Type
+            </h3>
+            <p className="text-guardian text-sm mb-6">
+              How would you like to modify your message?
+            </p>
+            
+            <div className="space-y-3">
+              <Button
+                onClick={() => generateAIVariation('longer')}
+                className="w-full text-left justify-start bg-shadowforce-light hover:bg-supernova hover:text-black text-black border border-guardian/30"
+              >
+                📝 Make it longer and more detailed
+              </Button>
+              
+              <Button
+                onClick={() => generateAIVariation('shorter')}
+                className="w-full text-left justify-start bg-shadowforce-light hover:bg-supernova hover:text-black text-black border border-guardian/30"
+              >
+                ✂️ Make it shorter/more concise
+              </Button>
+              
+              <Button
+                onClick={() => generateAIVariation('more_casual')}
+                className="w-full text-left justify-start bg-shadowforce-light hover:bg-supernova hover:text-black text-black border border-guardian/30"
+              >
+                😊 Make it more casual and friendly
+              </Button>
+              
+              <Button
+                onClick={() => generateAIVariation('more_formal')}
+                className="w-full text-left justify-start bg-shadowforce-light hover:bg-supernova hover:text-black text-black border border-guardian/30"
+              >
+                🎩 Make it more formal and professional
+              </Button>
+              
+              <Button
+                onClick={() => generateAIVariation('different_approach')}
+                className="w-full text-left justify-start bg-shadowforce-light hover:bg-supernova hover:text-black text-black border border-guardian/30"
+              >
+                🔄 Try a completely different approach
+              </Button>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <Button
+                onClick={() => setShowVariationModal(false)}
+                variant="outline"
+                className="flex-1 text-guardian border-guardian/30 hover:bg-guardian/10"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

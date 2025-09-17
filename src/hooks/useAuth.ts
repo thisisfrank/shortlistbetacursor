@@ -184,8 +184,7 @@ export const useAuth = () => {
                     role: 'client',
                     tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                     available_credits: 20,
-
-                    credits_reset_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                    // No credits_reset_date for free tier - one-time credits only
                   });
                   
                   if (createError) {
@@ -200,8 +199,7 @@ export const useAuth = () => {
                       role: 'client',
                       tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                       availableCredits: 20,
-
-                      creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                      creditsResetDate: null, // No reset date for free tier - one-time credits
                       createdAt: new Date(),
                       updatedAt: new Date(),
                     });
@@ -278,8 +276,7 @@ export const useAuth = () => {
                 role: 'client',
                 tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                 available_credits: 20,
-
-                credits_reset_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                // No credits_reset_date for free tier - one-time credits only
               });
               
               if (createError) {
@@ -294,8 +291,7 @@ export const useAuth = () => {
                   role: 'client',
                   tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                   availableCredits: 20,
-        
-                  creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                  creditsResetDate: null, // No reset date for free tier - one-time credits
                   createdAt: new Date(),
                   updatedAt: new Date(),
                 });
@@ -340,8 +336,7 @@ export const useAuth = () => {
           role,
           tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
           available_credits: 20,
-
-          credits_reset_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          // No credits_reset_date for free tier - one-time credits only
         });
         
         if (profileError) {
@@ -355,8 +350,7 @@ export const useAuth = () => {
           role,
           tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
           availableCredits: 20,
-
-          creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          creditsResetDate: null, // No reset date for free tier - one-time credits
           createdAt: new Date(),
           updatedAt: new Date(),
         };
