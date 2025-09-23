@@ -1,6 +1,9 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Stripe from 'https://esm.sh/stripe@17.7.0?target=deno'
+import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno'
+
+// Disable JWT verification for webhooks
+Deno.env.set('SUPABASE_AUTH_VERIFY_JWT', 'false')
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,59 +12,166 @@ const corsHeaders = {
 }
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-  apiVersion: '2024-12-18.acacia',
-  httpClient: Stripe.createFetchHttpClient(),
+  apiVersion: '2023-10-16',
+  // Use default http client for better Deno compatibility
 })
 
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL') || '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '',
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
 )
 
-// Map Stripe price IDs to database tier IDs
+// Map payment link URLs to database tier IDs (UPDATED with new payment links)
+const PAYMENT_LINK_TO_TIER_MAPPING: Record<string, string> = {
+  'https://buy.stripe.com/test_00w14neF09lNgjLd2h9R603': '88c433cf-0a8d-44de-82fa-71c7dcbe31ff',    // Starter - 100 credits
+  'https://buy.stripe.com/test_6oU7sLgN89lNaZr8M19R604': 'f871eb1b-6756-447d-a1c0-20a373d1d5a2',  // Pro - 400 credits
+  'https://buy.stripe.com/test_14AaEX40m0PhgjL1jz9R605': 'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd', // Beast Mode - 2500 credits
+}
+
+// Also keep price mapping as fallback for subscription events
 const PRICE_TO_TIER_MAPPING: Record<string, string> = {
-  'price_1S7TO3Hb6LdHADWYvWMTutrj': '88c433cf-0a8d-44de-82fa-71c7dcbe31ff',    // Tier 1 (Basic)
-  'price_1S7TOGHb6LdHADWYAu8g3h3f': 'f871eb1b-6756-447d-a1c0-20a373d1d5a2',  // Tier 2 (Premium) 
-  'price_1S7TPaHb6LdHADWYhMgRw3YY': 'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd', // Tier 3 (Top Shelf)
+  'price_1S7TO3Hb6LdHADWYvWMTutrj': '88c433cf-0a8d-44de-82fa-71c7dcbe31ff',    // Basic tier
+  'price_1S7TOGHb6LdHADWYAu8g3h3f': 'f871eb1b-6756-447d-a1c0-20a373d1d5a2',  // Premium tier
+  'price_1S7TPaHb6LdHADWYhMgRw3YY': 'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd', // Top Shelf tier
 }
 
 const FREE_TIER_ID = '5841d1d6-20d7-4360-96f8-0444305fac5b'
 
-async function updateUserTier(customerId: string, priceId: string | null, subscriptionStatus: string) {
+// Function to identify tier from checkout session (for Payment Links)
+async function getTierFromCheckoutSession(sessionId: string): Promise<string | null> {
   try {
-    console.log(`🎯 Updating user tier for customer: ${customerId}, price: ${priceId}, status: ${subscriptionStatus}`)
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['line_items', 'line_items.data.price']
+    })
     
-    // Get user ID from user_profiles table
-    const { data: customerData, error: customerError } = await supabase
+    console.log(`🔍 Analyzing checkout session: ${sessionId}`)
+    
+    // Method 1: Check if there's a payment link URL in session metadata
+    if (session.metadata && session.metadata.payment_link_url) {
+      const tierId = PAYMENT_LINK_TO_TIER_MAPPING[session.metadata.payment_link_url]
+      if (tierId) {
+        console.log(`✅ Found tier from payment link metadata: ${tierId}`)
+        return tierId
+      }
+    }
+    
+    // Method 2: Get tier from price ID (fallback)
+    if (session.line_items?.data?.[0]?.price?.id) {
+      const priceId = session.line_items.data[0].price.id
+      const tierId = PRICE_TO_TIER_MAPPING[priceId]
+      if (tierId) {
+        console.log(`✅ Found tier from price ID: ${priceId} -> ${tierId}`)
+        return tierId
+      }
+      console.warn(`⚠️ Unknown price ID: ${priceId}`)
+    }
+    
+    console.warn(`⚠️ Could not determine tier from checkout session ${sessionId}`)
+    return null
+    
+  } catch (error) {
+    console.error(`❌ Error retrieving checkout session ${sessionId}:`, error)
+    return null
+  }
+}
+
+async function cancelExistingSubscriptions(customerId: string, excludeSubscriptionId?: string) {
+  try {
+    console.log(`🔄 Checking for existing subscriptions for customer: ${customerId}`)
+    
+    // Get all active subscriptions for this customer
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      status: 'active',
+      limit: 100
+    })
+    
+    const subscriptionsToCancel = excludeSubscriptionId 
+      ? subscriptions.data.filter(sub => sub.id !== excludeSubscriptionId)
+      : subscriptions.data
+    
+    if (subscriptionsToCancel.length === 0) {
+      console.log(`✅ No existing subscriptions to cancel for customer: ${customerId}`)
+      return
+    }
+    
+    console.log(`⚠️ Found ${subscriptionsToCancel.length} existing subscriptions to cancel`)
+    
+    // Cancel each existing subscription
+    for (const subscription of subscriptionsToCancel) {
+      try {
+        await stripe.subscriptions.cancel(subscription.id)
+        console.log(`✅ Canceled subscription: ${subscription.id}`)
+      } catch (error) {
+        console.error(`❌ Failed to cancel subscription ${subscription.id}:`, error)
+      }
+    }
+    
+  } catch (error) {
+    console.error(`❌ Error checking/canceling existing subscriptions:`, error)
+  }
+}
+
+async function updateUserTier(customerId: string, tierId: string | null, subscriptionStatus: string, newSubscriptionId?: string) {
+  try {
+    console.log(`🎯 Updating user tier for customer: ${customerId}, tier: ${tierId}, status: ${subscriptionStatus}`)
+    
+    // Get customer email from Stripe first
+    const stripeCustomer = await stripe.customers.retrieve(customerId)
+    
+    if (!stripeCustomer || stripeCustomer.deleted || !stripeCustomer.email) {
+      console.error('❌ No email found for Stripe customer:', customerId)
+      return
+    }
+
+    const customerEmail = stripeCustomer.email
+    console.log(`📧 Looking up user by email: ${customerEmail}`)
+
+    // Find user by email (primary lookup method) - include current credits
+    const { data: userData, error: userError } = await supabase
       .from('user_profiles')
-      .select('id')
-      .eq('stripe_customer_id', customerId)
+      .select('id, email, stripe_customer_id, available_credits, tier_id')
+      .eq('email', customerEmail)
       .single()
 
-    if (customerError) {
-      console.error('❌ Error finding user for customer:', customerId, customerError)
+    if (userError || !userData) {
+      console.error('❌ No user found with email:', customerEmail, userError)
       return
     }
 
-    if (!customerData) {
-      console.warn(`⚠️ No user found for Stripe customer: ${customerId}`)
-      return
+    const userId = userData.id
+    console.log(`👤 Found user ID: ${userId} for email: ${customerEmail}`)
+    
+    // IMPORTANT: Cancel existing subscriptions to prevent duplicates
+    if (subscriptionStatus === 'active' && tierId !== FREE_TIER_ID) {
+      console.log(`🚫 User upgrading to paid tier - checking for existing subscriptions to cancel`)
+      await cancelExistingSubscriptions(customerId, newSubscriptionId)
     }
+    
+    // Update stripe_customer_id if it's not set (for future reference)
+    if (!userData.stripe_customer_id) {
+      const { error: updateCustomerError } = await supabase
+        .from('user_profiles')
+        .update({ stripe_customer_id: customerId })
+        .eq('id', userId)
 
-    const userId = customerData.id
-    console.log(`👤 Found user ID: ${userId} for customer: ${customerId}`)
+      if (!updateCustomerError) {
+        console.log(`🔗 Linked user ${userId} to Stripe customer ${customerId}`)
+      }
+    }
     
     let targetTierId: string
 
-    // Determine target tier based on subscription status and price
+    // Determine target tier based on subscription status
     if (subscriptionStatus === 'active' || subscriptionStatus === 'trialing') {
-      targetTierId = priceId ? PRICE_TO_TIER_MAPPING[priceId] || FREE_TIER_ID : FREE_TIER_ID
-      
-      if (priceId && !PRICE_TO_TIER_MAPPING[priceId]) {
-        console.warn(`⚠️ Unknown price ID: ${priceId}, defaulting to Free tier`)
-      } else if (priceId) {
-        console.log(`✅ Mapped price ${priceId} to tier ${targetTierId}`)
-      }
+      targetTierId = tierId || FREE_TIER_ID
+      console.log(`✅ Setting tier to: ${targetTierId}`)
     } else {
       targetTierId = FREE_TIER_ID
       console.log(`⬇️ Inactive subscription, downgrading to Free tier: ${targetTierId}`)
@@ -69,13 +179,42 @@ async function updateUserTier(customerId: string, priceId: string | null, subscr
 
     console.log(`🎯 Target tier ID: ${targetTierId} for user: ${userId}`)
 
-    // Update user's tier and subscription status
+    // Calculate new credit balance when upgrading
+    let newCreditBalance = userData.available_credits || 0
+    
+    if (targetTierId !== FREE_TIER_ID && targetTierId !== userData.tier_id) {
+      // User is upgrading to a paid tier - add credits from new tier
+      const { data: tierData } = await supabase
+        .from('tiers')
+        .select('monthly_candidate_allotment')
+        .eq('id', targetTierId)
+        .single()
+      
+      if (tierData?.monthly_candidate_allotment) {
+        const currentCredits = userData.available_credits || 0
+        const tierCredits = tierData.monthly_candidate_allotment
+        newCreditBalance = currentCredits + tierCredits
+        
+        console.log(`💳 Credit calculation: ${currentCredits} existing + ${tierCredits} from tier = ${newCreditBalance} total`)
+        
+        // Log credit transaction for audit trail
+        await supabase.from('credit_transactions').insert({
+          user_id: userId,
+          transaction_type: 'addition',
+          amount: tierCredits,
+          description: `Tier upgrade credit bonus: ${tierCredits} credits added`
+        })
+      }
+    }
+
+    // Update user's tier, subscription status, and credits
     const { error: updateError } = await supabase
       .from('user_profiles')
       .update({
         tier_id: targetTierId,
         subscription_status: subscriptionStatus,
-        stripe_customer_id: customerId
+        stripe_customer_id: customerId,
+        available_credits: newCreditBalance
       })
       .eq('id', userId)
 
@@ -84,7 +223,7 @@ async function updateUserTier(customerId: string, priceId: string | null, subscr
       throw new Error('Failed to update user tier in database')
     }
 
-    console.log(`✅ Successfully updated user ${userId} to tier ${targetTierId}`)
+    console.log(`✅ Successfully updated user ${userId} to tier ${targetTierId} with ${newCreditBalance} credits`)
     
   } catch (error) {
     console.error(`💥 Error in updateUserTier:`, error)
@@ -111,7 +250,8 @@ async function syncCustomerFromStripe(customerId: string) {
     console.log(`📋 Subscription found: ${subscription.id}, status: ${subscription.status}`)
 
     const priceId = subscription.items.data[0].price.id
-    await updateUserTier(customerId, priceId, subscription.status)
+    const tierId = PRICE_TO_TIER_MAPPING[priceId] || null
+    await updateUserTier(customerId, tierId, subscription.status, subscription.id)
     
     console.info(`✅ Successfully synced subscription for customer: ${customerId}`)
   } catch (error) {
@@ -121,9 +261,25 @@ async function syncCustomerFromStripe(customerId: string) {
 }
 
 serve(async (req) => {
+  console.log(`🎯 Webhook called: ${req.method} ${req.url}`)
+  console.log(`🔍 Headers:`, Object.fromEntries(req.headers.entries()))
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders })
+  }
+
+  // Add a simple GET endpoint for testing
+  if (req.method === 'GET') {
+    console.log('🧪 Webhook test endpoint called')
+    return new Response(JSON.stringify({ 
+      status: 'stripe_webhook_online',
+      message: 'Stripe webhook function is running',
+      timestamp: new Date().toISOString()
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
   }
 
   // Only accept POST requests for webhook
@@ -192,10 +348,25 @@ serve(async (req) => {
     // Handle subscription events
     switch (event.type) {
       case 'checkout.session.completed':
-        const { mode } = stripeData as Stripe.Checkout.Session
-        if (mode === 'subscription') {
-          console.info(`🔄 Processing subscription checkout for customer: ${customerId}`)
-          await syncCustomerFromStripe(customerId)
+        const session = stripeData as Stripe.Checkout.Session
+        console.info(`✅ Checkout completed for customer: ${customerId}, mode: ${session.mode}`)
+        
+        if (session.mode === 'subscription') {
+          // For subscription mode, get tier from checkout session
+          const tierId = await getTierFromCheckoutSession(session.id)
+          if (tierId) {
+            // Pass the new subscription ID to avoid canceling it
+            await updateUserTier(customerId, tierId, 'active', session.subscription as string)
+          } else {
+            console.warn(`⚠️ Could not determine tier for checkout session ${session.id}, syncing from Stripe`)
+            await syncCustomerFromStripe(customerId)
+          }
+        } else if (session.mode === 'payment') {
+          // For one-time payments, also try to get tier
+          const tierId = await getTierFromCheckoutSession(session.id)
+          if (tierId) {
+            await updateUserTier(customerId, tierId, 'active')
+          }
         }
         break
 
@@ -203,18 +374,20 @@ serve(async (req) => {
       case 'customer.subscription.updated':
         const subscription = stripeData as Stripe.Subscription
         const priceId = subscription.items.data[0].price.id
+        const tierId = PRICE_TO_TIER_MAPPING[priceId] || null
         console.info(`🔄 Processing subscription ${event.type} for customer: ${customerId}`)
-        await updateUserTier(customerId, priceId, subscription.status)
+        // Pass the subscription ID to avoid canceling the current one
+        await updateUserTier(customerId, tierId, subscription.status, subscription.id)
         break
 
       case 'customer.subscription.deleted':
         console.info(`🔄 Processing subscription cancellation for customer: ${customerId}`)
-        await updateUserTier(customerId, null, 'canceled')
+        await updateUserTier(customerId, FREE_TIER_ID, 'canceled')
         break
 
       case 'invoice.payment_failed':
         console.info(`💳 Payment failed for customer: ${customerId}`)
-        await updateUserTier(customerId, null, 'past_due')
+        await updateUserTier(customerId, FREE_TIER_ID, 'past_due')
         break
 
       case 'invoice.payment_succeeded':

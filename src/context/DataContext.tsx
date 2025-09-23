@@ -67,30 +67,30 @@ const createEmptyData = () => {
   const emptyCreditTransactions: CreditTransaction[] = [];
   const emptyTiers: Tier[] = [
     {
-      id: 'tier-free',
+      id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
       name: 'Free',
       monthlyCandidateAllotment: 20,
       includesCompanyEmails: false,
       createdAt: new Date('2024-01-01')
     },
     {
-      id: 'tier-1',
-      name: 'Tier 1',
-      monthlyCandidateAllotment: 50,
-      includesCompanyEmails: true,
+      id: '88c433cf-0a8d-44de-82fa-71c7dcbe31ff',
+      name: 'Starter',
+      monthlyCandidateAllotment: 100,
+      includesCompanyEmails: false,
       createdAt: new Date('2024-01-01')
     },
     {
-      id: 'tier-2',
-      name: 'Tier 2',
-      monthlyCandidateAllotment: 150,
-      includesCompanyEmails: true,
-      createdAt: new Date('2024-01-01')
-    },
-    {
-      id: 'tier-3',
-      name: 'Tier 3',
+      id: 'f871eb1b-6756-447d-a1c0-20a373d1d5a2',
+      name: 'Pro',
       monthlyCandidateAllotment: 400,
+      includesCompanyEmails: true,
+      createdAt: new Date('2024-01-01')
+    },
+    {
+      id: 'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd',
+      name: 'Beast Mode',
+      monthlyCandidateAllotment: 2500,
       includesCompanyEmails: true,
       createdAt: new Date('2024-01-01')
     }

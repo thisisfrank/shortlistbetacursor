@@ -27,9 +27,9 @@ const subscriptionPlans = [
   {
     id: 'basic',
     name: 'Starter',
-    price: 29.99,
+    price: 29,
     priceId: 'price_1S7TO3Hb6LdHADWYvWMTutrj', // Updated Stripe price ID
-    paymentLink: 'https://buy.stripe.com/test_fZu7sLaoK9lN1oRfap9R600', // Tier One
+    paymentLink: 'https://buy.stripe.com/test_00w14neF09lNgjLd2h9R603', // Starter
     description: 'Perfect for getting started',
     features: {
       jobs: 3,
@@ -43,9 +43,9 @@ const subscriptionPlans = [
   {
     id: 'premium',
     name: 'Pro',
-    price: 99.99,
+    price: 99,
     priceId: 'price_1S7TOGHb6LdHADWYAu8g3h3f', // Updated Stripe price ID
-    paymentLink: 'https://buy.stripe.com/test_eVq14n1SegOf8Rj3rH9R601', // Tier Two
+    paymentLink: 'https://buy.stripe.com/test_6oU7sLgN89lNaZr8M19R604', // Pro
     description: 'Advanced features for scaling businesses',
     features: {
       jobs: 3,
@@ -61,7 +61,7 @@ const subscriptionPlans = [
     name: 'Beast Mode',
     price: 699,
     priceId: 'price_1S7TPaHb6LdHADWYhMgRw3YY', // Updated Stripe price ID
-    paymentLink: 'https://buy.stripe.com/test_4gMdR90OacxZ7Nf0fv9R602', // Tier Three
+    paymentLink: 'https://buy.stripe.com/test_14AaEX40m0PhgjL1jz9R605', // Beast Mode
     description: 'Unlimited access for enterprise teams',
     features: {
       jobs: 10,
