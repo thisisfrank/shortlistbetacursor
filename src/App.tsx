@@ -31,6 +31,7 @@ import { LoginPage } from './components/auth/LoginPage';
 import { SignupPage } from './components/auth/SignupPage';
 import { ForgotPasswordPage } from './components/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from './components/auth/ResetPasswordPage';
+import { EmailConfirmationPage } from './components/auth/EmailConfirmationPage';
 
 // Legal Pages
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
@@ -73,6 +74,7 @@ function App() {
               <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
               <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
               <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+              <Route path="/confirm-email" element={<PublicRoute><EmailConfirmationPage /></PublicRoute>} />
               
               {/* Legal Pages - completely independent, no auth required */}
               <Route path="/privacy" element={<PrivacyPolicyPage />} />

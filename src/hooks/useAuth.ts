@@ -31,10 +31,13 @@ export const useAuth = () => {
   // IMMEDIATE URL CAPTURE - before anything else happens
   const currentUrl = window.location.href;
   const currentHash = window.location.hash;
+  const currentSearch = window.location.search;
   console.log('🚨 IMMEDIATE URL CAPTURE:', {
     url: currentUrl,
     hash: currentHash,
+    search: currentSearch,
     pathname: window.location.pathname,
+    hasAccessToken: currentSearch.includes('access_token') || currentHash.includes('access_token'),
     timestamp: new Date().toISOString()
   });
 
@@ -42,38 +45,53 @@ export const useAuth = () => {
     let isMounted = true;
     let authTimeout: NodeJS.Timeout;
 
-    // Check for password recovery in URL before initializing auth
-    const checkForPasswordRecovery = () => {
+    // Check for password recovery and email confirmation in URL before initializing auth
+    const checkForSpecialAuth = () => {
       const hash = window.location.hash;
+      const search = window.location.search;
       const fullUrl = window.location.href;
       const pathname = window.location.pathname;
-      const hasTypeRecovery = hash.includes('type=recovery');
+      
+      // Check for recovery in query params (primary) or hash (fallback)
+      const queryParams = new URLSearchParams(search);
+      const hashParams = new URLSearchParams(hash.substring(1));
+      
+      const hasTypeRecoveryQuery = queryParams.get('type') === 'recovery';
+      const hasTypeRecoveryHash = hashParams.get('type') === 'recovery';
+      const hasTypeSignupHash = hashParams.get('type') === 'signup';
       
       console.log('🔍 Checking URL for password recovery:', { 
+        search,
         hash, 
         fullUrl,
-        hasTypeRecovery,
+        hasTypeRecoveryQuery,
+        hasTypeRecoveryHash,
+        hasTypeSignupHash,
         pathname,
-        search: window.location.search,
-        hashLength: hash.length,
-        rawHash: hash
+        searchIncludes: search.includes('access_token'),
+        hashIncludes: hash.includes('access_token')
       });
       
-      if (hash && hash.includes('type=recovery')) {
+      // Handle password recovery (check query params first, then hash)
+      if (hasTypeRecoveryQuery || hasTypeRecoveryHash) {
         console.log('🔑 Password recovery detected in URL');
-        // Extract parameters
-        const params = new URLSearchParams(hash.substring(1));
-        const type = params.get('type');
+        
+        const params = hasTypeRecoveryQuery ? queryParams : hashParams;
         const accessToken = params.get('access_token');
         
-        console.log('🔑 Recovery parameters:', { type, hasAccessToken: !!accessToken });
+        console.log('🔑 Recovery parameters:', { 
+          type: params.get('type'), 
+          hasAccessToken: !!accessToken,
+          source: hasTypeRecoveryQuery ? 'query' : 'hash'
+        });
         
-        if (type === 'recovery' && accessToken) {
+        if (accessToken) {
           // Only redirect if we're NOT already on the reset-password page
           if (pathname !== '/reset-password') {
             console.log('🔑 Valid recovery link detected, redirecting to /reset-password with tokens preserved');
-            // Preserve the entire hash when redirecting
-            window.location.href = `/reset-password${hash}`;
+            // Preserve the tokens in the URL when redirecting
+            const tokenString = hasTypeRecoveryQuery ? search : hash;
+            window.location.href = `/reset-password${tokenString}`;
             return true; // Indicates we found recovery and are redirecting
           } else {
             console.log('🔑 Already on reset-password page with valid recovery tokens');
@@ -81,13 +99,38 @@ export const useAuth = () => {
           }
         }
       }
+      
+      // Handle email confirmation
+      if (hash && hash.includes('type=signup')) {
+        console.log('📧 Email confirmation detected in URL');
+        // Extract parameters
+        const params = new URLSearchParams(hash.substring(1));
+        const type = params.get('type');
+        const accessToken = params.get('access_token');
+        
+        console.log('📧 Confirmation parameters:', { type, hasAccessToken: !!accessToken });
+        
+        if (type === 'signup' && accessToken) {
+          // Only redirect if we're NOT already on the confirm-email page
+          if (pathname !== '/confirm-email') {
+            console.log('📧 Valid confirmation link detected, redirecting to /confirm-email with tokens preserved');
+            // Preserve the entire hash when redirecting
+            window.location.href = `/confirm-email${hash}`;
+            return true; // Indicates we found confirmation and are redirecting
+          } else {
+            console.log('📧 Already on confirm-email page with valid confirmation tokens');
+            return false; // Don't exit early, let auth initialize normally
+          }
+        }
+      }
+      
       return false;
     };
 
-    // Check for recovery first
-    const isPasswordRecovery = checkForPasswordRecovery();
-    if (isPasswordRecovery) {
-      return; // Exit early if password recovery
+    // Check for special auth (recovery or confirmation) first
+    const isSpecialAuth = checkForSpecialAuth();
+    if (isSpecialAuth) {
+      return; // Exit early if special auth handling
     }
 
     const initAuth = async () => {
@@ -149,7 +192,7 @@ export const useAuth = () => {
       }
     };
 
-    // Listen for auth state changes (including password recovery)
+    // Listen for auth state changes (including password recovery and email confirmation)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       console.log('🔐 Auth state change:', event);
       
@@ -158,6 +201,12 @@ export const useAuth = () => {
         // Redirect to reset password page
         window.location.href = '/reset-password';
         return;
+      }
+      
+      // Handle email confirmation
+      if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
+        console.log('📧 Email confirmation successful, user signed in');
+        // This will be handled by the SIGNED_IN case below
       }
       
       if (event === 'SIGNED_IN') {
@@ -318,9 +367,49 @@ export const useAuth = () => {
     }
   };
 
+  const checkEmailExists = async (email: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('email')
+        .eq('email', email.toLowerCase())
+        .single();
+      
+      if (error) {
+        // If error code is 'PGRST116', it means no row found (email doesn't exist)
+        if (error.code === 'PGRST116') {
+          return { exists: false, error: null };
+        }
+        // Other errors
+        return { exists: false, error };
+      }
+      
+      // If we get data back, the email exists
+      return { exists: true, error: null };
+    } catch (error) {
+      return { exists: false, error };
+    }
+  };
+
   const signUp = async (email: string, password: string, role: 'client' | 'sourcer' = 'client', name: string = '') => {
     setLoading(true);
     try {
+      // First check if email already exists
+      const { exists, error: checkError } = await checkEmailExists(email);
+      if (checkError) {
+        console.error('❌ Error checking email existence:', checkError);
+        // Continue with signup if check fails (don't block signup due to check error)
+      } else if (exists) {
+        setLoading(false);
+        return { 
+          data: null, 
+          error: { 
+            message: 'An account with this email already exists. Please sign in instead or use the forgot password option.',
+            code: 'email_exists'
+          } 
+        };
+      }
+
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) {
         setLoading(false);
@@ -355,8 +444,18 @@ export const useAuth = () => {
           updatedAt: new Date(),
         };
         
-        setUser(data.user);
-        setUserProfile(userProfileData);
+        // Only set user/profile state if email is already confirmed (no confirmation required)
+        // If email confirmation is required, the user will be set via auth state change after confirmation
+        if (data.user.email_confirmed_at) {
+          console.log('✅ Email already confirmed, setting user state');
+          setUser(data.user);
+          setUserProfile(userProfileData);
+        } else {
+          console.log('📧 Email confirmation required, not setting user state yet');
+          // Don't set user state - user will be set after email confirmation
+          setUser(null);
+          setUserProfile(null);
+        }
         
         // Send signup thank you notification to GoHighLevel
         try {
@@ -409,11 +508,26 @@ export const useAuth = () => {
 
   const resetPassword = async (email: string) => {
     try {
+      // Get the appropriate redirect URL based on environment
+      const baseUrl = window.location.origin;
+      const redirectUrl = `${baseUrl}/reset-password`;
+      
+      console.log('🔑 Sending password reset email to:', email);
+      console.log('🔑 Redirect URL:', redirectUrl);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: redirectUrl,
       });
+      
+      if (error) {
+        console.error('❌ Reset password error:', error);
+      } else {
+        console.log('✅ Reset password email sent successfully');
+      }
+      
       return { error };
     } catch (error) {
+      console.error('💥 Reset password exception:', error);
       return { error };
     }
   };
@@ -472,5 +586,6 @@ export const useAuth = () => {
     resetPassword,
     updatePassword,
     clearAllAuth,
+    checkEmailExists,
   };
 };

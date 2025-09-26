@@ -206,20 +206,35 @@ export const Header: React.FC = () => {
 
           {/* User info and Sign up/Sign in buttons - positioned absolutely to the right */}
           <div className="absolute right-0 flex items-center gap-3">
-            {/* Show user name and credits when authenticated */}
-            {userProfile && (
-              <div className="flex items-center gap-3 text-guardian">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-jakarta">Welcome,</span>
-                  <Link 
-                    to="/account"
-                    className="text-white-knight font-semibold hover:text-supernova transition-colors cursor-pointer"
-                  >
-                    {userProfile.name && userProfile.name.trim() !== '' 
-                      ? userProfile.name 
-                      : 'User'}
-                  </Link>
-                </div>
+          {/* Show user name and credits when authenticated */}
+          {userProfile && (
+            <div className="flex items-center gap-3 text-guardian">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-jakarta">Welcome,</span>
+                <Link 
+                  to="/account"
+                  className="text-white-knight font-semibold hover:text-supernova transition-colors cursor-pointer"
+                >
+                  {(() => {
+                    console.log('🔍 Debug - userProfile.name:', userProfile.name);
+                    console.log('🔍 Debug - userProfile.email:', userProfile.email);
+                    console.log('🔍 Debug - name length:', userProfile.name?.length);
+                    console.log('🔍 Debug - name trimmed:', userProfile.name?.trim());
+                    
+                    if (userProfile.name && userProfile.name.trim() !== '') {
+                      const firstName = userProfile.name.split(' ')[0];
+                      console.log('🔍 Debug - firstName extracted:', firstName);
+                      return firstName;
+                    } else {
+                      // Fallback: use first part of email before @ as name
+                      const emailName = userProfile.email?.split('@')[0] || 'User';
+                      const capitalizedName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+                      console.log('🔍 Debug - Using email fallback:', capitalizedName);
+                      return capitalizedName;
+                    }
+                  })()}
+                </Link>
+              </div>
                 {/* Credits display */}
                 <div className="flex items-center gap-1 bg-shadowforce-light/50 px-3 py-1 rounded-lg border border-guardian/20">
                   <span className="text-xs font-jakarta text-guardian">Credits:</span>

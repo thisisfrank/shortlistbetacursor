@@ -19,38 +19,64 @@ export const ResetPasswordPage: React.FC = () => {
   const [waitingForAuth, setWaitingForAuth] = useState(true);
   const [isValidSession, setIsValidSession] = useState(false);
 
+  // Debug: Log when component mounts
+  useEffect(() => {
+    console.log('🔑 ResetPasswordPage component mounted!', {
+      currentURL: window.location.href,
+      pathname: window.location.pathname,
+      search: window.location.search,
+      hash: window.location.hash
+    });
+  }, []);
+
   useEffect(() => {
     const handlePasswordRecovery = async () => {
-      console.log('🔑 ResetPasswordPage mounted, checking URL and auth state:', {
+      console.log('🔑 ResetPasswordPage mounted, checking auth state:', {
         hasUser: !!user,
         userEmail: user?.email,
         authLoading,
-        pathname: window.location.pathname,
-        hash: window.location.hash,
-        search: window.location.search
+        search: window.location.search,
+        hash: window.location.hash
       });
 
-      // Check for recovery tokens in URL hash (Supabase sends them there)
-      const hash = window.location.hash;
-      let urlParams: URLSearchParams;
-      
-      if (hash && hash.includes('access_token')) {
-        // Recovery tokens are in the hash
-        urlParams = new URLSearchParams(hash.substring(1));
-        console.log('🔑 Reading recovery tokens from hash:', hash);
-      } else {
-        // Fallback to query parameters
-        urlParams = new URLSearchParams(window.location.search);
-        console.log('🔑 Reading recovery tokens from query params:', window.location.search);
-      }
-      
+      // Check for recovery tokens in URL query parameters (Supabase sends them there)
+      const urlParams = new URLSearchParams(window.location.search);
       const accessToken = urlParams.get('access_token');
       const refreshToken = urlParams.get('refresh_token');
       const type = urlParams.get('type');
+      
+      // Also check hash as fallback (some configurations might use hash)
+      if (!accessToken && window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const hashAccessToken = hashParams.get('access_token');
+        const hashRefreshToken = hashParams.get('refresh_token');
+        const hashType = hashParams.get('type');
+        
+        if (hashAccessToken && hashRefreshToken && hashType === 'recovery') {
+          console.log('🔑 Found recovery tokens in hash (fallback)');
+          return handleTokens(hashAccessToken, hashRefreshToken, hashParams);
+        }
+      }
+      
+      if (accessToken && refreshToken && type === 'recovery') {
+        console.log('🔑 Found recovery tokens in query params');
+        return handleTokens(accessToken, refreshToken, urlParams);
+      } else if (user) {
+        console.log('✅ User already authenticated for password reset:', user.email);
+        setIsValidSession(true);
+        setError('');
+      } else if (!authLoading) {
+        console.warn('⚠️ No recovery tokens found and user not authenticated');
+        setError('Invalid reset link. Please request a new password reset from the login page.');
+      }
 
-      // Check for error in URL
-      const error = urlParams.get('error');
-      const errorDescription = urlParams.get('error_description');
+      setWaitingForAuth(false);
+    };
+
+    const handleTokens = async (accessToken: string, refreshToken: string, params: URLSearchParams) => {
+      // Check for error in URL first
+      const error = params.get('error');
+      const errorDescription = params.get('error_description');
       
       if (error) {
         console.error('❌ URL contains error:', error, errorDescription);
@@ -59,44 +85,33 @@ export const ResetPasswordPage: React.FC = () => {
         return;
       }
 
-      if (accessToken && refreshToken && type === 'recovery') {
-        console.log('🔑 Found recovery tokens in URL, setting session...');
-        try {
-          const { data, error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
+      try {
+        console.log('🔑 Setting session with recovery tokens...');
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
 
-          if (sessionError) {
-            console.error('❌ Error setting session:', sessionError);
-            setError('Invalid or expired reset link. Please request a new password reset.');
-          } else {
-            console.log('✅ Session set successfully for password recovery');
-            setIsValidSession(true);
-            setError(''); // Clear any errors
-          }
-        } catch (err) {
-          console.error('❌ Exception setting session:', err);
-          setError('Failed to authenticate reset link. Please request a new password reset.');
+        if (sessionError) {
+          console.error('❌ Error setting session:', sessionError);
+          setError('Invalid or expired reset link. Please request a new password reset.');
+        } else {
+          console.log('✅ Session set successfully for password recovery');
+          setIsValidSession(true);
+          setError('');
         }
-      } else if (!user && !authLoading) {
-        console.warn('⚠️ No recovery tokens found and user not authenticated');
-        setError('Invalid reset link. Please request a new password reset from the login page.');
-      } else if (user) {
-        console.log('✅ User already authenticated for password reset:', user.email);
-        setIsValidSession(true);
-        setError(''); // Clear any previous errors
+      } catch (err) {
+        console.error('❌ Exception setting session:', err);
+        setError('Failed to authenticate reset link. Please request a new password reset.');
       }
-
+      
       setWaitingForAuth(false);
     };
 
-    // Wait a bit for auth to initialize, then handle recovery
-    const authTimer = setTimeout(() => {
+    // Wait for auth to initialize, then handle recovery
+    if (!authLoading) {
       handlePasswordRecovery();
-    }, 1000);
-
-    return () => clearTimeout(authTimer);
+    }
   }, [user, authLoading]);
 
   // Show loading state while waiting for auth

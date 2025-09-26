@@ -22,8 +22,26 @@ export const ForgotPasswordPage: React.FC = () => {
     const { error: resetError } = await resetPassword(email);
 
     if (resetError) {
-      setError('Failed to send password reset email. Please check your email address and try again.');
+      console.error('Password reset error:', resetError);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to send password reset email. Please try again.';
+      
+      if (resetError.message?.includes('Invalid email')) {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (resetError.message?.includes('rate limit')) {
+        errorMessage = 'Too many reset attempts. Please wait a few minutes before trying again.';
+      } else if (resetError.message?.includes('User not found') || resetError.message?.includes('not found')) {
+        errorMessage = 'No account found with this email address. Please check your email or sign up for a new account.';
+      } else if (resetError.message?.includes('email not confirmed')) {
+        errorMessage = 'Your email address is not confirmed. Please check your inbox for the confirmation email first.';
+      } else if (resetError.message) {
+        errorMessage = `Reset failed: ${resetError.message}`;
+      }
+      
+      setError(errorMessage);
     } else {
+      console.log('Password reset email sent successfully');
       setSuccess(true);
     }
 
@@ -45,8 +63,17 @@ export const ForgotPasswordPage: React.FC = () => {
               Email Sent!
             </h1>
             <p className="text-guardian font-jakarta mb-6">
-              We've sent a password reset link to your email address. Please check your inbox and follow the instructions to reset your password.
+              We've sent a password reset link to <strong>{email}</strong>. Please check your inbox (and spam folder) and click the link to reset your password. The link will expire in 1 hour.
             </p>
+            <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+              <p className="text-blue-400 font-jakarta text-sm">
+                <strong>Next steps:</strong><br />
+                1. Check your email inbox<br />
+                2. Click the reset link in the email<br />
+                3. Enter your new password<br />
+                4. Sign in with your new password
+              </p>
+            </div>
             <Link
               to="/login"
               className="text-supernova hover:text-supernova-light font-semibold transition-colors font-jakarta"

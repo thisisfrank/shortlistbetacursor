@@ -14,6 +14,8 @@ export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [isEmailNotConfirmed, setIsEmailNotConfirmed] = useState(false);
   const [error, setError] = useState(() => {
     // Get error from sessionStorage on component mount
     return sessionStorage.getItem('loginError') || '';
@@ -23,6 +25,35 @@ export const LoginPage: React.FC = () => {
   const setErrorPersistent = (message: string) => {
     sessionStorage.setItem('loginError', message);
     setError(message);
+  };
+
+  // Function to handle resending confirmation email
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      setErrorPersistent('Please enter your email address first.');
+      return;
+    }
+
+    setResendLoading(true);
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setErrorPersistent('Confirmation email sent! Please check your inbox and spam folder.');
+      setIsEmailNotConfirmed(false);
+    } catch (error: any) {
+      console.error('Resend confirmation error:', error);
+      setErrorPersistent('Failed to resend confirmation email. Please try again later.');
+    } finally {
+      setResendLoading(false);
+    }
   };
 
   // Clear error from storage when component mounts (fresh page load)
@@ -70,8 +101,9 @@ export const LoginPage: React.FC = () => {
         
         if (signInError.message.includes('Invalid login credentials')) {
           errorMessage = 'Invalid email or password.\nPlease check your credentials and try again.';
-        } else if (signInError.message.includes('Email not confirmed')) {
-          errorMessage = 'Please check your email and click the confirmation link before signing in.';
+        } else if (signInError.message.includes('Email not confirmed') || signInError.message.includes('email_not_confirmed')) {
+          errorMessage = 'Please check your email and click the confirmation link before signing in. Check your spam folder if you don\'t see it.';
+          setIsEmailNotConfirmed(true);
         } else if (signInError.message.includes('Too many requests')) {
           errorMessage = 'Too many login attempts. Please wait a few minutes before trying again.';
         } else if (signInError.message.includes('timeout')) {
@@ -132,6 +164,20 @@ export const LoginPage: React.FC = () => {
                 <AlertCircle className="text-red-400 mb-3 flex-shrink-0" size={20} />
                 <p className="text-red-400 font-jakarta text-sm whitespace-pre-line">{error}</p>
               </div>
+              {isEmailNotConfirmed && (
+                <div className="mt-4 pt-3 border-t border-red-500/20">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    isLoading={resendLoading}
+                    onClick={handleResendConfirmation}
+                    className="text-red-400 border-red-400/50 hover:bg-red-500/10"
+                  >
+                    Resend Confirmation Email
+                  </Button>
+                </div>
+              )}
             </div>
           )}
           

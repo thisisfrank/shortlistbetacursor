@@ -106,8 +106,33 @@ export const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   }
 
+  // Special handling for password reset and email confirmation pages
+  // These pages need to work even when user is temporarily authenticated
+  const currentPath = window.location.pathname;
+  const currentSearch = window.location.search;
+  const currentHash = window.location.hash;
+  const isPasswordResetFlow = currentPath === '/reset-password' || currentPath === '/confirm-email';
+  const hasResetTokens = currentSearch.includes('access_token') || currentHash.includes('access_token');
+  
+  console.log('🔍 PublicRoute debug:', {
+    currentPath,
+    currentSearch,
+    currentHash,
+    isPasswordResetFlow,
+    hasResetTokens,
+    hasUser: !!user,
+    hasUserProfile: !!userProfile,
+    userRole: userProfile?.role
+  });
+  
+  if (isPasswordResetFlow && hasResetTokens) {
+    console.log('🔑 ✅ Allowing password reset/confirmation page despite authentication');
+    return <>{children}</>;
+  }
+
   // Only redirect if we have both user AND complete profile (prevents redirects during login attempts)
   if (user && userProfile && userProfile.role) {
+    console.log('🔄 PublicRoute redirecting authenticated user to:', getRoleHomePage(userProfile.role));
     return <Navigate to={getRoleHomePage(userProfile.role)} replace />;
   }
 

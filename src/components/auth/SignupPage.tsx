@@ -17,6 +17,7 @@ export const SignupPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [emailExists, setEmailExists] = useState(false);
 
   // List of common personal email domains that should be rejected
   const personalEmailDomains = [
@@ -35,6 +36,7 @@ export const SignupPage: React.FC = () => {
     console.log('📝 Signup form submitted');
     setLoading(true);
     setError('');
+    setEmailExists(false);
 
     if (!isBusinessEmail(email)) {
       setError('Please use a business email address. Personal email addresses (Gmail, Yahoo, Hotmail, etc.) are not allowed.');
@@ -59,25 +61,28 @@ export const SignupPage: React.FC = () => {
 
     if (signUpError) {
       console.error('❌ Signup error:', signUpError);
-      // Provide more helpful error messages
-      let errorMessage = signUpError.message;
-      if (signUpError.message.includes('already registered')) {
-        errorMessage = 'An account with this email already exists. Please use a different email or try signing in instead.';
-      } else if (signUpError.message.includes('Invalid email')) {
-        errorMessage = 'Please enter a valid email address.';
-      } else if (signUpError.message.includes('Password')) {
-        errorMessage = 'Password must be at least 6 characters long.';
+      // Check if it's an email exists error
+      if (signUpError.code === 'email_exists' || signUpError.message.includes('already registered') || signUpError.message.includes('already exists')) {
+        setEmailExists(true);
+        setError(''); // Clear generic error since we're showing special email exists state
+      } else {
+        // Provide more helpful error messages for other errors
+        let errorMessage = signUpError.message;
+        if (signUpError.message.includes('Invalid email')) {
+          errorMessage = 'Please enter a valid email address.';
+        } else if (signUpError.message.includes('Password')) {
+          errorMessage = 'Password must be at least 6 characters long.';
+        }
+        setError(errorMessage);
+        setEmailExists(false);
       }
-      setError(errorMessage);
     } else if (data.user) {
       console.log('✅ Signup successful, showing success state');
       setSuccess(true);
-      // Auto-redirect after successful signup since email confirmation is disabled
+      // Redirect to email confirmation page instead of auto-login
       setTimeout(() => {
-        console.log('🏠 Redirecting to home page');
-        // Check for redirect parameter
-        const redirectTo = new URLSearchParams(window.location.search).get('redirect_to');
-        navigate(redirectTo || '/');
+        console.log('📧 Redirecting to email confirmation page');
+        navigate('/confirm-email');
       }, 2000);
     }
 
@@ -99,7 +104,7 @@ export const SignupPage: React.FC = () => {
               Account Created!
             </h1>
             <p className="text-guardian font-jakarta mb-6">
-              Your account has been successfully created. You're being redirected to the dashboard.
+              Your account has been successfully created. Please check your email to confirm your account before signing in.
             </p>
             <div className="mb-6">
               <Link
@@ -150,6 +155,35 @@ export const SignupPage: React.FC = () => {
             <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center">
               <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
               <p className="text-red-400 font-jakarta text-sm">{error}</p>
+            </div>
+          )}
+
+          {emailExists && (
+            <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+              <div className="flex items-center mb-3">
+                <AlertCircle className="text-amber-400 mr-3 flex-shrink-0" size={20} />
+                <p className="text-amber-400 font-jakarta text-sm font-semibold">
+                  An account with this email already exists
+                </p>
+              </div>
+              <p className="text-guardian font-jakarta text-sm mb-4">
+                It looks like you already have an account with <span className="text-white-knight font-medium">{email}</span>. 
+                Please try one of the options below:
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link
+                  to="/login"
+                  className="flex-1 bg-supernova hover:bg-supernova-light text-shadowforce font-semibold py-2 px-4 rounded-lg transition-colors text-center font-jakarta text-sm"
+                >
+                  Sign In Instead
+                </Link>
+                <Link
+                  to="/forgot-password"
+                  className="flex-1 bg-transparent hover:bg-white-knight/10 text-supernova border border-supernova/30 hover:border-supernova font-semibold py-2 px-4 rounded-lg transition-colors text-center font-jakarta text-sm"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
             </div>
           )}
 
