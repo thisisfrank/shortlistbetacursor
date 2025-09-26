@@ -4,9 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
 
 import { Button } from '../ui/Button';
-import { GeneralFeedbackModal } from '../ui/GeneralFeedbackModal';
-import { AlertModal } from '../ui/AlertModal';
-import { useGeneralFeedback } from '../../hooks/useGeneralFeedback';
 import { getUserUsageStats } from '../../utils/userUsageStats';
 
 export const Header: React.FC = () => {
@@ -15,17 +12,6 @@ export const Header: React.FC = () => {
   const { userProfile, loading } = useAuth();
   const { jobs, candidates, tiers, creditTransactions } = useData();
   
-  // General feedback functionality
-  const {
-    generalFeedbackModal,
-    alertModal,
-    handleOpenGeneralFeedbackModal,
-    handleCloseGeneralFeedbackModal,
-    handleGeneralFeedbackChange,
-    handleSubmitGeneralFeedback,
-    setAlertModal
-  } = useGeneralFeedback('header');
-
   
   // Get the role-appropriate home path
   const getRoleHomePath = (role: string): string => {
@@ -83,18 +69,15 @@ export const Header: React.FC = () => {
         return [
           { path: '/client', label: 'GET CANDIDATES', key: 'submit' },
           { path: '/candidates', label: 'MY OPEN JOBS', key: 'candidates' },
-          { path: '/marketplace', label: 'SUPERPOWERS', key: 'marketplace' },
-          { path: '#feedback', label: 'FEEDBACK', key: 'feedback', action: 'feedback' }
+          { path: '/marketplace', label: 'SUPERPOWERS', key: 'marketplace' }
         ];
       case 'sourcer':
         return [
-          { path: '/sourcer', label: 'SOURCER HUB', key: 'sourcer' },
-          { path: '#feedback', label: 'FEEDBACK', key: 'feedback', action: 'feedback' }
+          { path: '/sourcer', label: 'SOURCER HUB', key: 'sourcer' }
         ];
       case 'admin':
         return [
-          { path: '/admin', label: 'ADMIN CONTROL', key: 'admin' },
-          { path: '#feedback', label: 'FEEDBACK', key: 'feedback', action: 'feedback' }
+          { path: '/admin', label: 'ADMIN CONTROL', key: 'admin' }
         ];
       default:
         return [
@@ -173,18 +156,6 @@ export const Header: React.FC = () => {
                   return null;
                 }
                 
-                // Handle feedback action differently
-                if (item.action === 'feedback') {
-                  return (
-                    <button
-                      key={item.key}
-                      onClick={handleOpenGeneralFeedbackModal}
-                      className="px-6 py-3 rounded-lg text-sm font-jakarta font-semibold transition-all duration-200 text-guardian hover:bg-shadowforce-light hover:text-supernova"
-                    >
-                      {item.label}
-                    </button>
-                  );
-                }
                 
                 const active = isActive(item.path);
                 return (
@@ -269,25 +240,6 @@ export const Header: React.FC = () => {
 
         </div>
       </div>
-      
-      {/* General Feedback Modal */}
-      <GeneralFeedbackModal
-        isOpen={generalFeedbackModal.isOpen}
-        feedback={generalFeedbackModal.feedback}
-        isSubmitting={generalFeedbackModal.isSubmitting}
-        onClose={handleCloseGeneralFeedbackModal}
-        onFeedbackChange={handleGeneralFeedbackChange}
-        onSubmit={handleSubmitGeneralFeedback}
-      />
-
-      {/* Alert Modal */}
-      <AlertModal
-        isOpen={alertModal.isOpen}
-        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
-        title={alertModal.title}
-        message={alertModal.message}
-        type={alertModal.type}
-      />
     </header>
   );
 };

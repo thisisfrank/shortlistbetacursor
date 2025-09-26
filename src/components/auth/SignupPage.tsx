@@ -193,8 +193,7 @@ export const SignupPage: React.FC = () => {
               Create Account
             </h1>
             <p className="text-guardian font-jakarta">
-              Start posting jobs and finding top talent
-            </p>
+            “We hire twice as fast without posting to any job boards.” - Nate Reitcher, CEO of Collector            </p>
           </div>
 
           {error && (

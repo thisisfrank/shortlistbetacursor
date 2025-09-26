@@ -18,8 +18,21 @@ export function getUserUsageStats(
   // Jobs submitted by this user (for display purposes only - no limits)
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const jobsUsed = jobs.filter(
-    job => job.userId === userProfile.id && job.createdAt >= startOfMonth
+  
+  // Calculate job statistics
+  const userJobs = jobs.filter(job => job.userId === userProfile.id);
+  const jobsUsed = userJobs.filter(job => job.createdAt >= startOfMonth).length;
+  const totalJobs = userJobs.length;
+  const jobsThisMonth = jobsUsed;
+  
+  // Calculate candidate statistics
+  const userCandidates = candidates.filter(candidate => {
+    const candidateJob = jobs.find(job => job.id === candidate.jobId);
+    return candidateJob && candidateJob.userId === userProfile.id;
+  });
+  const totalCandidatesSourced = userCandidates.length;
+  const candidatesSourcedThisMonth = userCandidates.filter(
+    candidate => candidate.submittedAt >= startOfMonth
   ).length;
 
   // For FREE TIER: Use actual available credits (one-time allocation)
@@ -65,5 +78,10 @@ export function getUserUsageStats(
     candidatesRemaining,
     creditsResetDate,
     tierName,
+    // New fields for account page display
+    totalCandidatesSourced,
+    candidatesSourcedThisMonth,
+    totalJobs,
+    jobsThisMonth,
   };
 } 

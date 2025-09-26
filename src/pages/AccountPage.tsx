@@ -5,8 +5,12 @@ import { useData } from '../context/DataContext';
 import { getUserUsageStats } from '../utils/userUsageStats';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import { GeneralFeedbackModal } from '../components/ui/GeneralFeedbackModal';
+import { AlertModal } from '../components/ui/AlertModal';
+import { AvatarSelector } from '../components/ui/AvatarSelector';
+import { useGeneralFeedback } from '../hooks/useGeneralFeedback';
 import { supabase } from '../lib/supabase';
-import { Users, Clock, Briefcase, Calendar, CreditCard, LogOut, Crown, User, Edit3, Check, X } from 'lucide-react';
+import { Users, Briefcase, CreditCard, LogOut, Crown, User, Edit3, Check, X, MessageCircle } from 'lucide-react';
 
 export const AccountPage: React.FC = () => {
   const { userProfile, signOut, refreshProfile } = useAuth();
@@ -19,10 +23,27 @@ export const AccountPage: React.FC = () => {
   const [nameLoading, setNameLoading] = useState(false);
   const [nameError, setNameError] = useState('');
 
-  // Update local name state when userProfile changes
+  // Avatar editing state
+  const [isAvatarSelectorOpen, setIsAvatarSelectorOpen] = useState(false);
+  const [avatar, setAvatar] = useState(userProfile?.avatar || '👤');
+  const [avatarLoading, setAvatarLoading] = useState(false);
+
+  // General feedback functionality
+  const {
+    generalFeedbackModal,
+    alertModal,
+    handleOpenGeneralFeedbackModal,
+    handleCloseGeneralFeedbackModal,
+    handleGeneralFeedbackChange,
+    handleSubmitGeneralFeedback,
+    setAlertModal
+  } = useGeneralFeedback('account');
+
+  // Update local state when userProfile changes
   React.useEffect(() => {
     setName(userProfile?.name || '');
-  }, [userProfile?.name]);
+    setAvatar(userProfile?.avatar || '👤');
+  }, [userProfile?.name, userProfile?.avatar]);
 
   const stats = getUserUsageStats(userProfile as any, jobs, candidates, tiers, creditTransactions);
 
@@ -75,6 +96,45 @@ export const AccountPage: React.FC = () => {
     setNameError('');
   };
 
+  const handleOpenAvatarSelector = () => {
+    setIsAvatarSelectorOpen(true);
+  };
+
+  const handleCloseAvatarSelector = () => {
+    setIsAvatarSelectorOpen(false);
+  };
+
+  const handleSelectAvatar = async (selectedAvatar: string) => {
+    if (!userProfile) return;
+    
+    setAvatarLoading(true);
+    
+    try {
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({ avatar: selectedAvatar })
+        .eq('id', userProfile.id);
+      
+      if (updateError) {
+        throw updateError;
+      }
+      
+      setAvatar(selectedAvatar);
+      setIsAvatarSelectorOpen(false);
+      
+      // Refresh the profile to get updated data
+      if (refreshProfile) {
+        await refreshProfile();
+      }
+      
+    } catch (err: any) {
+      console.error('Failed to update avatar:', err.message);
+      // Could show an error message here if needed
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
   if (!userProfile) {
     return (
       <div className="p-8 text-center text-guardian">
@@ -92,9 +152,26 @@ export const AccountPage: React.FC = () => {
         </h2>
         
         <div className="flex items-center gap-6 mb-8">
-          <div className="bg-supernova rounded-full p-4">
-            <User size={32} className="text-shadowforce" />
-          </div>
+          <button
+            onClick={handleOpenAvatarSelector}
+            disabled={avatarLoading}
+            className="bg-supernova rounded-full p-4 hover:bg-supernova-light transition-colors cursor-pointer group relative"
+            title="Click to change avatar"
+          >
+            {avatar && avatar !== '👤' ? (
+              <span className="text-3xl">{avatar}</span>
+            ) : (
+              <User size={32} className="text-shadowforce" />
+            )}
+            {avatarLoading && (
+              <div className="absolute inset-0 bg-supernova/80 rounded-full flex items-center justify-center">
+                <div className="animate-spin w-6 h-6 border-2 border-shadowforce border-t-transparent rounded-full"></div>
+              </div>
+            )}
+            <div className="absolute inset-0 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <Edit3 size={16} className="text-white" />
+            </div>
+          </button>
           <div>
             <div className="flex items-center gap-3 mb-1">
               {!isEditingName ? (
@@ -207,13 +284,13 @@ export const AccountPage: React.FC = () => {
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-6">
           <Button 
-            variant="secondary"
+            onClick={handleOpenGeneralFeedbackModal}
+            variant="outline"
             size="lg"
-            className="flex items-center justify-center gap-3 py-4 text-lg font-semibold"
-            onClick={() => window.open('https://billing.stripe.com/p/login/test_fZu7sLaoK9lN1oRfap9R600', '_blank')}
+            className="flex items-center justify-center gap-3 py-4 text-lg text-guardian hover:text-white-knight border-guardian/30 hover:border-supernova/50 transition-all duration-300"
           >
-            <CreditCard size={20} />
-            MANAGE CREDITS
+            <MessageCircle size={20} />
+            SUBMIT FEEDBACK
           </Button>
           
           <Button 
@@ -235,44 +312,45 @@ export const AccountPage: React.FC = () => {
         <div className="grid grid-cols-2 gap-6 mb-8">
           <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10">
             <div className="flex items-center gap-4 mb-4">
-              <Briefcase size={24} className="text-supernova" />
-              <span className="text-guardian text-lg font-semibold">Jobs This Month</span>
+              <Users size={24} className="text-supernova" />
+              <span className="text-guardian text-lg font-semibold">Total Candidates Sourced</span>
             </div>
-            <div className="text-white-knight font-bold text-3xl">{stats?.jobsUsed || 2}</div>
+            <div className="text-white-knight font-bold text-3xl">{stats?.totalCandidatesSourced || 0}</div>
           </div>
           
           <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10">
             <div className="flex items-center gap-4 mb-4">
               <Users size={24} className="text-supernova" />
-              <span className="text-guardian text-lg font-semibold">Credits Used</span>
+              <span className="text-guardian text-lg font-semibold">Candidates Sourced This Month</span>
             </div>
-            <div className="text-white-knight font-bold text-3xl">{stats?.candidatesUsed || 20}</div>
+            <div className="text-white-knight font-bold text-3xl">{stats?.candidatesSourcedThisMonth || 0}</div>
           </div>
           
           <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10">
             <div className="flex items-center gap-4 mb-4">
-              <Clock size={24} className="text-supernova" />
-              <span className="text-guardian text-lg font-semibold">Credits Left</span>
+              <Briefcase size={24} className="text-supernova" />
+              <span className="text-guardian text-lg font-semibold">Total Jobs</span>
             </div>
-            <div className="text-white-knight font-bold text-3xl">{stats?.candidatesRemaining || 130}</div>
+            <div className="text-white-knight font-bold text-3xl">{stats?.totalJobs || 0}</div>
           </div>
           
           <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10">
             <div className="flex items-center gap-4 mb-4">
-              <Calendar size={24} className="text-supernova" />
-              <span className="text-guardian text-lg font-semibold">Credits Limit</span>
+              <Briefcase size={24} className="text-supernova" />
+              <span className="text-guardian text-lg font-semibold">Jobs This Month</span>
             </div>
-            <div className="text-white-knight font-bold text-3xl">{stats?.candidatesLimit || 150}</div>
+            <div className="text-white-knight font-bold text-3xl">{stats?.jobsThisMonth || 0}</div>
           </div>
         </div>
+
 
         {/* Credit Usage Progress Bar */}
         {stats && stats.candidatesLimit > 0 && (
           <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-guardian text-lg font-semibold">Credits Remaining</span>
+              <span className="text-guardian text-lg font-semibold">Candidates Remaining this Month</span>
               <span className="text-white-knight text-lg font-semibold">
-                {stats.candidatesUsed || 20} / {stats.candidatesLimit || 150}
+                {stats.candidatesUsed || 20}
               </span>
             </div>
             <div className="w-full bg-shadowforce rounded-full h-4">
@@ -283,6 +361,19 @@ export const AccountPage: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Manage Credits Button */}
+        <div className="flex justify-center mt-6">
+          <Button 
+            variant="secondary"
+            size="lg"
+            className="flex items-center justify-center gap-3 py-4 text-lg font-semibold"
+            onClick={() => window.open('https://billing.stripe.com/p/login/test_fZu7sLaoK9lN1oRfap9R600', '_blank')}
+          >
+            <CreditCard size={20} />
+            MANAGE CREDITS
+          </Button>
+        </div>
       </div>
 
       {/* Sign Out Button - Bottom of Page */}
@@ -297,6 +388,35 @@ export const AccountPage: React.FC = () => {
           SIGN OUT
         </Button>
       </div>
+
+      {/* General Feedback Modal */}
+      <GeneralFeedbackModal
+        isOpen={generalFeedbackModal.isOpen}
+        onClose={handleCloseGeneralFeedbackModal}
+        feedback={generalFeedbackModal.feedback}
+        isSubmitting={generalFeedbackModal.isSubmitting}
+        onFeedbackChange={handleGeneralFeedbackChange}
+        onSubmit={handleSubmitGeneralFeedback}
+      />
+
+      {/* Alert Modal */}
+      {alertModal.isOpen && (
+        <AlertModal
+          isOpen={alertModal.isOpen}
+          onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+          title={alertModal.title}
+          message={alertModal.message}
+          type={alertModal.type}
+        />
+      )}
+
+      {/* Avatar Selector Modal */}
+      <AvatarSelector
+        isOpen={isAvatarSelectorOpen}
+        currentAvatar={avatar}
+        onClose={handleCloseAvatarSelector}
+        onSelect={handleSelectAvatar}
+      />
     </div>
   );
 };

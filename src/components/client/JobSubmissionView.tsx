@@ -51,35 +51,32 @@ export const JobSubmissionView: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4">
           {/* Main Headline - Across the top */}
           {currentStep === 'job-title' && (
-            <div className="text-center mb-8">
+            <div className="text-center mb-8 mt-16">
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-anton text-white-knight mb-4 uppercase tracking-wide">
                 Get High-Quality Candidates – Fast
               </h2>
-              <p className="text-base md:text-lg text-guardian mx-auto max-w-3xl font-jakarta leading-relaxed">
-                Enter your job requirements and get top notch candidates without lifting a finger.
-              </p>
             </div>
           )}
 
           {/* Form Layout */}
           <div className={currentStep === 'job-title' ? 'max-w-2xl mx-auto' : 'max-w-2xl mx-auto'}>
             <ClientIntakeForm currentStep={currentStep} setCurrentStep={setCurrentStep} />
-            
-            {/* Get More Candidates Button - Only show on job-title step */}
-            {currentStep === 'job-title' && (
-              <div className="mt-4 flex justify-center">
-                <Button 
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGetMoreCandidates}
-                  className="text-supernova border-supernova hover:bg-supernova hover:text-shadowforce w-1/2"
-                >
-                  GET MORE CANDIDATES
-                </Button>
-              </div>
-            )}
           </div>
+
+          {/* Get More Candidates Button - Only show on job-title step - Moved much further down */}
+          {currentStep === 'job-title' && (
+            <div className="mt-12 mb-2 flex justify-center">
+              <Button 
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleGetMoreCandidates}
+                className="text-supernova border-supernova hover:bg-supernova hover:text-shadowforce w-1/4"
+              >
+                GET MORE CANDIDATES
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

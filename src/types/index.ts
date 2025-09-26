@@ -90,6 +90,11 @@ export interface UserUsageStats {
   candidatesRemaining: number;
   creditsResetDate: Date | null;
   tierName: string;
+  // New fields for account page display
+  totalCandidatesSourced: number;
+  candidatesSourcedThisMonth: number;
+  totalJobs: number;
+  jobsThisMonth: number;
 }
 
 export interface Shortlist {
