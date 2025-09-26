@@ -154,7 +154,7 @@ export const LoginPage: React.FC = () => {
               Welcome Back
             </h1>
             <p className="text-guardian font-jakarta">
-              Sign in to your Super Recruiter account
+              Sign in to your account
             </p>
           </div>
 

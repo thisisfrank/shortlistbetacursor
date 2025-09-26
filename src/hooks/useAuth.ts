@@ -367,49 +367,9 @@ export const useAuth = () => {
     }
   };
 
-  const checkEmailExists = async (email: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('email')
-        .eq('email', email.toLowerCase())
-        .single();
-      
-      if (error) {
-        // If error code is 'PGRST116', it means no row found (email doesn't exist)
-        if (error.code === 'PGRST116') {
-          return { exists: false, error: null };
-        }
-        // Other errors
-        return { exists: false, error };
-      }
-      
-      // If we get data back, the email exists
-      return { exists: true, error: null };
-    } catch (error) {
-      return { exists: false, error };
-    }
-  };
-
   const signUp = async (email: string, password: string, role: 'client' | 'sourcer' = 'client', name: string = '') => {
     setLoading(true);
     try {
-      // First check if email already exists
-      const { exists, error: checkError } = await checkEmailExists(email);
-      if (checkError) {
-        console.error('❌ Error checking email existence:', checkError);
-        // Continue with signup if check fails (don't block signup due to check error)
-      } else if (exists) {
-        setLoading(false);
-        return { 
-          data: null, 
-          error: { 
-            message: 'An account with this email already exists. Please sign in instead or use the forgot password option.',
-            code: 'email_exists'
-          } 
-        };
-      }
-
       const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) {
         setLoading(false);
@@ -586,6 +546,5 @@ export const useAuth = () => {
     resetPassword,
     updatePassword,
     clearAllAuth,
-    checkEmailExists,
   };
 };

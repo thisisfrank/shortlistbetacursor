@@ -4,8 +4,9 @@ import { useAuth } from '../../context/AuthContext';
 import { Card, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { FormInput } from '../forms/FormInput';
-import { Zap, AlertCircle, CheckCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 import BoltIcon from '../../assets/v2.png';
+import { supabase } from '../../lib/supabase';
 
 export const SignupPage: React.FC = () => {
   const { signUp } = useAuth();
@@ -31,6 +32,35 @@ export const SignupPage: React.FC = () => {
     return domain ? !personalEmailDomains.includes(domain) : false;
   };
 
+  const checkEmailExists = async (email: string) => {
+    try {
+      console.log('🔍 Checking if email exists:', email);
+      const { error } = await supabase
+        .from('user_profiles')
+        .select('email')
+        .eq('email', email.toLowerCase())
+        .single();
+      
+      if (error) {
+        // If error code is 'PGRST116', it means no row found (email doesn't exist)
+        if (error.code === 'PGRST116') {
+          console.log('✅ Email does not exist, can proceed with signup');
+          return { exists: false, error: null };
+        }
+        // Other errors
+        console.error('❌ Error checking email existence:', error);
+        return { exists: false, error };
+      }
+      
+      // If we get data back, the email exists
+      console.log('⚠️ Email already exists in database');
+      return { exists: true, error: null };
+    } catch (error) {
+      console.error('❌ Exception checking email existence:', error);
+      return { exists: false, error };
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('📝 Signup form submitted');
@@ -38,6 +68,7 @@ export const SignupPage: React.FC = () => {
     setError('');
     setEmailExists(false);
 
+    // Validation checks first
     if (!isBusinessEmail(email)) {
       setError('Please use a business email address. Personal email addresses (Gmail, Yahoo, Hotmail, etc.) are not allowed.');
       setLoading(false);
@@ -56,26 +87,41 @@ export const SignupPage: React.FC = () => {
       return;
     }
 
-    console.log('📝 Attempting signup with role: client');
+    // CRITICAL: Check if email exists BEFORE calling signUp
+    console.log('🔍 Checking email existence before signup...');
+    const { exists, error: checkError } = await checkEmailExists(email);
+    
+    if (checkError) {
+      console.error('❌ Error checking email existence, but continuing with signup:', checkError);
+      // Continue with signup if check fails (don't block signup due to check error)
+    } else if (exists) {
+      console.log('⚠️ Email already exists, showing email exists UI');
+      setEmailExists(true);
+      setError('');
+      setLoading(false);
+      return; // STOP HERE - do not proceed to signUp
+    }
+
+    // Only proceed with signup if email doesn't exist
+    console.log('📝 Email is available, proceeding with signup...');
     const { data, error: signUpError } = await signUp(email, password, 'client', name);
 
     if (signUpError) {
       console.error('❌ Signup error:', signUpError);
-      // Check if it's an email exists error
-      if (signUpError.code === 'email_exists' || signUpError.message.includes('already registered') || signUpError.message.includes('already exists')) {
+      // Provide helpful error messages for signup errors
+      let errorMessage = signUpError.message;
+      if (signUpError.message.includes('Invalid email')) {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (signUpError.message.includes('Password')) {
+        errorMessage = 'Password must be at least 6 characters long.';
+      } else if (signUpError.message.includes('already registered')) {
+        // This should not happen now since we check first, but handle it
         setEmailExists(true);
-        setError(''); // Clear generic error since we're showing special email exists state
-      } else {
-        // Provide more helpful error messages for other errors
-        let errorMessage = signUpError.message;
-        if (signUpError.message.includes('Invalid email')) {
-          errorMessage = 'Please enter a valid email address.';
-        } else if (signUpError.message.includes('Password')) {
-          errorMessage = 'Password must be at least 6 characters long.';
-        }
-        setError(errorMessage);
-        setEmailExists(false);
+        setError('');
+        setLoading(false);
+        return;
       }
+      setError(errorMessage);
     } else if (data.user) {
       console.log('✅ Signup successful, showing success state');
       setSuccess(true);
@@ -144,7 +190,7 @@ export const SignupPage: React.FC = () => {
               </Link>
             </div>
             <h1 className="text-2xl font-anton text-white-knight uppercase tracking-wide mb-2">
-              Create Client Account
+              Create Account
             </h1>
             <p className="text-guardian font-jakarta">
               Start posting jobs and finding top talent
