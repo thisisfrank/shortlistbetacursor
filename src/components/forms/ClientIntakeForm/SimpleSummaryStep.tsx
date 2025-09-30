@@ -47,7 +47,11 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
   
   // Get user's actual available credits
   const userAvailableCredits = userProfile?.availableCredits || 0;
-  const candidatesRequested = parseInt(formData.candidatesRequested) || 1;
+  
+  // Set default based on user tier - free tier gets 20, paid users get 50
+  const isFreeUser = userProfile?.tierId === '5841d1d6-20d7-4360-96f8-0444305fac5b';
+  const defaultCandidates = isFreeUser ? 20 : 50;
+  const candidatesRequested = parseInt(formData.candidatesRequested) || defaultCandidates;
   
   // Handle slider changes with continuous values
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,38 +125,44 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
             `}</style>
             <div className="relative">
               {/* Custom track background */}
-              <div 
-                className="absolute top-1/2 transform -translate-y-1/2 w-full h-3 bg-shadowforce rounded-full"
-                style={{
-                  background: `linear-gradient(to right, #FFCF00 0%, #FFCF00 ${((candidatesRequested - 1) / 99) * 100}%, #111111 ${((candidatesRequested - 1) / 99) * 100}%, #111111 100%)`
-                }}
-              />
-              <input
-                type="range"
-                name="candidatesRequested"
-                min="1"
-                max="100"
-                step="1"
-                value={candidatesRequested}
-                onChange={handleSliderChange}
-                className="diamond-slider relative w-full h-3 appearance-none cursor-pointer bg-transparent"
-              />
+               <div 
+                 className="absolute top-1/2 transform -translate-y-1/2 w-full h-3 bg-shadowforce rounded-full"
+                 style={{
+                   background: `linear-gradient(to right, #FFCF00 0%, #FFCF00 ${((candidatesRequested - 20) / (200 - 20)) * 100}%, #111111 ${((candidatesRequested - 20) / (200 - 20)) * 100}%, #111111 100%)`
+                 }}
+               />
+               <input
+                 type="range"
+                 name="candidatesRequested"
+                 min="20"
+                 max="200"
+                 step="1"
+                 value={candidatesRequested}
+                 onChange={handleSliderChange}
+                 className="diamond-slider relative w-full h-3 appearance-none cursor-pointer bg-transparent"
+               />
             </div>
             <div className="relative mt-2">
-              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: 'calc(0% + 14px)'}}>1</div>
-              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: 'calc(25% + 7px)'}}>20</div>
-              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: '50%'}}>40</div>
-              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: 'calc(75% - 7px)'}}>60</div>
-              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: 'calc(100% - 14px)'}}>100</div>
+              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: 'calc(0% + 14px)'}}>20</div>
+              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: `${((50 - 20) / (200 - 20)) * 100}%`}}>
+                <div className="flex flex-col items-center">
+                  <span>50</span>
+                  <span className="text-supernova text-[10px] mt-1 whitespace-nowrap">Most Requested</span>
+                </div>
+              </div>
+              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: `${((100 - 20) / (200 - 20)) * 100}%`}}>100</div>
+              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: `${((150 - 20) / (200 - 20)) * 100}%`}}>150</div>
+              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: `${((175 - 20) / (200 - 20)) * 100}%`}}>175</div>
+              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: 'calc(100% - 14px)'}}>200</div>
             </div>
           </div>
           
-          <div className="text-center mt-8">
+          <div className="text-center mt-12">
             <div className="flex items-center justify-center gap-3">
               <input
                 type="number"
                 name="candidatesRequested"
-                min="1"
+                min="20"
                 max="999"
                 value={candidatesRequested}
                 onChange={onChange}

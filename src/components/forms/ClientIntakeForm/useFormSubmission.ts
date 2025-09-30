@@ -29,7 +29,7 @@ export const useFormSubmission = ({ setCurrentStep }: UseFormSubmissionProps) =>
 
       // Check candidate credit limits before submission (job limits removed)
       const stats = getUserUsageStats(userProfile as any, jobs, candidates, tiers, creditTransactions);
-      const requestedCandidates = parseInt(formData.candidatesRequested) || 1;
+      const requestedCandidates = parseInt(formData.candidatesRequested) || 20;
       
       // Only check candidate limit, job submissions are now unlimited
       const candidateLimitReached = stats && stats.candidatesRemaining < requestedCandidates;

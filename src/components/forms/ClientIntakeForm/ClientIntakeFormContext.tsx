@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { FormStep } from '../../../types';
+import { useAuth } from '../../../context/AuthContext';
 
 export interface FormData {
   companyName: string;
@@ -64,7 +65,7 @@ const initialFormData: FormData = {
   salaryRangeMin: '',
   salaryRangeMax: '',
   mustHaveSkills: [],
-  candidatesRequested: '1'
+  candidatesRequested: '20'
 };
 
 const initialAlertModal: AlertModalState = {
@@ -78,10 +79,27 @@ interface ClientIntakeFormProviderProps {
 }
 
 export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> = ({ children }) => {
+  const { userProfile } = useAuth();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alertModal, setAlertModal] = useState<AlertModalState>(initialAlertModal);
+
+  // Auto-fill company name from user profile when available
+  useEffect(() => {
+    if (userProfile?.company && !formData.companyName) {
+      setFormData(prev => ({ ...prev, companyName: userProfile.company }));
+    }
+  }, [userProfile?.company, formData.companyName]);
+
+  // Set default candidates requested based on user tier
+  useEffect(() => {
+    if (userProfile && formData.candidatesRequested === '20') {
+      const isFreeUser = userProfile.tierId === '5841d1d6-20d7-4360-96f8-0444305fac5b';
+      const defaultCandidates = isFreeUser ? '20' : '50';
+      setFormData(prev => ({ ...prev, candidatesRequested: defaultCandidates }));
+    }
+  }, [userProfile?.tierId, formData.candidatesRequested]);
 
   const updateFormField = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));

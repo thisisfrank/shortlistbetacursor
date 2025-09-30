@@ -9,6 +9,8 @@ function mapDbProfileToUserProfile(profile: any): UserProfile {
     id: profile.id,
     email: profile.email,
     name: profile.name || '',
+    company: profile.company || undefined,
+    avatar: profile.avatar || '👤',
     role: profile.role,
     tierId: profile.tier_id || '5841d1d6-20d7-4360-96f8-0444305fac5b', // Free tier ID from production
     availableCredits: profile.available_credits,
@@ -230,6 +232,8 @@ export const useAuth = () => {
                     id: currentUser.id,
                     email: currentUser.email,
                     name: '', // Leave name empty for user to set
+                    company: null, // No company info available in fallback scenario
+                    avatar: '👤', // Default avatar
                     role: 'client',
                     tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                     available_credits: 20,
@@ -245,6 +249,7 @@ export const useAuth = () => {
                       id: currentUser.id,
                       email: currentUser.email || '',
                       name: '', // Leave name empty for user to set
+                      avatar: '👤', // Default avatar
                       role: 'client',
                       tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                       availableCredits: 20,
@@ -322,6 +327,8 @@ export const useAuth = () => {
                 id: currentUser.id,
                 email: currentUser.email,
                 name: '', // Leave name empty for user to set
+                company: null, // No company info available in fallback scenario
+                avatar: '👤', // Default avatar
                 role: 'client',
                 tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                 available_credits: 20,
@@ -337,6 +344,7 @@ export const useAuth = () => {
                   id: currentUser.id,
                   email: currentUser.email || '',
                   name: '', // Leave name empty for user to set
+                  avatar: '👤', // Default avatar
                   role: 'client',
                   tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                   availableCredits: 20,
@@ -367,7 +375,7 @@ export const useAuth = () => {
     }
   };
 
-  const signUp = async (email: string, password: string, role: 'client' | 'sourcer' = 'client', name: string = '') => {
+  const signUp = async (email: string, password: string, role: 'client' | 'sourcer' = 'client', name: string = '', company: string = '') => {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({ email, password });
@@ -382,6 +390,8 @@ export const useAuth = () => {
           id: data.user.id,
           email,
           name,
+          company: company || null,
+          avatar: '👤', // Default avatar for new users
           role,
           tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
           available_credits: 20,
@@ -396,6 +406,8 @@ export const useAuth = () => {
           id: data.user.id,
           email,
           name,
+          company: company || undefined,
+          avatar: '👤', // Default avatar for new users
           role,
           tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
           availableCredits: 20,

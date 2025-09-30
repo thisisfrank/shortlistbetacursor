@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FormStep } from '../../../types';
 import { JobTitleStep } from './JobTitleStep';
 import { JobDetailsStep } from './JobDetailsStep';
@@ -22,6 +22,11 @@ export const FormStepRenderer: React.FC<FormStepRendererProps> = ({
   onReset
 }) => {
   const { formData, handleInputChange, handleSkillsChange, errors, isSubmitting } = useClientIntakeForm();
+
+  // Scroll to top whenever the current step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
 
   switch (currentStep) {
     case 'job-title':

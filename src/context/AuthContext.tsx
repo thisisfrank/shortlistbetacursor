@@ -8,7 +8,7 @@ interface AuthContextType {
   loading: boolean;
   signOutLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
-  signUp: (email: string, password: string, role?: 'client' | 'sourcer', name?: string) => Promise<{ data: any; error: any }>;
+  signUp: (email: string, password: string, role?: 'client' | 'sourcer', name?: string, company?: string) => Promise<{ data: any; error: any }>;
   signOut: () => Promise<{ error: any }>;
   refreshProfile: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;

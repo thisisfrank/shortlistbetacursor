@@ -594,7 +594,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           );
 
           // Record candidate credit deduction for requested candidates (non-blocking)
-          const requestedCandidates = jobData.candidatesRequested || 1;
+          const requestedCandidates = jobData.candidatesRequested || 20;
           recordCreditTransaction(user?.id, 'candidate', requestedCandidates, newJob.id).catch(error => 
             console.warn('⚠️ Candidate credit transaction failed but job was created:', error)
           );

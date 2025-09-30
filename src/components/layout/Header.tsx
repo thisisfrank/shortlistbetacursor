@@ -175,17 +175,34 @@ export const Header: React.FC = () => {
             </nav>
           )}
 
-          {/* User info and Sign up/Sign in buttons - positioned absolutely to the right */}
-          <div className="absolute right-0 flex items-center gap-3">
-          {/* Show user name and credits when authenticated */}
+          {/* Credits box - positioned between center nav and right side */}
           {userProfile && (
-            <div className="flex items-center gap-3 text-guardian">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-jakarta">Welcome,</span>
-                <Link 
-                  to="/account"
-                  className="text-white-knight font-semibold hover:text-supernova transition-colors cursor-pointer"
-                >
+            <div className="absolute right-64 flex items-center">
+              <Link 
+                to="/subscription"
+                className="flex items-center gap-1 bg-shadowforce-light/50 px-3 py-1 rounded-lg border border-guardian/20 hover:bg-shadowforce-light/70 hover:border-supernova/30 transition-all cursor-pointer"
+              >
+                <span className="text-xs font-jakarta text-guardian">Credits:</span>
+                <span className="text-sm font-semibold text-supernova">
+                  {availableCredits}
+                </span>
+              </Link>
+            </div>
+          )}
+
+          {/* User info and Sign up/Sign in buttons - positioned absolutely to the right */}
+          <div className="absolute right-6 flex items-center gap-3">
+          {/* Show user info when authenticated */}
+          {userProfile && (
+            <Link 
+              to="/account"
+              className="text-white-knight hover:text-supernova transition-colors cursor-pointer flex items-center gap-3"
+            >
+              <div className="w-8 h-8 bg-shadowforce-light rounded-full flex items-center justify-center border border-guardian/20">
+                <span className="text-lg">{userProfile.avatar || '👤'}</span>
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="text-sm font-semibold">
                   {(() => {
                     console.log('🔍 Debug - userProfile.name:', userProfile.name);
                     console.log('🔍 Debug - userProfile.email:', userProfile.email);
@@ -204,17 +221,13 @@ export const Header: React.FC = () => {
                       return capitalizedName;
                     }
                   })()}
-                </Link>
+                </span>
+                <span className="text-xs text-guardian font-jakarta">
+                  {userProfile.email}
+                </span>
               </div>
-                {/* Credits display */}
-                <div className="flex items-center gap-1 bg-shadowforce-light/50 px-3 py-1 rounded-lg border border-guardian/20">
-                  <span className="text-xs font-jakarta text-guardian">Credits:</span>
-                  <span className="text-sm font-semibold text-supernova">
-                    {availableCredits}
-                  </span>
-                </div>
-              </div>
-            )}
+            </Link>
+          )}
             
             {/* Show auth buttons only for unauthenticated users on landing page */}
             {!userProfile && location.pathname === '/' && (

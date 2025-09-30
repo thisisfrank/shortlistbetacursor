@@ -13,6 +13,7 @@ export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [company, setCompany] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -104,7 +105,7 @@ export const SignupPage: React.FC = () => {
 
     // Only proceed with signup if email doesn't exist
     console.log('📝 Email is available, proceeding with signup...');
-    const { data, error: signUpError } = await signUp(email, password, 'client', name);
+    const { data, error: signUpError } = await signUp(email, password, 'client', name, company);
 
     if (signUpError) {
       console.error('❌ Signup error:', signUpError);
@@ -240,6 +241,14 @@ export const SignupPage: React.FC = () => {
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your full name"
               required
+            />
+
+            <FormInput
+              label="Company"
+              type="text"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              placeholder="Enter your company name"
             />
 
             <FormInput

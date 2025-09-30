@@ -2,6 +2,8 @@ export interface UserProfile {
   id: string;
   email: string;
   name: string;
+  company?: string;
+  avatar?: string;
   role: 'client' | 'sourcer' | 'admin';
   tierId: string;
   availableCredits?: number;

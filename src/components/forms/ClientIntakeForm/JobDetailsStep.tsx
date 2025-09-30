@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FormTextarea, FormInput, FormSelect } from '../FormInput';
+import { SearchableSelect } from '../../ui/SearchableSelect';
 import { Button } from '../../ui/Button';
 import { useData } from '../../../context/DataContext';
 import { X, Plus } from 'lucide-react';
@@ -258,7 +259,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
             placeholder={formData.isRemote ? "Not required for remote positions" : "Enter city name"}
           />
           
-          <FormSelect
+          <SearchableSelect
             label="State"
             name="state"
             value={formData.state}
@@ -267,6 +268,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
             error={errors.state}
             required={!formData.isRemote}
             disabled={formData.isRemote}
+            placeholder="Type to search states..."
           />
         </div>
         

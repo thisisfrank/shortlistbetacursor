@@ -17,10 +17,17 @@ export const SourcerAccountPage: React.FC = () => {
   const [nameLoading, setNameLoading] = useState(false);
   const [nameError, setNameError] = useState('');
 
-  // Update local name state when userProfile changes
+  // Company editing state
+  const [isEditingCompany, setIsEditingCompany] = useState(false);
+  const [company, setCompany] = useState(userProfile?.company || '');
+  const [companyLoading, setCompanyLoading] = useState(false);
+  const [companyError, setCompanyError] = useState('');
+
+  // Update local state when userProfile changes
   React.useEffect(() => {
     setName(userProfile?.name || '');
-  }, [userProfile?.name]);
+    setCompany(userProfile?.company || '');
+  }, [userProfile?.name, userProfile?.company]);
 
   // Calculate sourcer-specific stats
   const sourcerStats = React.useMemo(() => {
@@ -88,6 +95,47 @@ export const SourcerAccountPage: React.FC = () => {
     setNameError('');
   };
 
+  const handleSaveCompany = async () => {
+    if (!userProfile) return;
+    
+    setCompanyLoading(true);
+    setCompanyError('');
+    
+    try {
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({ company: company.trim() || null })
+        .eq('id', userProfile.id);
+      
+      if (updateError) {
+        throw updateError;
+      }
+      
+      setIsEditingCompany(false);
+      
+      // Refresh the profile to get updated data
+      if (refreshProfile) {
+        await refreshProfile();
+      }
+      
+    } catch (err: any) {
+      setCompanyError(err.message || 'Failed to update company');
+    } finally {
+      setCompanyLoading(false);
+    }
+  };
+
+  const handleCancelCompany = () => {
+    setCompany(userProfile?.company || '');
+    setIsEditingCompany(false);
+    setCompanyError('');
+  };
+
+  const handleEditCompany = () => {
+    setIsEditingCompany(true);
+    setCompanyError('');
+  };
+
   if (!userProfile) {
     return (
       <div className="p-8 text-center text-guardian">
@@ -109,57 +157,129 @@ export const SourcerAccountPage: React.FC = () => {
             <Zap size={32} className="text-shadowforce" />
           </div>
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              {!isEditingName ? (
-                <>
-                  <h3 className="font-jakarta font-bold text-white-knight text-2xl">
-                    {userProfile.name && userProfile.name.trim() !== '' 
-                      ? userProfile.name 
-                      : 'Complete Your Profile'}
-                  </h3>
-                  <button
-                    onClick={handleEditName}
-                    className="p-1 text-guardian hover:text-supernova transition-colors flex items-end"
-                    title="Edit name"
-                  >
-                    <Edit3 size={16} />
-                  </button>
-                </>
-              ) : (
+            <div className="space-y-4">
+              {/* Name Field */}
+              <div>
+                <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                  Name
+                </label>
                 <div className="flex items-center gap-3">
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="font-jakarta font-bold text-white-knight text-2xl bg-transparent border-b-2 border-supernova focus:outline-none focus:border-supernova-light"
-                    placeholder="Enter your name"
-                    autoFocus
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleSaveName}
-                      disabled={!name.trim() || nameLoading}
-                      className="p-1 bg-supernova text-shadowforce rounded text-sm font-semibold hover:bg-supernova-light disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Save name"
-                    >
-                      {nameLoading ? '...' : <CheckIcon size={16} />}
-                    </button>
-                    <button
-                      onClick={handleCancelName}
-                      className="p-1 bg-guardian/20 text-guardian rounded text-sm font-semibold hover:bg-guardian/30"
-                      title="Cancel"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
+                  {!isEditingName ? (
+                    <>
+                      <h3 className="font-jakarta font-bold text-white-knight text-2xl">
+                        {userProfile.name && userProfile.name.trim() !== '' 
+                          ? userProfile.name 
+                          : 'Complete Your Profile'}
+                      </h3>
+                      <button
+                        onClick={handleEditName}
+                        className="p-1 text-guardian hover:text-supernova transition-colors flex items-end"
+                        title="Edit name"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="font-jakarta font-bold text-white-knight text-2xl bg-transparent border-b-2 border-supernova focus:outline-none focus:border-supernova-light"
+                        placeholder="Enter your name"
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleSaveName}
+                          disabled={!name.trim() || nameLoading}
+                          className="p-1 bg-supernova text-shadowforce rounded text-sm font-semibold hover:bg-supernova-light disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Save name"
+                        >
+                          {nameLoading ? '...' : <CheckIcon size={16} />}
+                        </button>
+                        <button
+                          onClick={handleCancelName}
+                          className="p-1 bg-guardian/20 text-guardian rounded text-sm font-semibold hover:bg-guardian/30"
+                          title="Cancel"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+                {nameError && (
+                  <p className="text-red-400 text-sm mt-2">{nameError}</p>
+                )}
+              </div>
+
+              {/* Email Field */}
+              <div>
+                <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                  Email
+                </label>
+                <p className="text-guardian text-lg">{userProfile.email}</p>
+              </div>
+              
+              {/* Company Field */}
+              <div>
+                <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                  Company
+                </label>
+                <div className="flex items-center gap-3">
+                  {!isEditingCompany ? (
+                    <>
+                      <p className="text-guardian text-lg">
+                        {userProfile.company && userProfile.company.trim() !== '' 
+                          ? userProfile.company 
+                          : 'No company specified'}
+                      </p>
+                      <button
+                        onClick={handleEditCompany}
+                        className="p-1 text-guardian hover:text-supernova transition-colors"
+                        title="Edit company"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="text"
+                        value={company}
+                        onChange={(e) => setCompany(e.target.value)}
+                        className="text-guardian text-lg bg-transparent border-b-2 border-supernova focus:outline-none focus:border-supernova-light"
+                        placeholder="Enter your company name"
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleSaveCompany}
+                          disabled={companyLoading}
+                          className="p-1 bg-supernova text-shadowforce rounded text-sm font-semibold hover:bg-supernova-light disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Save company"
+                        >
+                          {companyLoading ? '...' : <CheckIcon size={14} />}
+                        </button>
+                        <button
+                          onClick={handleCancelCompany}
+                          className="p-1 bg-guardian/20 text-guardian rounded text-sm font-semibold hover:bg-guardian/30"
+                          title="Cancel"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {companyError && (
+                  <p className="text-red-400 text-sm mt-2">{companyError}</p>
+                )}
+              </div>
             </div>
-            {nameError && (
-              <p className="text-red-400 text-sm mb-2">{nameError}</p>
-            )}
-            <p className="text-guardian text-lg">{userProfile.email}</p>
-            <p className="text-supernova text-sm font-semibold uppercase tracking-wide mt-2">
+            
+            <p className="text-supernova text-sm font-semibold uppercase tracking-wide mt-4">
             </p>
           </div>
         </div>

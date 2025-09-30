@@ -222,8 +222,9 @@ export const SubscriptionPlans: React.FC = () => {
 
 
         {/* Premium Service Offering */}
-        <div className="mb-12">
-          <Card className="bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 border-yellow-500/30">
+        <div className="mb-12 flex justify-center">
+          <div className="w-1/2">
+            <Card className="bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 border-yellow-500/30">
             <CardContent className="p-8">
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center mb-4">
@@ -244,9 +245,6 @@ export const SubscriptionPlans: React.FC = () => {
               </div>
 
               <div className="text-center mb-8">
-                <div className="text-4xl font-jakarta text-white-knight mb-6">
-                  STARTING AT $999<span className="text-lg">/month</span>
-                </div>
                 
                 <Button 
                   onClick={() => window.open('https://calendly.com/superrecruiter/outboundcandidatepipelines', '_blank')}
@@ -312,6 +310,7 @@ export const SubscriptionPlans: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+          </div>
         </div>
       </div>
     </div>
