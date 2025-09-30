@@ -9,27 +9,11 @@ import BoltIcon from '../../assets/v2.png';
 // Updated subscription plans with payment links
 const subscriptionPlans = [
   {
-    id: 'free',
-    name: 'Free',
-    price: 0,
-    priceId: null,
-    paymentLink: null,
-    description: 'One-time credits to try our platform',
-    features: {
-      jobs: 1,
-      credits: 20,
-      companyEmails: false,
-      unlimited: false
-    },
-    popular: false,
-    color: 'from-guardian/20 to-guardian/10 border-guardian/30'
-  },
-  {
     id: 'basic',
-    name: 'Starter',
+    name: 'Average Recruiter',
     price: 29,
     priceId: 'price_1S7TO3Hb6LdHADWYvWMTutrj', // Updated Stripe price ID
-    paymentLink: 'https://buy.stripe.com/test_00w14neF09lNgjLd2h9R603', // Starter
+    paymentLink: 'https://buy.stripe.com/test_00w14neF09lNgjLd2h9R603', // Average Recruiter
     description: 'Perfect for getting started',
     features: {
       jobs: 3,
@@ -42,10 +26,10 @@ const subscriptionPlans = [
   },
   {
     id: 'premium',
-    name: 'Pro',
+    name: 'Beast Mode',
     price: 99,
     priceId: 'price_1S7TOGHb6LdHADWYAu8g3h3f', // Updated Stripe price ID
-    paymentLink: 'https://buy.stripe.com/test_6oU7sLgN89lNaZr8M19R604', // Pro
+    paymentLink: 'https://buy.stripe.com/test_6oU7sLgN89lNaZr8M19R604', // Beast Mode
     description: 'Advanced features for scaling businesses',
     features: {
       jobs: 3,
@@ -58,10 +42,10 @@ const subscriptionPlans = [
   },
   {
     id: 'topshelf',
-    name: 'Beast Mode',
+    name: 'Super Recruiter',
     price: 699,
     priceId: 'price_1S7TPaHb6LdHADWYhMgRw3YY', // Updated Stripe price ID
-    paymentLink: 'https://buy.stripe.com/test_14AaEX40m0PhgjL1jz9R605', // Beast Mode
+    paymentLink: 'https://buy.stripe.com/test_14AaEX40m0PhgjL1jz9R605', // Super Recruiter
     description: 'Unlimited access for enterprise teams',
     features: {
       jobs: 10,
@@ -79,10 +63,9 @@ export const SubscriptionPlans: React.FC = () => {
 
   // Map tier IDs to plan IDs for accurate current plan detection
   const tierIdToPlanId: Record<string, string> = {
-    '5841d1d6-20d7-4360-96f8-0444305fac5b': 'free',     // Free tier
-    '88c433cf-0a8d-44de-82fa-71c7dcbe31ff': 'basic',    // Basic tier  
-    'f871eb1b-6756-447d-a1c0-20a373d1d5a2': 'premium',  // Premium tier
-    'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd': 'topshelf'  // Top Shelf tier
+    '88c433cf-0a8d-44de-82fa-71c7dcbe31ff': 'basic',    // Average Recruiter tier  
+    'f871eb1b-6756-447d-a1c0-20a373d1d5a2': 'premium',  // Beast Mode tier
+    'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd': 'topshelf'  // Super Recruiter tier
   };
 
   // Get current plan based on user's actual tier_id
@@ -96,8 +79,6 @@ export const SubscriptionPlans: React.FC = () => {
 
   const handleSubscribe = (paymentLink: string | null) => {
     if (!paymentLink) {
-      // Handle free tier - no payment needed
-      alert('You are already on the Free Tier. Choose a paid plan to upgrade.');
       return;
     }
 
@@ -108,11 +89,11 @@ export const SubscriptionPlans: React.FC = () => {
 
   const getPlanIcon = (planName: string) => {
     switch (planName) {
-      case 'Beast Mode':
+      case 'Super Recruiter':
         return <Crown className="text-supernova" size={32} />;
-      case 'Pro':
+      case 'Beast Mode':
         return <Star className="text-blue-400" size={32} />;
-      case 'Starter':
+      case 'Average Recruiter':
         return <Zap className="text-green-400" size={32} />;
       default:
         return <Users className="text-guardian" size={32} />;
@@ -150,7 +131,7 @@ export const SubscriptionPlans: React.FC = () => {
 
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {subscriptionPlans.map((plan) => (
             <Card 
               key={plan.id} 
@@ -172,17 +153,10 @@ export const SubscriptionPlans: React.FC = () => {
                   {plan.name}
                 </h3>
                 <div className="mb-4">
-                  {plan.price === 0 ? (
-                    <span className="text-2xl font-anton text-supernova">FREE</span>
-                  ) : (
-                    <>
-                      <span className="text-2xl font-anton text-supernova">${plan.price}</span>
-                      <span className="text-guardian font-jakarta">/month</span>
-                    </>
-                  )}
+                  <span className="text-2xl font-anton text-supernova">${plan.price}</span>
+                  <span className="text-guardian font-jakarta">/month</span>
                 </div>
                 <p className="text-guardian font-jakarta text-sm">
-                  {plan.id === 'free' && 'One-time credits - no renewal'}
                   {plan.id === 'basic' && 'For growing teams'}
                   {plan.id === 'premium' && 'For scaling businesses'}
                   {plan.id === 'topshelf' && 'Unlimited access for enterprise'}
@@ -196,7 +170,10 @@ export const SubscriptionPlans: React.FC = () => {
                       {plan.features.credits} CREDITS
                     </div>
                     <div className="text-sm text-guardian font-jakarta">
-                      {plan.id === 'free' ? 'one-time only' : 'per month'}
+                      per month
+                    </div>
+                    <div className="text-sm text-guardian font-jakarta">
+                      [${(plan.price / plan.features.credits).toFixed(2)}/per candidate]
                     </div>
                   </div>
                 </div>
@@ -212,7 +189,7 @@ export const SubscriptionPlans: React.FC = () => {
                 >
                   {isCurrentPlan(plan.id) 
                     ? 'CURRENT PLAN' 
-                    : (plan.id === 'free' ? 'CURRENT PLAN' : 'SUBSCRIBE NOW')}
+                    : 'SUBSCRIBE NOW'}
                   </Button>
                 </div>
               </CardContent>

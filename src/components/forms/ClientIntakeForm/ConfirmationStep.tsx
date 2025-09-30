@@ -8,22 +8,20 @@ interface ConfirmationStepProps {
 
 export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ onReset }) => {
   return (
-    <div className="text-center py-12 animate-fadeIn">
-      <div className="flex justify-center mb-8">
+    <div className="text-center py-8 animate-fadeIn">
+      <div className="flex justify-center mb-6">
         <div className="relative">
-          <CheckCircle size={80} className="text-supernova animate-pulse" />
-          <div className="absolute inset-0 bg-supernova/30 blur-2xl rounded-full"></div>
+          <CheckCircle size={48} className="text-supernova animate-pulse" />
+          <div className="absolute inset-0 bg-supernova/30 blur-xl rounded-full"></div>
         </div>
       </div>
       
-      <h2 className="text-4xl font-anton text-white-knight mb-12 uppercase tracking-wide">
+      <h2 className="text-4xl font-anton text-white-knight mb-6 uppercase tracking-wide">
         REQUEST SUBMITTED SUCCESSFULLY!
       </h2>
       
-
-      
-      <div className="bg-supernova/10 border border-supernova/30 p-8 rounded-xl mb-12 max-w-3xl mx-auto">
-        <div className="flex items-center justify-center mb-6">
+      <div className="bg-supernova/10 border border-supernova/30 p-6 rounded-xl mb-6 max-w-3xl mx-auto">
+        <div className="flex items-center justify-center mb-4">
           <h3 className="font-anton text-2xl text-supernova uppercase">What Happens Next</h3>
         </div>
         
@@ -32,40 +30,46 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ onReset }) =
           <div className="absolute top-4 left-0 right-0 h-1 bg-supernova/30 rounded-full"></div>
           <div className="absolute top-4 left-0 w-full h-1 bg-gradient-to-r from-supernova via-supernova to-supernova/30 rounded-full"></div>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative">
-            {/* Hour 1 */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
+            {/* Right Now */}
             <div className="text-center relative">
-              <div className="bg-supernova rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-4 relative z-10 border-2 border-shadowforce">
+              <div className="bg-supernova rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-3 relative z-10 border-2 border-shadowforce">
               </div>
-              <h4 className="font-anton text-white-knight mb-2 text-lg">ANALYZE</h4>
-              <p className="text-guardian font-jakarta text-xs">Process your requirements and define ideal profiles</p>
+              <h4 className="font-anton text-white-knight mb-1 text-lg">RIGHT NOW</h4>
+              <p className="text-guardian font-jakarta text-xs">Analyzing your job requirements.</p>
             </div>
             
-            {/* Hour 6 */}
+            {/* Next */}
             <div className="text-center relative">
-              <div className="bg-supernova rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-4 relative z-10 border-2 border-shadowforce">
+              <div className="bg-supernova rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-3 relative z-10 border-2 border-shadowforce">
               </div>
-              <h4 className="font-anton text-white-knight mb-2 text-lg">SOURCING</h4>
-              <p className="text-guardian font-jakarta text-xs">Search 8+ channels to identify top candidates</p>
+              <h4 className="font-anton text-white-knight mb-1 text-lg">NEXT</h4>
+              <p className="text-guardian font-jakarta text-xs">We source new candidates for your exact role.</p>
             </div>
             
-            {/* Hour 18 */}
+            {/* Qualify */}
             <div className="text-center relative">
-              <div className="bg-supernova rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-4 relative z-10 border-2 border-shadowforce">
+              <div className="bg-supernova rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-3 relative z-10 border-2 border-shadowforce">
               </div>
-              <h4 className="font-anton text-white-knight mb-2 text-lg">CURATION</h4>
-              <p className="text-guardian font-jakarta text-xs">Grade, qualify, and remove mismatches</p>
+              <h4 className="font-anton text-white-knight mb-1 text-lg">QUALIFY</h4>
+              <p className="text-guardian font-jakarta text-xs">Match and score candidates (remove bad fits).</p>
             </div>
             
-            {/* Hour 24 */}
+            {/* Delivery */}
             <div className="text-center relative">
-              <div className="bg-supernova rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-4 relative z-10 border-2 border-shadowforce">
+              <div className="bg-supernova rounded-full w-8 h-8 flex items-center justify-center mx-auto mb-3 relative z-10 border-2 border-shadowforce">
               </div>
-              <h4 className="font-anton text-white-knight mb-2 text-lg">DELIVERY</h4>
-              <p className="text-guardian font-jakarta text-xs">Shortlist of high-quality candidates sent to your inbox</p>
+              <h4 className="font-anton text-white-knight mb-1 text-lg">DELIVERY</h4>
+              <p className="text-guardian font-jakarta text-xs">Get high-quality candidates sent straight to your email.</p>
             </div>
           </div>
         </div>
+      </div>
+      
+      <div className="mb-4">
+        <p className="text-lg font-jakarta font-semibold text-supernova">
+          Guaranteed delivery in less than 24 hours (normally, much faster)
+        </p>
       </div>
       
       <Button onClick={onReset} size="lg" className="glow-supernova">

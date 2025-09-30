@@ -175,6 +175,58 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
     <form onSubmit={handleSubmit} className="space-y-6 animate-fadeIn">
       <h2 className="text-3xl font-anton text-supernova mb-12 uppercase tracking-wide">Job Details & Requirements</h2>
       
+      {/* Must Have Skills */}
+      <div className="mb-8">
+        <label className="block text-sm font-jakarta font-semibold text-supernova mb-3 uppercase tracking-wide">
+          Must Have Skills (3+ required)
+        </label>
+        <div className="flex gap-3">
+          <input
+            type="text"
+            value={newSkill}
+            onChange={(e) => setNewSkill(e.target.value)}
+            onKeyDown={handleSkillKeyDown}
+            placeholder="Enter skills here"
+            className="flex-1 border-0 border-b-2 px-0 py-4 text-lg bg-transparent text-white-knight placeholder-guardian/60 font-jakarta focus:ring-0 focus:border-supernova transition-colors duration-200 border-guardian/40 hover:border-guardian/60"
+          />
+          <Button
+            type="button"
+            onClick={addSkill}
+            variant="outline"
+            size="md"
+            disabled={!newSkill.trim() || formData.mustHaveSkills.length >= 3}
+            className="flex items-center gap-2"
+          >
+            <Plus size={16} />
+            ADD
+          </Button>
+        </div>
+        {(errors.mustHaveSkills || formData.mustHaveSkills.length < 3) && (
+          <p className="mt-2 text-sm text-red-400 font-jakarta font-medium">
+            {errors.mustHaveSkills || `${3 - formData.mustHaveSkills.length} more skill${3 - formData.mustHaveSkills.length > 1 ? 's' : ''} required`}
+          </p>
+        )}
+        {formData.mustHaveSkills.length > 0 && (
+          <div className="mt-6 space-y-3">
+            {formData.mustHaveSkills.map((skill, index) => (
+              <div 
+                key={index}
+                className="flex items-center bg-supernova/10 border border-supernova/30 p-4 rounded-lg hover:bg-supernova/20 transition-colors"
+              >
+                <span className="flex-1 text-white-knight font-jakarta font-medium">{skill}</span>
+                <button
+                  type="button"
+                  onClick={() => removeSkill(index)}
+                  className="text-guardian hover:text-red-400 transition-colors ml-3"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      
       <FormInput
         label="Company Name"
         name="companyName"
@@ -310,58 +362,6 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
           required
           placeholder="$80,000"
         />
-      </div>
-      
-      {/* Must Have Skills */}
-      <div className="mb-8">
-        <label className="block text-sm font-jakarta font-semibold text-supernova mb-3 uppercase tracking-wide">
-          Must Have Skills (3+ required)
-        </label>
-        <div className="flex gap-3">
-          <input
-            type="text"
-            value={newSkill}
-            onChange={(e) => setNewSkill(e.target.value)}
-            onKeyDown={handleSkillKeyDown}
-            placeholder="Enter skills here"
-            className="flex-1 border-0 border-b-2 px-0 py-4 text-lg bg-transparent text-white-knight placeholder-guardian/60 font-jakarta focus:ring-0 focus:border-supernova transition-colors duration-200 border-guardian/40 hover:border-guardian/60"
-          />
-          <Button
-            type="button"
-            onClick={addSkill}
-            variant="outline"
-            size="md"
-            disabled={!newSkill.trim() || formData.mustHaveSkills.length >= 3}
-            className="flex items-center gap-2"
-          >
-            <Plus size={16} />
-            ADD
-          </Button>
-        </div>
-        {(errors.mustHaveSkills || formData.mustHaveSkills.length < 3) && (
-          <p className="mt-2 text-sm text-red-400 font-jakarta font-medium">
-            {errors.mustHaveSkills || `${3 - formData.mustHaveSkills.length} more skill${3 - formData.mustHaveSkills.length > 1 ? 's' : ''} required`}
-          </p>
-        )}
-        {formData.mustHaveSkills.length > 0 && (
-          <div className="mt-6 space-y-3">
-            {formData.mustHaveSkills.map((skill, index) => (
-              <div 
-                key={index}
-                className="flex items-center bg-supernova/10 border border-supernova/30 p-4 rounded-lg hover:bg-supernova/20 transition-colors"
-              >
-                <span className="flex-1 text-white-knight font-jakarta font-medium">{skill}</span>
-                <button
-                  type="button"
-                  onClick={() => removeSkill(index)}
-                  className="text-guardian hover:text-red-400 transition-colors ml-3"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       <div className="flex pt-8 gap-6">

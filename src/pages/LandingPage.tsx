@@ -60,9 +60,9 @@ export const LandingPage: React.FC = () => {
                 <span className="block text-supernova">CANDIDATES, FAST!</span>
               </h1>
               <div className="flex flex-col gap-2 mb-8 max-w-2xl">
-                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Submit job requirements</span></div>
-                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Get high-quality candidates sent to you</span></div>
-                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Interview quality people not active on job boards</span></div>
+                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Get high-quality candidates delivered straight to your inbox - for any role.</span></div>
+                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Skip the hours of research, list building, and endless LinkedIn scrolling.</span></div>
+                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Save thousands on tools, job boards, and LinkedIn Recruiter.</span></div>
               </div>
               <div className="flex flex-col sm:flex-row gap-6 mb-4">
                 <div className="flex flex-col items-center gap-4">
@@ -157,34 +157,28 @@ export const LandingPage: React.FC = () => {
                 <img src={Image5} alt="Testimonial 3" className="max-w-xs object-contain shadow-lg rounded-lg" />
               </div>
               
-              {/* Why You'll Love It Section */}
+              {/* How it Works Section */}
               <div className="max-w-4xl mx-auto">
                 <h3 className="text-2xl md:text-3xl font-anton text-white-knight mb-8 uppercase tracking-wide">
-                Why You’ll Love The Shortlist
+                How it Works
                 </h3>
                 <div className="space-y-6 text-center">
                   <div className="flex items-center justify-center">
-                    <Check className="text-supernova mr-3 flex-shrink-0" size={20} />
+                    <div className="bg-supernova text-shadowforce rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0 font-anton font-bold">1</div>
                     <p className="text-lg text-white font-jakarta leading-relaxed">
-                    Get high-quality candidates delivered straight to your inbox - for any role.
+                    Submit job requirements
                     </p>
                   </div>
                   <div className="flex items-center justify-center">
-                    <Check className="text-supernova mr-3 flex-shrink-0" size={20} />
+                    <div className="bg-supernova text-shadowforce rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0 font-anton font-bold">2</div>
                     <p className="text-lg text-white font-jakarta leading-relaxed">
-                    Skip the hours of research, list building, and endless LinkedIn scrolling.
+                    Get high-quality candidates sent to you
                     </p>
                   </div>
                   <div className="flex items-center justify-center">
-                    <Check className="text-supernova mr-3 flex-shrink-0" size={20} />
+                    <div className="bg-supernova text-shadowforce rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0 font-anton font-bold">3</div>
                     <p className="text-lg text-white font-jakarta leading-relaxed">
-                    Save thousands on tools, job boards, and LinkedIn Recruiter.
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <Check className="text-supernova mr-3 flex-shrink-0" size={20} />
-                    <p className="text-lg text-white font-jakarta leading-relaxed">
-                    Focus your time on choosing the right candidate, not finding them.
+                    Interview quality people not active on job boards
                     </p>
                   </div>
                 </div>

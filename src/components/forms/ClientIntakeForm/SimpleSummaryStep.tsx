@@ -275,7 +275,7 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
         >
           {isSubmitting ? 'PROCESSING...' : 
            exceedsCredits ? 'INSUFFICIENT CREDITS' : 
-           'SUBMIT FOR CANDIDATE SOURCING'}
+           'SUBMIT'}
         </Button>
       </div>
     </div>
