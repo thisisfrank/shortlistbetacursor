@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FormTextarea, FormInput, FormSelect } from '../FormInput';
 import { SearchableSelect } from '../../ui/SearchableSelect';
 import { Button } from '../../ui/Button';
 import { useData } from '../../../context/DataContext';
-import { X, Plus } from 'lucide-react';
+import { useClientIntakeForm } from './ClientIntakeFormContext';
+import { X, Plus, Wand2, RefreshCw } from 'lucide-react';
 
 interface JobDetailsStepProps {
   formData: {
@@ -38,11 +39,32 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
   errors
 }) => {
   const { tiers } = useData();
+  const { 
+    isGeneratingDescription, 
+    descriptionGenerationError, 
+    generateJobDescription,
+    setDescriptionGenerationError,
+    hasUserEditedDescription,
+    handleDescriptionChange
+  } = useClientIntakeForm();
   const [newSkill, setNewSkill] = useState('');
   
   // Get free tier for displaying limits
   const freeTier = tiers.find(tier => tier.name === 'Free');
   const maxCandidates = freeTier?.monthlyCandidateAllotment || 20;
+
+  // Auto-trigger job description generation when 3 skills are added
+  useEffect(() => {
+    if (
+      formData.mustHaveSkills.length === 3 && 
+      formData.title && 
+      !formData.description && 
+      !isGeneratingDescription &&
+      !hasUserEditedDescription // Don't auto-generate if user has manually edited
+    ) {
+      generateJobDescription();
+    }
+  }, [formData.mustHaveSkills.length, formData.title, formData.description, isGeneratingDescription, hasUserEditedDescription, generateJobDescription]);
 
   // US States options - dynamically set first option based on remote status
   const stateOptions = [
@@ -237,16 +259,104 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
         placeholder="Enter your company name"
       />
       
-      <FormTextarea
-        label="Job Description"
-        name="description"
-        value={formData.description}
-        onChange={onChange}
-        error={errors.description}
-        required
-        placeholder="Enter a detailed job description. The more information you can provide, the better our candidate matching system will be able to return you precise, highly qualified candidates."
-        rows={6}
-      />
+      {/* Job Description with AI Generation */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="block text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">
+            Job Description <span className="text-red-400">*</span>
+          </label>
+          
+          {/* AI Generation Controls */}
+          <div className="flex items-center gap-2">
+            {formData.mustHaveSkills.length >= 3 && formData.title && (
+              <>
+                {!formData.description && !isGeneratingDescription && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={generateJobDescription}
+                    className="flex items-center gap-2 text-xs"
+                  >
+                    <Wand2 size={14} />
+                    Generate with AI
+                  </Button>
+                )}
+                
+                {formData.description && !isGeneratingDescription && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={generateJobDescription}
+                    className="flex items-center gap-2 text-xs"
+                  >
+                    <RefreshCw size={14} />
+                    Regenerate
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+        
+        {/* Loading State */}
+        {isGeneratingDescription && (
+          <div className="flex items-center gap-3 p-4 bg-supernova/10 border border-supernova/30 rounded-lg">
+            <div className="animate-spin">
+              <Wand2 size={16} className="text-supernova" />
+            </div>
+            <span className="text-sm text-supernova font-jakarta font-medium">
+              Generating job description with AI...
+            </span>
+          </div>
+        )}
+        
+        {/* Error State */}
+        {descriptionGenerationError && (
+          <div className="p-4 bg-red-400/10 border border-red-400/30 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-red-400 font-jakarta font-medium">
+                {descriptionGenerationError}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDescriptionGenerationError(null)}
+                className="text-xs"
+              >
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        <textarea
+          name="description"
+          value={formData.description}
+          onChange={handleDescriptionChange}
+          placeholder={
+            formData.mustHaveSkills.length >= 3 && formData.title && !hasUserEditedDescription
+              ? "AI will generate a description when you add 3 skills, or you can write your own..."
+              : "Enter a detailed job description. The more information you can provide, the better our candidate matching system will be able to return you precise, highly qualified candidates."
+          }
+          rows={6}
+          required
+          disabled={isGeneratingDescription}
+          className={`w-full px-4 py-3 bg-transparent border-2 rounded-xl text-white-knight placeholder-guardian/60 font-jakarta focus:outline-none focus:ring-0 transition-all duration-200 resize-none ${
+            errors.description
+              ? 'border-red-400 focus:border-red-400'
+              : 'border-guardian/40 hover:border-guardian/60 focus:border-supernova'
+          } ${isGeneratingDescription ? 'opacity-50 cursor-not-allowed' : ''}`}
+        />
+        
+        {errors.description && (
+          <p className="text-red-400 text-sm font-jakarta font-medium">
+            {errors.description}
+          </p>
+        )}
+      </div>
       
       <FormInput
         label="Industry"

@@ -157,9 +157,9 @@ export const SubscriptionPlans: React.FC = () => {
                   <span className="text-guardian font-jakarta">/month</span>
                 </div>
                 <p className="text-guardian font-jakarta text-sm">
-                  {plan.id === 'basic' && 'For growing teams'}
-                  {plan.id === 'premium' && 'For scaling businesses'}
-                  {plan.id === 'topshelf' && 'Unlimited access for enterprise'}
+                  {plan.id === 'basic' && 'Hiring for 1 position'}
+                  {plan.id === 'premium' && 'Hiring for 2-4 positions'}
+                  {plan.id === 'topshelf' && 'Hiring for 5+ positions'}
                 </p>
               </CardHeader>
 
@@ -231,9 +231,17 @@ export const SubscriptionPlans: React.FC = () => {
                 >
                   BOOK YOUR STRATEGY CALL
                 </Button>
-                <p className="text-guardian font-jakarta text-sm">
+                <p className="text-white-knight font-anton text-2xl md:text-3xl uppercase tracking-wide">
                   Lower your cost per hire by over 30% in 60 days or pay nothing.
                 </p>
+                <div className="mt-6">
+                  <p className="text-guardian font-jakarta text-lg italic">
+                    "Super Recruiter truly understand the nuances of quality recruitment and have a pricing model you can't beat"
+                  </p>
+                  <p className="text-supernova font-jakarta text-sm mt-2">
+                    Michael Tibor, CEO of Credo
+                  </p>
+                </div>
               </div>
 
               <div className="mb-8">
@@ -244,37 +252,43 @@ export const SubscriptionPlans: React.FC = () => {
                   <div className="flex items-start justify-center">
                     <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
                     <span className="text-guardian font-jakarta">
-                      Your personal Super Recruiter
+                      Dedicated Super Recruiter for your roles
                     </span>
                   </div>
                   <div className="flex items-start justify-center">
                     <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
                     <span className="text-guardian font-jakarta">
-                      High-quality candidate sourcing for every role
+                      Outbound candidate pipelines built & managed for you
                     </span>
                   </div>
                   <div className="flex items-start justify-center">
                     <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
                     <span className="text-guardian font-jakarta">
-                      Create and manage your outbound pipelines
+                      100% sourced candidates (not job board spam)
                     </span>
                   </div>
                   <div className="flex items-start justify-center">
                     <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
                     <span className="text-guardian font-jakarta">
-                      Weekly reports with actionable recruiting insights
+                      Pre-screened, qualified candidates on your calendar
                     </span>
                   </div>
                   <div className="flex items-start justify-center">
                     <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
                     <span className="text-guardian font-jakarta">
-                      A/B message testing to maximize conversions
+                      A/B message testing to boost conversions
                     </span>
                   </div>
                   <div className="flex items-start justify-center">
                     <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
                     <span className="text-guardian font-jakarta">
-                      Custom candidate pitch deck to sell your company
+                      Custom candidate pitch deck to win top talent
+                    </span>
+                  </div>
+                  <div className="flex items-start justify-center">
+                    <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                    <span className="text-guardian font-jakarta">
+                      Proven multi-channel outreach (email, LinkedIn, SMS)
                     </span>
                   </div>
                 </div>

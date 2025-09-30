@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { FormStep } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
+import { generateJobDescription as generateJobDescriptionService } from '../../../services/jobDescriptionService';
 
 export interface FormData {
   companyName: string;
@@ -41,6 +42,15 @@ export interface ClientIntakeFormContextType {
   isSubmitting: boolean;
   setIsSubmitting: (submitting: boolean) => void;
   
+  // Job Description Generation State
+  isGeneratingDescription: boolean;
+  setIsGeneratingDescription: (generating: boolean) => void;
+  descriptionGenerationError: string | null;
+  setDescriptionGenerationError: (error: string | null) => void;
+  generateJobDescription: () => Promise<void>;
+  hasUserEditedDescription: boolean;
+  setHasUserEditedDescription: (edited: boolean) => void;
+  
   // Alert Modal State
   alertModal: AlertModalState;
   setAlertModal: (modal: AlertModalState) => void;
@@ -49,6 +59,7 @@ export interface ClientIntakeFormContextType {
   resetForm: () => void;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   handleSkillsChange: (skills: string[]) => void;
+  handleDescriptionChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }
 
 const ClientIntakeFormContext = createContext<ClientIntakeFormContextType | undefined>(undefined);
@@ -84,6 +95,11 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alertModal, setAlertModal] = useState<AlertModalState>(initialAlertModal);
+  
+  // Job Description Generation State
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+  const [descriptionGenerationError, setDescriptionGenerationError] = useState<string | null>(null);
+  const [hasUserEditedDescription, setHasUserEditedDescription] = useState(false);
 
   // Auto-fill company name from user profile when available
   useEffect(() => {
@@ -128,11 +144,51 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
     clearFieldError('mustHaveSkills');
   };
 
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const { value } = e.target;
+    updateFormField('description', value);
+    clearFieldError('description');
+    setHasUserEditedDescription(true); // Mark as user-edited
+  };
+
+  const generateJobDescription = async () => {
+    if (!formData.title || formData.mustHaveSkills.length < 3) {
+      setDescriptionGenerationError('Job title and at least 3 skills are required');
+      return;
+    }
+
+    setIsGeneratingDescription(true);
+    setDescriptionGenerationError(null);
+
+    try {
+      const generatedDescription = await generateJobDescriptionService({
+        title: formData.title,
+        mustHaveSkills: formData.mustHaveSkills,
+        companyName: formData.companyName || undefined,
+        industry: formData.industry || undefined,
+        seniorityLevel: formData.seniorityLevel || undefined
+      });
+
+      updateFormField('description', generatedDescription);
+      clearFieldError('description');
+      setHasUserEditedDescription(false); // Reset flag since AI generated this
+    } catch (error) {
+      setDescriptionGenerationError(
+        error instanceof Error ? error.message : 'Failed to generate job description. Please try again.'
+      );
+    } finally {
+      setIsGeneratingDescription(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData(initialFormData);
     setErrors({});
     setIsSubmitting(false);
     setAlertModal(initialAlertModal);
+    setIsGeneratingDescription(false);
+    setDescriptionGenerationError(null);
+    setHasUserEditedDescription(false);
   };
 
   const value: ClientIntakeFormContextType = {
@@ -150,6 +206,15 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
     isSubmitting,
     setIsSubmitting,
     
+    // Job Description Generation State
+    isGeneratingDescription,
+    setIsGeneratingDescription,
+    descriptionGenerationError,
+    setDescriptionGenerationError,
+    generateJobDescription,
+    hasUserEditedDescription,
+    setHasUserEditedDescription,
+    
     // Alert Modal State
     alertModal,
     setAlertModal,
@@ -157,7 +222,8 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
     // Form Actions
     resetForm,
     handleInputChange,
-    handleSkillsChange
+    handleSkillsChange,
+    handleDescriptionChange
   };
 
   return (
