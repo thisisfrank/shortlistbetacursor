@@ -121,10 +121,10 @@ export const SubscriptionPlans: React.FC = () => {
             </div>
           </div>
           <h1 className="text-5xl md:text-6xl font-anton text-white-knight mb-4 uppercase tracking-wide">
-            CANDIDATE CREDIT PLANS
+            CANDIDATE PLANS
           </h1>
           <p className="text-xl text-guardian font-jakarta max-w-xl mx-auto">
-          For less than a job posting, get high-quality candidates for your exact opening
+          Get high-quality candidates for less than a job posting.
           </p>
         </header>
 
@@ -167,7 +167,7 @@ export const SubscriptionPlans: React.FC = () => {
                 <div className="space-y-4 mb-8 flex-1">
                   <div className="text-center mt-6">
                     <div className="text-4xl font-anton text-supernova mb-2">
-                      {plan.features.credits} CREDITS
+                      {plan.features.credits} CANDIDATES
                     </div>
                     <div className="text-sm text-guardian font-jakarta">
                       per month
@@ -189,7 +189,7 @@ export const SubscriptionPlans: React.FC = () => {
                 >
                   {isCurrentPlan(plan.id) 
                     ? 'CURRENT PLAN' 
-                    : 'SUBSCRIBE NOW'}
+                    : (plan.id === 'topshelf' ? 'BEAST MODE' : 'LEVEL UP')}
                   </Button>
                 </div>
               </CardContent>
@@ -229,7 +229,7 @@ export const SubscriptionPlans: React.FC = () => {
                   size="lg"
                   className="bg-yellow-400 hover:bg-yellow-500 text-black font-anton uppercase tracking-wide px-8 py-4 mb-4"
                 >
-                  BOOK YOUR STRATEGY CALL
+                  BOOK YOUR FREE STRATEGY CALL
                 </Button>
                 <p className="text-white-knight font-anton text-2xl md:text-3xl uppercase tracking-wide">
                   Lower your cost per hire by over 30% in 60 days or pay nothing.

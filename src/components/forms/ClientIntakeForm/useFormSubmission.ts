@@ -54,6 +54,7 @@ export const useFormSubmission = ({ setCurrentStep }: UseFormSubmissionProps) =>
         userId: user.id,
         companyName: formData.companyName,
         title: formData.title,
+        idealCandidate: formData.idealCandidate,
         description: formData.description,
         seniorityLevel: formData.seniorityLevel as 'Junior' | 'Mid' | 'Senior' | 'Super Senior',
         location: location,

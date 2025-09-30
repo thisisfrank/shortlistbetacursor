@@ -1493,9 +1493,7 @@ export const CandidatesView: React.FC = () => {
     if (!showHidden && isJobHidden) {
       return false; // Hide jobs that are in hiddenJobIds when not showing hidden
     }
-    if (showHidden && !isJobHidden) {
-      return false; // Only show hidden jobs when showHidden is true
-    }
+    // When showHidden is true, show all jobs (both hidden and non-hidden)
     
     return true;
   });
@@ -1829,12 +1827,9 @@ export const CandidatesView: React.FC = () => {
                     <CreditCard className="text-supernova" size={32} />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-anton text-white-knight mb-2 uppercase tracking-wide">
-                      Need More Candidate Credits?
+                    <h3 className="text-guardian font-anton text-xl uppercase tracking-wide">
+                      Unlock unlimited job submissions and more candidates upgrading your plan!
                     </h3>
-                    <p className="text-guardian font-jakarta">
-                      Upgrade to unlock unlimited job submissions and candidate credits with our premium plans
-                    </p>
                   </div>
                 </div>
                 <Button 
@@ -1845,7 +1840,7 @@ export const CandidatesView: React.FC = () => {
                   isLoading={isCreatingCheckout}
                 >
                   <Crown size={20} />
-                  {isCreatingCheckout ? 'OPENING CHECKOUT...' : 'GET MORE CANDIDATE CREDITS'}
+                  {isCreatingCheckout ? 'OPENING CHECKOUT...' : 'UPGRADE'}
                 </Button>
               </div>
             </CardContent>

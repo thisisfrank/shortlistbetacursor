@@ -6,6 +6,7 @@ import { generateJobDescription as generateJobDescriptionService } from '../../.
 export interface FormData {
   companyName: string;
   title: string;
+  idealCandidate: string;
   description: string;
   industry: string;
   seniorityLevel: string;
@@ -67,6 +68,7 @@ const ClientIntakeFormContext = createContext<ClientIntakeFormContextType | unde
 const initialFormData: FormData = {
   companyName: '',
   title: '',
+  idealCandidate: '',
   description: '',
   industry: '',
   seniorityLevel: '',

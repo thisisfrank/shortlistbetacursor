@@ -48,7 +48,7 @@ export const FormInput: React.FC<FormInputProps> = ({
           id={inputId}
           type={inputType}
           className={`
-            block w-full border-0 border-b-2 px-0 py-4 text-lg
+            block w-full border-0 border-b-2 pl-4 pr-0 py-4 text-lg
             bg-transparent font-jakarta
             focus:ring-0 focus:border-supernova transition-colors duration-200
             ${props.disabled ? 'text-guardian/40 placeholder-guardian/30 cursor-not-allowed border-guardian/20' : 'text-white-knight placeholder-guardian/60'}
@@ -124,7 +124,7 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
       <textarea
         id={inputId}
         className={`
-          block w-full border-0 border-b-2 px-0 py-4 text-lg
+          block w-full border-0 border-b-2 pl-4 pr-0 py-4 text-lg
           bg-transparent text-white-knight placeholder-guardian/60 font-jakarta
           focus:ring-0 focus:border-supernova transition-colors duration-200 resize-none
           ${error ? 'border-red-500' : 'border-guardian/40 hover:border-guardian/60'}
@@ -173,7 +173,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
       <select
         id={inputId}
         className={`
-          block w-full border-0 border-b-2 px-0 py-4 text-lg
+          block w-full border-0 border-b-2 pl-4 pr-0 py-4 text-lg
           bg-transparent font-jakarta
           focus:ring-0 focus:border-supernova transition-colors duration-200
           ${props.disabled ? 'text-guardian/40 cursor-not-allowed' : 'text-white-knight'}

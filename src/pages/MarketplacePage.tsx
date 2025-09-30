@@ -25,8 +25,8 @@ const marketplaceItems: MarketplaceItem[] = [
   },
   {
     id: 'super-recruiter',
-    title: 'Super Recruiter: Convert your candidate list into real interviews',
-    description: 'Free outbound implementation meeting with your first job entry.',
+    title: 'Convert Your List of Candidates into Real Interviews',
+    description: 'Book your free call 15-minute discovery call',
     unlockDay: 10,
     sequenceIndex: 2,
     icon: Target,
@@ -305,7 +305,12 @@ export const MarketplacePage: React.FC = () => {
                         {!itemUnlocked && (
                           <div className="flex items-center gap-2 text-guardian">
                             <Clock size={16} />
-                            <span className="text-sm">Unlocks Day {item.unlockDay}</span>
+                            <span className="text-sm">
+                              {item.id === 'clay-table-emails' 
+                                ? 'Free upon upgrading plans' 
+                                : `Unlocks Day ${item.unlockDay}`
+                              }
+                            </span>
                           </div>
                         )}
                       </div>
@@ -326,7 +331,7 @@ export const MarketplacePage: React.FC = () => {
                           onClick={() => handleUnlock(item)}
                           className="w-full bg-supernova text-shadowforce hover:bg-supernova/90 text-sm font-medium py-2 px-4 rounded-lg transition-colors"
                         >
-                          Buy Now
+                          {item.id === 'super-recruiter' ? 'Book My Free Meeting' : 'Buy Now'}
                         </button>
                       )}
                     </div>

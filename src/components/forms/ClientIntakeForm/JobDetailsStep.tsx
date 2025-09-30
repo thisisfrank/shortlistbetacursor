@@ -10,6 +10,7 @@ interface JobDetailsStepProps {
   formData: {
     title: string;
     companyName: string;
+    idealCandidate: string;
     description: string;
     industry: string;
     seniorityLevel: string;
@@ -259,6 +260,16 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
         placeholder="Enter your company name"
       />
       
+      <FormTextarea
+        label="Describe your ideal candidate (1-2 sentences)"
+        name="idealCandidate"
+        value={formData.idealCandidate}
+        onChange={onChange}
+        error={errors.idealCandidate}
+        placeholder="Describe the perfect candidate for this role..."
+        rows={2}
+      />
+      
       {/* Job Description with AI Generation */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -339,7 +350,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
           placeholder={
             formData.mustHaveSkills.length >= 3 && formData.title && !hasUserEditedDescription
               ? "AI will generate a description when you add 3 skills, or you can write your own..."
-              : "Enter a detailed job description. The more information you can provide, the better our candidate matching system will be able to return you precise, highly qualified candidates."
+              : "Paste Job Description"
           }
           rows={6}
           required

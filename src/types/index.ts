@@ -39,6 +39,7 @@ export interface Job {
   userEmail?: string; // Email of the user who submitted the job
   companyName: string; // Production uses company_name (string field)
   title: string;
+  idealCandidate?: string; // Optional field for ideal candidate description
   description: string;
   seniorityLevel: 'Junior' | 'Mid' | 'Senior' | 'Super Senior';
   workArrangement?: 'Remote' | 'On-site' | 'Hybrid'; // Made optional

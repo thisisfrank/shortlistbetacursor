@@ -271,14 +271,14 @@ export const LandingPage: React.FC = () => {
             READY TO GET STARTED?
           </h2>
           <p className="text-xl text-guardian mb-8 font-jakarta">
-          Get your first candidates on us
+          Get your first candidates on us.
           </p>
           <Button 
             onClick={() => window.location.href = '/signup'}
             size="lg"
             className="glow-supernova text-xl px-12 py-6"
           >
-            Get My First Candidate List Free
+            Get My Free Candidates
           </Button>
           
           {/* Quality Guarantee Badge */}
