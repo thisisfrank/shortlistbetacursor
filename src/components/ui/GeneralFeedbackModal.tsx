@@ -85,7 +85,7 @@ Future Needs: ${formData.futureNeeds}
               We'd love your feedback
             </h3>
             <p className="text-guardian font-jakarta">
-              Share your thoughts and unlock your free candidate conversion kit (the tools that have generated over 500+ interviews for people just like you – worth $29).
+              Share your thoughts and get 50 free candidates
             </p>
           </div>
           <button

@@ -199,10 +199,13 @@ export const MarketplacePage: React.FC = () => {
         
         {/* Header */}
         <div className="text-center mb-16 mt-12">
-          <div className="flex items-center justify-center gap-6 mb-4">
-            <h1 className="text-4xl font-anton text-white-knight leading-tight uppercase">
-              Superpowers
-            </h1>
+          <h1 className="text-8xl font-anton text-white-knight leading-tight uppercase mb-4">
+            Superpowers
+          </h1>
+          <p className="text-xl text-guardian mb-4">
+            Unlock premium hiring tools and resources
+          </p>
+          <div className="flex justify-center">
             <div className="inline-flex items-center gap-2 bg-supernova/20 border border-supernova px-4 py-2 rounded-lg">
               <Clock className="text-supernova" size={20} />
               <span className="text-white-knight font-semibold text-sm">
@@ -213,9 +216,6 @@ export const MarketplacePage: React.FC = () => {
               </span>
             </div>
           </div>
-          <p className="text-xl text-guardian">
-            Unlock premium hiring tools and resources
-          </p>
         </div>
 
         {/* Categories */}

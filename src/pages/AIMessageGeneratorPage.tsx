@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { useSearchParams, Navigate } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Copy, Edit, Check, User, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
+import { ChevronDown, ChevronRight, Copy, Edit, Check, User, Sparkles, AlertCircle, CheckCircle, Plus, Save, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Tooltip } from '../components/ui/Tooltip';
@@ -33,6 +33,14 @@ interface Job {
   candidates?: Candidate[];
 }
 
+interface CustomTemplate {
+  id: string;
+  name: string;
+  template: string;
+  messageType: 'linkedin' | 'email';
+  createdAt: Date;
+}
+
 export const AIMessageGeneratorPage: React.FC = () => {
   const { user, userProfile } = useAuth();
   const dataContext = useData();
@@ -50,9 +58,14 @@ export const AIMessageGeneratorPage: React.FC = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<number>(1);
   const [isGeneratingVariation, setIsGeneratingVariation] = useState(false);
   const [messageType, setMessageType] = useState<'linkedin' | 'email'>('linkedin');
-  const [isReviewing, setIsReviewing] = useState(false);
   const [reviewResult, setReviewResult] = useState<GrammarReviewResult | null>(null);
   const [showVariationModal, setShowVariationModal] = useState(false);
+  const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
+  const [showCustomTemplateModal, setShowCustomTemplateModal] = useState(false);
+  const [editingCustomTemplate, setEditingCustomTemplate] = useState<CustomTemplate | null>(null);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [newTemplateContent, setNewTemplateContent] = useState('');
+  const [selectedCustomTemplate, setSelectedCustomTemplate] = useState<string | null>(null);
 
   // Character limits
   const LINKEDIN_CHAR_LIMIT = 300;
@@ -61,6 +74,28 @@ export const AIMessageGeneratorPage: React.FC = () => {
   const characterCount = bodyText.length;
   const isOverLimit = characterCount > currentLimit;
   const isNearLimit = characterCount > currentLimit * 0.9; // 90% of limit
+
+  // Load custom templates from localStorage on mount
+  React.useEffect(() => {
+    const savedTemplates = localStorage.getItem(`customTemplates_${user?.id}`);
+    if (savedTemplates) {
+      try {
+        const parsed = JSON.parse(savedTemplates).map((t: any) => ({
+          ...t,
+          createdAt: new Date(t.createdAt)
+        }));
+        setCustomTemplates(parsed);
+      } catch (error) {
+        console.error('Error loading custom templates:', error);
+      }
+    }
+  }, [user?.id]);
+
+  // Save custom templates to localStorage
+  const saveCustomTemplates = (templates: CustomTemplate[]) => {
+    localStorage.setItem(`customTemplates_${user?.id}`, JSON.stringify(templates));
+    setCustomTemplates(templates);
+  };
 
   // Predefined templates
   const templates = {
@@ -195,10 +230,90 @@ Alex`
 
   // Fill template with candidate and job data
   const getMessageTemplate = (templateId: number = selectedTemplate, candidate?: Candidate, job?: Job) => {
+    // If a custom template is selected, use it instead
+    if (selectedCustomTemplate) {
+      const customTemplate = customTemplates.find(t => t.id === selectedCustomTemplate);
+      if (customTemplate) {
+        return fillTemplateVariables(customTemplate.template, candidate, job);
+      }
+    }
+    
     const templateGroup = templates[messageType];
     const template = templateGroup[templateId as keyof typeof templateGroup];
     if (!template) return '';
+    
+    return fillTemplateVariables(template.template, candidate, job);
+  };
 
+  // Custom template management functions
+  const handleSaveCustomTemplate = () => {
+    if (!newTemplateName.trim() || !newTemplateContent.trim()) return;
+    
+    const newTemplate: CustomTemplate = {
+      id: Date.now().toString(),
+      name: newTemplateName,
+      template: newTemplateContent,
+      messageType,
+      createdAt: new Date()
+    };
+    
+    const updatedTemplates = [...customTemplates, newTemplate];
+    saveCustomTemplates(updatedTemplates);
+    
+    setNewTemplateName('');
+    setNewTemplateContent('');
+    setShowCustomTemplateModal(false);
+  };
+
+  const handleEditCustomTemplate = (template: CustomTemplate) => {
+    setEditingCustomTemplate(template);
+    setNewTemplateName(template.name);
+    setNewTemplateContent(template.template);
+    setShowCustomTemplateModal(true);
+  };
+
+  const handleUpdateCustomTemplate = () => {
+    if (!editingCustomTemplate || !newTemplateName.trim() || !newTemplateContent.trim()) return;
+    
+    const updatedTemplates = customTemplates.map(t => 
+      t.id === editingCustomTemplate.id 
+        ? { ...t, name: newTemplateName, template: newTemplateContent }
+        : t
+    );
+    
+    saveCustomTemplates(updatedTemplates);
+    
+    setEditingCustomTemplate(null);
+    setNewTemplateName('');
+    setNewTemplateContent('');
+    setShowCustomTemplateModal(false);
+  };
+
+  const handleDeleteCustomTemplate = (templateId: string) => {
+    const updatedTemplates = customTemplates.filter(t => t.id !== templateId);
+    saveCustomTemplates(updatedTemplates);
+    
+    if (selectedCustomTemplate === templateId) {
+      setSelectedCustomTemplate(null);
+    }
+  };
+
+  const handleSelectCustomTemplate = (template: CustomTemplate) => {
+    setSelectedCustomTemplate(template.id);
+    setSelectedTemplate(0); // Reset predefined template selection
+    const candidate = prefilledCandidate || selectedCandidate || undefined;
+    const job = prefilledJob || selectedJob || undefined;
+    const filledTemplate = fillTemplateVariables(template.template, candidate, job);
+    setBodyText(filledTemplate);
+    setEditingBody(false);
+  };
+
+  const handleSaveCurrentAsTemplate = () => {
+    setNewTemplateContent(bodyText);
+    setShowCustomTemplateModal(true);
+  };
+
+  const fillTemplateVariables = (templateText: string, candidate?: Candidate, job?: Job) => {
     const candidateFirstName = candidate ? candidate.firstName : '{{firstname}}';
     const currentRole = candidate?.headline || candidate?.experience?.[0]?.title || '{{current_role}}';
     const jobTitle = job ? job.title : '{{job_opening}}';
@@ -208,7 +323,7 @@ Alex`
     const userName = userProfile?.name || '{{your_name}}';
     const salary = '{{salary}}'; // Placeholder for user to fill in
 
-    return template.template
+    return templateText
       .replace(/\{\{firstname\}\}/g, candidateFirstName)
       .replace(/\{\{current_role\}\}/g, currentRole)
       .replace(/\{\{job_opening\}\}/g, jobTitle)
@@ -284,8 +399,9 @@ Alex`
 
   const handleTemplateChange = (templateId: number) => {
     setSelectedTemplate(templateId);
-    const candidate = prefilledCandidate || selectedCandidate;
-    const job = prefilledJob || selectedJob;
+    setSelectedCustomTemplate(null); // Reset custom template selection
+    const candidate = prefilledCandidate || selectedCandidate || undefined;
+    const job = prefilledJob || selectedJob || undefined;
     const message = getMessageTemplate(templateId, candidate, job);
     setBodyText(message);
     setEditingBody(false);
@@ -293,8 +409,9 @@ Alex`
 
   const handleMessageTypeChange = (type: 'linkedin' | 'email') => {
     setMessageType(type);
-    const candidate = prefilledCandidate || selectedCandidate;
-    const job = prefilledJob || selectedJob;
+    setSelectedCustomTemplate(null); // Reset custom template when changing message type
+    const candidate = prefilledCandidate || selectedCandidate || undefined;
+    const job = prefilledJob || selectedJob || undefined;
     const message = getMessageTemplate(selectedTemplate, candidate, job);
     setBodyText(message);
     setEditingBody(false);
@@ -397,8 +514,8 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
   // Initialize template - always show template
   React.useEffect(() => {
     // Prioritize prefilled data from URL params
-    const candidate = prefilledCandidate || selectedCandidate;
-    const job = prefilledJob || selectedJob;
+    const candidate = prefilledCandidate || selectedCandidate || undefined;
+    const job = prefilledJob || selectedJob || undefined;
     
     const message = getMessageTemplate(selectedTemplate, candidate, job);
     setBodyText(message);
@@ -414,28 +531,6 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
     }
   };
 
-  const handleReviewMessage = async () => {
-    if (!bodyText.trim()) return;
-    
-    setIsReviewing(true);
-    setShowReviewResults(false);
-    
-    try {
-      const result = await reviewMessageGrammar(bodyText);
-      setReviewResult(result);
-      setShowReviewResults(true);
-    } catch (error) {
-      console.error('Review failed:', error);
-      setReviewResult({
-        hasIssues: false,
-        suggestions: ['Review service temporarily unavailable. Please check your message manually.'],
-        score: 8
-      });
-      setShowReviewResults(true);
-    } finally {
-      setIsReviewing(false);
-    }
-  };
 
   const applyCorrectedMessage = () => {
     if (reviewResult?.correctedMessage) {
@@ -535,6 +630,62 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                   {template.name}
                 </Button>
               ))}
+            </div>
+          </div>
+
+          {/* Custom Templates Section */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-white-knight font-jakarta mb-2">
+              Custom Templates
+            </h3>
+            <Button
+              onClick={() => {
+                setEditingCustomTemplate(null);
+                setNewTemplateName('');
+                setNewTemplateContent('');
+                setShowCustomTemplateModal(true);
+              }}
+              className="bg-supernova hover:bg-supernova/90 text-shadowforce flex items-center gap-1 mb-4"
+              size="sm"
+            >
+              <Plus size={14} />
+              Add New
+            </Button>
+            
+            {/* Custom Templates List */}
+            <div className="space-y-2">
+              {customTemplates
+                .filter(template => template.messageType === messageType)
+                .map((template) => (
+                  <div key={template.id} className="flex items-center gap-2">
+                    <Button
+                      onClick={() => handleSelectCustomTemplate(template)}
+                      className={`flex-1 text-left text-xs border border-purple-500 ${
+                        selectedCustomTemplate === template.id
+                          ? 'bg-purple-500 text-white'
+                          : 'bg-transparent text-white-knight hover:bg-purple-500 hover:text-white'
+                      }`}
+                      size="sm"
+                    >
+                      {template.name}
+                    </Button>
+                    <Button
+                      onClick={() => handleEditCustomTemplate(template)}
+                      className="bg-guardian/30 hover:bg-guardian/50 text-black"
+                      size="sm"
+                    >
+                      <Edit size={14} />
+                    </Button>
+                    <Button
+                      onClick={() => handleDeleteCustomTemplate(template.id)}
+                      className="bg-red-500/30 hover:bg-red-500/50 text-red-200"
+                      size="sm"
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
+                ))}
+              
             </div>
           </div>
 
@@ -648,6 +799,18 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                          {editingBody ? 'Save' : 'Edit Manually'}
                        </Button>
                      </Tooltip>
+
+                     <Tooltip content="Save current message as a custom template">
+                       <Button
+                         onClick={handleSaveCurrentAsTemplate}
+                         disabled={!bodyText.trim()}
+                         className="bg-green-600 hover:bg-green-700 text-black disabled:opacity-50 flex items-center gap-2"
+                         size="sm"
+                       >
+                         <Save size={16} />
+                         Save as Template
+                       </Button>
+                     </Tooltip>
                      
                      <Tooltip content={isOverLimit ? `Message exceeds ${messageType === 'linkedin' ? 'LinkedIn' : 'email'} character limit` : `Copy the message to use in ${messageType === 'linkedin' ? 'LinkedIn' : 'email'} to contact your candidate`}>
                        <Button
@@ -680,7 +843,7 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                       <textarea
                         value={bodyText}
                         onChange={(e) => setBodyText(e.target.value)}
-                        className={`w-full p-3 bg-shadowforce border-2 rounded-lg text-white-knight resize-none mb-2 flex-1 ${
+                         className={`w-full p-3 bg-shadowforce border-2 rounded-lg text-white-knight resize-none mb-2 h-[90%] ${
                           isOverLimit 
                             ? 'border-red-500' 
                             : isNearLimit 
@@ -714,7 +877,7 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                     </div>
                   ) : (
                     <div className="flex-1 flex flex-col">
-                      <div className={`p-3 bg-shadowforce/50 border-2 rounded-lg text-white-knight whitespace-pre-wrap mb-2 flex-1 overflow-y-auto ${
+                       <div className={`p-3 bg-shadowforce/50 border-2 rounded-lg text-white-knight whitespace-pre-wrap mb-2 h-[90%] overflow-y-auto ${
                         isOverLimit 
                           ? 'border-red-500' 
                           : isNearLimit 
@@ -875,7 +1038,64 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
         </div>
       )}
 
+      {/* Custom Template Modal */}
+      {showCustomTemplateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCustomTemplateModal(false)}>
+          <div className="bg-shadowforce border border-guardian/30 rounded-lg p-6 max-w-2xl w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-semibold text-white-knight font-jakarta mb-4">
+              {editingCustomTemplate ? 'Edit Custom Template' : 'Create Custom Template'}
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-white-knight text-sm font-medium mb-2">
+                  Template Name
+                </label>
+                <input
+                  type="text"
+                  value={newTemplateName}
+                  onChange={(e) => setNewTemplateName(e.target.value)}
+                  className="w-full p-3 bg-shadowforce-light border border-guardian/30 rounded-lg text-white-knight"
+                  placeholder="Enter template name (e.g., 'My LinkedIn Template')"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-white-knight text-sm font-medium mb-2">
+                  Template Content
+                </label>
+                <textarea
+                  value={newTemplateContent}
+                  onChange={(e) => setNewTemplateContent(e.target.value)}
+                  className="w-full h-40 p-3 bg-shadowforce-light border border-guardian/30 rounded-lg text-white-knight resize-none"
+                  placeholder="Enter your template content. You can use variables like {{firstname}}, {{job_opening}}, {{company_name}}, {{skillone}}, {{skilltwo}}, {{your_name}}, and {{salary}}"
+                />
+                <p className="text-guardian text-xs mt-1">
+                  Available variables: {'{'}firstname{'}'}, {'{'}job_opening{'}'}, {'{'}company_name{'}'}, {'{'}skillone{'}'}, {'{'}skilltwo{'}'}, {'{'}your_name{'}'}, {'{'}salary{'}'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <Button
+                onClick={() => setShowCustomTemplateModal(false)}
+                variant="outline"
+                className="flex-1 text-guardian border-guardian/30 hover:bg-guardian/10"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={editingCustomTemplate ? handleUpdateCustomTemplate : handleSaveCustomTemplate}
+                disabled={!newTemplateName.trim() || !newTemplateContent.trim()}
+                className="flex-1 bg-supernova hover:bg-supernova/90 text-shadowforce disabled:opacity-50"
+              >
+                {editingCustomTemplate ? 'Update Template' : 'Save Template'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
-
