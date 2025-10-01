@@ -126,11 +126,8 @@ export const SignupPage: React.FC = () => {
     } else if (data.user) {
       console.log('✅ Signup successful, showing success state');
       setSuccess(true);
-      // Redirect to email confirmation page instead of auto-login
-      setTimeout(() => {
-        console.log('📧 Redirecting to email confirmation page');
-        navigate('/confirm-email');
-      }, 2000);
+      // User will receive email with confirmation link
+      // When they click it, they'll be redirected to root and automatically signed in
     }
 
     setLoading(false);

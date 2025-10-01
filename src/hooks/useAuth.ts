@@ -103,28 +103,9 @@ export const useAuth = () => {
       }
       
       // Handle email confirmation
-      if (hash && hash.includes('type=signup')) {
-        console.log('📧 Email confirmation detected in URL');
-        // Extract parameters
-        const params = new URLSearchParams(hash.substring(1));
-        const type = params.get('type');
-        const accessToken = params.get('access_token');
-        
-        console.log('📧 Confirmation parameters:', { type, hasAccessToken: !!accessToken });
-        
-        if (type === 'signup' && accessToken) {
-          // Only redirect if we're NOT already on the confirm-email page
-          if (pathname !== '/confirm-email') {
-            console.log('📧 Valid confirmation link detected, redirecting to /confirm-email with tokens preserved');
-            // Preserve the entire hash when redirecting
-            window.location.href = `/confirm-email${hash}`;
-            return true; // Indicates we found confirmation and are redirecting
-          } else {
-            console.log('📧 Already on confirm-email page with valid confirmation tokens');
-            return false; // Don't exit early, let auth initialize normally
-          }
-        }
-      }
+      // Supabase handles email confirmation automatically via the auth tokens in the URL hash
+      // Just let it process naturally and the user will be signed in
+      // The LandingPage will redirect them to their dashboard once authenticated
       
       return false;
     };
