@@ -7,47 +7,45 @@ import { CheckCircle, AlertCircle, Mail, RefreshCw } from 'lucide-react';
 import BoltIcon from '../../assets/v2.png';
 
 export const EmailConfirmationPage: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const { user, userProfile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState('');
   const [resendLoading, setResendLoading] = useState(false);
 
-  // Get token from URL parameters
-  const token = searchParams.get('token');
-  const type = searchParams.get('type');
-
+  // Check for confirmation token in hash (Supabase uses hash fragments, not query params)
   useEffect(() => {
-    const handleEmailConfirmation = async () => {
-      if (token && type === 'signup') {
-        try {
-          // The Supabase client will automatically handle the token verification
-          // when the user visits this page with the confirmation link
-          setConfirmed(true);
-          setLoading(false);
-          
-          // Redirect to dashboard after successful confirmation
-          setTimeout(() => {
-            navigate('/');
-          }, 3000);
-        } catch (error: any) {
-          console.error('Email confirmation error:', error);
-          setError('Failed to confirm email. The link may be expired or invalid.');
-          setLoading(false);
-        }
-      } else if (token) {
-        // Handle other types of email confirmations (password reset, etc.)
-        setLoading(false);
-      } else {
-        // No token - user probably navigated here directly
-        setLoading(false);
-      }
-    };
+    const hash = window.location.hash;
+    console.log('📧 Email confirmation page loaded, hash:', hash);
+    
+    if (hash && hash.includes('access_token')) {
+      // Supabase is processing the confirmation
+      console.log('📧 Confirmation token detected in URL, waiting for auth to process...');
+      setConfirmed(true);
+      setLoading(false);
+    } else {
+      // No token in URL - user navigated here directly or after signup
+      console.log('📧 No confirmation token in URL');
+      setLoading(false);
+    }
+  }, []);
 
-    handleEmailConfirmation();
-  }, [token, type, navigate]);
+  // Redirect to dashboard once user is authenticated after confirmation
+  useEffect(() => {
+    if (!authLoading && user && userProfile) {
+      console.log('📧 User authenticated and profile loaded, redirecting to dashboard');
+      // Redirect to appropriate dashboard based on role
+      const redirectPath = userProfile.role === 'admin' 
+        ? '/admin' 
+        : userProfile.role === 'sourcer' 
+        ? '/sourcer' 
+        : '/client';
+      
+      // Immediate redirect - no waiting
+      navigate(redirectPath, { replace: true });
+    }
+  }, [authLoading, user, userProfile, navigate]);
 
   const handleResendConfirmation = async () => {
     if (!user?.email) {
@@ -88,7 +86,7 @@ export const EmailConfirmationPage: React.FC = () => {
           <CardContent className="p-8 text-center">
             <div className="flex justify-center mb-6">
               <div className="relative">
-                <CheckCircle size={64} className="text-green-400" />
+                <CheckCircle size={64} className="text-green-400 animate-pulse" />
                 <div className="absolute inset-0 bg-green-400/30 blur-xl rounded-full"></div>
               </div>
             </div>
@@ -96,24 +94,9 @@ export const EmailConfirmationPage: React.FC = () => {
               Email Confirmed!
             </h1>
             <p className="text-guardian font-jakarta mb-6">
-              Your email has been successfully confirmed. You can now access your account.
+              Signing you in and redirecting to your dashboard...
             </p>
-            <div className="space-y-4">
-              <Button
-                onClick={() => navigate('/')}
-                fullWidth
-                size="lg"
-              >
-                Go to Dashboard
-              </Button>
-              <Link
-                to="/login"
-                className="block text-supernova hover:text-supernova-light font-semibold transition-colors font-jakarta"
-              >
-                Or sign in manually
-              </Link>
-            </div>
-            <div className="mt-6 animate-pulse">
+            <div className="mt-6">
               <div className="w-full bg-shadowforce rounded-full h-2">
                 <div className="bg-supernova h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
               </div>
