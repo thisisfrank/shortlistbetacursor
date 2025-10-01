@@ -7,12 +7,21 @@ import { CheckCircle, AlertCircle, Mail, RefreshCw } from 'lucide-react';
 import BoltIcon from '../../assets/v2.png';
 
 export const EmailConfirmationPage: React.FC = () => {
-  const { user, userProfile, loading: authLoading } = useAuth();
+  const { user, userProfile, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState('');
   const [resendLoading, setResendLoading] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+
+  // Load pending email from localStorage on mount
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('pendingConfirmationEmail');
+    if (storedEmail) {
+      setPendingEmail(storedEmail);
+    }
+  }, []);
 
   // Check for confirmation token in hash (Supabase uses hash fragments, not query params)
   useEffect(() => {
@@ -24,6 +33,8 @@ export const EmailConfirmationPage: React.FC = () => {
       console.log('📧 Confirmation token detected in URL, waiting for auth to process...');
       setConfirmed(true);
       setLoading(false);
+      // Clean up stored email since confirmation is in progress
+      localStorage.removeItem('pendingConfirmationEmail');
     } else {
       // No token in URL - user navigated here directly or after signup
       console.log('📧 No confirmation token in URL');
@@ -35,6 +46,9 @@ export const EmailConfirmationPage: React.FC = () => {
   useEffect(() => {
     if (!authLoading && user && userProfile) {
       console.log('📧 User authenticated and profile loaded, redirecting to dashboard');
+      // Clean up stored email since user is now confirmed
+      localStorage.removeItem('pendingConfirmationEmail');
+      
       // Redirect to appropriate dashboard based on role
       const redirectPath = userProfile.role === 'admin' 
         ? '/admin' 
@@ -48,7 +62,8 @@ export const EmailConfirmationPage: React.FC = () => {
   }, [authLoading, user, userProfile, navigate]);
 
   const handleResendConfirmation = async () => {
-    if (!user?.email) {
+    const emailToResend = user?.email || pendingEmail;
+    if (!emailToResend) {
       setError('No email found. Please sign up again.');
       return;
     }
@@ -60,7 +75,7 @@ export const EmailConfirmationPage: React.FC = () => {
       const { supabase } = await import('../../lib/supabase');
       const { error } = await supabase.auth.resend({
         type: 'signup',
-        email: user.email,
+        email: emailToResend,
       });
 
       if (error) {
@@ -176,7 +191,7 @@ export const EmailConfirmationPage: React.FC = () => {
               fullWidth
               size="lg"
               isLoading={resendLoading}
-              disabled={!user?.email}
+              disabled={!user?.email && !pendingEmail}
               variant="outline"
             >
               Resend Confirmation Email

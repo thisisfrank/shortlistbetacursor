@@ -124,50 +124,17 @@ export const SignupPage: React.FC = () => {
       }
       setError(errorMessage);
     } else if (data.user) {
-      console.log('✅ Signup successful, showing success state');
-      setSuccess(true);
-      // User will receive email with confirmation link
-      // When they click it, they'll be redirected to root and automatically signed in
+      console.log('✅ Signup successful, redirecting to email confirmation page');
+      // Store email temporarily for the confirmation page
+      localStorage.setItem('pendingConfirmationEmail', email);
+      // Redirect to dedicated email confirmation page
+      navigate('/confirm-email');
     }
 
     setLoading(false);
   };
 
-  if (success) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center px-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center">
-            <div className="flex justify-center mb-6">
-              <div className="relative">
-                <CheckCircle size={64} className="text-green-400" />
-                <div className="absolute inset-0 bg-green-400/30 blur-xl rounded-full"></div>
-              </div>
-            </div>
-            <h1 className="text-2xl font-anton text-white-knight uppercase tracking-wide mb-4">
-              Account Created!
-            </h1>
-            <p className="text-guardian font-jakarta mb-6">
-              Your account has been successfully created. Please check your email to confirm your account before signing in.
-            </p>
-            <div className="mb-6">
-              <Link
-                to="/login"
-                className="text-supernova hover:text-supernova-light font-semibold transition-colors font-jakarta"
-              >
-                Or click here to sign in manually
-              </Link>
-            </div>
-            <div className="animate-pulse">
-              <div className="w-full bg-shadowforce rounded-full h-2">
-                <div className="bg-supernova h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Note: success state removed since we now redirect to /confirm-email
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center px-4">

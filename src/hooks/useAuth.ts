@@ -359,65 +359,29 @@ export const useAuth = () => {
   const signUp = async (email: string, password: string, role: 'client' | 'sourcer' = 'client', name: string = '', company: string = '') => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      // Simple signup - let database trigger handle profile creation after email confirmation
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: {
+            // Store signup data in user metadata for the trigger to use
+            name,
+            company: company || null,
+            role
+          }
+        }
+      });
+      
       if (error) {
         setLoading(false);
         return { data: null, error };
       }
-      // Insert user profile after sign up
-      // Upsert user profile after sign up (overwrites trigger-created profile with correct name)
-      if (data.user) {
-        const { error: profileError } = await supabase.from('user_profiles').upsert({
-          id: data.user.id,
-          email,
-          name,
-          company: company || null,
-          avatar: '👤', // Default avatar for new users
-          role,
-          tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
-          available_credits: 20,
-          // No credits_reset_date for free tier - one-time credits only
-        });
-        
-        if (profileError) {
-          console.error('❌ Profile creation error:', profileError);
-        }
-        
-        const userProfileData = {
-          id: data.user.id,
-          email,
-          name,
-          company: company || undefined,
-          avatar: '👤', // Default avatar for new users
-          role,
-          tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
-          availableCredits: 20,
-          creditsResetDate: null, // No reset date for free tier - one-time credits
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-        
-        // Only set user/profile state if email is already confirmed (no confirmation required)
-        // If email confirmation is required, the user will be set via auth state change after confirmation
-        if (data.user.email_confirmed_at) {
-          console.log('✅ Email already confirmed, setting user state');
-          setUser(data.user);
-          setUserProfile(userProfileData);
-        } else {
-          console.log('📧 Email confirmation required, not setting user state yet');
-          // Don't set user state - user will be set after email confirmation
-          setUser(null);
-          setUserProfile(null);
-        }
-        
-        // Send signup thank you notification to GoHighLevel
-        try {
-          await ghlService.sendSignupThankYouNotification(userProfileData, 'web_signup');
-        } catch (error) {
-          console.error('Failed to send GHL Sign Up Thank You notification:', error);
-          // Don't fail signup if GHL notification fails
-        }
-      }
+
+      // Don't create profile here - database trigger will handle it after email confirmation
+      // Don't set user state - auth state change handler will handle it after confirmation
+      console.log('📧 Signup successful, email confirmation required');
+      
       setLoading(false);
       return { data, error: null };
     } catch (error) {
