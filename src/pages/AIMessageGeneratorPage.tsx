@@ -140,7 +140,7 @@ We have a {{job_opening}} I'd love to share with you.
 
 Hi {{firstname}},
 
-Saw your LinkedIn, looks like you've done some great work at {{company_name}}.
+Saw your LinkedIn, looks like you've done some great work at {{current_company}}.
 
 We're looking for a {{job_opening}} like you - with a strong background in {{skilltwo}} and {{skillone}}.
 
@@ -316,20 +316,25 @@ Alex`
   const fillTemplateVariables = (templateText: string, candidate?: Candidate, job?: Job) => {
     const candidateFirstName = candidate ? candidate.firstName : '{{firstname}}';
     const currentRole = candidate?.headline || candidate?.experience?.[0]?.title || '{{current_role}}';
+    const currentCompany = candidate?.experience?.[0]?.company || '{{current_company}}';
     const jobTitle = job ? job.title : '{{job_opening}}';
     const companyName = job ? job.companyName : '{{company_name}}';
-    const skillOne = candidate?.skills?.[0] || '{{skillone}}';
-    const skillTwo = candidate?.skills?.[1] || '{{skilltwo}}';
+    // Use job's must-have skills instead of candidate's skills
+    const skillOne = job?.mustHaveSkills?.[0] || '{{skillone}}';
+    const skillTwo = job?.mustHaveSkills?.[1] || '{{skilltwo}}';
+    const skillThree = job?.mustHaveSkills?.[2] || '{{skillthree}}';
     const userName = userProfile?.name || '{{your_name}}';
     const salary = '{{salary}}'; // Placeholder for user to fill in
 
     return templateText
       .replace(/\{\{firstname\}\}/g, candidateFirstName)
       .replace(/\{\{current_role\}\}/g, currentRole)
+      .replace(/\{\{current_company\}\}/g, currentCompany)
       .replace(/\{\{job_opening\}\}/g, jobTitle)
       .replace(/\{\{company_name\}\}/g, companyName)
       .replace(/\{\{skillone\}\}/g, skillOne)
       .replace(/\{\{skilltwo\}\}/g, skillTwo)
+      .replace(/\{\{skillthree\}\}/g, skillThree)
       .replace(/\{\{your_name\}\}/g, userName)
       .replace(/\\\{\{salary\}\}/g, salary);
   };
@@ -1068,10 +1073,10 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                   value={newTemplateContent}
                   onChange={(e) => setNewTemplateContent(e.target.value)}
                   className="w-full h-40 p-3 bg-shadowforce-light border border-guardian/30 rounded-lg text-white-knight resize-none"
-                  placeholder="Enter your template content. You can use variables like {{firstname}}, {{job_opening}}, {{company_name}}, {{skillone}}, {{skilltwo}}, {{your_name}}, and {{salary}}"
+                  placeholder="Enter your template content. You can use variables like {{firstname}}, {{current_company}}, {{company_name}}, {{job_opening}}, {{skillone}}, {{skilltwo}}, {{skillthree}}, {{your_name}}, and {{salary}}"
                 />
                 <p className="text-guardian text-xs mt-1">
-                  Available variables: {'{'}firstname{'}'}, {'{'}job_opening{'}'}, {'{'}company_name{'}'}, {'{'}skillone{'}'}, {'{'}skilltwo{'}'}, {'{'}your_name{'}'}, {'{'}salary{'}'}
+                  Available variables: {'{'}firstname{'}'}, {'{'}current_company{'}'}, {'{'}company_name{'}'}, {'{'}job_opening{'}'}, {'{'}skillone{'}'}, {'{'}skilltwo{'}'}, {'{'}skillthree{'}'}, {'{'}your_name{'}'}, {'{'}salary{'}'}
                 </p>
               </div>
             </div>

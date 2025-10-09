@@ -1,7 +1,8 @@
-import React from 'react';
-import { Lock, Clock, Download, Zap, Calculator, Building, Users, BookOpen, Target, Play, ExternalLink, Bot, TrendingUp, Briefcase, Network, Award } from 'lucide-react';
+import React, { useState } from 'react';
+import { Lock, Clock, Download, Zap, Calculator, Building, Users, BookOpen, Target, ExternalLink, Bot, TrendingUp, Briefcase, Network, Award } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { useMarketplaceUnlock, MarketplaceItem } from '../hooks/useMarketplaceUnlock';
+import { CandidateEmailsModal } from '../components/ui/CandidateEmailsModal';
 
 const marketplaceItems: MarketplaceItem[] = [
   {
@@ -32,21 +33,57 @@ const marketplaceItems: MarketplaceItem[] = [
     category: 'free',
   },
   {
-    id: 'employee-retention-kit',
-    title: 'Employee Retention Kit',
-    description: 'Proven strategies to keep your best people longer and reduce costly turnover.',
+    id: 'cost-per-hire-calculator',
+    title: 'Cost Per Hire',
+    description: 'See your true cost per hire - and how you can save money and time.',
     unlockDay: 15,
-    sequenceIndex: 3,
-    icon: Users,
+    sequenceIndex: 1,
+    icon: Calculator,
     category: 'starter',
   },
   {
     id: 'ai-recruiter-kit',
-    title: 'AI Recruiter Kit',
+    title: 'AI Tools',
     description: 'Automate your recruiting with AI-driven workflows and tools.',
-    unlockDay: 20,
-    sequenceIndex: 4,
+    unlockDay: 15,
+    sequenceIndex: 1,
     icon: Bot,
+    category: 'starter',
+  },
+  {
+    id: 'outreach-templates',
+    title: 'Outreach Templates',
+    description: 'Turn cold outreach into booked interviews (LinkedIn +email)',
+    unlockDay: 15,
+    sequenceIndex: 1,
+    icon: Award,
+    category: 'starter',
+  },
+  {
+    id: 'employee-retention-kit',
+    title: 'Retention',
+    description: 'Proven strategies to keep your best people longer and reduce costly turnover.',
+    unlockDay: 20,
+    sequenceIndex: 2,
+    icon: Award,
+    category: 'starter',
+  },
+  {
+    id: 'interview-kit',
+    title: 'Interview Kit',
+    description: 'Make the right hire, every time.',
+    unlockDay: 20,
+    sequenceIndex: 2,
+    icon: Users,
+    category: 'starter',
+  },
+  {
+    id: 'candidate-scheduling-automation',
+    title: 'Candidate Scheduling Automation',
+    description: 'Improve your candidate experience while booking interviews on autopilot.',
+    unlockDay: 20,
+    sequenceIndex: 2,
+    icon: Clock,
     category: 'starter',
   },
   {
@@ -54,32 +91,23 @@ const marketplaceItems: MarketplaceItem[] = [
     title: 'Candidate Conversion Kit',
     description: 'Turn passive, high-quality candidates into interviews with these strategies and ready-to-use templates.',
     unlockDay: 25,
-    sequenceIndex: 5,
-    icon: Award,
+    sequenceIndex: 4,
+    icon: Target,
     category: 'starter',
   },
   {
     id: 'candidate-conversion-kit-agency',
-    title: 'Candidate Conversion Kit\n(Agency Edition)',
+    title: 'Candidate Conversion Kit (Agency)',
     description: 'Make more placements with these strategies and ready-to-use templates.',
-    unlockDay: 30,
-    sequenceIndex: 6,
+    unlockDay: 25,
+    sequenceIndex: 4,
     icon: Briefcase,
-    category: 'starter',
-  },
-  {
-    id: 'cost-per-hire-calculator',
-    title: 'Cost Per Hire Calculator',
-    description: 'See your true cost per hire - and how you can save money and time.',
-    unlockDay: 35,
-    sequenceIndex: 7,
-    icon: Calculator,
     category: 'starter',
   },
   {
     id: 'infrastructure-build',
     title: 'Time Machine',
-    description: 'Get the complete playbook to set up a scalable, world-class recruiting operation from the ground up.',
+    description: 'A step-by-step guide to building your fully scalable outbound recruiting machine.',
     unlockDay: 40,
     sequenceIndex: 8,
     icon: Building,
@@ -126,7 +154,7 @@ const getCategoryColor = (category: string) => {
 const getCategoryLabel = (category: string) => {
   switch (category) {
     case 'free': return 'Free Unlocks';
-    case 'starter': return 'Starter Kits';
+    case 'starter': return 'Super Tools';
     case 'enterprise': return 'Advanced Recruiting Playbooks';
     default: return category;
   }
@@ -145,6 +173,7 @@ export const MarketplacePage: React.FC = () => {
 
   const userPoints = getUserPoints();
   const pointsUntilNext = getPointsUntilNextUnlock();
+  const [showEmailsModal, setShowEmailsModal] = useState(false);
 
   // Group items by category
   const allItems = marketplaceItems;
@@ -169,15 +198,24 @@ export const MarketplacePage: React.FC = () => {
       return;
     }
 
+    // Show modal for Clay table emails
+    if (item.id === 'clay-table-emails') {
+      setShowEmailsModal(true);
+      return;
+    }
+
     // Handle external links for marketplace items
     const itemUrls: Record<string, string> = {
+      'cost-per-hire-calculator': 'https://superrecruiterinfo.com/cost-per-hire-calculator',
       'ai-recruiter-kit': 'https://superrecruiterinfo.com/ai-recruiter-tools',
+      'outreach-templates': 'https://superrecruiterinfo.com/outreach-templates',
+      'employee-retention-kit': 'https://superrecruiterinfo.com/employee-retention',
+      'interview-kit': 'https://superrecruiterinfo.com/interview-kit',
+      'candidate-scheduling-automation': 'https://superrecruiterinfo.com/candidate-scheduling',
       'candidate-conversion-kit': 'https://superrecruiterinfo.com/candidate-conversion-kit-corp',
       'candidate-conversion-kit-agency': 'https://superrecruiterinfo.com/candidate-conversion-kit-staffing',
-      'cost-per-hire-calculator': 'https://superrecruiterinfo.com/cost-per-hire-calculator',
-      'employee-retention-kit': 'https://superrecruiterinfo.com/employee-retention',
-      'end-to-end-guide': 'https://superrecruiterinfo.com/evaluation-interviewing',
       'infrastructure-build': 'https://superrecruiterinfo.com/hiring-playbook',
+      'end-to-end-guide': 'https://superrecruiterinfo.com/evaluation-interviewing',
       'outbound-pipelines': 'https://superrecruiterinfo.com/outbound-recruiting',
       'outbound-pipelines-agency': 'https://superrecruiterinfo.com/outbound-recruiting-agency',
       'super-recruiter': 'https://api.leadconnectorhq.com/widget/bookings/superrecruiter-strategy-call'
@@ -303,6 +341,12 @@ export const MarketplacePage: React.FC = () => {
 
 
       </div>
+
+      {/* Candidate Emails Modal */}
+      <CandidateEmailsModal 
+        isOpen={showEmailsModal}
+        onClose={() => setShowEmailsModal(false)}
+      />
     </div>
   );
 };
