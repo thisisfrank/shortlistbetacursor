@@ -4,13 +4,18 @@ interface CardProps {
   children: React.ReactNode;
   className?: string;
   onClick?: (e: React.MouseEvent) => void;
+  style?: React.CSSProperties;
 }
 
-export const Card: React.FC<CardProps> = ({ children, className = '', onClick }) => {
+export const Card: React.FC<CardProps> = ({ children, className = '', onClick, style }) => {
+  // If style is provided (for gradient borders), don't apply default border classes
+  const defaultBorderClasses = style ? '' : 'border border-guardian/20 hover:border-supernova/30';
+  
   return (
     <div 
-      className={`bg-shadowforce-light rounded-xl shadow-2xl border border-guardian/20 hover:border-supernova/30 transition-all duration-300 ${className}`}
+      className={`bg-shadowforce-light rounded-xl shadow-2xl ${defaultBorderClasses} transition-all duration-300 ${className}`}
       onClick={onClick}
+      style={style}
     >
       {children}
     </div>

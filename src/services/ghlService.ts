@@ -39,6 +39,8 @@ class GHLService {
   private signupThankYouWebhookUrl: string;
   private jobSubmissionConfirmationWebhookUrl: string;
   private jobCompletionNotificationWebhookUrl: string;
+  private planPurchaseWelcomeWebhookUrl: string;
+  private feedbackSubmissionWebhookUrl: string;
 
   constructor() {
     // Hardcoded signup webhook URL - triggers when someone first signs up
@@ -47,6 +49,10 @@ class GHLService {
     this.jobSubmissionConfirmationWebhookUrl = 'https://services.leadconnectorhq.com/hooks/QekUNBmcxjsxAKXluQc0/webhook-trigger/543083ea-d7ab-4ef5-8f87-dc35b3ed868b';
     // Hardcoded job completion webhook URL - triggers when a job is completed
     this.jobCompletionNotificationWebhookUrl = 'https://services.leadconnectorhq.com/hooks/QekUNBmcxjsxAKXluQc0/webhook-trigger/2c183ff3-08a7-4fcc-bc4d-aa0d55a9f636';
+    // Hardcoded plan purchase welcome webhook URL - triggers when user purchases a plan
+    this.planPurchaseWelcomeWebhookUrl = 'https://services.leadconnectorhq.com/hooks/QekUNBmcxjsxAKXluQc0/webhook-trigger/72bfee45-a750-4adb-b4d0-f492f641754c';
+    // Hardcoded feedback submission webhook URL - triggers when user submits feedback
+    this.feedbackSubmissionWebhookUrl = 'https://services.leadconnectorhq.com/hooks/QekUNBmcxjsxAKXluQc0/webhook-trigger/238d8a85-b4fc-4580-a379-102f69801702';
   }
 
   async sendSignupThankYouNotification(userProfile: UserProfile, signupSource?: string): Promise<void> {
@@ -220,6 +226,119 @@ class GHLService {
     } catch (error) {
       console.error('Error sending GHL Job Completion Notification:', error);
       // Don't throw error to avoid breaking the job completion flow
+    }
+  }
+
+  async sendPlanPurchaseWelcome(
+    userEmail: string, 
+    userName: string, 
+    tierName: string, 
+    creditsGranted: number,
+    tierId: string
+  ): Promise<void> {
+    if (!this.planPurchaseWelcomeWebhookUrl) {
+      console.log('GHL Plan Purchase Welcome webhook URL not configured, skipping notification');
+      return;
+    }
+
+    try {
+      const payload = {
+        event: 'plan_purchase_welcome',
+        userEmail: userEmail,
+        userName: userName,
+        planDetails: {
+          tierName: tierName,
+          tierId: tierId,
+          creditsGranted: creditsGranted,
+        },
+        clayReferralLink: 'https://clay.com?via=bae546',
+        clayReferralBonus: 3000,
+        welcomeMessage: `Welcome to ${tierName}! You now have ${creditsGranted} candidate credits available.`,
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = await fetch(this.planPurchaseWelcomeWebhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`GHL Plan Purchase Welcome webhook failed: ${response.status} ${response.statusText}`);
+      }
+
+      console.log('✅ GHL Plan Purchase Welcome notification sent successfully');
+    } catch (error) {
+      console.error('❌ Error sending GHL Plan Purchase Welcome notification:', error);
+      // Don't throw error to avoid breaking the purchase flow
+    }
+  }
+
+  async sendFeedbackSubmission(
+    feedbackData: {
+      feedback: string;
+      user: {
+        id?: string;
+        email?: string;
+        name?: string;
+        role?: string;
+      };
+      context?: {
+        feedbackType?: string;
+        page?: string;
+        currentContext?: string;
+        jobId?: string;
+        jobTitle?: string;
+        companyName?: string;
+        candidateCount?: number;
+      };
+    }
+  ): Promise<void> {
+    if (!this.feedbackSubmissionWebhookUrl) {
+      console.log('GHL Feedback Submission webhook URL not configured, skipping notification');
+      return;
+    }
+
+    try {
+      const payload = {
+        event: 'feedback_submission',
+        userEmail: feedbackData.user.email || 'unknown@example.com',
+        userName: feedbackData.user.name || 'Unknown User',
+        userId: feedbackData.user.id,
+        userRole: feedbackData.user.role || 'client',
+        feedbackDetails: {
+          feedback: feedbackData.feedback,
+          feedbackType: feedbackData.context?.feedbackType || 'general',
+          page: feedbackData.context?.page || 'unknown',
+          context: feedbackData.context?.currentContext || '',
+        },
+        jobContext: feedbackData.context?.jobId ? {
+          jobId: feedbackData.context.jobId,
+          jobTitle: feedbackData.context.jobTitle,
+          companyName: feedbackData.context.companyName,
+          candidateCount: feedbackData.context.candidateCount,
+        } : null,
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = await fetch(this.feedbackSubmissionWebhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`GHL Feedback Submission webhook failed: ${response.status} ${response.statusText}`);
+      }
+
+      console.log('✅ GHL Feedback Submission notification sent successfully');
+    } catch (error) {
+      console.error('❌ Error sending GHL Feedback Submission notification:', error);
+      // Don't throw error to avoid breaking the feedback flow
     }
   }
 
@@ -422,6 +541,43 @@ if (typeof window !== 'undefined') {
     ];
     
     ghlService.sendJobCompletionNotification(testJob, testUserProfile, testCandidates);
+  };
+
+  (window as any).testPlanPurchaseWelcome = () => {
+    console.log('🧪 Testing Plan Purchase Welcome webhook...');
+    
+    ghlService.sendPlanPurchaseWelcome(
+      'test@example.com',          // userEmail
+      'Test User',                  // userName
+      'Beast Mode',                 // tierName
+      400,                          // creditsGranted
+      'f871eb1b-6756-447d-a1c0-20a373d1d5a2'  // tierId
+    );
+  };
+
+  (window as any).testFeedbackSubmission = () => {
+    console.log('🧪 Testing Feedback Submission webhook...');
+    
+    const testFeedbackData = {
+      feedback: 'This is a test feedback! The app is working great and the candidates are high quality.',
+      user: {
+        id: 'test-user-id',
+        email: 'test@example.com',
+        name: 'Test User',
+        role: 'client'
+      },
+      context: {
+        feedbackType: 'general',
+        page: '/candidates',
+        currentContext: 'header',
+        jobId: 'test-job-id',
+        jobTitle: 'Senior Software Engineer',
+        companyName: 'Test Company Inc',
+        candidateCount: 12
+      }
+    };
+    
+    ghlService.sendFeedbackSubmission(testFeedbackData);
   };
 
   (window as any).debugGHLEnvVars = () => {

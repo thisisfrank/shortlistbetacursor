@@ -10,6 +10,8 @@ The application now sends different events to GoHighLevel via separate webhooks 
 - `VITE_GHL_JOB_SUBMISSION_CONFIRMATION_WEBHOOK_URL`: Webhook URL for job submission confirmation events  
 - `VITE_GHL_CANDIDATE_READY_NOTIFICATION_WEBHOOK_URL`: Webhook URL for candidate ready notification events
 - `VITE_GHL_JOB_COMPLETION_NOTIFICATION_WEBHOOK_URL`: Webhook URL for job completion notification events
+- `VITE_GHL_PLAN_PURCHASE_WELCOME_WEBHOOK_URL`: Webhook URL for plan purchase welcome email (with Clay info)
+- `VITE_GHL_FEEDBACK_SUBMISSION_WEBHOOK_URL`: Webhook URL for user feedback submission events
 
 ## Webhook Payload Formats
 
@@ -187,6 +189,61 @@ When a job is completed, the following payload is sent to the job completion not
 }
 ```
 
+### 5. Plan Purchase Welcome Event
+When a user purchases a subscription plan, the following payload is sent to trigger a welcome email with Clay table and referral information:
+
+```json
+{
+  "event": "plan_purchase_welcome",
+  "userEmail": "user@company.com",
+  "userName": "John Doe",
+  "planDetails": {
+    "tierName": "Beast Mode",
+    "tierId": "tier-uuid",
+    "creditsGranted": 400
+  },
+  "clayReferralLink": "https://clay.com?via=bae546",
+  "clayReferralBonus": 3000,
+  "welcomeMessage": "Welcome to Beast Mode! You now have 400 candidate credits available.",
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**Email Template Should Include:**
+- Welcome message with plan name
+- Number of candidate credits available
+- Clay table access information
+- Clay referral link: `https://clay.com?via=bae546`
+- Message: "Use this link to sign up for Clay and get 3,000 free credits!"
+
+### 6. Feedback Submission Event
+When a user submits feedback (general or job-specific), the following payload is sent:
+
+```json
+{
+  "event": "feedback_submission",
+  "userEmail": "user@company.com",
+  "userName": "John Doe",
+  "userId": "user-uuid",
+  "userRole": "client",
+  "feedbackDetails": {
+    "feedback": "The candidate quality is excellent! Would love more filtering options.",
+    "feedbackType": "general",
+    "page": "/candidates",
+    "context": "header"
+  },
+  "jobContext": {
+    "jobId": "job-uuid",
+    "jobTitle": "Software Engineer",
+    "companyName": "Tech Corp",
+    "candidateCount": 15
+  },
+  "timestamp": "2024-01-09T00:00:00.000Z"
+}
+```
+
+**Note**: `jobContext` will be `null` for general feedback submissions. It's only populated when feedback is submitted from the candidates page.
+
 ## Setup Instructions
 
 1. **Get GoHighLevel Webhook URLs**: 
@@ -201,6 +258,8 @@ When a job is completed, the following payload is sent to the job completion not
    VITE_GHL_JOB_SUBMISSION_CONFIRMATION_WEBHOOK_URL=https://your-job-submission-confirmation-webhook-url
    VITE_GHL_CANDIDATE_READY_NOTIFICATION_WEBHOOK_URL=https://your-candidate-ready-notification-webhook-url
    VITE_GHL_JOB_COMPLETION_NOTIFICATION_WEBHOOK_URL=https://your-job-completion-notification-webhook-url
+   VITE_GHL_PLAN_PURCHASE_WELCOME_WEBHOOK_URL=https://your-plan-purchase-welcome-webhook-url
+   VITE_GHL_FEEDBACK_SUBMISSION_WEBHOOK_URL=https://your-feedback-submission-webhook-url
    ```
 
 3. **For Netlify deployment**: Add these in the Netlify dashboard under Site Settings > Environment Variables
@@ -231,6 +290,20 @@ await ghlService.sendCandidateReadyNotification(candidate, job, userProfile);
 await ghlService.sendJobCompletionNotification(job, userProfile, candidates);
 ```
 
+### Plan Purchase Welcome Event (Automatic)
+```javascript
+// Automatically fires when user purchases a subscription plan via Stripe
+// Triggered in Stripe webhook after checkout.session.completed
+await ghlService.sendPlanPurchaseWelcome(userEmail, userName, tierName, creditsGranted, tierId);
+```
+
+### Feedback Submission Event (Automatic)
+```javascript
+// Automatically fires when user submits feedback (general or job-specific)
+// Triggered in useGeneralFeedback.ts and CandidatesView.tsx
+await ghlService.sendFeedbackSubmission(feedbackData);
+```
+
 ## Error Handling
 
 - If any webhook URL is not configured, that specific notification is skipped (logged but doesn't break the main flow)
@@ -259,4 +332,6 @@ testJobCompletionWebhook()
 - `user_signup`: Sent when a new user registers (Sign Up Thank You)
 - `job_submission_confirmation`: Sent when a job is submitted (Job Submission Confirmation)
 - `candidate_ready_notification`: Sent when candidates are submitted (Candidate Ready Notification)
-- `job_completion_notification`: Sent when a job is completed (Job Completion Notification) 
+- `job_completion_notification`: Sent when a job is completed (Job Completion Notification)
+- `plan_purchase_welcome`: Sent when a user purchases a subscription plan (includes Clay referral link)
+- `feedback_submission`: Sent when a user submits feedback (general or job-specific) 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { ghlService } from '../services/ghlService';
 
 interface GeneralFeedbackModal {
   isOpen: boolean;
@@ -75,7 +76,7 @@ export const useGeneralFeedback = (currentContext?: string) => {
         feedbackType: 'general'
       };
 
-      // Submit to general feedback webhook
+      // Submit to Make.com webhook (existing)
       const response = await fetch('https://hook.us1.make.com/l0wxoj3wktjgswsskzjugpn6pkllezwp', {
         method: 'POST',
         headers: {
@@ -86,6 +87,13 @@ export const useGeneralFeedback = (currentContext?: string) => {
 
       if (!response.ok) {
         throw new Error(`Webhook failed with status: ${response.status}`);
+      }
+
+      // Also send to GHL for email automation (non-blocking)
+      try {
+        await ghlService.sendFeedbackSubmission(feedbackData);
+      } catch (ghlError) {
+        console.warn('⚠️ GHL feedback webhook failed (non-blocking):', ghlError);
       }
       
       setAlertModal({

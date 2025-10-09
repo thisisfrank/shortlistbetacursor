@@ -1,4 +1,5 @@
 import { useAuth } from './useAuth';
+import { useData } from '../context/DataContext';
 
 export interface MarketplaceItem {
   id: string;
@@ -12,6 +13,7 @@ export interface MarketplaceItem {
 
 export const useMarketplaceUnlock = () => {
   const { userProfile } = useAuth();
+  const { jobs, shortlistCandidates, shortlists } = useData();
 
   const getDaysActive = (): number => {
     if (!userProfile?.createdAt) return 0;
@@ -20,30 +22,50 @@ export const useMarketplaceUnlock = () => {
     return Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
   };
 
-  const getUnlockedItemsCount = (): number => {
-    const daysActive = getDaysActive();
-    return Math.floor(daysActive / 5) + 1; // +1 for immediate unlock (AI Generator)
+  const getUserPoints = (): number => {
+    if (!userProfile?.id) return 0;
+
+    // Points from jobs (10 points each)
+    const jobCount = jobs.filter(j => j.userId === userProfile.id).length;
+    const jobPoints = jobCount * 10;
+
+    // Points from shortlisted candidates (5 points each)
+    const userShortlists = shortlists.filter(s => s.userId === userProfile.id);
+    const userShortlistIds = userShortlists.map(s => s.id);
+    const candidateCount = shortlistCandidates.filter(sc => userShortlistIds.includes(sc.shortlistId)).length;
+    const candidatePoints = candidateCount * 5;
+
+    // Bonus points from account age (10 points per day)
+    const dayBonus = getDaysActive() * 10;
+
+    return jobPoints + candidatePoints + dayBonus;
   };
 
-  const getDaysUntilNextUnlock = (): number => {
-    const daysActive = getDaysActive();
-    const nextUnlockDay = (Math.floor(daysActive / 5) + 1) * 5;
-    return Math.max(0, nextUnlockDay - daysActive);
+  const getUnlockedItemsCount = (): number => {
+    const points = getUserPoints();
+    return Math.floor(points / 100) + 1; // +1 for immediate unlock (AI Generator at 0 points)
+  };
+
+  const getPointsUntilNextUnlock = (): number => {
+    const points = getUserPoints();
+    const nextUnlockPoints = (Math.floor(points / 100) + 1) * 100;
+    return Math.max(0, nextUnlockPoints - points);
   };
 
   const isItemUnlocked = (item: MarketplaceItem): boolean => {
-    const unlockedCount = getUnlockedItemsCount();
-    return item.sequenceIndex < unlockedCount;
+    const points = getUserPoints();
+    const requiredPoints = item.sequenceIndex * 100;
+    return points >= requiredPoints;
   };
 
   const getNextUnlockItem = (items: MarketplaceItem[]): MarketplaceItem | null => {
-    const unlockedCount = getUnlockedItemsCount();
-    return items.find(item => item.sequenceIndex === unlockedCount) || null;
+    const sortedItems = [...items].sort((a, b) => a.sequenceIndex - b.sequenceIndex);
+    return sortedItems.find(item => !isItemUnlocked(item)) || null;
   };
 
   // Keep for backward compatibility with AI Generator
   const isAIGeneratorUnlocked = (): boolean => {
-    return getUnlockedItemsCount() > 0;
+    return getUserPoints() >= 0; // AI Generator always unlocked
   };
 
   const isDataLoading = (): boolean => {
@@ -52,8 +74,9 @@ export const useMarketplaceUnlock = () => {
 
   return {
     getDaysActive,
+    getUserPoints,
     getUnlockedItemsCount,
-    getDaysUntilNextUnlock,
+    getPointsUntilNextUnlock,
     isItemUnlocked,
     getNextUnlockItem,
     isAIGeneratorUnlocked,

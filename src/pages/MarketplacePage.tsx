@@ -1,6 +1,5 @@
 import React from 'react';
-import { Lock, Clock, Download, Gift, Zap, Calculator, Building, Users, BookOpen, Target, Play, CheckCircle, ExternalLink, Bot, TrendingUp, Briefcase, Network, Award } from 'lucide-react';
-import { Button } from '../components/ui/Button';
+import { Lock, Clock, Download, Zap, Calculator, Building, Users, BookOpen, Target, Play, ExternalLink, Bot, TrendingUp, Briefcase, Network, Award } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { useMarketplaceUnlock, MarketplaceItem } from '../hooks/useMarketplaceUnlock';
 
@@ -79,7 +78,7 @@ const marketplaceItems: MarketplaceItem[] = [
   },
   {
     id: 'infrastructure-build',
-    title: 'Infrastructure Build',
+    title: 'Time Machine',
     description: 'Get the complete playbook to set up a scalable, world-class recruiting operation from the ground up.',
     unlockDay: 40,
     sequenceIndex: 8,
@@ -133,25 +132,24 @@ const getCategoryLabel = (category: string) => {
   }
 };
 
+const getGradientBorderClass = () => {
+  return 'relative before:absolute before:inset-0 before:rounded-xl before:p-[2px] before:bg-gradient-to-br before:[background:linear-gradient(40deg,#1a1a1a_0%,#FFD700_100%)] before:-z-10 rounded-xl [box-shadow:0_8px_20px_-6px_rgba(255,215,0,0.2),0_4px_12px_-3px_rgba(255,165,0,0.15)]';
+};
+
 export const MarketplacePage: React.FC = () => {
   const { 
-    getDaysActive, 
-    getUnlockedItemsCount, 
-    getDaysUntilNextUnlock, 
-    isItemUnlocked,
-    getNextUnlockItem
+    getUserPoints,
+    getPointsUntilNextUnlock, 
+    isItemUnlocked
   } = useMarketplaceUnlock();
 
-  const daysActive = getDaysActive();
-  const unlockedCount = getUnlockedItemsCount();
-  const daysUntilNext = getDaysUntilNextUnlock();
-  const nextUnlockItem = getNextUnlockItem(marketplaceItems);
+  const userPoints = getUserPoints();
+  const pointsUntilNext = getPointsUntilNextUnlock();
 
-  // Separate AI Message Generator from other items
-  const aiMessageGenerator = marketplaceItems.find(item => item.id === 'ai-message-generator');
-  const otherItems = marketplaceItems.filter(item => item.id !== 'ai-message-generator');
+  // Group items by category
+  const allItems = marketplaceItems;
   
-  const groupedItems = otherItems.reduce((acc, item) => {
+  const groupedItems = allItems.reduce((acc, item) => {
     if (!acc[item.category]) {
       acc[item.category] = [];
     }
@@ -202,15 +200,24 @@ export const MarketplacePage: React.FC = () => {
           <h1 className="text-8xl font-anton text-white-knight leading-tight uppercase mb-4">
             Superpowers
           </h1>
-          <p className="text-xl text-guardian mb-4">
+          <p className="text-xl text-guardian mb-2">
             Unlock premium hiring tools and resources
           </p>
-          <div className="flex justify-center">
+          <p className="text-sm text-guardian/80 mb-4">
+            Earn points: Create jobs (10pts) • Add candidates (5pts) • Daily bonus (10pts/day)
+          </p>
+          <div className="flex justify-center gap-4">
             <div className="inline-flex items-center gap-2 bg-supernova/20 border border-supernova px-4 py-2 rounded-lg">
-              <Clock className="text-supernova" size={20} />
+              <Zap className="text-supernova" size={20} />
               <span className="text-white-knight font-semibold text-sm">
-                {daysUntilNext > 0 
-                  ? `Next unlock in ${daysUntilNext} day${daysUntilNext !== 1 ? 's' : ''}`
+                {userPoints} Points
+              </span>
+            </div>
+            <div className="inline-flex items-center gap-2 bg-guardian/20 border border-guardian px-4 py-2 rounded-lg">
+              <Clock className="text-guardian" size={20} />
+              <span className="text-white-knight font-semibold text-sm">
+                {pointsUntilNext > 0 
+                  ? `${pointsUntilNext} points to next unlock`
                   : 'New unlock available!'
                 }
               </span>
@@ -226,116 +233,68 @@ export const MarketplacePage: React.FC = () => {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Featured AI Message Generator for free category */}
-              {category === 'free' && aiMessageGenerator && (
-                <Card className="relative overflow-hidden bg-gradient-to-br from-supernova/20 via-supernova/10 to-transparent border-2 border-supernova/50 shadow-2xl flex flex-col h-full">
-                  {/* Animated background elements */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-supernova/5 to-transparent"></div>
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-supernova/10 rounded-full -translate-y-16 translate-x-16"></div>
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-supernova/10 rounded-full translate-y-12 -translate-x-12"></div>
-                  
-                  <div className="relative p-6 flex-grow flex flex-col">
-                    <div className="text-center flex-grow flex flex-col justify-center">
-                      {/* Badge */}
-                      <div className="mb-4">
-                        <div className="inline-flex items-center gap-2 bg-green-500/20 border border-green-500 px-3 py-1 rounded-full">
-                          <Gift size={14} className="text-green-500" />
-                          <span className="text-green-500 font-semibold text-sm">FEATURED</span>
-                        </div>
-                      </div>
-                      
-                      {/* Content */}
-                      <div className="mb-4">
-                        <h3 className="text-lg font-semibold text-white-knight font-jakarta mb-2">
-                          AI Message Generator
-                        </h3>
-                        <p className="text-guardian text-sm mb-4">
-                          Personalize your outreach in seconds - with messages that actually get replies.
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {/* Action area */}
-                    <div className="pt-3 border-t border-guardian/20 space-y-2">
-                      {isItemUnlocked(aiMessageGenerator) ? (
-                        <button 
-                          onClick={() => handleUnlock(aiMessageGenerator)}
-                          className="w-full text-supernova hover:text-supernova/80 text-sm font-medium flex items-center justify-center gap-2 transition-colors py-2"
-                        >
-                          <Play size={14} />
-                          Start Creating Messages
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={() => handleUnlock(aiMessageGenerator)}
-                          className="w-full bg-supernova text-shadowforce hover:bg-supernova/90 text-sm font-medium py-2 px-4 rounded-lg transition-colors"
-                        >
-                          Buy Now
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              )}
               {items.map((item) => {
                 const Icon = item.icon;
                 const itemUnlocked = isItemUnlocked(item);
                 
                 return (
-                  <Card key={item.id} className={`p-6 ${getCategoryColor(category)} border-2 flex flex-col h-full ${
-                    itemUnlocked ? 'ring-2 ring-supernova/50' : ''
-                  }`}>
+                  <div key={item.id} className={getGradientBorderClass()}>
+                    <Card 
+                      className={`p-6 ${getCategoryColor(category)} flex flex-col h-full !border-0 ${
+                        itemUnlocked ? 'ring-2 ring-supernova/50' : ''
+                      }`}
+                    >
                     <div className="flex items-start gap-4 mb-4 flex-grow">
-                      <div className={`p-3 rounded-lg ${
-                        itemUnlocked ? 'bg-supernova/20' : 'bg-guardian/10'
-                      }`}>
-                        <Icon size={24} className={
-                          itemUnlocked ? 'text-supernova' : 'text-guardian'
-                        } />
-                      </div>
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-white-knight font-jakarta mb-2 whitespace-pre-line">
                           {item.title}
                         </h3>
-                        <p className="text-guardian text-sm mb-3">
+                        <p className="text-guardian text-sm mb-2">
                           {item.description}
                         </p>
-                        
-                        {/* Status indicator */}
-                        {!itemUnlocked && (
-                          <div className="flex items-center gap-2 text-guardian">
-                            <Clock size={16} />
-                            <span className="text-sm">
-                              {item.id === 'clay-table-emails' 
-                                ? 'Free upon upgrading plans' 
-                                : `Unlocks Day ${item.unlockDay}`
-                              }
+                        {item.id === 'ai-message-generator' && (
+                          <div className="inline-block">
+                            <span className="text-xs font-bold text-shadowforce bg-supernova px-3 py-1 rounded-full">
+                              FEATURED TOOL
                             </span>
                           </div>
                         )}
+                      </div>
+                      <div className="p-3 rounded-lg bg-supernova/20">
+                        <Icon size={24} className="text-supernova" />
                       </div>
                     </div>
                     
                     {/* Action area */}
                     <div className="pt-3 border-t border-guardian/20 space-y-2">
+                      {/* Status indicator */}
+                      {!itemUnlocked && (
+                        <div className="flex items-center gap-2 text-supernova mb-2">
+                          <Lock size={16} />
+                          <span className="text-sm">
+                            Requires {item.sequenceIndex * 100} points
+                          </span>
+                        </div>
+                      )}
                       {itemUnlocked ? (
                         <button 
                           onClick={() => handleUnlock(item)}
                           className="w-full text-supernova hover:text-supernova/80 text-sm font-medium flex items-center justify-center gap-2 transition-colors py-2"
                         >
                           <ExternalLink size={14} />
-                          {item.id === 'super-recruiter' ? 'Schedule Strategy Session' : 'Access Now'}
+                          {item.id === 'super-recruiter' ? 'Book My Free Call' : 'Access Now'}
                         </button>
                       ) : (
                         <button 
                           onClick={() => handleUnlock(item)}
                           className="w-full bg-supernova text-shadowforce hover:bg-supernova/90 text-sm font-medium py-2 px-4 rounded-lg transition-colors"
                         >
-                          {item.id === 'super-recruiter' ? 'Book My Free Meeting' : 'Buy Now'}
+                          {item.id === 'super-recruiter' ? 'Book My Free Meeting' : 'Unlock Now'}
                         </button>
                       )}
                     </div>
                   </Card>
+                  </div>
                 );
               })}
             </div>

@@ -9,7 +9,8 @@ import { generateJobMatchScore } from '../../services/anthropicService';
 import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List, Edit2, Trash2, Save, X, MessageSquare, CheckCircle, ArrowDown, MessageCircle, Eye, EyeOff, Minus, Plus } from 'lucide-react';
+import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List, Edit2, Trash2, Save, X, MessageSquare, CheckCircle, ArrowDown, MessageCircle, Eye, EyeOff, Minus, Plus, Clock } from 'lucide-react';
+import { ghlService } from '../../services/ghlService';
 
 // Helper function to calculate total years of experience
 const calculateYearsOfExperience = (experience?: Array<{ title: string; company: string; duration: string }>): number => {
@@ -64,6 +65,43 @@ const calculateYearsOfExperience = (experience?: Array<{ title: string; company:
   }
   
   return Math.round(totalMonths / 12 * 10) / 10; // Round to 1 decimal place
+};
+
+// Delivery Countdown Component
+const DeliveryCountdown: React.FC<{ jobCreatedAt: string }> = ({ jobCreatedAt }) => {
+  const [timeRemaining, setTimeRemaining] = useState('');
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      const createdDate = new Date(jobCreatedAt);
+      const deliveryDeadline = new Date(createdDate.getTime() + 24 * 60 * 60 * 1000); // 24 hours later
+      const now = new Date();
+      const diff = deliveryDeadline.getTime() - now.getTime();
+
+      if (diff <= 0) {
+        setTimeRemaining('Delivery time passed');
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setTimeRemaining(`${hours}h ${minutes}m ${seconds}s`);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [jobCreatedAt]);
+
+  return (
+    <div className="flex items-center text-sm font-jakarta text-green-500">
+      <Clock size={16} className="mr-2" />
+      <span>Time to Delivery: {timeRemaining}</span>
+    </div>
+  );
 };
 
 export const CandidatesView: React.FC = () => {
@@ -669,7 +707,7 @@ export const CandidatesView: React.FC = () => {
         page: 'candidates'
       };
 
-      // Submit to Make.com webhook
+      // Submit to Make.com webhook (existing)
       const response = await fetch('https://hook.us1.make.com/ohs8r24la92v5bl7pvb03pzyikh28wy2', {
         method: 'POST',
         headers: {
@@ -680,6 +718,13 @@ export const CandidatesView: React.FC = () => {
 
       if (!response.ok) {
         throw new Error(`Webhook failed with status: ${response.status}`);
+      }
+
+      // Also send to GHL for email automation (non-blocking)
+      try {
+        await ghlService.sendFeedbackSubmission(feedbackData);
+      } catch (ghlError) {
+        console.warn('⚠️ GHL feedback webhook failed (non-blocking):', ghlError);
       }
       
       setAlertModal({
@@ -1692,6 +1737,7 @@ export const CandidatesView: React.FC = () => {
                             <Users size={16} className="mr-2" />
                             <span>Requested Candidates: {job.candidatesRequested}</span>
                           </div>
+                          <DeliveryCountdown jobCreatedAt={job.createdAt} />
                         </div>
                         
                         {/* Expanded Job Details */}

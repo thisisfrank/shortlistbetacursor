@@ -1,3 +1,4 @@
+// @ts-nocheck - Deno edge function (not Node.js)
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno'
@@ -260,6 +261,91 @@ async function syncCustomerFromStripe(customerId: string) {
   }
 }
 
+async function renewMonthlyCredits(customerId: string) {
+  try {
+    console.log(`💳 Starting credit renewal for customer: ${customerId}`)
+    
+    // Get customer email from Stripe
+    const stripeCustomer = await stripe.customers.retrieve(customerId)
+    
+    if (!stripeCustomer || stripeCustomer.deleted || !stripeCustomer.email) {
+      console.error('❌ No email found for Stripe customer:', customerId)
+      return
+    }
+
+    const customerEmail = stripeCustomer.email
+    console.log(`📧 Looking up user by email: ${customerEmail}`)
+
+    // Get user with their tier information
+    const { data: userData, error: userError } = await supabase
+      .from('user_profiles')
+      .select(`
+        id,
+        email,
+        available_credits,
+        tier_id,
+        tiers!inner(
+          id,
+          name,
+          monthly_candidate_allotment
+        )
+      `)
+      .eq('email', customerEmail)
+      .single()
+
+    if (userError || !userData) {
+      console.error('❌ No user found with email:', customerEmail, userError)
+      return
+    }
+
+    // Don't renew credits for free tier
+    if (userData.tier_id === FREE_TIER_ID) {
+      console.log(`⚠️ User is on free tier - skipping credit renewal`)
+      return
+    }
+
+    const userId = userData.id
+    const tierCredits = userData.tiers.monthly_candidate_allotment
+    const currentCredits = userData.available_credits || 0
+    const newCreditBalance = currentCredits + tierCredits
+
+    console.log(`💰 Credit renewal: ${currentCredits} existing + ${tierCredits} tier credits = ${newCreditBalance} total`)
+
+    // Calculate next renewal date (30 days from now)
+    const nextResetDate = new Date()
+    nextResetDate.setDate(nextResetDate.getDate() + 30)
+
+    // Update user's credits and reset date
+    const { error: updateError } = await supabase
+      .from('user_profiles')
+      .update({
+        available_credits: newCreditBalance,
+        credits_reset_date: nextResetDate.toISOString(),
+        subscription_period_end: nextResetDate.toISOString()
+      })
+      .eq('id', userId)
+
+    if (updateError) {
+      console.error('❌ Error updating user credits:', updateError)
+      throw new Error('Failed to update user credits in database')
+    }
+
+    // Log credit transaction for audit trail
+    await supabase.from('credit_transactions').insert({
+      user_id: userId,
+      transaction_type: 'addition',
+      amount: tierCredits,
+      description: `Monthly credit renewal: ${tierCredits} credits added`
+    })
+
+    console.log(`✅ Successfully renewed ${tierCredits} credits for user ${userId} (${userData.tiers.name} tier)`)
+    
+  } catch (error) {
+    console.error(`💥 Error in renewMonthlyCredits:`, error)
+    throw error
+  }
+}
+
 serve(async (req) => {
   console.log(`🎯 Webhook called: ${req.method} ${req.url}`)
   console.log(`🔍 Headers:`, Object.fromEntries(req.headers.entries()))
@@ -357,6 +443,64 @@ serve(async (req) => {
           if (tierId) {
             // Pass the new subscription ID to avoid canceling it
             await updateUserTier(customerId, tierId, 'active', session.subscription as string)
+            
+            // Send plan purchase welcome email via GHL webhook
+            try {
+              // Get customer and user details
+              const stripeCustomer = await stripe.customers.retrieve(customerId)
+              if (stripeCustomer && !stripeCustomer.deleted && stripeCustomer.email) {
+                // Get tier details from database
+                const { data: tierData } = await supabase
+                  .from('tiers')
+                  .select('name, monthly_candidate_allotment')
+                  .eq('id', tierId)
+                  .single()
+                
+                // Get user name from database
+                const { data: userData } = await supabase
+                  .from('user_profiles')
+                  .select('name')
+                  .eq('email', stripeCustomer.email)
+                  .single()
+                
+                if (tierData) {
+                  const userName = userData?.name || stripeCustomer.email.split('@')[0]
+                  
+                  // Call GHL webhook to send welcome email
+                  const ghlWebhookUrl = 'https://services.leadconnectorhq.com/hooks/QekUNBmcxjsxAKXluQc0/webhook-trigger/72bfee45-a750-4adb-b4d0-f492f641754c'
+                  
+                  const ghlPayload = {
+                    event: 'plan_purchase_welcome',
+                    userEmail: stripeCustomer.email,
+                    userName: userName,
+                    planDetails: {
+                      tierName: tierData.name,
+                      tierId: tierId,
+                      creditsGranted: tierData.monthly_candidate_allotment,
+                    },
+                    clayReferralLink: 'https://clay.com?via=bae546',
+                    clayReferralBonus: 3000,
+                    welcomeMessage: `Welcome to ${tierData.name}! You now have ${tierData.monthly_candidate_allotment} candidate credits available.`,
+                    timestamp: new Date().toISOString(),
+                  }
+                  
+                  const ghlResponse = await fetch(ghlWebhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(ghlPayload),
+                  })
+                  
+                  if (ghlResponse.ok) {
+                    console.log('✅ Plan purchase welcome email triggered via GHL webhook')
+                  } else {
+                    console.warn(`⚠️ GHL webhook failed: ${ghlResponse.status}`)
+                  }
+                }
+              }
+            } catch (ghlError) {
+              console.error('❌ Error sending plan purchase welcome email:', ghlError)
+              // Don't fail the webhook if email notification fails
+            }
           } else {
             console.warn(`⚠️ Could not determine tier for checkout session ${session.id}, syncing from Stripe`)
             await syncCustomerFromStripe(customerId)
@@ -391,7 +535,19 @@ serve(async (req) => {
         break
 
       case 'invoice.payment_succeeded':
+        const invoice = stripeData as Stripe.Invoice
         console.info(`✅ Payment succeeded for customer: ${customerId}`)
+        
+        // Check if this is a recurring payment (not the first invoice)
+        // billing_reason 'subscription_cycle' means it's a renewal
+        if (invoice.billing_reason === 'subscription_cycle') {
+          console.log(`🔄 Recurring payment detected - processing credit renewal`)
+          await renewMonthlyCredits(customerId)
+        } else {
+          console.log(`ℹ️ First payment or manual invoice - no credit renewal needed`)
+        }
+        
+        // Still sync subscription status
         await syncCustomerFromStripe(customerId)
         break
 
