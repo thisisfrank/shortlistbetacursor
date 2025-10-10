@@ -3,6 +3,7 @@ import { Lock, Clock, Download, Zap, Calculator, Building, Users, BookOpen, Targ
 import { Card } from '../components/ui/Card';
 import { useMarketplaceUnlock, MarketplaceItem } from '../hooks/useMarketplaceUnlock';
 import { CandidateEmailsModal } from '../components/ui/CandidateEmailsModal';
+import { OutreachTemplatesModal } from '../components/ui/OutreachTemplatesModal';
 
 const marketplaceItems: MarketplaceItem[] = [
   {
@@ -167,13 +168,12 @@ const getGradientBorderClass = () => {
 export const MarketplacePage: React.FC = () => {
   const { 
     getUserPoints,
-    getPointsUntilNextUnlock, 
     isItemUnlocked
   } = useMarketplaceUnlock();
 
   const userPoints = getUserPoints();
-  const pointsUntilNext = getPointsUntilNextUnlock();
   const [showEmailsModal, setShowEmailsModal] = useState(false);
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
 
   // Group items by category
   const allItems = marketplaceItems;
@@ -204,20 +204,25 @@ export const MarketplacePage: React.FC = () => {
       return;
     }
 
+    // Show modal for Outreach Templates
+    if (item.id === 'outreach-templates') {
+      setShowTemplatesModal(true);
+      return;
+    }
+
     // Handle external links for marketplace items
     const itemUrls: Record<string, string> = {
-      'cost-per-hire-calculator': 'https://superrecruiterinfo.com/cost-per-hire-calculator',
-      'ai-recruiter-kit': 'https://superrecruiterinfo.com/ai-recruiter-tools',
-      'outreach-templates': 'https://superrecruiterinfo.com/outreach-templates',
-      'employee-retention-kit': 'https://superrecruiterinfo.com/employee-retention',
-      'interview-kit': 'https://superrecruiterinfo.com/interview-kit',
-      'candidate-scheduling-automation': 'https://superrecruiterinfo.com/candidate-scheduling',
-      'candidate-conversion-kit': 'https://superrecruiterinfo.com/candidate-conversion-kit-corp',
-      'candidate-conversion-kit-agency': 'https://superrecruiterinfo.com/candidate-conversion-kit-staffing',
-      'infrastructure-build': 'https://superrecruiterinfo.com/hiring-playbook',
-      'end-to-end-guide': 'https://superrecruiterinfo.com/evaluation-interviewing',
-      'outbound-pipelines': 'https://superrecruiterinfo.com/outbound-recruiting',
-      'outbound-pipelines-agency': 'https://superrecruiterinfo.com/outbound-recruiting-agency',
+      'cost-per-hire-calculator': 'https://superrecruiterresources.notion.site/Cost-Per-Hire-Calculation-Kit-2467773d39ea80ab9b84c6a99591ba9d?pvs=74',
+      'ai-recruiter-kit': 'https://superrecruiterresources.notion.site/AI-Recruiting-Tools-2387773d39ea8041ae0ac722c76c47be?pvs=74',
+      'employee-retention-kit': 'https://superrecruiterresources.notion.site/Employee-Retention-Guide-2467773d39ea80e99ea4e5b295658f10?pvs=74',
+      'interview-kit': 'https://superrecruiterresources.notion.site/Evaluating-Interviewing-Candidates-2467773d39ea80bda8b6c2e09693a97e?pvs=74',
+      'candidate-scheduling-automation': 'https://superrecruiterresources.notion.site/Candidate-Scheduling-Automation-2477773d39ea81139252c1cd7443f98d?pvs=74',
+      'candidate-conversion-kit': 'https://superrecruiterresources.notion.site/?pvs=74',
+      'candidate-conversion-kit-agency': 'https://superrecruiterresources.notion.site/Candidate-Conversion-Kit-Agency-Edition-2567773d39ea804fa10af5f0b1a75f02',
+      'infrastructure-build': 'https://superrecruiterresources.notion.site/Outbound-Candidate-Funnel-Builder-2277773d39ea80519727d2463b9cc7b5?pvs=74',
+      'end-to-end-guide': 'https://ultimatehiringplaybook.notion.site/?pvs=74',
+      'outbound-pipelines': 'https://100xrecruiterstack.notion.site/100x-Recruiting-Stack-22d7773d39ea806882d5d5519f675bf6?pvs=74',
+      'outbound-pipelines-agency': 'https://www.notion.so/100x-Recruiter-Stack-agency-edition-21b7773d39ea8005a2b4cca0652e3f1c',
       'super-recruiter': 'https://api.leadconnectorhq.com/widget/bookings/superrecruiter-strategy-call'
     };
 
@@ -242,22 +247,13 @@ export const MarketplacePage: React.FC = () => {
             Unlock premium hiring tools and resources
           </p>
           <p className="text-sm text-guardian/80 mb-4">
-            Earn points: Create jobs (10pts) • Add candidates (5pts) • Daily bonus (10pts/day)
+            Earn points: Create jobs (10pts) • Daily bonus (10pts/day)
           </p>
           <div className="flex justify-center gap-4">
             <div className="inline-flex items-center gap-2 bg-supernova/20 border border-supernova px-4 py-2 rounded-lg">
               <Zap className="text-supernova" size={20} />
               <span className="text-white-knight font-semibold text-sm">
                 {userPoints} Points
-              </span>
-            </div>
-            <div className="inline-flex items-center gap-2 bg-guardian/20 border border-guardian px-4 py-2 rounded-lg">
-              <Clock className="text-guardian" size={20} />
-              <span className="text-white-knight font-semibold text-sm">
-                {pointsUntilNext > 0 
-                  ? `${pointsUntilNext} points to next unlock`
-                  : 'New unlock available!'
-                }
               </span>
             </div>
           </div>
@@ -346,6 +342,12 @@ export const MarketplacePage: React.FC = () => {
       <CandidateEmailsModal 
         isOpen={showEmailsModal}
         onClose={() => setShowEmailsModal(false)}
+      />
+
+      {/* Outreach Templates Modal */}
+      <OutreachTemplatesModal 
+        isOpen={showTemplatesModal}
+        onClose={() => setShowTemplatesModal(false)}
       />
     </div>
   );

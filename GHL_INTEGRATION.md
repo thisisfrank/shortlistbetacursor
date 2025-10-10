@@ -185,9 +185,13 @@ When a job is completed, the following payload is sent to the job completion not
     "requestedCandidates": 3,
     "completionDate": "2024-01-01T00:00:00.000Z"
   },
+  "viewCandidatesLink": "https://yourapp.com/candidates",
+  "viewCandidatesText": "View Your Candidates",
   "message": "Job completed: Software Engineer at Tech Corp - 2 candidates submitted"
 }
 ```
+
+**Note**: The `viewCandidatesLink` field contains a direct URL to the candidates page where the client can view their completed list. Use this in your GHL email template as a clickable button or link (e.g., `{{viewCandidatesLink}}`). The `viewCandidatesText` field provides suggested button text.
 
 ### 5. Plan Purchase Welcome Event
 When a user purchases a subscription plan, the following payload is sent to trigger a welcome email with Clay table and referral information:

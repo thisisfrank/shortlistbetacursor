@@ -42,6 +42,13 @@ const PRICE_TO_TIER_MAPPING: Record<string, string> = {
   'price_1S7TPaHb6LdHADWYhMgRw3YY': 'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd', // Top Shelf tier
 }
 
+// Map credit pack price IDs to credit amounts
+const CREDIT_PACK_MAPPING: Record<string, number> = {
+  'price_1SGU4JQZ6mxDPDqbVdt9aXBb': 100,   // 100 credits
+  'price_1SGU5AQZ6mxDPDqb9PgcCeM5': 250,   // 250 credits
+  'price_1SGU5bQZ6mxDPDqbRASYzbqQ': 500,   // 500 credits
+}
+
 const FREE_TIER_ID = '5841d1d6-20d7-4360-96f8-0444305fac5b'
 
 // Function to identify tier from checkout session (for Payment Links)
@@ -346,6 +353,73 @@ async function renewMonthlyCredits(customerId: string) {
   }
 }
 
+async function addTopOffCredits(customerId: string, priceId: string) {
+  try {
+    console.log(`💰 Processing credit top-off for customer: ${customerId}, price: ${priceId}`)
+    
+    // Get credits amount from price ID
+    const creditsToAdd = CREDIT_PACK_MAPPING[priceId]
+    if (!creditsToAdd) {
+      console.warn(`⚠️ Unknown credit pack price ID: ${priceId}`)
+      return
+    }
+    
+    console.log(`📦 Credit pack identified: ${creditsToAdd} credits`)
+    
+    // Get customer email from Stripe
+    const stripeCustomer = await stripe.customers.retrieve(customerId)
+    if (!stripeCustomer || stripeCustomer.deleted || !stripeCustomer.email) {
+      console.error('❌ No email found for Stripe customer:', customerId)
+      return
+    }
+
+    const customerEmail = stripeCustomer.email
+    console.log(`📧 Looking up user by email: ${customerEmail}`)
+
+    // Get user
+    const { data: userData, error: userError } = await supabase
+      .from('user_profiles')
+      .select('id, available_credits, name')
+      .eq('email', customerEmail)
+      .single()
+
+    if (userError || !userData) {
+      console.error('❌ No user found:', userError)
+      return
+    }
+
+    const currentCredits = userData.available_credits || 0
+    const newBalance = currentCredits + creditsToAdd
+
+    console.log(`💳 Credit calculation: ${currentCredits} existing + ${creditsToAdd} top-off = ${newBalance} total`)
+
+    // Update credits
+    const { error: updateError } = await supabase
+      .from('user_profiles')
+      .update({ available_credits: newBalance })
+      .eq('id', userData.id)
+
+    if (updateError) {
+      console.error('❌ Error updating credits:', updateError)
+      throw updateError
+    }
+
+    // Log transaction
+    await supabase.from('credit_transactions').insert({
+      user_id: userData.id,
+      transaction_type: 'addition',
+      amount: creditsToAdd,
+      description: `Credit top-off purchase: ${creditsToAdd} credits added`
+    })
+
+    console.log(`✅ Successfully added ${creditsToAdd} credits to user ${userData.id}, new balance: ${newBalance}`)
+    
+  } catch (error) {
+    console.error(`💥 Error adding top-off credits:`, error)
+    throw error
+  }
+}
+
 serve(async (req) => {
   console.log(`🎯 Webhook called: ${req.method} ${req.url}`)
   console.log(`🔍 Headers:`, Object.fromEntries(req.headers.entries()))
@@ -506,10 +580,24 @@ serve(async (req) => {
             await syncCustomerFromStripe(customerId)
           }
         } else if (session.mode === 'payment') {
-          // For one-time payments, also try to get tier
-          const tierId = await getTierFromCheckoutSession(session.id)
-          if (tierId) {
-            await updateUserTier(customerId, tierId, 'active')
+          // For one-time payments, check if it's a credit pack purchase
+          try {
+            const lineItems = await stripe.checkout.sessions.listLineItems(session.id)
+            const priceId = lineItems.data[0]?.price?.id
+            
+            if (priceId && CREDIT_PACK_MAPPING[priceId]) {
+              // This is a credit top-off purchase
+              console.log(`🎯 Detected credit pack purchase: ${priceId}`)
+              await addTopOffCredits(customerId, priceId)
+            } else {
+              // Existing one-time payment tier logic
+              const tierId = await getTierFromCheckoutSession(session.id)
+              if (tierId) {
+                await updateUserTier(customerId, tierId, 'active')
+              }
+            }
+          } catch (error) {
+            console.error('❌ Error processing one-time payment:', error)
           }
         }
         break

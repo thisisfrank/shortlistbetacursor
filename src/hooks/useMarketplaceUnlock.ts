@@ -13,7 +13,7 @@ export interface MarketplaceItem {
 
 export const useMarketplaceUnlock = () => {
   const { userProfile } = useAuth();
-  const { jobs, shortlistCandidates, shortlists } = useData();
+  const { jobs } = useData();
 
   const getDaysActive = (): number => {
     if (!userProfile?.createdAt) return 0;
@@ -29,16 +29,10 @@ export const useMarketplaceUnlock = () => {
     const jobCount = jobs.filter(j => j.userId === userProfile.id).length;
     const jobPoints = jobCount * 10;
 
-    // Points from shortlisted candidates (5 points each)
-    const userShortlists = shortlists.filter(s => s.userId === userProfile.id);
-    const userShortlistIds = userShortlists.map(s => s.id);
-    const candidateCount = shortlistCandidates.filter(sc => userShortlistIds.includes(sc.shortlistId)).length;
-    const candidatePoints = candidateCount * 5;
-
     // Bonus points from account age (10 points per day)
     const dayBonus = getDaysActive() * 10;
 
-    return jobPoints + candidatePoints + dayBonus;
+    return jobPoints + dayBonus;
   };
 
   const getUnlockedItemsCount = (): number => {

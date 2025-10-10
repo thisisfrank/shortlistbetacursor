@@ -70,6 +70,7 @@ This document lists all email notifications configured in the Super Recruiter ap
   - Job details
   - All candidate information
   - Completion summary
+  - **Direct link to view candidates** (`viewCandidatesLink` and `viewCandidatesText`)
 - **Status**: ACTIVE
 
 ---
@@ -183,6 +184,6 @@ testGHLWebhook()
 
 ---
 
-**Last Updated**: 2025-01-09  
-**Status**: 2 new emails added (Plan Purchase ✅, Feedback ⚙️)
+**Last Updated**: 2025-10-09  
+**Status**: Job completion email now includes direct link to view candidates
 

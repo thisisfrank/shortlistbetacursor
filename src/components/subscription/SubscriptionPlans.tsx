@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { CheckCircle, Zap, Crown, Star, Users } from 'lucide-react';
 import BoltIcon from '../../assets/v2.png';
+import { CreditTopOff } from './CreditTopOff';
 
 // Updated subscription plans with payment links
 const subscriptionPlans = [
@@ -26,7 +27,7 @@ const subscriptionPlans = [
   },
   {
     id: 'premium',
-    name: 'Beast Mode',
+    name: 'Super Recruiter',
     price: 99,
     priceId: 'price_1S7TOGHb6LdHADWYAu8g3h3f', // Updated Stripe price ID
     paymentLink: 'https://buy.stripe.com/test_6oU7sLgN89lNaZr8M19R604', // Beast Mode
@@ -42,7 +43,7 @@ const subscriptionPlans = [
   },
   {
     id: 'topshelf',
-    name: 'Super Recruiter',
+    name: 'Beast Mode',
     price: 699,
     priceId: 'price_1S7TPaHb6LdHADWYhMgRw3YY', // Updated Stripe price ID
     paymentLink: 'https://buy.stripe.com/test_14AaEX40m0PhgjL1jz9R605', // Super Recruiter
@@ -77,21 +78,46 @@ export const SubscriptionPlans: React.FC = () => {
 
   const currentTierPlan = getCurrentPlanFromTier();
 
-  const handleSubscribe = (paymentLink: string | null) => {
+  // Stripe Billing Portal URL for managing subscriptions
+  const STRIPE_BILLING_PORTAL = 'https://billing.stripe.com/p/login/test_fZu7sLaoK9lN1oRfap9R600';
+
+  // Define plan order for upgrade/downgrade detection
+  const planTiers = {
+    basic: 1,
+    premium: 2,
+    topshelf: 3
+  };
+
+  const isUpgrade = (planId: string) => {
+    if (!currentTierPlan) return true; // No current plan means all are upgrades
+    return planTiers[planId as keyof typeof planTiers] > planTiers[currentTierPlan.id as keyof typeof planTiers];
+  };
+
+  const isDowngrade = (planId: string) => {
+    if (!currentTierPlan) return false;
+    return planTiers[planId as keyof typeof planTiers] < planTiers[currentTierPlan.id as keyof typeof planTiers];
+  };
+
+  const handleSubscribe = (paymentLink: string | null, planId: string) => {
     if (!paymentLink) {
       return;
     }
 
-    // Redirect to Stripe Payment Link - no authentication required
-    window.open(paymentLink, '_blank');
+    // If it's a downgrade, redirect to Stripe Billing Portal
+    if (isDowngrade(planId)) {
+      window.open(STRIPE_BILLING_PORTAL, '_blank');
+    } else {
+      // For upgrades, use the payment link
+      window.open(paymentLink, '_blank');
+    }
   };
 
 
   const getPlanIcon = (planName: string) => {
     switch (planName) {
-      case 'Super Recruiter':
-        return <Crown className="text-supernova" size={32} />;
       case 'Beast Mode':
+        return <Crown className="text-supernova" size={32} />;
+      case 'Super Recruiter':
         return <Star className="text-blue-400" size={32} />;
       case 'Average Recruiter':
         return <Zap className="text-green-400" size={32} />;
@@ -183,13 +209,15 @@ export const SubscriptionPlans: React.FC = () => {
                   fullWidth
                   size="lg"
                   variant={isCurrentPlan(plan.id) ? 'outline' : 'primary'}
-                  onClick={() => handleSubscribe(plan.paymentLink)}
+                  onClick={() => handleSubscribe(plan.paymentLink, plan.id)}
                   disabled={isCurrentPlan(plan.id)}
                   isLoading={false}
                 >
                   {isCurrentPlan(plan.id) 
                     ? 'CURRENT PLAN' 
-                    : (plan.id === 'topshelf' ? 'BEAST MODE' : 'LEVEL UP')}
+                    : isDowngrade(plan.id)
+                    ? 'DOWNGRADE'
+                    : (plan.id === 'topshelf' ? 'GO BEAST MODE' : 'LEVEL UP')}
                   </Button>
                 </div>
               </CardContent>
@@ -197,6 +225,8 @@ export const SubscriptionPlans: React.FC = () => {
           ))}
         </div>
 
+        {/* Credit Top-Off Section */}
+        <CreditTopOff />
 
         {/* Premium Service Offering */}
         <div className="mb-12 flex justify-center">

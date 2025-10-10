@@ -161,6 +161,10 @@ class GHLService {
     }
 
     try {
+      // Get the app URL for the direct link to candidates
+      const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+      const candidatesPageLink = `${appUrl}/candidates`;
+
       const payload = {
         event: 'job_completion_notification',
         userId: userProfile.id,
@@ -207,6 +211,9 @@ class GHLService {
           requestedCandidates: job.candidatesRequested,
           completionDate: new Date().toISOString(),
         },
+        // Direct link to view candidates
+        viewCandidatesLink: candidatesPageLink,
+        viewCandidatesText: 'View Your Candidates',
         message: `Job completed: ${job.title} at ${job.companyName} - ${candidates.length} candidates submitted`,
       };
 
