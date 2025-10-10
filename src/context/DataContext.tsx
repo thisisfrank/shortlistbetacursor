@@ -860,13 +860,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     error?: string 
   }> => {
     try {
-      // Enforce 50-candidate limit per submission
-      if (linkedinUrls.length > 50) {
+      // Enforce 200-candidate limit per submission
+      if (linkedinUrls.length > 200) {
         return {
           success: false,
           acceptedCount: 0,
           rejectedCount: 0,
-          error: 'Cannot submit more than 50 candidates per job submission'
+          error: 'Cannot submit more than 200 candidates per job submission'
         };
       }
 

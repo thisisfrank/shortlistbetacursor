@@ -41,7 +41,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   const [showJobCompletionConfirmation, setShowJobCompletionConfirmation] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   
-  const MAX_CANDIDATES_PER_SUBMISSION = 50;
+  const MAX_CANDIDATES_PER_SUBMISSION = 200;
   
   // Get accepted candidates for this job
   const [acceptedCandidates, setAcceptedCandidates] = useState(getCandidatesByJob(job.id));
@@ -150,7 +150,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
       return;
     }
     
-    // Enforce 50-candidate limit
+    // Enforce 200-candidate limit
     if (validUrls.length > MAX_CANDIDATES_PER_SUBMISSION) {
       setError(`Cannot submit more than ${MAX_CANDIDATES_PER_SUBMISSION} candidates per job submission`);
       return;

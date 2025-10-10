@@ -190,11 +190,11 @@ otp_expiry = 3600
 # Use a production-ready SMTP server
 [auth.email.smtp]
 enabled = true
-host = "127.0.0.1"
-port = 2500
-user = "test"
-pass = "test"
-admin_email = "admin@localhost"
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "your-resend-api-key-here"
+admin_email = "onboarding@resend.dev"
 sender_name = "Shortlist Beta"
 
 # Customize email templates
