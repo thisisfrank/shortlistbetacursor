@@ -13,7 +13,7 @@ export interface MarketplaceItem {
 
 export const useMarketplaceUnlock = () => {
   const { userProfile } = useAuth();
-  const { jobs } = useData();
+  const { jobs, isItemUnlockedInDB } = useData();
 
   const getDaysActive = (): number => {
     if (!userProfile?.createdAt) return 0;
@@ -25,9 +25,9 @@ export const useMarketplaceUnlock = () => {
   const getUserPoints = (): number => {
     if (!userProfile?.id) return 0;
 
-    // Points from jobs (10 points each)
+    // Points from jobs (50 points each)
     const jobCount = jobs.filter(j => j.userId === userProfile.id).length;
-    const jobPoints = jobCount * 10;
+    const jobPoints = jobCount * 50;
 
     // Bonus points from account age (10 points per day)
     const dayBonus = getDaysActive() * 10;
@@ -47,6 +47,12 @@ export const useMarketplaceUnlock = () => {
   };
 
   const isItemUnlocked = (item: MarketplaceItem): boolean => {
+    // Check if already unlocked in database
+    if (isItemUnlockedInDB(item.id)) {
+      return true;
+    }
+    
+    // Otherwise check if user has enough points to unlock
     const points = getUserPoints();
     const requiredPoints = item.sequenceIndex * 100;
     return points >= requiredPoints;

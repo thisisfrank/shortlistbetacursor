@@ -4,6 +4,8 @@ import { Card } from '../components/ui/Card';
 import { useMarketplaceUnlock, MarketplaceItem } from '../hooks/useMarketplaceUnlock';
 import { CandidateEmailsModal } from '../components/ui/CandidateEmailsModal';
 import { OutreachTemplatesModal } from '../components/ui/OutreachTemplatesModal';
+import { UnlockModal } from '../components/ui/UnlockModal';
+import { useData } from '../context/DataContext';
 
 const marketplaceItems: MarketplaceItem[] = [
   {
@@ -20,7 +22,7 @@ const marketplaceItems: MarketplaceItem[] = [
     title: 'Get Candidate Emails',
     description: 'Unlock a Clay table with verified candidate emails to power your outreach.',
     unlockDay: 5,
-    sequenceIndex: 1,
+    sequenceIndex: 0.5,
     icon: Download,
     category: 'free',
   },
@@ -29,7 +31,7 @@ const marketplaceItems: MarketplaceItem[] = [
     title: 'Convert Your List of Candidates into Real Interviews',
     description: 'Book your free call 15-minute discovery call',
     unlockDay: 10,
-    sequenceIndex: 2,
+    sequenceIndex: 0.5,
     icon: Target,
     category: 'free',
   },
@@ -170,10 +172,13 @@ export const MarketplacePage: React.FC = () => {
     getUserPoints,
     isItemUnlocked
   } = useMarketplaceUnlock();
+  
+  const { unlockMarketplaceItem, isItemUnlockedInDB } = useData();
 
   const userPoints = getUserPoints();
   const [showEmailsModal, setShowEmailsModal] = useState(false);
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
+  const [unlockingItem, setUnlockingItem] = useState<MarketplaceItem | null>(null);
 
   // Group items by category
   const allItems = marketplaceItems;
@@ -186,11 +191,24 @@ export const MarketplacePage: React.FC = () => {
     return acc;
   }, {} as Record<string, MarketplaceItem[]>);
 
-  const handleUnlock = (item: MarketplaceItem) => {
-    // Only allow access if item is unlocked
-    if (!isItemUnlocked(item)) {
+  const handleUnlockClick = (item: MarketplaceItem) => {
+    // If already unlocked in DB, proceed with access
+    if (isItemUnlockedInDB(item.id)) {
+      handleAccess(item);
       return;
     }
+
+    // If not unlocked but has enough points, show unlock modal
+    if (isItemUnlocked(item)) {
+      setUnlockingItem(item);
+      return;
+    }
+
+    // Otherwise locked (shouldn't happen since button is disabled)
+    console.log('Item is locked');
+  };
+
+  const handleAccess = (item: MarketplaceItem) => {
 
     // Navigate to AI Message Generator if it's unlocked
     if (item.id === 'ai-message-generator') {
@@ -247,13 +265,13 @@ export const MarketplacePage: React.FC = () => {
             Unlock premium hiring tools and resources
           </p>
           <p className="text-sm text-guardian/80 mb-4">
-            Earn points: Create jobs (10pts) • Daily bonus (10pts/day)
+            Earn XP: Create jobs (+50) • Daily bonus (+10/day)
           </p>
           <div className="flex justify-center gap-4">
             <div className="inline-flex items-center gap-2 bg-supernova/20 border border-supernova px-4 py-2 rounded-lg">
               <Zap className="text-supernova" size={20} />
               <span className="text-white-knight font-semibold text-sm">
-                {userPoints} Points
+                Level {userPoints}
               </span>
             </div>
           </div>
@@ -269,13 +287,15 @@ export const MarketplacePage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {items.map((item) => {
                 const Icon = item.icon;
-                const itemUnlocked = isItemUnlocked(item);
+                const alreadyUnlocked = isItemUnlockedInDB(item.id);
+                const hasEnoughPoints = isItemUnlocked(item);
+                const canUnlock = hasEnoughPoints && !alreadyUnlocked;
                 
                 return (
                   <div key={item.id} className={getGradientBorderClass()}>
                     <Card 
                       className={`p-6 ${getCategoryColor(category)} flex flex-col h-full !border-0 ${
-                        itemUnlocked ? 'ring-2 ring-supernova/50' : ''
+                        alreadyUnlocked ? 'ring-2 ring-supernova/50' : ''
                       }`}
                     >
                     <div className="flex items-start gap-4 mb-4 flex-grow">
@@ -302,28 +322,35 @@ export const MarketplacePage: React.FC = () => {
                     {/* Action area */}
                     <div className="pt-3 border-t border-guardian/20 space-y-2">
                       {/* Status indicator */}
-                      {!itemUnlocked && (
+                      {!hasEnoughPoints && (
                         <div className="flex items-center gap-2 text-supernova mb-2">
                           <Lock size={16} />
                           <span className="text-sm">
-                            Requires {item.sequenceIndex * 100} points
+                            Requires Level {item.sequenceIndex * 100}
                           </span>
                         </div>
                       )}
-                      {itemUnlocked ? (
+                      {alreadyUnlocked ? (
                         <button 
-                          onClick={() => handleUnlock(item)}
+                          onClick={() => handleUnlockClick(item)}
                           className="w-full text-supernova hover:text-supernova/80 text-sm font-medium flex items-center justify-center gap-2 transition-colors py-2"
                         >
                           <ExternalLink size={14} />
                           {item.id === 'super-recruiter' ? 'Book My Free Call' : 'Access Now'}
                         </button>
-                      ) : (
+                      ) : canUnlock ? (
                         <button 
-                          onClick={() => handleUnlock(item)}
+                          onClick={() => handleUnlockClick(item)}
                           className="w-full bg-supernova text-shadowforce hover:bg-supernova/90 text-sm font-medium py-2 px-4 rounded-lg transition-colors"
                         >
                           {item.id === 'super-recruiter' ? 'Book My Free Meeting' : 'Unlock Now'}
+                        </button>
+                      ) : (
+                        <button 
+                          disabled
+                          className="w-full bg-guardian/20 text-guardian/50 text-sm font-medium py-2 px-4 rounded-lg cursor-not-allowed"
+                        >
+                          Locked
                         </button>
                       )}
                     </div>
@@ -348,6 +375,22 @@ export const MarketplacePage: React.FC = () => {
       <OutreachTemplatesModal 
         isOpen={showTemplatesModal}
         onClose={() => setShowTemplatesModal(false)}
+      />
+
+      {/* Unlock Modal */}
+      <UnlockModal 
+        isOpen={unlockingItem !== null}
+        onClose={() => setUnlockingItem(null)}
+        item={unlockingItem}
+        userPoints={userPoints}
+        onUnlock={async () => {
+          if (unlockingItem) {
+            const success = await unlockMarketplaceItem(unlockingItem.id);
+            if (success) {
+              handleAccess(unlockingItem);
+            }
+          }
+        }}
       />
     </div>
   );

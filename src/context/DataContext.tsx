@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
-import { Job, Candidate, Tier, CreditTransaction, UserProfile, Shortlist, ShortlistCandidate } from '../types';
+import { Job, Candidate, Tier, CreditTransaction, UserProfile, Shortlist, ShortlistCandidate, MarketplaceUnlock } from '../types';
 import { scrapeLinkedInProfiles } from '../services/apifyService';
 import { generateJobMatchScore } from '../services/anthropicService';
 import { webhookService } from '../services/webhookService';
@@ -13,6 +13,7 @@ interface DataContextType {
   creditTransactions: CreditTransaction[];
   shortlists: Shortlist[];
   shortlistCandidates: ShortlistCandidate[];
+  marketplaceUnlocks: MarketplaceUnlock[];
   loading: boolean;
   loadError: string | null;
   addJob: (job: Omit<Job, 'id' | 'status' | 'sourcerName' | 'completionLink' | 'createdAt' | 'updatedAt'>) => Promise<Job>;
@@ -40,6 +41,9 @@ interface DataContextType {
   removeCandidateFromShortlist: (shortlistId: string, candidateId: string) => Promise<boolean>;
   getCandidatesByShortlist: (shortlistId: string) => Candidate[];
   getShortlistsForCandidate: (candidateId: string) => Shortlist[];
+  // Marketplace unlock functions
+  unlockMarketplaceItem: (itemId: string) => Promise<boolean>;
+  isItemUnlockedInDB: (itemId: string) => boolean;
   resetData: () => void;
   testInsertCandidate: () => Promise<{ success: boolean; data: any; error: any }>;
   recordCreditTransaction: (userId: string | null | undefined, type: 'job' | 'candidate', amount: number, jobId?: string) => Promise<void>;
@@ -100,6 +104,7 @@ const createEmptyData = () => {
   const emptyCandidates: Candidate[] = [];
   const emptyShortlists: Shortlist[] = [];
   const emptyShortlistCandidates: ShortlistCandidate[] = [];
+  const emptyMarketplaceUnlocks: MarketplaceUnlock[] = [];
 
   return {
     tiers: emptyTiers,
@@ -107,7 +112,8 @@ const createEmptyData = () => {
     candidates: emptyCandidates,
     creditTransactions: emptyCreditTransactions,
     shortlists: emptyShortlists,
-    shortlistCandidates: emptyShortlistCandidates
+    shortlistCandidates: emptyShortlistCandidates,
+    marketplaceUnlocks: emptyMarketplaceUnlocks
   };
 };
 
@@ -153,6 +159,7 @@ const loadInitialData = () => {
       creditTransactions: cached.creditTransactions || [],
       shortlists: cached.shortlists || [],
       shortlistCandidates: cached.shortlistCandidates || [],
+      marketplaceUnlocks: cached.marketplaceUnlocks || [],
       userProfile: cached.userProfile || null,
     };
   }
@@ -505,6 +512,23 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         }
       }
 
+      // Load marketplace unlocks for the user
+      const { data: unlocksData, error: unlocksError } = await supabase
+        .from('user_marketplace_unlocks')
+        .select('*')
+        .eq('user_id', user.id || '');
+
+      const loadedMarketplaceUnlocks: MarketplaceUnlock[] = unlocksData?.map((unlock: any) => ({
+        id: unlock.id,
+        userId: unlock.user_id,
+        itemId: unlock.item_id,
+        unlockedAt: new Date(unlock.unlocked_at)
+      })) || [];
+
+      if (unlocksError) {
+        console.warn('⚠️ Error loading marketplace unlocks:', unlocksError);
+      }
+
       setData(prev => ({
         ...prev,
         jobs: loadedJobs,
@@ -512,6 +536,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         creditTransactions: loadedCreditTransactions,
         shortlists: loadedShortlists,
         shortlistCandidates: loadedShortlistCandidates,
+        marketplaceUnlocks: loadedMarketplaceUnlocks,
         userProfile: userProfile || null,
       }));
       // Save to cache
@@ -521,6 +546,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         creditTransactions: loadedCreditTransactions,
         shortlists: loadedShortlists,
         shortlistCandidates: loadedShortlistCandidates,
+        marketplaceUnlocks: loadedMarketplaceUnlocks,
         userProfile: userProfile || null,
       });
 
@@ -1559,6 +1585,54 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     }
   };
 
+  // Marketplace unlock functions
+  const unlockMarketplaceItem = async (itemId: string): Promise<boolean> => {
+    if (!user?.id) {
+      console.warn('⚠️ Cannot unlock item: no user');
+      return false;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('user_marketplace_unlocks')
+        .insert({
+          user_id: user.id,
+          item_id: itemId
+        });
+
+      if (error) {
+        console.error('❌ Error unlocking item:', error);
+        return false;
+      }
+
+      // Add to local state
+      const newUnlock: MarketplaceUnlock = {
+        id: crypto.randomUUID(),
+        userId: user.id,
+        itemId,
+        unlockedAt: new Date()
+      };
+
+      setData(prev => ({
+        ...prev,
+        marketplaceUnlocks: [...prev.marketplaceUnlocks, newUnlock]
+      }));
+
+      console.log('✅ Item unlocked:', itemId);
+      return true;
+    } catch (error) {
+      console.error('💥 Failed to unlock item:', error);
+      return false;
+    }
+  };
+
+  const isItemUnlockedInDB = (itemId: string): boolean => {
+    if (!user?.id) return false;
+    return data.marketplaceUnlocks.some(
+      unlock => unlock.userId === user.id && unlock.itemId === itemId
+    );
+  };
+
   // Expose test function globally for console access
   if (typeof window !== 'undefined') {
     (window as any).testCandidateInsertion = testInsertCandidate;
@@ -1572,6 +1646,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     creditTransactions: data.creditTransactions,
     shortlists: data.shortlists,
     shortlistCandidates: data.shortlistCandidates,
+    marketplaceUnlocks: data.marketplaceUnlocks,
     loading,
     loadError,
     addJob,
@@ -1593,6 +1668,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     removeCandidateFromShortlist,
     getCandidatesByShortlist,
     getShortlistsForCandidate,
+    unlockMarketplaceItem,
+    isItemUnlockedInDB,
     resetData,
     testInsertCandidate,
     recordCreditTransaction,

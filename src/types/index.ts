@@ -115,3 +115,10 @@ export interface ShortlistCandidate {
   candidateId: string;
   addedAt: Date;
 }
+
+export interface MarketplaceUnlock {
+  id: string;
+  userId: string;
+  itemId: string;
+  unlockedAt: Date;
+}
