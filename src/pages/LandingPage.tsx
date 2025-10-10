@@ -55,7 +55,7 @@ export const LandingPage: React.FC = () => {
                   style={{ width: '150px', height: '62px', filter: 'drop-shadow(0 0 16px #FFD600)', objectFit: 'contain' }}
                 />
               </div>
-              <h1 className="text-4xl md:text-6xl font-anton text-white-knight mb-4 leading-tight">
+              <h1 className="text-3xl md:text-5xl lg:text-6xl font-anton text-white-knight mb-4 leading-tight">
               GET HIGH-QUALITY
                 <span className="block text-supernova">CANDIDATES, FAST!</span>
               </h1>
@@ -65,11 +65,11 @@ export const LandingPage: React.FC = () => {
                 <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Save thousands on tools, job boards, and LinkedIn Recruiter.</span></div>
               </div>
               <div className="flex flex-col sm:flex-row gap-6 mb-4">
-                <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-col items-center gap-4 w-full sm:w-auto">
                   <Button 
                     onClick={() => window.location.href = '/signup'}
                     size="lg"
-                    className="glow-supernova text-xl px-12 py-6"
+                    className="glow-supernova text-base md:text-xl px-6 py-4 md:px-12 md:py-6 w-full sm:w-auto"
                   >
                     Get My First Candidate List Free
                   </Button>
@@ -147,22 +147,22 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
         {/* Testimonial Section */}
-        <div className="py-16 px-4">
+        <div className="py-8 md:py-16 px-4">
           <div className="max-w-6xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-anton text-white-knight mb-10 uppercase tracking-wide">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-anton text-white-knight mb-6 md:mb-10 uppercase tracking-wide">
             TRUSTED BY RECRUITERS, FOUNDERS, AND HIRING MANAGERS            </h2>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-items-center mb-12">
-                <img src={Image3} alt="Testimonial 1" className="max-w-xs object-contain shadow-lg rounded-lg" />
-                <img src={Image4} alt="Testimonial 2" className="max-w-xs object-contain shadow-lg rounded-lg" />
-                <img src={Image5} alt="Testimonial 3" className="max-w-xs object-contain shadow-lg rounded-lg" />
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 justify-items-center mb-8 md:mb-12">
+                <img src={Image3} alt="Testimonial 1" className="w-full max-w-sm md:max-w-xs object-contain shadow-lg rounded-lg" />
+                <img src={Image4} alt="Testimonial 2" className="w-full max-w-sm md:max-w-xs object-contain shadow-lg rounded-lg" />
+                <img src={Image5} alt="Testimonial 3" className="w-full max-w-sm md:max-w-xs object-contain shadow-lg rounded-lg" />
               </div>
               
               {/* How it Works Section */}
               <div className="max-w-4xl mx-auto">
-                <h3 className="text-2xl md:text-3xl font-anton text-white-knight mb-8 uppercase tracking-wide">
+                <h3 className="text-xl md:text-2xl lg:text-3xl font-anton text-white-knight mb-6 md:mb-8 uppercase tracking-wide">
                 How it Works
                 </h3>
-                <div className="space-y-6 text-center">
+                <div className="space-y-4 md:space-y-6 text-center">
                   <div className="flex items-center justify-center">
                     <div className="bg-supernova text-shadowforce rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0 font-anton font-bold">1</div>
                     <p className="text-lg text-white font-jakarta leading-relaxed">
@@ -185,11 +185,11 @@ export const LandingPage: React.FC = () => {
               </div>
               
               {/* FAQ Section */}
-              <div className="max-w-4xl mx-auto mt-16">
-                <h3 className="text-2xl md:text-3xl font-anton text-white-knight mb-8 uppercase tracking-wide text-center">
+              <div className="max-w-4xl mx-auto mt-12 md:mt-16">
+                <h3 className="text-xl md:text-2xl lg:text-3xl font-anton text-white-knight mb-6 md:mb-8 uppercase tracking-wide text-center">
                   Frequently Asked Questions
                 </h3>
-                <div className="space-y-6">
+                <div className="space-y-4 md:space-y-6">
                   {/* FAQ Item 1 */}
                   <div className="border-b border-guardian/20 pb-6">
                     <h4 className="text-lg font-anton text-supernova mb-3 uppercase tracking-wide">
@@ -265,18 +265,18 @@ export const LandingPage: React.FC = () => {
         </div>
       </div>
       {/* CTA Section remains unchanged */}
-      <div className="py-20 px-4 bg-gradient-to-r from-supernova/10 to-transparent">
+      <div className="py-12 md:py-20 px-4 bg-gradient-to-r from-supernova/10 to-transparent">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-anton text-white-knight mb-6 uppercase tracking-wide">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-anton text-white-knight mb-4 md:mb-6 uppercase tracking-wide">
             READY TO GET STARTED?
           </h2>
-          <p className="text-xl text-guardian mb-8 font-jakarta">
+          <p className="text-lg md:text-xl text-guardian mb-6 md:mb-8 font-jakarta">
           Get your first candidates on us.
           </p>
           <Button 
             onClick={() => window.location.href = '/signup'}
             size="lg"
-            className="glow-supernova text-xl px-12 py-6"
+            className="glow-supernova text-base md:text-xl px-6 py-4 md:px-12 md:py-6"
           >
             Get My Free Candidates
           </Button>

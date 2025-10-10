@@ -38,11 +38,11 @@ export const Button: React.FC<ButtonProps> = ({
     <button
       className={`
         font-jakarta font-semibold focus:outline-none focus:ring-4 focus:ring-supernova/50
-        transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95
+        transition-all duration-200 ease-in-out transform active:scale-95 md:hover:scale-105
         ${variantClasses[variant]}
         ${sizeClasses[size]}
         ${fullWidth ? 'w-full' : ''}
-        ${isLoading || disabled ? 'opacity-70 cursor-not-allowed transform-none hover:scale-100' : ''}
+        ${isLoading || disabled ? 'opacity-70 cursor-not-allowed transform-none md:hover:scale-100' : ''}
         ${className}
       `}
       disabled={isLoading || disabled}

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
+import { Menu, X } from 'lucide-react';
 
 import { Button } from '../ui/Button';
 import { getUserUsageStats } from '../../utils/userUsageStats';
@@ -11,6 +12,7 @@ export const Header: React.FC = () => {
   const navigate = useNavigate();
   const { userProfile, loading } = useAuth();
   const { jobs, candidates, tiers, creditTransactions } = useData();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   
   // Get the role-appropriate home path
@@ -135,7 +137,8 @@ export const Header: React.FC = () => {
   return (
     <header className="bg-shadowforce border-b border-guardian/20 shadow-lg">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-center h-20 relative">
+        {/* Desktop Header */}
+        <div className="hidden md:flex items-center justify-center h-20 relative">
           {/* Logo - positioned absolutely to the left */}
           <div className="absolute left-0 flex items-center">
             <Link to="/" className="flex items-center text-supernova hover:text-supernova-light transition-colors">
@@ -250,8 +253,132 @@ export const Header: React.FC = () => {
               </>
             )}
           </div>
-
         </div>
+
+        {/* Mobile Header */}
+        <div className="md:hidden flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center text-supernova hover:text-supernova-light transition-colors">
+            <div className="text-lg font-anton">
+              <span className="text-supernova">SUPER</span>
+              <span className="text-white-knight ml-1">RECRUITER</span>
+            </div>
+          </Link>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="text-supernova hover:text-supernova-light transition-colors p-2"
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+          </button>
+        </div>
+
+        {/* Mobile Menu Dropdown */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden bg-shadowforce-light border-t border-guardian/20 py-4 space-y-2">
+            {/* Navigation Items */}
+            {!(location.pathname === '/' && navItems.filter(item => item.label === 'GET CANDIDATES').length === 1) && (
+              <nav className="space-y-2">
+                {navItems.map((item) => {
+                  if (item.label === 'GET CANDIDATES' && location.pathname === '/') {
+                    return null;
+                  }
+                  
+                  const active = isActive(item.path);
+                  return (
+                    <Link
+                      key={item.key}
+                      to={item.path}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`block px-4 py-3 rounded-lg text-sm font-jakarta font-semibold transition-all duration-200 ${
+                        active
+                          ? 'bg-supernova text-shadowforce shadow-lg' 
+                          : 'text-guardian hover:bg-shadowforce hover:text-supernova'
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+            )}
+
+            {/* Credits - Mobile */}
+            {userProfile && (
+              <Link 
+                to="/subscription"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center justify-between px-4 py-3 bg-shadowforce rounded-lg border border-guardian/20"
+              >
+                <span className="text-sm font-jakarta text-guardian">Credits:</span>
+                <span className="text-lg font-semibold text-supernova">
+                  {availableCredits}
+                </span>
+              </Link>
+            )}
+
+            {/* User Info - Mobile */}
+            {userProfile && (
+              <Link 
+                to="/account"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-3 bg-shadowforce rounded-lg border border-guardian/20 hover:border-supernova/30 transition-all"
+              >
+                <div className="w-10 h-10 bg-shadowforce-light rounded-full flex items-center justify-center border border-guardian/20">
+                  <span className="text-xl">{userProfile.avatar || '👤'}</span>
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-sm font-semibold text-white-knight">
+                    {(() => {
+                      if (userProfile.name && userProfile.name.trim() !== '') {
+                        const firstName = userProfile.name.split(' ')[0];
+                        return firstName;
+                      } else {
+                        const emailName = userProfile.email?.split('@')[0] || 'User';
+                        const capitalizedName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+                        return capitalizedName;
+                      }
+                    })()}
+                  </span>
+                  <span className="text-xs text-guardian font-jakarta">
+                    {userProfile.email}
+                  </span>
+                </div>
+              </Link>
+            )}
+
+            {/* Auth Buttons - Mobile */}
+            {!userProfile && location.pathname === '/' && (
+              <div className="space-y-2 px-4 pt-2">
+                <Button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    navigate('/signup');
+                  }}
+                  size="md"
+                  fullWidth
+                  className="glow-supernova"
+                >
+                  SIGN UP
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    navigate('/login');
+                  }}
+                  variant="ghost"
+                  size="md"
+                  fullWidth
+                  className="text-guardian hover:text-supernova"
+                >
+                  SIGN IN
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );

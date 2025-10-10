@@ -133,23 +133,23 @@ export const SubscriptionPlans: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 py-6 md:py-12">
         {/* Header */}
-        <header className="mb-12 text-center">
-          <div className="flex items-center justify-center mb-6 mt-8">
+        <header className="mb-8 md:mb-12 text-center">
+          <div className="flex items-center justify-center mb-4 md:mb-6 mt-4 md:mt-8">
             <div className="relative">
               <img
                 src={BoltIcon}
                 alt="Super Recruiter Logo"
                 className="animate-pulse"
-                style={{ width: '150px', height: '62px', filter: 'drop-shadow(0 0 16px #FFD600)', objectFit: 'contain' }}
+                style={{ width: '120px', height: '50px', filter: 'drop-shadow(0 0 16px #FFD600)', objectFit: 'contain' }}
               />
             </div>
           </div>
-          <h1 className="text-5xl md:text-6xl font-anton text-white-knight mb-4 uppercase tracking-wide">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-anton text-white-knight mb-4 uppercase tracking-wide px-4">
             CANDIDATE PLANS
           </h1>
-          <p className="text-xl text-guardian font-jakarta max-w-xl mx-auto">
+          <p className="text-base md:text-xl text-guardian font-jakarta max-w-xl mx-auto px-4">
           Get high-quality candidates for less than a job posting.
           </p>
         </header>
@@ -229,24 +229,24 @@ export const SubscriptionPlans: React.FC = () => {
         <CreditTopOff />
 
         {/* Premium Service Offering */}
-        <div className="mb-12 flex justify-center">
-          <div className="w-1/2">
+        <div className="mb-8 md:mb-12 flex justify-center">
+          <div className="w-full lg:w-3/4 xl:w-1/2">
             <Card className="bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 border-yellow-500/30">
-            <CardContent className="p-8">
+            <CardContent className="p-4 md:p-8">
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center mb-4">
                   <div className="relative">
                     <img
                       src={BoltIcon}
                       alt="Super Recruiter Logo"
-                      style={{ width: '120px', height: '50px', filter: 'drop-shadow(0 0 12px #FACC15)', objectFit: 'contain' }}
+                      style={{ width: '100px', height: '42px', filter: 'drop-shadow(0 0 12px #FACC15)', objectFit: 'contain' }}
                     />
                   </div>
                 </div>
-                <h3 className="text-3xl font-anton text-white-knight mb-4 uppercase tracking-wide">
+                <h3 className="text-2xl md:text-3xl font-anton text-white-knight mb-4 uppercase tracking-wide px-4">
                 CANDIDATE ACCELERATOR PROGRAM
                 </h3>
-                <p className="text-xl text-yellow-300 font-jakarta mb-6">
+                <p className="text-base md:text-xl text-yellow-300 font-jakarta mb-6 px-4">
                   Want help turning your candidate lists into real interviews? 
                 </p>
               </div>
@@ -257,11 +257,11 @@ export const SubscriptionPlans: React.FC = () => {
                   onClick={() => window.open('https://calendly.com/superrecruiter/outboundcandidatepipelines', '_blank')}
                   variant="primary"
                   size="lg"
-                  className="bg-yellow-400 hover:bg-yellow-500 text-black font-anton uppercase tracking-wide px-8 py-4 mb-4"
+                  className="bg-yellow-400 hover:bg-yellow-500 text-black font-anton uppercase tracking-wide px-6 md:px-8 py-3 md:py-4 mb-4 w-full sm:w-auto"
                 >
                   BOOK YOUR FREE STRATEGY CALL
                 </Button>
-                <p className="text-white-knight font-anton text-2xl md:text-3xl uppercase tracking-wide">
+                <p className="text-white-knight font-anton text-xl md:text-2xl lg:text-3xl uppercase tracking-wide px-4">
                   Lower your cost per hire by over 30% in 60 days or pay nothing.
                 </p>
                 <div className="mt-6">

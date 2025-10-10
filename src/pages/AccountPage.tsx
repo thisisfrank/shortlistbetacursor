@@ -192,9 +192,9 @@ export const AccountPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-8">
+    <div className="max-w-6xl mx-auto p-4 md:p-8">
       {/* Profile Information Section */}
-      <div className="bg-shadowforce-light/30 rounded-xl p-8 border border-guardian/10 mb-8">
+      <div className="bg-shadowforce-light/30 rounded-xl p-4 md:p-8 border border-guardian/10 mb-6 md:mb-8">
         <h2 className="font-anton text-2xl text-white-knight uppercase tracking-wide mb-6">
           PROFILE INFORMATION
         </h2>
@@ -401,7 +401,7 @@ export const AccountPage: React.FC = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <Button 
             onClick={handleOpenGeneralFeedbackModal}
             variant="outline"
@@ -423,12 +423,12 @@ export const AccountPage: React.FC = () => {
       </div>
 
       {/* Usage Statistics Section */}
-      <div className="bg-shadowforce-light/30 rounded-xl p-8 border border-guardian/10 mb-12">
-        <h2 className="font-anton text-2xl text-white-knight uppercase tracking-wide mb-8">
+      <div className="bg-shadowforce-light/30 rounded-xl p-4 md:p-8 border border-guardian/10 mb-8 md:mb-12">
+        <h2 className="font-anton text-xl md:text-2xl text-white-knight uppercase tracking-wide mb-6 md:mb-8">
           USAGE STATISTICS
         </h2>
 
-        <div className="grid grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
           <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10">
             <div className="flex items-center gap-4 mb-4">
               <Users size={24} className="text-supernova" />

@@ -51,8 +51,8 @@ export const JobSubmissionView: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4">
           {/* Main Headline - Across the top */}
           {currentStep === 'job-title' && (
-            <div className="text-center mb-8 mt-16">
-              <h2 className="text-2xl md:text-3xl lg:text-4xl font-anton text-white-knight mb-4 uppercase tracking-wide">
+            <div className="text-center mb-6 md:mb-8 mt-8 md:mt-16">
+              <h2 className="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-anton text-white-knight mb-4 uppercase tracking-wide px-4">
                 Get High-Quality Candidates – Fast
               </h2>
             </div>
@@ -65,13 +65,13 @@ export const JobSubmissionView: React.FC = () => {
 
           {/* Get More Candidates Button - Only show on job-title step - Moved much further down */}
           {currentStep === 'job-title' && (
-            <div className="mt-12 mb-2 flex justify-center">
+            <div className="mt-8 md:mt-12 mb-2 flex justify-center px-4">
               <Button 
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleGetMoreCandidates}
-                className="text-supernova border-supernova hover:bg-supernova hover:text-shadowforce w-1/4"
+                className="text-supernova border-supernova hover:bg-supernova hover:text-shadowforce w-full sm:w-auto"
               >
                 GET MORE CANDIDATES
               </Button>

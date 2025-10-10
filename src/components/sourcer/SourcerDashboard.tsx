@@ -184,19 +184,19 @@ const SourcerDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 py-6 md:py-12">
         {/* Header */}
-        <header className="mb-12">
-          <div className="flex items-center justify-center mb-6">
+        <header className="mb-8 md:mb-12">
+          <div className="flex items-center justify-center mb-4 md:mb-6">
             <div className="relative">
-              <Zap size={60} className="text-supernova fill-current animate-pulse" />
+              <Zap size={48} className="text-supernova fill-current animate-pulse md:w-[60px] md:h-[60px]" />
               <div className="absolute inset-0 bg-supernova/30 blur-xl rounded-full"></div>
             </div>
           </div>
-          <h1 className="text-5xl md:text-6xl font-anton text-white-knight mb-4 text-center uppercase tracking-wide">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-anton text-white-knight mb-4 text-center uppercase tracking-wide px-4">
             SOURCER HUB
           </h1>
-          <p className="text-xl text-guardian text-center font-jakarta max-w-2xl mx-auto">
+          <p className="text-base md:text-xl text-guardian text-center font-jakarta max-w-2xl mx-auto px-4">
             Claim jobs and source candidates
           </p>
         </header>

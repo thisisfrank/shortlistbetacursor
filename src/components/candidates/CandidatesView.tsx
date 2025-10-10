@@ -764,7 +764,7 @@ export const CandidatesView: React.FC = () => {
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
-        <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="max-w-7xl mx-auto px-4 py-6 md:py-12">
           {/* Header */}
           <header className="mb-12">
             <div className="flex items-center justify-center mb-6">
@@ -773,10 +773,10 @@ export const CandidatesView: React.FC = () => {
                 <div className="absolute inset-0 bg-supernova/30 blur-xl rounded-full"></div>
               </div>
             </div>
-            <h1 className="text-4xl md:text-5xl font-anton text-white-knight mb-4 text-center uppercase tracking-wide">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-anton text-white-knight mb-4 text-center uppercase tracking-wide">
               CANDIDATES FOR
             </h1>
-            <h2 className="text-3xl md:text-4xl font-anton text-supernova mb-4 text-center uppercase tracking-wide">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-anton text-supernova mb-4 text-center uppercase tracking-wide">
               {selectedJob?.title}
             </h2>
             {selectedJob && (
@@ -864,13 +864,13 @@ export const CandidatesView: React.FC = () => {
                     <div className="flex items-center gap-4">
                       <div className="flex items-center">
                         <Users className="text-blue-400 mr-2" size={20} />
-                        <span className="text-white-knight font-jakarta font-semibold">
+                        <span className="text-white-knight font-jakarta font-semibold text-sm md:text-base">
                           {selectedCandidates.size} of {currentJobCandidates.length} candidates selected
                         </span>
                       </div>
                     </div>
                     
-                    <div className="flex gap-3">
+                    <div className="flex flex-wrap gap-2 md:gap-3">
                       <Button
                         variant="outline"
                         size="sm"
@@ -1021,11 +1021,11 @@ export const CandidatesView: React.FC = () => {
                 <div className="space-y-6">
                   {sortedCurrentJobCandidates.map(candidate => (
                     <Card key={candidate.id} className="hover:shadow-2xl transition-all duration-300 border-l-4 border-l-supernova">
-                      <CardContent className="p-8">
+                      <CardContent className="p-4 md:p-8">
                         {/* Main candidate info row - always visible */}
-                        <div className="grid grid-cols-7 gap-6 items-center mb-6">
+                        <div className="flex flex-col md:grid md:grid-cols-7 gap-4 md:gap-6 items-start md:items-center mb-4 md:mb-6">
                           {/* AI Match Score */}
-                          <div className="col-span-1 flex items-center justify-center h-full">
+                          <div className="md:col-span-1 flex items-center justify-start md:justify-center w-full md:h-full">
                             {matchScores[candidate.id]?.loading ? (
                               <div className="flex items-center justify-center">
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-supernova mr-2"></div>
@@ -1044,17 +1044,17 @@ export const CandidatesView: React.FC = () => {
                             )}
                           </div>
                           {/* Name and basic info */}
-                          <div className="col-span-2 flex items-center h-full">
-                            <h4 className="text-3xl font-anton text-white-knight mb-0 uppercase tracking-wide">
+                          <div className="md:col-span-2 flex items-center w-full md:h-full">
+                            <h4 className="text-2xl md:text-3xl font-anton text-white-knight mb-0 uppercase tracking-wide">
                               {candidate.firstName === 'N/A' && candidate.lastName === 'N/A' 
                                 ? 'N/A' 
                                 : `${candidate.firstName} ${candidate.lastName}`}
                             </h4>
                           </div>
                           {/* Spacer to push controls to the right */}
-                          <div className="col-span-3"></div>
+                          <div className="hidden md:block md:col-span-3"></div>
                           {/* Actions and Selection Checkbox - right edge */}
-                          <div className="col-span-1 flex justify-end items-center gap-4 w-full h-full">
+                          <div className="md:col-span-1 flex justify-start md:justify-end items-center gap-3 md:gap-4 w-full md:h-full">
                             <Button
                               variant="outline"
                               size="sm"
@@ -1553,16 +1553,16 @@ export const CandidatesView: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 py-6 md:py-12">
         {/* Header */}
-        <header className="mb-12">
-          <div className="flex items-center justify-center mb-6">
+        <header className="mb-8 md:mb-12">
+          <div className="flex items-center justify-center mb-4 md:mb-6">
             <div className="relative">
-              <Briefcase size={60} className="text-supernova fill-current animate-pulse" />
+              <Briefcase size={48} className="text-supernova fill-current animate-pulse md:w-[60px] md:h-[60px]" />
               <div className="absolute inset-0 bg-supernova/30 blur-xl rounded-full"></div>
             </div>
           </div>
-          <h1 className="text-5xl md:text-6xl font-anton text-white-knight mb-4 text-center uppercase tracking-wide">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-anton text-white-knight mb-4 text-center uppercase tracking-wide">
             MY OPEN JOBS
           </h1>
           <p className="text-xl text-guardian text-center font-jakarta max-w-2xl mx-auto">
@@ -1667,9 +1667,9 @@ export const CandidatesView: React.FC = () => {
                       className={`hover:shadow-2xl transition-all duration-300 ${isCompleted ? 'cursor-pointer' : 'cursor-default opacity-75'} ${isJobHidden && showHidden ? 'border-orange-500/50 bg-orange-500/5' : ''}`}
                     >
                       <CardContent className="p-6">
-                        <div className="mb-4 p-3 rounded-lg flex items-center justify-between">
-                          <p className="text-white-knight font-anton text-3xl uppercase tracking-wide">{job.title}</p>
-                          <div className="flex items-center gap-3">
+                        <div className="mb-4 p-3 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+                          <p className="text-white-knight font-anton text-2xl md:text-3xl uppercase tracking-wide">{job.title}</p>
+                          <div className="flex flex-wrap items-center gap-2 md:gap-3">
                             <div className={`px-3 py-2 rounded-lg border text-sm font-jakarta font-semibold uppercase tracking-wide ${
                               isCompleted 
                                 ? 'bg-green-500/10 border-green-500/30 text-green-400' 
@@ -1820,11 +1820,11 @@ export const CandidatesView: React.FC = () => {
                           </div>
                         )}
                         
-                        <div className="flex gap-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            className="flex-1"
+                            className="flex-1 w-full sm:w-auto"
                             disabled={!hasCandidates}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1840,7 +1840,7 @@ export const CandidatesView: React.FC = () => {
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="flex-1 glow-supernova"
+                              className="flex-1 w-full sm:w-auto glow-supernova"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleRequestMoreCandidates(job.id);

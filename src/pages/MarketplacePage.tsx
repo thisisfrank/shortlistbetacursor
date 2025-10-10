@@ -253,18 +253,18 @@ export const MarketplacePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce py-8">
-      <div className="max-w-7xl mx-auto px-6">
+    <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce py-4 md:py-8">
+      <div className="max-w-7xl mx-auto px-4 md:px-6">
         
         {/* Header */}
-        <div className="text-center mb-16 mt-12">
-          <h1 className="text-8xl font-anton text-white-knight leading-tight uppercase mb-4">
+        <div className="text-center mb-8 md:mb-16 mt-6 md:mt-12">
+          <h1 className="text-4xl md:text-6xl lg:text-8xl font-anton text-white-knight leading-tight uppercase mb-4">
             Superpowers
           </h1>
-          <p className="text-xl text-guardian mb-2">
+          <p className="text-base md:text-xl text-guardian mb-2">
             Unlock premium hiring tools and resources
           </p>
-          <p className="text-sm text-guardian/80 mb-4">
+          <p className="text-xs md:text-sm text-guardian/80 mb-4">
             Earn XP: Create jobs (+50) • Daily bonus (+10/day)
           </p>
           <div className="flex justify-center gap-4">
@@ -279,12 +279,12 @@ export const MarketplacePage: React.FC = () => {
 
         {/* Categories */}
         {Object.entries(groupedItems).map(([category, items]) => (
-          <div key={category} className="mb-12">
-            <h2 className="text-2xl font-bold text-white-knight font-jakarta mb-6 capitalize">
+          <div key={category} className="mb-8 md:mb-12">
+            <h2 className="text-xl md:text-2xl font-bold text-white-knight font-jakarta mb-4 md:mb-6 capitalize">
               {getCategoryLabel(category)}
             </h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {items.map((item) => {
                 const Icon = item.icon;
                 const alreadyUnlocked = isItemUnlockedInDB(item.id);
@@ -294,11 +294,11 @@ export const MarketplacePage: React.FC = () => {
                 return (
                   <div key={item.id} className={getGradientBorderClass()}>
                     <Card 
-                      className={`p-6 ${getCategoryColor(category)} flex flex-col h-full !border-0 ${
+                      className={`p-4 md:p-6 ${getCategoryColor(category)} flex flex-col h-full !border-0 ${
                         alreadyUnlocked ? 'ring-2 ring-supernova/50' : ''
                       }`}
                     >
-                    <div className="flex items-start gap-4 mb-4 flex-grow">
+                    <div className="flex items-start gap-3 md:gap-4 mb-3 md:mb-4 flex-grow">
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-white-knight font-jakarta mb-2 whitespace-pre-line">
                           {item.title}

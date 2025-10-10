@@ -100,6 +100,22 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  
+  /* Mobile-specific utilities */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .mobile-padding {
+    @apply px-4 py-3;
+  }
+  
+  @media (min-width: 768px) {
+    .mobile-padding {
+      @apply px-8 py-6;
+    }
+  }
 }
 
 /* Custom scrollbar */
