@@ -422,72 +422,205 @@ Alex`
     setEditingBody(false);
   };
 
+  // =====================================
+  // Validation System (Step 4)
+  // =====================================
+  
+  const FORBIDDEN_COMPANY = /(mission|funding|investor|series [a-e]|ipo|customers?|client(s)?|award(s)?|press|hq|headquarters|office(s)?|location(s)?|culture|values|perk(s)?|unlimited pto|equity|stock|rsu|bonus|visa|relocation|remote policy|platform|initiatives?)/i;
+  const FORBIDDEN_CANDIDATE = /(leader|leadership|expert|seasoned|rockstar|ninja|guru|innovative|visionary|world[- ]class|award[- ]winning|impressive)/i;
+  const EXTRA_PLACEHOLDER = /{{(?!firstname|job_opening|company_name|skillone|skilltwo|skillthree|salary|your_name|current_role|current_company)[^}]+}}/i;
+  const ANY_PLACEHOLDER = /{{(firstname|job_opening|company_name|skillone|skilltwo|skillthree|salary|your_name|current_role|current_company)}}/g;
+  const EM_DASH = /\u2014/; // em dash (—)
+  const EMOJI = /[\p{Extended_Pictographic}]/u;
+  const HASHTAG = /#/;
+
+  // Normalize spacing and formatting
+  const normalizeFormatting = (text: string): string => {
+    let normalized = text
+      .replace(/\r\n/g, '\n')           // Normalize line endings
+      .replace(/\r/g, '\n')             // Convert any remaining \r to \n
+      .replace(/[ \t]+\n/g, '\n')       // Remove trailing spaces/tabs before newlines
+      .replace(/\n{3,}/g, '\n\n')       // Max 2 consecutive newlines (one blank line)
+      .replace(/^\n+/, '')              // Remove leading newlines
+      .replace(/\n+$/, '')              // Remove trailing newlines
+      .trim();
+    
+    // Ensure line break after greeting patterns
+    // Matches: "Hi Name,", "Hey Name,", "Hello Name," etc. followed by text on same line
+    normalized = normalized.replace(/(^(?:Hi|Hey|Hello)\s+\{\{firstname\}\},)\s*([^\n])/i, '$1\n\n$2');
+    
+    return normalized;
+  };
+
+  const validateMessage = (text: string, channel: 'linkedin' | 'email'): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    
+    // 1. Check for em dashes
+    if (EM_DASH.test(text)) {
+      errors.push('Contains em dashes (—)');
+    }
+    
+    // 2. Check for emojis or hashtags
+    if (EMOJI.test(text)) {
+      errors.push('Contains emojis');
+    }
+    if (HASHTAG.test(text)) {
+      errors.push('Contains hashtags');
+    }
+    
+    // 3. Check for extra/invalid placeholders
+    if (EXTRA_PLACEHOLDER.test(text)) {
+      errors.push('Contains invalid placeholders');
+    }
+    
+    // 4. Check length caps
+    const maxLen = channel === 'linkedin' ? 300 : 700;
+    const charCount = [...text].length; // Unicode-safe
+    if (charCount > maxLen) {
+      errors.push(`Exceeds ${maxLen} character limit (${charCount} chars)`);
+    }
+    
+    // 5. Check forbidden content - with detailed logging for debugging
+    if (FORBIDDEN_COMPANY.test(text)) {
+      const match = text.match(FORBIDDEN_COMPANY);
+      errors.push(`Contains forbidden company details: "${match?.[0]}"`);
+    }
+    if (FORBIDDEN_CANDIDATE.test(text)) {
+      const match = text.match(FORBIDDEN_CANDIDATE);
+      errors.push(`Contains forbidden candidate traits: "${match?.[0]}"`);
+    }
+    
+    // 6. Must contain a question mark (more lenient - just needs to have one)
+    const trimmed = text.trim();
+    if (!trimmed.includes('?')) {
+      errors.push('Does not contain a question mark');
+    }
+    
+    // 7. Channel-specific required keywords
+    if (channel === 'linkedin') {
+      if (!/(salary|range)/i.test(trimmed)) {
+        errors.push('Missing required salary/range keyword');
+      }
+    } else {
+      if (!/(salary|range|jd|job description|details|spec)/i.test(trimmed)) {
+        errors.push('Missing required closing keyword');
+      }
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  };
+
   const generateAIVariation = async (variationType: string) => {
     if (!bodyText.trim()) return;
     
     setIsGeneratingVariation(true);
     setShowVariationModal(false);
     
+    // Store base template for fallback
+    const baseTemplate = getMessageTemplate(
+      selectedTemplate, 
+      prefilledCandidate || selectedCandidate || undefined,
+      prefilledJob || selectedJob || undefined
+    );
+    
     try {
       let specificPrompt = '';
       
       switch (variationType) {
         case 'longer':
-          specificPrompt = `Make this ${messageType} recruitment message longer and more detailed while keeping it professional. Add more context about the role or company benefits, but maintain the core message and salary question:`;
+          specificPrompt = `Make this ${messageType} recruitment message longer and more detailed while keeping it professional. Add more context about the role scope or impact (NOT company or candidate specifics). Maintain the core message and salary question.`;
           break;
         case 'shorter':
-          specificPrompt = `Make this ${messageType} recruitment message shorter and more concise while keeping all essential information. Remove any unnecessary words but maintain the professional tone and salary question:`;
+          specificPrompt = `Make this ${messageType} recruitment message shorter and more concise while keeping all essential information. Remove any unnecessary words but maintain the professional tone and salary question.`;
           break;
         case 'more_casual':
-          specificPrompt = `Make this ${messageType} recruitment message more casual and friendly while keeping it professional. Use a warmer, more conversational tone:`;
+          specificPrompt = `Make this ${messageType} recruitment message more casual and friendly while keeping it professional. Use light contractions and conversational cadence. No slang or emojis.`;
           break;
         case 'more_formal':
-          specificPrompt = `Make this ${messageType} recruitment message more formal and professional while keeping it engaging. Use more business-like language:`;
+          specificPrompt = `Make this ${messageType} recruitment message more formal and professional while keeping it engaging. Use more business-like language and balanced sentences.`;
           break;
         case 'different_approach':
-          specificPrompt = `Rewrite this ${messageType} recruitment message using a completely different approach while maintaining the same goal and salary question. Try a different opening or structure:`;
+          specificPrompt = `Rewrite this ${messageType} recruitment message using a completely different approach. Try reordering to: candidate → role → closing question. Do not add new information.`;
           break;
         default:
-          specificPrompt = `Create a professional variation of this ${messageType} recruitment message that ${messageType === 'linkedin' ? 'stays under 300 characters' : 'is concise and professional'} and maintains the same structure and intent:`;
+          specificPrompt = `Create a professional variation of this ${messageType} recruitment message that ${messageType === 'linkedin' ? 'stays under 300 characters' : 'is concise and professional'} and maintains the same structure and intent.`;
       }
 
       const fullPrompt = `${specificPrompt}
 
 ${bodyText}
 
-Requirements:
-- Keep it professional and direct
-- Maintain the salary question element
-${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concise but can be longer than LinkedIn'}
-- Keep the same overall intent
-- NO fluff at the start (skip "I hope this message finds you well" or "hope you're having a good day" - get straight to the point)
-- Put the candidate as the hero of the message
-- Use one sentence per line for better readability
-- Each sentence should stand on its own`;
+CRITICAL REQUIREMENTS:
+- ${messageType === 'linkedin' ? 'Output MUST be ≤300 characters' : 'Output MUST be ≤700 characters'} (count carefully!)
+- Preserve ALL placeholders EXACTLY ({{firstname}}, {{job_opening}}, {{company_name}}, {{skillone}}, {{skilltwo}}, {{salary}}, {{your_name}}, etc.)
+- FORMATTING: Start with greeting "Hi {{firstname}}," or "Hey {{firstname}}," on its own line, then blank line, then body text
+- End with ONE question containing "${messageType === 'linkedin' ? 'salary or range' : 'salary, range, JD, job description, details, or spec'}"
+- DO NOT add signatures, sign-offs, or sender names at the end (the template handles this)
+- NO em dashes (—), use hyphens (-) or commas instead
+- NO emojis, hashtags, or links
+- DO NOT use words like: platform, initiatives, mission, funding, culture, perks, office, headquarters, values, equity, stock, bonus, relocation
+- DO NOT use words like: impressive, leader, expert, seasoned, rockstar, innovative, visionary, world-class, award-winning
+- Keep professional and direct
+- NO fluff at the start (skip "I hope this message finds you well")
+- Put the candidate as the hero
+- Natural rhythm with varied sentence length
+- The message should END with the question mark - nothing after it
 
+Output ONLY the final message text with NO signature or closing.`;
+
+      // Attempt 1: Generate variation
       const result = await reviewMessageGrammar(fullPrompt);
-      if (result.correctedMessage) {
-        setBodyText(result.correctedMessage);
-      } else {
-        // Fallback: simple word variations
-        const variations = bodyText
-          .replace(/Super impressive/gi, 'Really impressive')
-          .replace(/Hey /gi, 'Hi ')
-          .replace(/Mind if I ask/gi, 'Could I ask')
-          .replace(/Curious,/gi, 'Quick question,')
-          .replace(/Love your/gi, 'Impressed by your');
-        setBodyText(variations);
+      let generatedText = result.correctedMessage || '';
+      
+      // Clean up em dashes and normalize formatting
+      generatedText = generatedText.replace(/\u2014/g, '-');
+      generatedText = normalizeFormatting(generatedText);
+      
+      // Validate first attempt
+      const validation = validateMessage(generatedText, messageType);
+      
+      if (validation.isValid) {
+        console.log('✅ Variation validated successfully');
+        setBodyText(generatedText);
+        return;
       }
+      
+      // First validation failed - log errors and retry once
+      console.warn('❌ First attempt failed validation:');
+      console.warn('Errors:', validation.errors);
+      console.warn('Generated text:', generatedText);
+      console.warn('Character count:', [...generatedText].length);
+      
+      // Attempt 2: Regenerate
+      const retryResult = await reviewMessageGrammar(fullPrompt);
+      let retryText = retryResult.correctedMessage || '';
+      retryText = retryText.replace(/\u2014/g, '-');
+      retryText = normalizeFormatting(retryText);
+      
+      const retryValidation = validateMessage(retryText, messageType);
+      
+      if (retryValidation.isValid) {
+        console.log('✅ Retry validated successfully');
+        setBodyText(retryText);
+        return;
+      }
+      
+      // Both attempts failed - revert to base template
+      console.warn('❌ Retry also failed validation:');
+      console.warn('Errors:', retryValidation.errors);
+      console.warn('Retry text:', retryText);
+      console.warn('Character count:', [...retryText].length);
+      console.log('↩️ Reverting to base template');
+      setBodyText(baseTemplate);
+      
     } catch (error) {
-      console.error('AI variation generation failed:', error);
-      // Fallback: simple word variations
-      const variations = bodyText
-        .replace(/Super impressive/gi, 'Really impressive')
-        .replace(/Hey /gi, 'Hi ')
-        .replace(/Mind if I ask/gi, 'Could I ask')
-        .replace(/Curious,/gi, 'Quick question,')
-        .replace(/Love your/gi, 'Impressed by your');
-      setBodyText(variations);
+      console.error('AI variation generation error:', error);
+      // On error, revert to base template
+      console.log('↩️ Reverting to base template due to error');
+      setBodyText(baseTemplate);
     } finally {
       setIsGeneratingVariation(false);
     }
@@ -575,19 +708,19 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
 
   return (
          <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
-       <div className="flex min-h-screen">
+       <div className="flex flex-col md:flex-row min-h-screen">
          {/* Left Panel - Jobs List */}
-         <div className="w-1/3 bg-shadowforce-light/30 border-r border-guardian/20 p-6 overflow-y-auto">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-white-knight font-jakarta mb-2">
+         <div className="w-full md:w-1/3 bg-shadowforce-light/30 md:border-r border-guardian/20 p-4 md:p-6 overflow-y-auto max-h-[50vh] md:max-h-none">
+          <div className="mb-4 md:mb-6">
+            <h1 className="text-xl md:text-2xl font-bold text-white-knight font-jakarta mb-2">
               Message Generator
             </h1>
           </div>
 
           {/* Message Type Toggle */}
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-white-knight font-jakarta mb-2">Message Type</h3>
-            <div className="flex gap-2">
+            <h3 className="text-base md:text-lg font-semibold text-white-knight font-jakarta mb-2">Message Type</h3>
+            <div className="flex gap-2 flex-wrap">
               <Button
                 onClick={() => handleMessageTypeChange('linkedin')}
                 className={`border border-supernova ${
@@ -614,9 +747,9 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
           </div>
 
           {/* Template Selector */}
-          <div className="mb-6">
+          <div className="mb-4 md:mb-6">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold text-white-knight font-jakarta">
+              <h3 className="text-base md:text-lg font-semibold text-white-knight font-jakarta">
                 {messageType === 'linkedin' ? 'LinkedIn' : 'Email'} Templates
               </h3>
             </div>
@@ -639,8 +772,8 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
           </div>
 
           {/* Custom Templates Section */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-white-knight font-jakarta mb-2">
+          <div className="mb-4 md:mb-6">
+            <h3 className="text-base md:text-lg font-semibold text-white-knight font-jakarta mb-2">
               Custom Templates
             </h3>
             <Button
@@ -765,30 +898,32 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
         </div>
 
                  {/* Right Panel - Message Template */}
-         <div className="flex-1 p-6 flex flex-col">
+         <div className="flex-1 p-4 md:p-6 flex flex-col">
            <div className="flex-1 flex flex-col">
 
                 {/* Message Body */}
-                <Card className="p-6 flex-1 flex flex-col">
+                <Card className="p-4 md:p-6 flex-1 flex flex-col">
                   
                   {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-3 pb-4 mb-4 border-b border-guardian/20">
+                  <div className="flex flex-wrap gap-2 md:gap-3 pb-4 mb-4 border-b border-guardian/20">
                      <Tooltip content="Generate an AI variation of the current message">
                        <Button
                          onClick={() => setShowVariationModal(true)}
                          disabled={isGeneratingVariation || !bodyText.trim()}
-                         className="bg-purple-600 hover:bg-purple-700 text-black disabled:opacity-50 flex items-center gap-2"
+                         className="bg-purple-600 hover:bg-purple-700 text-black disabled:opacity-50 flex items-center gap-1 md:gap-2 text-xs md:text-sm"
                          size="sm"
                        >
                          {isGeneratingVariation ? (
                            <>
-                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                             Generating...
+                             <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white"></div>
+                             <span className="hidden sm:inline">Generating...</span>
+                             <span className="sm:hidden">Gen...</span>
                            </>
                          ) : (
                            <>
-                             <Sparkles size={16} />
-                             AI Variation
+                             <Sparkles size={14} className="md:w-4 md:h-4" />
+                             <span className="hidden sm:inline">AI Variation</span>
+                             <span className="sm:hidden">AI</span>
                            </>
                          )}
                        </Button>
@@ -797,11 +932,12 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                      <Tooltip content="Directly edit the message to fine tune your message">
                        <Button
                          onClick={() => setEditingBody(!editingBody)}
-                         className="bg-guardian/30 hover:bg-guardian/50 text-black flex items-center gap-2"
+                         className="bg-guardian/30 hover:bg-guardian/50 text-black flex items-center gap-1 md:gap-2 text-xs md:text-sm"
                          size="sm"
                        >
-                         <Edit size={16} />
-                         {editingBody ? 'Save' : 'Edit Manually'}
+                         <Edit size={14} className="md:w-4 md:h-4" />
+                         <span className="hidden sm:inline">{editingBody ? 'Save' : 'Edit Manually'}</span>
+                         <span className="sm:hidden">Edit</span>
                        </Button>
                      </Tooltip>
 
@@ -809,11 +945,12 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                        <Button
                          onClick={handleSaveCurrentAsTemplate}
                          disabled={!bodyText.trim()}
-                         className="bg-green-600 hover:bg-green-700 text-black disabled:opacity-50 flex items-center gap-2"
+                         className="bg-green-600 hover:bg-green-700 text-black disabled:opacity-50 flex items-center gap-1 md:gap-2 text-xs md:text-sm"
                          size="sm"
                        >
-                         <Save size={16} />
-                         Save as Template
+                         <Save size={14} className="md:w-4 md:h-4" />
+                         <span className="hidden sm:inline">Save as Template</span>
+                         <span className="sm:hidden">Save</span>
                        </Button>
                      </Tooltip>
                      
@@ -821,7 +958,7 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                        <Button
                          onClick={() => copyToClipboard(bodyText)}
                          disabled={messageType === 'linkedin' && isOverLimit}
-                         className={`flex items-center gap-2 ${
+                         className={`flex items-center gap-1 md:gap-2 text-xs md:text-sm ${
                            messageType === 'linkedin' && isOverLimit
                              ? 'bg-gray-500 cursor-not-allowed opacity-50 text-white' 
                              : 'bg-supernova hover:bg-supernova/90 text-shadowforce'
@@ -830,13 +967,15 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                        >
                          {copiedBody ? (
                            <>
-                             <Check size={16} />
-                             Copied!
+                             <Check size={14} className="md:w-4 md:h-4" />
+                             <span className="hidden sm:inline">Copied!</span>
+                             <span className="sm:hidden">✓</span>
                            </>
                        ) : (
                            <>
-                             <Copy size={16} />
-                             {messageType === 'linkedin' && isOverLimit ? 'Exceeds Limit' : 'Copy Message'}
+                             <Copy size={14} className="md:w-4 md:h-4" />
+                             <span className="hidden sm:inline">{messageType === 'linkedin' && isOverLimit ? 'Exceeds Limit' : 'Copy Message'}</span>
+                             <span className="sm:hidden">Copy</span>
                            </>
                          )}
                        </Button>
@@ -859,7 +998,7 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                       />
                       {/* Character Counter */}
                       <div className="flex justify-between items-center mb-4">
-                        <div className={`text-sm font-medium ${
+                        <div className={`text-xs md:text-sm font-medium ${
                           isOverLimit 
                             ? 'text-red-400' 
                             : isNearLimit 
@@ -893,7 +1032,7 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                       </div>
                       {/* Character Counter in view mode */}
                       <div className="flex justify-between items-center mb-4">
-                        <div className={`text-sm font-medium ${
+                        <div className={`text-xs md:text-sm font-medium ${
                           isOverLimit 
                             ? 'text-red-400' 
                             : isNearLimit 
@@ -920,17 +1059,17 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
 
                                  {/* Grammar Review Results */}
                  {showReviewResults && reviewResult && (
-                   <Card className="p-6 border-l-4 border-l-supernova mt-4">
+                   <Card className="p-4 md:p-6 border-l-4 border-l-supernova mt-4">
                     <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 md:gap-3">
                         {reviewResult.hasIssues ? (
-                          <AlertCircle size={20} className="text-yellow-500" />
+                          <AlertCircle size={16} className="text-yellow-500 md:w-5 md:h-5" />
                         ) : (
-                          <CheckCircle size={20} className="text-green-500" />
+                          <CheckCircle size={16} className="text-green-500 md:w-5 md:h-5" />
                         )}
                         <div>
-                          <h3 className="text-lg font-semibold text-white-knight">Grammar Review</h3>
-                          <p className="text-guardian text-sm">
+                          <h3 className="text-base md:text-lg font-semibold text-white-knight">Grammar Review</h3>
+                          <p className="text-guardian text-xs md:text-sm">
                             Quality Score: {reviewResult.score}/10
                           </p>
                         </div>
@@ -947,10 +1086,10 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
 
                     {reviewResult.suggestions.length > 0 && (
                       <div className="mb-4">
-                        <h4 className="text-white-knight font-medium mb-2">Suggestions:</h4>
+                        <h4 className="text-white-knight text-sm md:text-base font-medium mb-2">Suggestions:</h4>
                         <ul className="space-y-1">
                           {reviewResult.suggestions.map((suggestion, index) => (
-                            <li key={index} className="text-guardian text-sm flex items-start gap-2">
+                            <li key={index} className="text-guardian text-xs md:text-sm flex items-start gap-2">
                               <span className="text-supernova">•</span>
                               {suggestion}
                             </li>
@@ -960,18 +1099,18 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
                     )}
 
                     {reviewResult.correctedMessage && (
-                      <div className="mt-4 p-4 bg-shadowforce rounded-lg">
+                      <div className="mt-4 p-3 md:p-4 bg-shadowforce rounded-lg">
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-white-knight font-medium">Suggested Correction:</h4>
+                          <h4 className="text-white-knight text-sm md:text-base font-medium">Suggested Correction:</h4>
                           <Button
                             onClick={applyCorrectedMessage}
                             size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white"
+                            className="bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm"
                           >
-                            Apply Changes
+                            Apply
                           </Button>
                         </div>
-                        <div className="text-guardian text-sm whitespace-pre-wrap">
+                        <div className="text-guardian text-xs md:text-sm whitespace-pre-wrap">
                           {reviewResult.correctedMessage}
                         </div>
                       </div>
@@ -984,57 +1123,57 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
 
       {/* AI Variation Modal */}
       {showVariationModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowVariationModal(false)}>
-          <div className="bg-shadowforce border border-guardian/30 rounded-lg p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-semibold text-white-knight font-jakarta mb-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowVariationModal(false)}>
+          <div className="bg-shadowforce border border-guardian/30 rounded-lg p-4 md:p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg md:text-xl font-semibold text-white-knight font-jakarta mb-3 md:mb-4">
               Choose AI Variation Type
             </h3>
-            <p className="text-guardian text-sm mb-6">
+            <p className="text-guardian text-xs md:text-sm mb-4 md:mb-6">
               How would you like to modify your message?
             </p>
             
-            <div className="space-y-3">
+            <div className="space-y-2 md:space-y-3">
               <Button
                 onClick={() => generateAIVariation('longer')}
-                className="w-full text-left justify-start bg-shadowforce-light hover:bg-supernova hover:text-black text-black border border-guardian/30"
+                className="w-full text-left justify-start bg-shadowforce-light hover:bg-supernova hover:text-black text-black border border-guardian/30 text-xs md:text-sm"
               >
                 📝 Make it longer and more detailed
               </Button>
               
               <Button
                 onClick={() => generateAIVariation('shorter')}
-                className="w-full text-left justify-start bg-shadowforce-light hover:bg-supernova hover:text-black text-black border border-guardian/30"
+                className="w-full text-left justify-start bg-shadowforce-light hover:bg-supernova hover:text-black text-black border border-guardian/30 text-xs md:text-sm"
               >
                 ✂️ Make it shorter/more concise
               </Button>
               
               <Button
                 onClick={() => generateAIVariation('more_casual')}
-                className="w-full text-left justify-start bg-shadowforce-light hover:bg-supernova hover:text-black text-black border border-guardian/30"
+                className="w-full text-left justify-start bg-shadowforce-light hover:bg-supernova hover:text-black text-black border border-guardian/30 text-xs md:text-sm"
               >
                 😊 Make it more casual and friendly
               </Button>
               
               <Button
                 onClick={() => generateAIVariation('more_formal')}
-                className="w-full text-left justify-start bg-shadowforce-light hover:bg-supernova hover:text-black text-black border border-guardian/30"
+                className="w-full text-left justify-start bg-shadowforce-light hover:bg-supernova hover:text-black text-black border border-guardian/30 text-xs md:text-sm"
               >
                 🎩 Make it more formal and professional
               </Button>
               
               <Button
                 onClick={() => generateAIVariation('different_approach')}
-                className="w-full text-left justify-start bg-shadowforce-light hover:bg-supernova hover:text-black text-black border border-guardian/30"
+                className="w-full text-left justify-start bg-shadowforce-light hover:bg-supernova hover:text-black text-black border border-guardian/30 text-xs md:text-sm"
               >
                 🔄 Try a completely different approach
               </Button>
             </div>
             
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-2 md:gap-3 mt-4 md:mt-6">
               <Button
                 onClick={() => setShowVariationModal(false)}
                 variant="outline"
-                className="flex-1 text-guardian border-guardian/30 hover:bg-guardian/10"
+                className="flex-1 text-guardian border-guardian/30 hover:bg-guardian/10 text-xs md:text-sm"
               >
                 Cancel
               </Button>
@@ -1045,34 +1184,34 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
 
       {/* Custom Template Modal */}
       {showCustomTemplateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCustomTemplateModal(false)}>
-          <div className="bg-shadowforce border border-guardian/30 rounded-lg p-6 max-w-2xl w-full mx-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-semibold text-white-knight font-jakarta mb-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto" onClick={() => setShowCustomTemplateModal(false)}>
+          <div className="bg-shadowforce border border-guardian/30 rounded-lg p-4 md:p-6 max-w-2xl w-full my-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg md:text-xl font-semibold text-white-knight font-jakarta mb-3 md:mb-4">
               {editingCustomTemplate ? 'Edit Custom Template' : 'Create Custom Template'}
             </h3>
             
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               <div>
-                <label className="block text-white-knight text-sm font-medium mb-2">
+                <label className="block text-white-knight text-xs md:text-sm font-medium mb-2">
                   Template Name
                 </label>
                 <input
                   type="text"
                   value={newTemplateName}
                   onChange={(e) => setNewTemplateName(e.target.value)}
-                  className="w-full p-3 bg-shadowforce-light border border-guardian/30 rounded-lg text-white-knight"
+                  className="w-full p-2 md:p-3 bg-shadowforce-light border border-guardian/30 rounded-lg text-white-knight text-sm"
                   placeholder="Enter template name (e.g., 'My LinkedIn Template')"
                 />
               </div>
               
               <div>
-                <label className="block text-white-knight text-sm font-medium mb-2">
+                <label className="block text-white-knight text-xs md:text-sm font-medium mb-2">
                   Template Content
                 </label>
                 <textarea
                   value={newTemplateContent}
                   onChange={(e) => setNewTemplateContent(e.target.value)}
-                  className="w-full h-40 p-3 bg-shadowforce-light border border-guardian/30 rounded-lg text-white-knight resize-none"
+                  className="w-full h-32 md:h-40 p-2 md:p-3 bg-shadowforce-light border border-guardian/30 rounded-lg text-white-knight resize-none text-sm"
                   placeholder="Enter your template content. You can use variables like {{firstname}}, {{current_company}}, {{company_name}}, {{job_opening}}, {{skillone}}, {{skilltwo}}, {{skillthree}}, {{your_name}}, and {{salary}}"
                 />
                 <p className="text-guardian text-xs mt-1">
@@ -1081,18 +1220,18 @@ ${messageType === 'linkedin' ? '- Stay under 300 characters' : '- Keep it concis
               </div>
             </div>
             
-            <div className="flex gap-3 mt-6">
+            <div className="flex gap-2 md:gap-3 mt-4 md:mt-6">
               <Button
                 onClick={() => setShowCustomTemplateModal(false)}
                 variant="outline"
-                className="flex-1 text-guardian border-guardian/30 hover:bg-guardian/10"
+                className="flex-1 text-guardian border-guardian/30 hover:bg-guardian/10 text-xs md:text-sm"
               >
                 Cancel
               </Button>
               <Button
                 onClick={editingCustomTemplate ? handleUpdateCustomTemplate : handleSaveCustomTemplate}
                 disabled={!newTemplateName.trim() || !newTemplateContent.trim()}
-                className="flex-1 bg-supernova hover:bg-supernova/90 text-shadowforce disabled:opacity-50"
+                className="flex-1 bg-supernova hover:bg-supernova/90 text-shadowforce disabled:opacity-50 text-xs md:text-sm"
               >
                 {editingCustomTemplate ? 'Update Template' : 'Save Template'}
               </Button>

@@ -138,7 +138,7 @@ export const Header: React.FC = () => {
     <header className="bg-shadowforce border-b border-guardian/20 shadow-lg">
       <div className="max-w-7xl mx-auto px-4">
         {/* Desktop Header */}
-        <div className="hidden md:flex items-center justify-center h-20 relative">
+        <div className="hidden lg:flex items-center justify-center h-20 relative">
           {/* Logo - positioned absolutely to the left */}
           <div className="absolute left-0 flex items-center">
             <Link to="/" className="flex items-center text-supernova hover:text-supernova-light transition-colors">
@@ -256,7 +256,7 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Mobile Header */}
-        <div className="md:hidden flex items-center justify-between h-16">
+        <div className="lg:hidden flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center text-supernova hover:text-supernova-light transition-colors">
             <div className="text-lg font-anton">
@@ -277,7 +277,7 @@ export const Header: React.FC = () => {
 
         {/* Mobile Menu Dropdown */}
         {isMobileMenuOpen && (
-          <div className="md:hidden bg-shadowforce-light border-t border-guardian/20 py-4 space-y-2">
+          <div className="lg:hidden bg-shadowforce-light border-t border-guardian/20 py-4 space-y-2">
             {/* Navigation Items */}
             {!(location.pathname === '/' && navItems.filter(item => item.label === 'GET CANDIDATES').length === 1) && (
               <nav className="space-y-2">
