@@ -316,25 +316,7 @@ export const ResetPasswordPage: React.FC = () => {
           </form>
 
           {!user && (
-            <div className="mt-6 text-center space-y-4">
-              <button
-                onClick={() => {
-                  const hash = window.location.hash;
-                  const fullUrl = window.location.href;
-                  console.log('🔍 MANUAL URL CHECK:', {
-                    hash,
-                    fullUrl,
-                    pathname: window.location.pathname,
-                    search: window.location.search,
-                    hasRecovery: hash.includes('type=recovery'),
-                    params: hash ? Object.fromEntries(new URLSearchParams(hash.substring(1))) : {}
-                  });
-                  alert('Check console for URL details');
-                }}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-jakarta"
-              >
-                Test URL Detection
-              </button>
+            <div className="mt-6 text-center">
               <Link
                 to="/forgot-password"
                 className="block text-supernova hover:text-supernova-light font-semibold transition-colors font-jakarta"
