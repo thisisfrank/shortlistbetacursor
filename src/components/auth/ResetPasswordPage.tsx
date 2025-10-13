@@ -21,11 +21,22 @@ export const ResetPasswordPage: React.FC = () => {
 
   // Debug: Log when component mounts
   useEffect(() => {
-    console.log('🔑 ResetPasswordPage component mounted!', {
-      currentURL: window.location.href,
+    const urlInfo = {
+      fullURL: window.location.href,
       pathname: window.location.pathname,
       search: window.location.search,
-      hash: window.location.hash
+      hash: window.location.hash,
+      queryParams: Object.fromEntries(new URLSearchParams(window.location.search)),
+      hashParams: window.location.hash ? Object.fromEntries(new URLSearchParams(window.location.hash.substring(1))) : {}
+    };
+    
+    console.log('🔑 ResetPasswordPage component mounted!', urlInfo);
+    console.log('🔍 DETAILED URL ANALYSIS:', {
+      hasAccessTokenInQuery: window.location.search.includes('access_token'),
+      hasAccessTokenInHash: window.location.hash.includes('access_token'),
+      hasTypeRecoveryInQuery: window.location.search.includes('type=recovery'),
+      hasTypeRecoveryInHash: window.location.hash.includes('type=recovery'),
+      fullHref: window.location.href
     });
   }, []);
 

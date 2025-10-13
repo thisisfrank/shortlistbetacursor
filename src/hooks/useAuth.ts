@@ -115,6 +115,21 @@ export const useAuth = () => {
     if (isSpecialAuth) {
       return; // Exit early if special auth handling
     }
+    
+    // IMPORTANT: If we're on reset-password page with recovery tokens,
+    // skip normal auth initialization to prevent consuming the tokens
+    const pathname = window.location.pathname;
+    const search = window.location.search;
+    const hash = window.location.hash;
+    const hasRecoveryTokens = (search.includes('type=recovery') || hash.includes('type=recovery')) 
+      && (search.includes('access_token') || hash.includes('access_token'));
+    
+    if (pathname === '/reset-password' && hasRecoveryTokens) {
+      console.log('🔑 ⏸️ Skipping normal auth init - letting ResetPasswordPage handle recovery tokens');
+      setLoading(false);
+      setAuthInitialized(true);
+      return; // Let ResetPasswordPage handle the tokens
+    }
 
     const initAuth = async () => {
       try {
