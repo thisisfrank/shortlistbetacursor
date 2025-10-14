@@ -23,7 +23,7 @@ export const UnlockModal: React.FC<UnlockModalProps> = ({
   if (!isOpen || !item) return null;
 
   const Icon = item.icon;
-  const requiredPoints = item.sequenceIndex * 100;
+  const requiredPoints = item.requiredLevel;
   const hasEnoughPoints = userPoints >= requiredPoints;
 
   const handleUnlock = () => {

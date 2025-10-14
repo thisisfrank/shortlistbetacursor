@@ -5,8 +5,7 @@ export interface MarketplaceItem {
   id: string;
   title: string;
   description: string;
-  unlockDay: number;
-  sequenceIndex: number;
+  requiredLevel: number;
   icon: any;
   category: 'free' | 'starter' | 'enterprise';
 }
@@ -25,8 +24,8 @@ export const useMarketplaceUnlock = () => {
   const getUserPoints = (): number => {
     if (!userProfile?.id) return 0;
 
-    // Signup bonus (100 points for joining)
-    const signupBonus = 100;
+    // Signup bonus (10 points for joining)
+    const signupBonus = 10;
 
     // Points from jobs (50 points each)
     const jobCount = jobs.filter(j => j.userId === userProfile.id).length;
@@ -57,12 +56,11 @@ export const useMarketplaceUnlock = () => {
     
     // Otherwise check if user has enough points to unlock
     const points = getUserPoints();
-    const requiredPoints = item.sequenceIndex * 100;
-    return points >= requiredPoints;
+    return points >= item.requiredLevel;
   };
 
   const getNextUnlockItem = (items: MarketplaceItem[]): MarketplaceItem | null => {
-    const sortedItems = [...items].sort((a, b) => a.sequenceIndex - b.sequenceIndex);
+    const sortedItems = [...items].sort((a, b) => a.requiredLevel - b.requiredLevel);
     return sortedItems.find(item => !isItemUnlocked(item)) || null;
   };
 

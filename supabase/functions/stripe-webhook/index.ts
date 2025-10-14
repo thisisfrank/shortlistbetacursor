@@ -264,9 +264,15 @@ async function syncCustomerFromStripe(customerId: string) {
     const subscription = subscriptions.data[0]
     console.log(`📋 Subscription found: ${subscription.id}, status: ${subscription.status}`)
 
-    const priceId = subscription.items.data[0].price.id
+    // CRITICAL FIX: Retrieve the full subscription to get current_period_end
+    const fullSubscription = await stripe.subscriptions.retrieve(subscription.id)
+    console.log(`📅 Retrieved subscription with period end: ${new Date(fullSubscription.current_period_end * 1000).toISOString()}`)
+
+    const priceId = fullSubscription.items.data[0].price.id
     const tierId = PRICE_TO_TIER_MAPPING[priceId] || null
-    await updateUserTier(customerId, tierId, subscription.status, subscription.id, subscription.current_period_end)
+    
+    // Pass the current_period_end from the full subscription object
+    await updateUserTier(customerId, tierId, fullSubscription.status, fullSubscription.id, fullSubscription.current_period_end)
     
     console.info(`✅ Successfully synced subscription for customer: ${customerId}`)
   } catch (error) {
@@ -638,11 +644,17 @@ serve(async (req) => {
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
         const subscription = stripeData as Stripe.Subscription
-        const priceId = subscription.items.data[0].price.id
-        const tierId = PRICE_TO_TIER_MAPPING[priceId] || null
         console.info(`🔄 Processing subscription ${event.type} for customer: ${customerId}`)
+        
+        // CRITICAL FIX: Retrieve the full subscription to ensure we have current_period_end
+        const fullSubscription = await stripe.subscriptions.retrieve(subscription.id)
+        console.log(`📅 Retrieved subscription period end from Stripe: ${new Date(fullSubscription.current_period_end * 1000).toISOString()}`)
+        
+        const priceId = fullSubscription.items.data[0].price.id
+        const tierId = PRICE_TO_TIER_MAPPING[priceId] || null
+        
         // Pass the subscription ID and period end to avoid canceling the current one
-        await updateUserTier(customerId, tierId, subscription.status, subscription.id, subscription.current_period_end)
+        await updateUserTier(customerId, tierId, fullSubscription.status, fullSubscription.id, fullSubscription.current_period_end)
         break
 
       case 'customer.subscription.deleted':
