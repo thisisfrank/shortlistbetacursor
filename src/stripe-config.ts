@@ -11,7 +11,7 @@ export interface StripeProduct {
 export const stripeProducts: StripeProduct[] = [
   {
     id: 'prod_SgO9JAsJtILfdq',
-    priceId: 'price_1S7TPaHb6LdHADWYhMgRw3YY',
+    priceId: 'price_1SALDtHb6LdHADWYY5NBNKj5l',
     name: 'Beast Mode',
     description: 'Unlimited access for enterprise teams',
     mode: 'subscription',
@@ -20,21 +20,21 @@ export const stripeProducts: StripeProduct[] = [
   },
   {
     id: 'prod_SgO9Ov8KJgqfXd',
-    priceId: 'price_1S7TOGHb6LdHADWYAu8g3h3f',
-    name: 'Pro',
+    priceId: 'price_1SALDYHb6LdHADWYwZ8almdN',
+    name: 'Super Recruiter',
     description: 'Advanced features for scaling businesses',
     mode: 'subscription',
     price: 99.00,
-    paymentLink: 'https://buy.stripe.com/test_6oU7sLgN89lNaZr8M19R604' // Pro
+    paymentLink: 'https://buy.stripe.com/test_6oU7sLgN89lNaZr8M19R604' // Super Recruiter (Pro)
   },
   {
     id: 'prod_SgO9o092ze8mBs',
-    priceId: 'price_1S7TO3Hb6LdHADWYvWMTutrj',
-    name: 'Starter',
+    priceId: 'price_1SALD5Hb6LdHADWYbyDzUv7a',
+    name: 'Average Recruiter',
     description: 'Perfect for getting started',
     mode: 'subscription',
     price: 29.00,
-    paymentLink: 'https://buy.stripe.com/test_00w14neF09lNgjLd2h9R603' // Starter
+    paymentLink: 'https://buy.stripe.com/test_00w14neF09lNgjLd2h9R603' // Average Recruiter (Starter)
   }
 ];
 

@@ -13,7 +13,7 @@ const subscriptionPlans = [
     id: 'basic',
     name: 'Average Recruiter',
     price: 29,
-    priceId: 'price_1S7TO3Hb6LdHADWYvWMTutrj', // Updated Stripe price ID
+    priceId: 'price_1SALD5Hb6LdHADWYbyDzUv7a', // Updated Stripe price ID
     paymentLink: 'https://buy.stripe.com/test_00w14neF09lNgjLd2h9R603', // Average Recruiter
     description: 'Perfect for getting started',
     features: {
@@ -29,8 +29,8 @@ const subscriptionPlans = [
     id: 'premium',
     name: 'Super Recruiter',
     price: 99,
-    priceId: 'price_1S7TOGHb6LdHADWYAu8g3h3f', // Updated Stripe price ID
-    paymentLink: 'https://buy.stripe.com/test_6oU7sLgN89lNaZr8M19R604', // Beast Mode
+    priceId: 'price_1SALDYHb6LdHADWYwZ8almdN', // Updated Stripe price ID
+    paymentLink: 'https://buy.stripe.com/test_6oU7sLgN89lNaZr8M19R604', // Pro
     description: 'Advanced features for scaling businesses',
     features: {
       jobs: 3,
@@ -45,8 +45,8 @@ const subscriptionPlans = [
     id: 'topshelf',
     name: 'Beast Mode',
     price: 699,
-    priceId: 'price_1S7TPaHb6LdHADWYhMgRw3YY', // Updated Stripe price ID
-    paymentLink: 'https://buy.stripe.com/test_14AaEX40m0PhgjL1jz9R605', // Super Recruiter
+    priceId: 'price_1SALDtHb6LdHADWYY5NBNKj5l', // Updated Stripe price ID
+    paymentLink: 'https://buy.stripe.com/test_14AaEX40m0PhgjL1jz9R605', // Beast Mode
     description: 'Unlimited access for enterprise teams',
     features: {
       jobs: 10,
@@ -65,8 +65,8 @@ export const SubscriptionPlans: React.FC = () => {
   // Map tier IDs to plan IDs for accurate current plan detection
   const tierIdToPlanId: Record<string, string> = {
     '88c433cf-0a8d-44de-82fa-71c7dcbe31ff': 'basic',    // Average Recruiter tier  
-    'f871eb1b-6756-447d-a1c0-20a373d1d5a2': 'premium',  // Beast Mode tier
-    'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd': 'topshelf'  // Super Recruiter tier
+    'd8b7d6ae-8a44-49c9-9dc3-1c6b1838815fd': 'premium',  // Super Recruiter tier (Pro - 400 credits)
+    'f871eb1b-6756-447d-a1c0-20a373d1d5a2': 'topshelf'  // Beast Mode tier
   };
 
   // Get current plan based on user's actual tier_id

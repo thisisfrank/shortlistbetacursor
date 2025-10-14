@@ -194,7 +194,7 @@ host = "smtp.resend.com"
 port = 465
 user = "resend"
 pass = "your-resend-api-key-here"
-admin_email = "onboarding@resend.dev"
+admin_email = "thisisfr ankgonzalez@gmail.com"
 sender_name = "Shortlist Beta"
 
 # Customize email templates

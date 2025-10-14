@@ -25,6 +25,9 @@ export const useMarketplaceUnlock = () => {
   const getUserPoints = (): number => {
     if (!userProfile?.id) return 0;
 
+    // Signup bonus (100 points for joining)
+    const signupBonus = 100;
+
     // Points from jobs (50 points each)
     const jobCount = jobs.filter(j => j.userId === userProfile.id).length;
     const jobPoints = jobCount * 50;
@@ -32,7 +35,7 @@ export const useMarketplaceUnlock = () => {
     // Bonus points from account age (10 points per day)
     const dayBonus = getDaysActive() * 10;
 
-    return jobPoints + dayBonus;
+    return signupBonus + jobPoints + dayBonus;
   };
 
   const getUnlockedItemsCount = (): number => {

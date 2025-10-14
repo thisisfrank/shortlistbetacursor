@@ -3,9 +3,6 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno'
 
-// Disable JWT verification for webhooks
-Deno.env.set('SUPABASE_AUTH_VERIFY_JWT', 'false')
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
@@ -30,16 +27,16 @@ const supabase = createClient(
 
 // Map payment link URLs to database tier IDs (UPDATED with new payment links)
 const PAYMENT_LINK_TO_TIER_MAPPING: Record<string, string> = {
-  'https://buy.stripe.com/test_00w14neF09lNgjLd2h9R603': '88c433cf-0a8d-44de-82fa-71c7dcbe31ff',    // Starter - 100 credits
-  'https://buy.stripe.com/test_6oU7sLgN89lNaZr8M19R604': 'f871eb1b-6756-447d-a1c0-20a373d1d5a2',  // Pro - 400 credits
-  'https://buy.stripe.com/test_14AaEX40m0PhgjL1jz9R605': 'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd', // Beast Mode - 2500 credits
+  'https://buy.stripe.com/test_00w14neF09lNgjLd2h9R603': '88c433cf-0a8d-44de-82fa-71c7dcbe31ff',    // Average Recruiter - 100 credits
+  'https://buy.stripe.com/test_6oU7sLgN89lNaZr8M19R604': 'd8b7d6ae-8a44-49c9-9dc3-1c6b1838815fd',  // Super Recruiter - 400 credits
+  'https://buy.stripe.com/test_14AaEX40m0PhgjL1jz9R605': 'f871eb1b-6756-447d-a1c0-20a373d1d5a2', // Beast Mode - 2500 credits
 }
 
 // Also keep price mapping as fallback for subscription events
 const PRICE_TO_TIER_MAPPING: Record<string, string> = {
-  'price_1S7TO3Hb6LdHADWYvWMTutrj': '88c433cf-0a8d-44de-82fa-71c7dcbe31ff',    // Basic tier
-  'price_1S7TOGHb6LdHADWYAu8g3h3f': 'f871eb1b-6756-447d-a1c0-20a373d1d5a2',  // Premium tier
-  'price_1S7TPaHb6LdHADWYhMgRw3YY': 'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd', // Top Shelf tier
+  'price_1SALD5Hb6LdHADWYbyDzUv7a': '88c433cf-0a8d-44de-82fa-71c7dcbe31ff',    // Average Recruiter - 100 credits
+  'price_1SALDYHb6LdHADWYwZ8almdN': 'd8b7d6ae-8a44-49c9-9dc3-1c6b1838815fd',  // Super Recruiter - 400 credits
+  'price_1SALDtHb6LdHADWYY5NBNKj5l': 'f871eb1b-6756-447d-a1c0-20a373d1d5a2', // Beast Mode - 2500 credits
 }
 
 // Map credit pack price IDs to credit amounts
@@ -126,7 +123,7 @@ async function cancelExistingSubscriptions(customerId: string, excludeSubscripti
   }
 }
 
-async function updateUserTier(customerId: string, tierId: string | null, subscriptionStatus: string, newSubscriptionId?: string) {
+async function updateUserTier(customerId: string, tierId: string | null, subscriptionStatus: string, newSubscriptionId?: string, subscriptionPeriodEnd?: number) {
   try {
     console.log(`🎯 Updating user tier for customer: ${customerId}, tier: ${tierId}, status: ${subscriptionStatus}`)
     
@@ -215,15 +212,25 @@ async function updateUserTier(customerId: string, tierId: string | null, subscri
       }
     }
 
-    // Update user's tier, subscription status, and credits
+    // Prepare update object with subscription period end
+    const updateData: any = {
+      tier_id: targetTierId,
+      subscription_status: subscriptionStatus,
+      stripe_customer_id: customerId,
+      available_credits: newCreditBalance
+    }
+    
+    // Add subscription period end if provided
+    if (subscriptionPeriodEnd) {
+      const periodEndDate = new Date(subscriptionPeriodEnd * 1000) // Convert Unix timestamp to Date
+      updateData.subscription_period_end = periodEndDate.toISOString()
+      console.log(`📅 Setting subscription period end to: ${periodEndDate.toISOString()}`)
+    }
+    
+    // Update user's tier, subscription status, credits, and period end in single transaction
     const { error: updateError } = await supabase
       .from('user_profiles')
-      .update({
-        tier_id: targetTierId,
-        subscription_status: subscriptionStatus,
-        stripe_customer_id: customerId,
-        available_credits: newCreditBalance
-      })
+      .update(updateData)
       .eq('id', userId)
 
     if (updateError) {
@@ -259,7 +266,7 @@ async function syncCustomerFromStripe(customerId: string) {
 
     const priceId = subscription.items.data[0].price.id
     const tierId = PRICE_TO_TIER_MAPPING[priceId] || null
-    await updateUserTier(customerId, tierId, subscription.status, subscription.id)
+    await updateUserTier(customerId, tierId, subscription.status, subscription.id, subscription.current_period_end)
     
     console.info(`✅ Successfully synced subscription for customer: ${customerId}`)
   } catch (error) {
@@ -318,16 +325,35 @@ async function renewMonthlyCredits(customerId: string) {
 
     console.log(`💰 Credit renewal: ${currentCredits} existing + ${tierCredits} tier credits = ${newCreditBalance} total`)
 
-    // Calculate next renewal date (30 days from now)
-    const nextResetDate = new Date()
-    nextResetDate.setDate(nextResetDate.getDate() + 30)
+    // Get the actual subscription period end from Stripe
+    let nextResetDate: Date | null = null
+    try {
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        limit: 1,
+        status: 'active',
+      })
+      
+      if (subscriptions.data.length > 0) {
+        const subscription = subscriptions.data[0]
+        nextResetDate = new Date(subscription.current_period_end * 1000)
+        console.log(`📅 Got subscription period end from Stripe: ${nextResetDate.toISOString()}`)
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not fetch subscription from Stripe, calculating 30 days from now')
+    }
+    
+    // Fallback: Calculate next renewal date (30 days from now) if we couldn't get it from Stripe
+    if (!nextResetDate) {
+      nextResetDate = new Date()
+      nextResetDate.setDate(nextResetDate.getDate() + 30)
+    }
 
-    // Update user's credits and reset date
+    // Update user's credits, reset date, and subscription period end
     const { error: updateError } = await supabase
       .from('user_profiles')
       .update({
         available_credits: newCreditBalance,
-        credits_reset_date: nextResetDate.toISOString(),
         subscription_period_end: nextResetDate.toISOString()
       })
       .eq('id', userId)
@@ -515,8 +541,15 @@ serve(async (req) => {
           // For subscription mode, get tier from checkout session
           const tierId = await getTierFromCheckoutSession(session.id)
           if (tierId) {
-            // Pass the new subscription ID to avoid canceling it
-            await updateUserTier(customerId, tierId, 'active', session.subscription as string)
+            // Get the full subscription details to extract current_period_end
+            let subscriptionPeriodEnd: number | undefined
+            if (session.subscription && typeof session.subscription === 'string') {
+              const fullSubscription = await stripe.subscriptions.retrieve(session.subscription)
+              subscriptionPeriodEnd = fullSubscription.current_period_end
+            }
+            
+            // Pass the new subscription ID and period end to avoid canceling it
+            await updateUserTier(customerId, tierId, 'active', session.subscription as string, subscriptionPeriodEnd)
             
             // Send plan purchase welcome email via GHL webhook
             try {
@@ -608,8 +641,8 @@ serve(async (req) => {
         const priceId = subscription.items.data[0].price.id
         const tierId = PRICE_TO_TIER_MAPPING[priceId] || null
         console.info(`🔄 Processing subscription ${event.type} for customer: ${customerId}`)
-        // Pass the subscription ID to avoid canceling the current one
-        await updateUserTier(customerId, tierId, subscription.status, subscription.id)
+        // Pass the subscription ID and period end to avoid canceling the current one
+        await updateUserTier(customerId, tierId, subscription.status, subscription.id, subscription.current_period_end)
         break
 
       case 'customer.subscription.deleted':

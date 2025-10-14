@@ -193,228 +193,249 @@ export const AccountPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8">
-      {/* Profile Information Section */}
-      <div className="bg-shadowforce-light/30 rounded-xl p-4 md:p-8 border border-guardian/10 mb-6 md:mb-8">
-        <h2 className="font-anton text-2xl text-white-knight uppercase tracking-wide mb-6">
-          PROFILE INFORMATION
-        </h2>
-        
-        <div className="flex items-center gap-6 mb-8">
-          <button
-            onClick={handleOpenAvatarSelector}
-            disabled={avatarLoading}
-            className="bg-supernova rounded-full p-4 hover:bg-supernova-light transition-colors cursor-pointer group relative"
-            title="Click to change avatar"
-          >
-            {avatar && avatar !== '👤' ? (
-              <span className="text-3xl">{avatar}</span>
-            ) : (
-              <User size={32} className="text-shadowforce" />
-            )}
-            {avatarLoading && (
-              <div className="absolute inset-0 bg-supernova/80 rounded-full flex items-center justify-center">
-                <div className="animate-spin w-6 h-6 border-2 border-shadowforce border-t-transparent rounded-full"></div>
-              </div>
-            )}
-            <div className="absolute inset-0 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <Edit3 size={16} className="text-white" />
-            </div>
-          </button>
-          <div>
-            <div className="space-y-4">
-              {/* Name Field */}
-              <div>
-                <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
-                  Name
-                </label>
-                <div className="flex items-center gap-3">
-                  {!isEditingName ? (
-                    <>
-                      <h3 className="font-jakarta font-bold text-white-knight text-2xl">
-                        {userProfile.name && userProfile.name.trim() !== '' 
-                          ? userProfile.name 
-                          : 'Complete Your Profile'}
-                      </h3>
-                      <button
-                        onClick={handleEditName}
-                        className="p-1 text-guardian hover:text-supernova transition-colors flex items-end"
-                        title="Edit name"
-                      >
-                        <Edit3 size={16} />
-                      </button>
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="font-jakarta font-bold text-white-knight text-2xl bg-transparent border-b-2 border-supernova focus:outline-none focus:border-supernova-light"
-                        placeholder="Enter your name"
-                        autoFocus
-                      />
-                      <div className="flex gap-2">
+      {/* Profile Information and Current Plan Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 md:mb-8">
+        {/* Profile Information Section */}
+        <div className="bg-shadowforce-light/30 rounded-xl p-4 md:p-6 border border-guardian/10">
+          <h2 className="font-anton text-xl text-white-knight uppercase tracking-wide mb-6">
+            PROFILE INFORMATION
+          </h2>
+          
+          <div className="flex items-start gap-4">
+            <div className="flex-1">
+              <div className="space-y-4">
+                {/* Name Field */}
+                <div>
+                  <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                    Name
+                  </label>
+                  <div className="flex items-center gap-3">
+                    {!isEditingName ? (
+                      <>
+                        <h3 className="font-jakarta font-bold text-white-knight text-xl">
+                          {userProfile.name && userProfile.name.trim() !== '' 
+                            ? userProfile.name 
+                            : 'Complete Your Profile'}
+                        </h3>
                         <button
-                          onClick={handleSaveName}
-                          disabled={!name.trim() || nameLoading}
-                          className="p-1 bg-supernova text-shadowforce rounded text-sm font-semibold hover:bg-supernova-light disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Save name"
+                          onClick={handleEditName}
+                          className="p-1 text-guardian hover:text-supernova transition-colors flex items-end"
+                          title="Edit name"
                         >
-                          {nameLoading ? '...' : <Check size={16} />}
+                          <Edit3 size={14} />
                         </button>
-                        <button
-                          onClick={handleCancelName}
-                          className="p-1 bg-guardian/20 text-guardian rounded text-sm font-semibold hover:bg-guardian/30"
-                          title="Cancel"
-                        >
-                          <X size={16} />
-                        </button>
+                      </>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="text"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="font-jakarta font-bold text-white-knight text-xl bg-transparent border-b-2 border-supernova focus:outline-none focus:border-supernova-light"
+                          placeholder="Enter your name"
+                          autoFocus
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleSaveName}
+                            disabled={!name.trim() || nameLoading}
+                            className="p-1 bg-supernova text-shadowforce rounded text-sm font-semibold hover:bg-supernova-light disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Save name"
+                          >
+                            {nameLoading ? '...' : <Check size={16} />}
+                          </button>
+                          <button
+                            onClick={handleCancelName}
+                            className="p-1 bg-guardian/20 text-guardian rounded text-sm font-semibold hover:bg-guardian/30"
+                            title="Cancel"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
+                  </div>
+                  {nameError && (
+                    <p className="text-red-400 text-sm mt-2">{nameError}</p>
                   )}
                 </div>
-                {nameError && (
-                  <p className="text-red-400 text-sm mt-2">{nameError}</p>
-                )}
-              </div>
 
-              {/* Email Field */}
-              <div>
-                <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
-                  Email
-                </label>
-                <p className="text-guardian text-lg">{userProfile.email}</p>
-              </div>
-              
-              {/* Company Field */}
-              <div>
-                <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
-                  Company
-                </label>
-                <div className="flex items-center gap-3">
-                  {!isEditingCompany ? (
-                    <>
-                      <p className="text-guardian text-lg">
-                        {userProfile.company && userProfile.company.trim() !== '' 
-                          ? userProfile.company 
-                          : 'No company specified'}
-                      </p>
-                      <button
-                        onClick={handleEditCompany}
-                        className="p-1 text-guardian hover:text-supernova transition-colors"
-                        title="Edit company"
-                      >
-                        <Edit3 size={14} />
-                      </button>
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="text"
-                        value={company}
-                        onChange={(e) => setCompany(e.target.value)}
-                        className="text-guardian text-lg bg-transparent border-b-2 border-supernova focus:outline-none focus:border-supernova-light"
-                        placeholder="Enter your company name"
-                        autoFocus
-                      />
-                      <div className="flex gap-2">
+                {/* Email Field */}
+                <div>
+                  <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                    Email
+                  </label>
+                  <p className="text-white-knight text-lg">{userProfile.email}</p>
+                </div>
+                
+                {/* Company Field */}
+                <div>
+                  <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                    Company
+                  </label>
+                  <div className="flex items-center gap-3">
+                    {!isEditingCompany ? (
+                      <>
+                        <p className="text-white-knight text-lg">
+                          {userProfile.company && userProfile.company.trim() !== '' 
+                            ? userProfile.company 
+                            : 'No company specified'}
+                        </p>
                         <button
-                          onClick={handleSaveCompany}
-                          disabled={companyLoading}
-                          className="p-1 bg-supernova text-shadowforce rounded text-sm font-semibold hover:bg-supernova-light disabled:opacity-50 disabled:cursor-not-allowed"
-                          title="Save company"
+                          onClick={handleEditCompany}
+                          className="p-1 text-guardian hover:text-supernova transition-colors"
+                          title="Edit company"
                         >
-                          {companyLoading ? '...' : <Check size={14} />}
+                          <Edit3 size={14} />
                         </button>
-                        <button
-                          onClick={handleCancelCompany}
-                          className="p-1 bg-guardian/20 text-guardian rounded text-sm font-semibold hover:bg-guardian/30"
-                          title="Cancel"
-                        >
-                          <X size={14} />
-                        </button>
+                      </>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="text"
+                          value={company}
+                          onChange={(e) => setCompany(e.target.value)}
+                          className="text-white-knight text-lg bg-transparent border-b-2 border-supernova focus:outline-none focus:border-supernova-light"
+                          placeholder="Enter your company name"
+                          autoFocus
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleSaveCompany}
+                            disabled={companyLoading}
+                            className="p-1 bg-supernova text-shadowforce rounded text-sm font-semibold hover:bg-supernova-light disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Save company"
+                          >
+                            {companyLoading ? '...' : <Check size={14} />}
+                          </button>
+                          <button
+                            onClick={handleCancelCompany}
+                            className="p-1 bg-guardian/20 text-guardian rounded text-sm font-semibold hover:bg-guardian/30"
+                            title="Cancel"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
+                  </div>
+                  {companyError && (
+                    <p className="text-red-400 text-sm mt-2">{companyError}</p>
                   )}
                 </div>
-                {companyError && (
-                  <p className="text-red-400 text-sm mt-2">{companyError}</p>
-                )}
               </div>
             </div>
+            <button
+              onClick={handleOpenAvatarSelector}
+              disabled={avatarLoading}
+              className="bg-supernova rounded-full p-4 hover:bg-supernova-light transition-colors cursor-pointer group relative flex-shrink-0"
+              title="Click to change avatar"
+            >
+              {avatar && avatar !== '👤' ? (
+                <span className="text-3xl">{avatar}</span>
+              ) : (
+                <User size={32} className="text-shadowforce" />
+              )}
+              {avatarLoading && (
+                <div className="absolute inset-0 bg-supernova/80 rounded-full flex items-center justify-center">
+                  <div className="animate-spin w-6 h-6 border-2 border-shadowforce border-t-transparent rounded-full"></div>
+                </div>
+              )}
+              <div className="absolute inset-0 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Edit3 size={16} className="text-white" />
+              </div>
+            </button>
           </div>
         </div>
 
         {/* Current Plan Section */}
-        <div className="mb-8">
-          <h4 className="font-anton text-lg text-white-knight uppercase tracking-wide mb-4">
+        <div className="bg-shadowforce-light/30 rounded-xl p-4 md:p-6 border border-guardian/10">
+          <h2 className="font-anton text-xl text-white-knight uppercase tracking-wide mb-6">
             CURRENT PLAN
-          </h4>
+          </h2>
           
-          <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="bg-supernova rounded-full p-2">
-                  <Crown size={20} className="text-shadowforce" />
-                </div>
-                <div>
-                  <div className="font-anton text-xl text-white-knight uppercase tracking-wide">
-                    {stats?.tierName || 'TIER 2'}
-                  </div>
-                  <div className="text-guardian text-sm">
-                    Active Subscription Plan
-                  </div>
-                </div>
-              </div>
-              
-              <Badge variant="outline" className="bg-supernova/20 border-supernova text-supernova px-4 py-2 font-semibold">
-                ACTIVE
-              </Badge>
+          <div className="space-y-4">
+            {/* Plan */}
+            <div>
+              <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                Plan
+              </label>
+              <p className="text-white-knight text-lg">
+                {stats?.tierName || 'TIER 2'}
+              </p>
             </div>
             
-            {stats?.creditsResetDate && stats?.tierName !== 'Free' && (
-              <div className="pt-4 border-t border-guardian/20">
-                <div className="flex items-center justify-between">
-                  <span className="text-guardian font-medium">Next Credit Reset:</span>
-                  <span className="text-white-knight font-semibold text-lg">
-                    {new Date(stats.creditsResetDate).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })}
-                  </span>
-                </div>
-              </div>
-            )}
+            {/* Status */}
+            <div>
+              <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                Status
+              </label>
+              <p className={`text-lg ${
+                userProfile?.subscriptionStatus === 'active' 
+                  ? 'text-white-knight'
+                  : userProfile?.subscriptionStatus === 'trialing'
+                  ? 'text-blue-500'
+                  : userProfile?.subscriptionStatus === 'past_due'
+                  ? 'text-red-500'
+                  : userProfile?.subscriptionStatus === 'canceled'
+                  ? 'text-gray-500'
+                  : 'text-white-knight'
+              }`}>
+                {userProfile?.subscriptionStatus === 'active' && 'Active'}
+                {userProfile?.subscriptionStatus === 'trialing' && 'Trial'}
+                {userProfile?.subscriptionStatus === 'past_due' && 'Past Due'}
+                {userProfile?.subscriptionStatus === 'canceled' && 'Canceled'}
+                {(!userProfile?.subscriptionStatus || userProfile?.subscriptionStatus === 'free') && 'Free'}
+              </p>
+            </div>
             
-            {stats?.tierName === 'Free' && (
-              <div className="pt-4 border-t border-guardian/20">
-                <div className="flex items-center justify-between">
-                  <span className="text-guardian font-medium">Credit Type:</span>
-                  <span className="text-white-knight font-semibold text-lg">
-                    One-time allocation
-                  </span>
-                </div>
+            {/* Next Credit Reset */}
+            {stats?.creditsResetDate && stats?.tierName !== 'Free' && (
+              <div>
+                <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                  Next Credit Reset
+                </label>
+                <p className="text-white-knight text-lg">
+                  {new Date(stats.creditsResetDate).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </p>
               </div>
             )}
           </div>
         </div>
+      </div>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+      {/* Action Buttons */}
+      <div className="mb-6 md:mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
           <Button 
             onClick={handleOpenGeneralFeedbackModal}
             variant="outline"
             size="lg"
-            className="flex items-center justify-center gap-3 py-4 text-lg text-guardian hover:text-white-knight border-guardian/30 hover:border-supernova/50 transition-all duration-300"
+            className="flex items-center justify-center gap-3 py-4 text-lg text-guardian hover:text-shadowforce border-guardian/30 hover:border-supernova/50 transition-all duration-300"
           >
             <MessageCircle size={20} />
             SUBMIT FEEDBACK
           </Button>
           
           <Button 
+            variant="outline"
+            size="lg"
+            className="flex items-center justify-center gap-3 py-4 text-lg text-guardian hover:text-shadowforce border-guardian/30 hover:border-supernova/50 transition-all duration-300"
+            onClick={() => window.open('https://billing.stripe.com/p/login/test_fZu7sLaoK9lN1oRfap9R600', '_blank')}
+          >
+            <CreditCard size={20} />
+            MANAGE CREDITS
+          </Button>
+          
+          <Button 
             onClick={() => navigate('/subscription')}
-            className="flex items-center justify-center gap-3 py-4 text-lg font-semibold bg-supernova text-shadowforce hover:bg-supernova-light glow-supernova"
+            variant="outline"
+            size="lg"
+            className="flex items-center justify-center gap-3 py-4 text-lg text-guardian hover:text-shadowforce border-guardian/30 hover:border-supernova/50 transition-all duration-300"
           >
             <Crown size={20} />
             GET MORE CANDIDATES
@@ -460,38 +481,6 @@ export const AccountPage: React.FC = () => {
             </div>
             <div className="text-white-knight font-bold text-3xl">{stats?.jobsThisMonth || 0}</div>
           </div>
-        </div>
-
-
-        {/* Credit Usage Progress Bar */}
-        {stats && stats.candidatesLimit > 0 && (
-          <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-guardian text-lg font-semibold">Candidates Remaining this Month</span>
-              <span className="text-white-knight text-lg font-semibold">
-                {stats.candidatesUsed || 20}
-              </span>
-            </div>
-            <div className="w-full bg-shadowforce rounded-full h-4">
-              <div 
-                className="bg-supernova h-4 rounded-full transition-all duration-300"
-                style={{ width: `${((stats.candidatesUsed || 20) / (stats.candidatesLimit || 150)) * 100}%` }}
-              ></div>
-            </div>
-          </div>
-        )}
-
-        {/* Manage Credits Button */}
-        <div className="flex justify-center mt-6">
-          <Button 
-            variant="secondary"
-            size="lg"
-            className="flex items-center justify-center gap-3 py-4 text-lg font-semibold"
-            onClick={() => window.open('https://billing.stripe.com/p/login/test_fZu7sLaoK9lN1oRfap9R600', '_blank')}
-          >
-            <CreditCard size={20} />
-            MANAGE CREDITS
-          </Button>
         </div>
       </div>
 

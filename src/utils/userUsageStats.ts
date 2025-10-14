@@ -48,25 +48,59 @@ export function getUserUsageStats(
     candidatesRemaining = userProfile.availableCredits || 0;
     candidatesUsed = candidatesLimit - candidatesRemaining;
     creditsResetDate = null; // No reset for free tier
+    
+    console.log('📊 [FREE TIER] Credit calculation:', {
+      userId: userProfile.id,
+      email: userProfile.email,
+      candidatesLimit,
+      availableCreditsFromDB: userProfile.availableCredits,
+      candidatesRemaining,
+      candidatesUsed
+    });
   } else {
-    // Paid tiers: Monthly allotment with transaction tracking
+    // Paid tiers: Use available_credits as source of truth
     candidatesLimit = tier?.monthlyCandidateAllotment ?? 20;
     
-    // Calculate candidate credits used from credit transactions (in the current month)
+    // Use available_credits from database as the remaining credits
+    // This field is updated when candidates are submitted and reset by Stripe webhook
+    candidatesRemaining = userProfile.availableCredits || 0;
+    candidatesUsed = Math.max(0, candidatesLimit - candidatesRemaining);
+    
+    // Also calculate from transactions for comparison/debugging
     const candidateTransactions = creditTransactions.filter(
       ct => ct.userId === userProfile.id && 
             ct.transactionType === 'deduction' &&
             ct.description.includes('candidate') &&
             ct.createdAt >= startOfMonth
     );
-    
-    // Sum up all candidate credit deductions (amounts are negative, so we negate them)
-    candidatesUsed = candidateTransactions.reduce((total, ct) => total + Math.abs(ct.amount), 0);
-    candidatesRemaining = Math.max(0, candidatesLimit - candidatesUsed);
+    const transactionBasedUsed = candidateTransactions.reduce((total, ct) => total + Math.abs(ct.amount), 0);
 
-    // Calculate credits reset date (start of next month)
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    creditsResetDate = nextMonth;
+    console.log('📊 [PAID TIER] Credit calculation:', {
+      userId: userProfile.id,
+      email: userProfile.email,
+      tierName: tier?.name,
+      candidatesLimit,
+      availableCreditsFromDB: userProfile.availableCredits,
+      candidatesRemaining,
+      candidatesUsed,
+      transactionCount: candidateTransactions.length,
+      transactionBasedUsed,
+      mismatch: transactionBasedUsed !== candidatesUsed,
+      transactions: candidateTransactions.map(ct => ({
+        amount: ct.amount,
+        description: ct.description,
+        date: ct.createdAt
+      }))
+    });
+
+    // Use the actual subscription period end from Stripe (if available), otherwise calculate next month
+    if (userProfile.subscriptionPeriodEnd) {
+      creditsResetDate = new Date(userProfile.subscriptionPeriodEnd);
+    } else {
+      // Fallback to calculating start of next month if subscription period end not set
+      const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      creditsResetDate = nextMonth;
+    }
   }
 
   return {

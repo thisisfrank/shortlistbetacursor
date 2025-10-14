@@ -79,20 +79,20 @@ const createEmptyData = () => {
     },
     {
       id: '88c433cf-0a8d-44de-82fa-71c7dcbe31ff',
-      name: 'Starter',
+      name: 'Average Recruiter',
       monthlyCandidateAllotment: 100,
       includesCompanyEmails: false,
       createdAt: new Date('2024-01-01')
     },
     {
-      id: 'f871eb1b-6756-447d-a1c0-20a373d1d5a2',
-      name: 'Pro',
+      id: 'd8b7d6ae-8a44-49c9-9dc3-1c6b1838815fd',
+      name: 'Super Recruiter',
       monthlyCandidateAllotment: 400,
       includesCompanyEmails: true,
       createdAt: new Date('2024-01-01')
     },
     {
-      id: 'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd',
+      id: 'f871eb1b-6756-447d-a1c0-20a373d1d5a2',
       name: 'Beast Mode',
       monthlyCandidateAllotment: 2500,
       includesCompanyEmails: true,

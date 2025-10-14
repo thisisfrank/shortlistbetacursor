@@ -322,7 +322,7 @@ export const MarketplacePage: React.FC = () => {
                     {/* Action area */}
                     <div className="pt-3 border-t border-guardian/20 space-y-2">
                       {/* Status indicator */}
-                      {!hasEnoughPoints && (
+                      {!alreadyUnlocked && (
                         <div className="flex items-center gap-2 text-supernova mb-2">
                           <Lock size={16} />
                           <span className="text-sm">

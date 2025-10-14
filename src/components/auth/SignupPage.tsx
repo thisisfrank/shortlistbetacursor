@@ -107,6 +107,8 @@ export const SignupPage: React.FC = () => {
     console.log('📝 Email is available, proceeding with signup...');
     const { data, error: signUpError } = await signUp(email, password, 'client', name, company);
 
+    console.log('🔍 Signup response:', { data, error: signUpError, hasUser: !!data?.user });
+
     if (signUpError) {
       console.error('❌ Signup error:', signUpError);
       // Provide helpful error messages for signup errors
@@ -123,7 +125,8 @@ export const SignupPage: React.FC = () => {
         return;
       }
       setError(errorMessage);
-    } else if (data.user) {
+    } else if (data) {
+      // With email confirmation enabled, data.user might be null but data.session will exist
       console.log('✅ Signup successful, redirecting to email confirmation page');
       // Store email temporarily for the confirmation page
       localStorage.setItem('pendingConfirmationEmail', email);
