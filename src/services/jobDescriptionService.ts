@@ -88,3 +88,81 @@ const generateFallbackDescription = (data: JobDescriptionRequest): string => {
 
 The ideal candidate will have strong expertise in ${mustHaveSkills.join(', ')} and be passionate about delivering high-quality solutions. You'll collaborate with cross-functional teams, contribute to technical decisions, and help drive innovation while growing your career in a supportive environment.`;
 };
+
+export interface FormatJobDescriptionRequest {
+  description: string;
+  title: string;
+  companyName?: string;
+  seniorityLevel?: string;
+}
+
+export const formatJobDescription = async (data: FormatJobDescriptionRequest): Promise<string> => {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    
+    if (!supabaseUrl) {
+      throw new Error('Supabase URL not configured');
+    }
+
+    // Build context for better formatting
+    const contextInfo = [];
+    if (data.companyName) contextInfo.push(`Company: ${data.companyName}`);
+    if (data.title) contextInfo.push(`Position: ${data.title}`);
+    if (data.seniorityLevel) contextInfo.push(`Level: ${data.seniorityLevel}`);
+    
+    const contextSection = contextInfo.length > 0 
+      ? `\n\nContext:\n${contextInfo.join('\n')}` 
+      : '';
+
+    const prompt = `Take this job description and improve its formatting and readability while preserving all key information:
+
+${data.description}${contextSection}
+
+Please:
+- Structure it into clear, well-organized paragraphs
+- Fix any grammar, spelling, or punctuation issues
+- Make it more professional and engaging
+- Ensure proper spacing and flow
+- Keep the same core content and meaning
+- Remove any redundant or unclear phrasing
+- Make it ATS-friendly and recruiter-ready
+
+Return only the improved job description, no explanations or additional commentary.`;
+
+    // Call Anthropic API via our proxy
+    const response = await fetch(`${supabaseUrl}/functions/v1/anthropic-proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 800, // More tokens for formatting longer descriptions
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Job description formatting failed: ${response.status}`);
+    }
+
+    const data_response = await response.json();
+    
+    // Parse Anthropic response
+    if (data_response.content && data_response.content.length > 0 && data_response.content[0].text) {
+      return data_response.content[0].text.trim();
+    } else {
+      throw new Error('Invalid response format from AI service');
+    }
+  } catch (error) {
+    console.error('Job description formatting error:', error);
+    // If formatting fails, return the original description
+    return data.description;
+  }
+};

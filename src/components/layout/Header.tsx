@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
@@ -13,6 +13,8 @@ export const Header: React.FC = () => {
   const { userProfile, loading } = useAuth();
   const { jobs, candidates, tiers, creditTransactions } = useData();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCandidatesDropdownOpen, setIsCandidatesDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   
   
   // Get the role-appropriate home path
@@ -93,6 +95,23 @@ export const Header: React.FC = () => {
   // Calculate user credits using the sophisticated stats function
   const userStats = getUserUsageStats(userProfile as any, jobs, candidates, tiers, creditTransactions);
   const availableCredits = userStats?.candidatesRemaining ?? userProfile?.availableCredits ?? 0;
+  
+  // Handle clicks outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsCandidatesDropdownOpen(false);
+      }
+    };
+
+    if (isCandidatesDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isCandidatesDropdownOpen]);
   
   // Auto-navigate to role home when role changes - with debouncing to prevent flashing
   React.useEffect(() => {
@@ -178,18 +197,42 @@ export const Header: React.FC = () => {
             </nav>
           )}
 
-          {/* Credits box - positioned between center nav and right side */}
+          {/* Candidates dropdown - positioned between center nav and right side */}
           {userProfile && (
-            <div className="absolute right-64 flex items-center">
-              <Link 
-                to="/subscription"
-                className="flex items-center gap-1 bg-shadowforce-light/50 px-3 py-1 rounded-lg border border-guardian/20 hover:bg-shadowforce-light/70 hover:border-supernova/30 transition-all cursor-pointer"
-              >
-                <span className="text-xs font-jakarta text-guardian">Credits:</span>
-                <span className="text-sm font-semibold text-supernova">
-                  {availableCredits}
-                </span>
-              </Link>
+            <div className="absolute right-64 flex items-center" ref={dropdownRef}>
+              <div className="relative">
+                <button 
+                  onClick={() => setIsCandidatesDropdownOpen(!isCandidatesDropdownOpen)}
+                  className="flex items-center gap-1 bg-shadowforce-light/50 px-3 py-1 rounded-lg border border-guardian/20 hover:bg-shadowforce-light/70 hover:border-supernova/30 transition-all cursor-pointer"
+                >
+                  <span className="text-xs font-jakarta text-guardian">Candidates</span>
+                </button>
+
+                {/* Dropdown menu */}
+                {isCandidatesDropdownOpen && (
+                  <div className="absolute top-full mt-2 right-0 w-64 bg-shadowforce border border-guardian/20 rounded-lg shadow-xl z-50 overflow-hidden">
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-jakarta text-guardian">Candidates remaining:</span>
+                        <span className="text-xl font-semibold text-supernova">
+                          {availableCredits}
+                        </span>
+                      </div>
+                      <Button
+                        onClick={() => {
+                          setIsCandidatesDropdownOpen(false);
+                          navigate('/subscription');
+                        }}
+                        size="sm"
+                        fullWidth
+                        className="glow-supernova"
+                      >
+                        Get More Candidates
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -305,18 +348,39 @@ export const Header: React.FC = () => {
               </nav>
             )}
 
-            {/* Credits - Mobile */}
+            {/* Candidates - Mobile */}
             {userProfile && (
-              <Link 
-                to="/subscription"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-between px-4 py-3 bg-shadowforce rounded-lg border border-guardian/20"
-              >
-                <span className="text-sm font-jakarta text-guardian">Credits:</span>
-                <span className="text-lg font-semibold text-supernova">
-                  {availableCredits}
-                </span>
-              </Link>
+              <div className="space-y-2">
+                <button 
+                  onClick={() => setIsCandidatesDropdownOpen(!isCandidatesDropdownOpen)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-shadowforce rounded-lg border border-guardian/20"
+                >
+                  <span className="text-sm font-jakarta text-guardian">Candidates</span>
+                </button>
+
+                {isCandidatesDropdownOpen && (
+                  <div className="px-4 py-3 bg-shadowforce-light rounded-lg border border-guardian/20 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-jakarta text-guardian">Candidates remaining:</span>
+                      <span className="text-xl font-semibold text-supernova">
+                        {availableCredits}
+                      </span>
+                    </div>
+                    <Button
+                      onClick={() => {
+                        setIsCandidatesDropdownOpen(false);
+                        setIsMobileMenuOpen(false);
+                        navigate('/subscription');
+                      }}
+                      size="sm"
+                      fullWidth
+                      className="glow-supernova"
+                    >
+                      Get More Candidates
+                    </Button>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* User Info - Mobile */}

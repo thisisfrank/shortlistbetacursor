@@ -4,6 +4,7 @@ import { useData } from '../../../context/DataContext';
 import { useAuth } from '../../../context/AuthContext';
 import { getUserUsageStats } from '../../../utils/userUsageStats';
 import { ghlService } from '../../../services/ghlService';
+import { formatJobDescription } from '../../../services/jobDescriptionService';
 import { useClientIntakeForm } from './ClientIntakeFormContext';
 import { useFormValidation } from './useFormValidation';
 import { FormStep } from '../../../types';
@@ -49,13 +50,28 @@ export const useFormSubmission = ({ setCurrentStep }: UseFormSubmissionProps) =>
       // Combine city and state into location for backend
       const location = formData.isRemote ? 'Remote' : `${formData.city}, ${formData.state}`;
 
+      // Format the job description before submission
+      let formattedDescription = formData.description;
+      try {
+        formattedDescription = await formatJobDescription({
+          description: formData.description,
+          title: formData.title,
+          companyName: formData.companyName,
+          seniorityLevel: formData.seniorityLevel
+        });
+        console.log('✅ Job description formatted successfully');
+      } catch (error) {
+        console.warn('⚠️ Job description formatting failed, using original:', error);
+        // Continue with original description if formatting fails
+      }
+
       // Create the job data to submit
       const jobData = {
         userId: user.id,
         companyName: formData.companyName,
         title: formData.title,
         idealCandidate: formData.idealCandidate,
-        description: formData.description,
+        description: formattedDescription,
         seniorityLevel: formData.seniorityLevel as 'Junior' | 'Mid' | 'Senior' | 'Super Senior',
         location: location,
         salaryRangeMin: extractNumericValue(formData.salaryRangeMin),

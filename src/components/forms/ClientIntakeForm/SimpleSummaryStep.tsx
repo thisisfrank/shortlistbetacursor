@@ -78,7 +78,7 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
           </p>
         </div>
         
-        <div className="mb-6">
+        <div className="mb-6 px-4">
           <div className="relative">
             <style>{`
               .diamond-slider {
@@ -142,18 +142,36 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
                  className="diamond-slider relative w-full h-3 appearance-none cursor-pointer bg-transparent"
                />
             </div>
-            <div className="relative mt-2">
-              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: 'calc(0% + 14px)'}}>20</div>
-              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: `${((50 - 20) / (200 - 20)) * 100}%`}}>
-                <div className="flex flex-col items-center">
-                  <span>50</span>
-                  <span className="text-supernova text-[10px] mt-1 whitespace-nowrap">Most Requested</span>
-                </div>
-              </div>
-              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: `${((100 - 20) / (200 - 20)) * 100}%`}}>100</div>
-              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: `${((150 - 20) / (200 - 20)) * 100}%`}}>150</div>
-              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: `${((175 - 20) / (200 - 20)) * 100}%`}}>175</div>
-              <div className="absolute text-xs text-guardian font-jakarta transform -translate-x-1/2" style={{left: 'calc(100% - 14px)'}}>200</div>
+            <div className="relative mt-4">
+              {/* Helper function to calculate thumb position accounting for slider offset */}
+              {(() => {
+                const thumbWidth = 28; // Diamond thumb is 28px
+                const getThumbPosition = (value: number) => {
+                  const percent = (value - 20) / (200 - 20);
+                  // Calculate pixel offset: thumb center shifts from left edge
+                  // At 0%, thumb is at thumbWidth/2, at 100%, thumb is at width - thumbWidth/2
+                  // So we need to shift by: thumbWidth/2 - (percent * thumbWidth)
+                  const pixelOffset = (thumbWidth / 2) - (percent * thumbWidth);
+                  return `calc(${percent * 100}% + ${pixelOffset}px)`;
+                };
+                
+                return (
+                  <>
+                    <div className="absolute text-xs text-guardian font-jakarta text-center" style={{left: getThumbPosition(20), transform: 'translateX(-50%)'}}>20</div>
+                    <div className="absolute text-xs text-guardian font-jakarta" style={{left: getThumbPosition(50), transform: 'translateX(-50%)'}}>
+                      <div className="flex flex-col items-center">
+                        <span>50</span>
+                        <span className="text-supernova text-[10px] mt-1 whitespace-nowrap">Most Requested</span>
+                      </div>
+                    </div>
+                    <div className="absolute text-xs text-guardian font-jakarta text-center" style={{left: getThumbPosition(80), transform: 'translateX(-50%)'}}>80</div>
+                    <div className="absolute text-xs text-guardian font-jakarta text-center" style={{left: getThumbPosition(110), transform: 'translateX(-50%)'}}>110</div>
+                    <div className="absolute text-xs text-guardian font-jakarta text-center" style={{left: getThumbPosition(140), transform: 'translateX(-50%)'}}>140</div>
+                    <div className="absolute text-xs text-guardian font-jakarta text-center" style={{left: getThumbPosition(170), transform: 'translateX(-50%)'}}>170</div>
+                    <div className="absolute text-xs text-guardian font-jakarta text-center" style={{left: getThumbPosition(200), transform: 'translateX(-50%)'}}>200</div>
+                  </>
+                );
+              })()}
             </div>
           </div>
           

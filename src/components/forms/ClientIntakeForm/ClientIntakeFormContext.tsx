@@ -51,6 +51,9 @@ export interface ClientIntakeFormContextType {
   generateJobDescription: () => Promise<void>;
   hasUserEditedDescription: boolean;
   setHasUserEditedDescription: (edited: boolean) => void;
+  previousDescription: string;
+  undoAIGeneration: () => void;
+  clearDescriptionForManualEntry: () => void;
   
   // Alert Modal State
   alertModal: AlertModalState;
@@ -102,6 +105,7 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
   const [descriptionGenerationError, setDescriptionGenerationError] = useState<string | null>(null);
   const [hasUserEditedDescription, setHasUserEditedDescription] = useState(false);
+  const [previousDescription, setPreviousDescription] = useState<string>(''); // Track previous description for undo
 
   // Auto-fill company name from user profile when available
   useEffect(() => {
@@ -110,14 +114,15 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
     }
   }, [userProfile?.company, formData.companyName]);
 
-  // Set default candidates requested based on user tier
+  // Set default candidates requested based on user tier (only on mount)
   useEffect(() => {
     if (userProfile && formData.candidatesRequested === '20') {
       const isFreeUser = userProfile.tierId === '5841d1d6-20d7-4360-96f8-0444305fac5b';
       const defaultCandidates = isFreeUser ? '20' : '50';
       setFormData(prev => ({ ...prev, candidatesRequested: defaultCandidates }));
     }
-  }, [userProfile?.tierId, formData.candidatesRequested]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userProfile?.tierId]);
 
   const updateFormField = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -162,6 +167,9 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
     setIsGeneratingDescription(true);
     setDescriptionGenerationError(null);
 
+    // Save current description for undo functionality
+    setPreviousDescription(formData.description);
+
     try {
       const generatedDescription = await generateJobDescriptionService({
         title: formData.title,
@@ -178,9 +186,23 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
       setDescriptionGenerationError(
         error instanceof Error ? error.message : 'Failed to generate job description. Please try again.'
       );
+      // Restore previous description if generation failed
+      setPreviousDescription('');
     } finally {
       setIsGeneratingDescription(false);
     }
+  };
+
+  const undoAIGeneration = () => {
+    updateFormField('description', previousDescription);
+    setPreviousDescription(''); // Clear the undo history
+    setHasUserEditedDescription(previousDescription.length > 0); // Set flag if there was previous content
+  };
+
+  const clearDescriptionForManualEntry = () => {
+    updateFormField('description', '');
+    setPreviousDescription(''); // Clear the undo history
+    setHasUserEditedDescription(true); // Mark as edited to prevent auto-generation from firing
   };
 
   const resetForm = () => {
@@ -191,6 +213,7 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
     setIsGeneratingDescription(false);
     setDescriptionGenerationError(null);
     setHasUserEditedDescription(false);
+    setPreviousDescription('');
   };
 
   const value: ClientIntakeFormContextType = {
@@ -216,6 +239,9 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
     generateJobDescription,
     hasUserEditedDescription,
     setHasUserEditedDescription,
+    previousDescription,
+    undoAIGeneration,
+    clearDescriptionForManualEntry,
     
     // Alert Modal State
     alertModal,

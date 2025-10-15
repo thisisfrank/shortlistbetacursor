@@ -4,7 +4,7 @@ import { SearchableSelect } from '../../ui/SearchableSelect';
 import { Button } from '../../ui/Button';
 import { useData } from '../../../context/DataContext';
 import { useClientIntakeForm } from './ClientIntakeFormContext';
-import { X, Plus, Wand2, RefreshCw } from 'lucide-react';
+import { X, Plus, Wand2, RefreshCw, Undo2, Edit3 } from 'lucide-react';
 
 interface JobDetailsStepProps {
   formData: {
@@ -46,7 +46,10 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
     generateJobDescription,
     setDescriptionGenerationError,
     hasUserEditedDescription,
-    handleDescriptionChange
+    handleDescriptionChange,
+    previousDescription,
+    undoAIGeneration,
+    clearDescriptionForManualEntry
   } = useClientIntakeForm();
   const [newSkill, setNewSkill] = useState('');
   
@@ -55,11 +58,14 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
   const maxCandidates = freeTier?.monthlyCandidateAllotment || 20;
 
   // Auto-trigger job description generation when 3 skills are added
+  // ONLY if the description field is empty and hasn't been edited by the user
   useEffect(() => {
+    const hasExistingDescription = formData.description && formData.description.trim().length > 0;
+    
     if (
       formData.mustHaveSkills.length === 3 && 
       formData.title && 
-      !formData.description && 
+      !hasExistingDescription && // Don't auto-generate if description already has content
       !isGeneratingDescription &&
       !hasUserEditedDescription // Don't auto-generate if user has manually edited
     ) {
@@ -295,16 +301,46 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
                 )}
                 
                 {formData.description && !isGeneratingDescription && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={generateJobDescription}
-                    className="flex items-center gap-2 text-xs"
-                  >
-                    <RefreshCw size={14} />
-                    Regenerate
-                  </Button>
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={generateJobDescription}
+                      className="flex items-center gap-2 text-xs"
+                    >
+                      <RefreshCw size={14} />
+                      Regenerate
+                    </Button>
+                    
+                    {/* Undo button - only show if there's a previous description to undo to */}
+                    {previousDescription !== undefined && previousDescription !== formData.description && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={undoAIGeneration}
+                        className="flex items-center gap-2 text-xs"
+                      >
+                        <Undo2 size={14} />
+                        Undo
+                      </Button>
+                    )}
+                    
+                    {/* Clear button - show if AI has generated content (indicated by previousDescription existing) */}
+                    {previousDescription !== undefined && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={clearDescriptionForManualEntry}
+                        className="flex items-center gap-2 text-xs"
+                      >
+                        <Edit3 size={14} />
+                        Enter your own
+                      </Button>
+                    )}
+                  </>
                 )}
               </>
             )}

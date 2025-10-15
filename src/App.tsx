@@ -1,5 +1,4 @@
 import React from 'react';
-import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
@@ -10,7 +9,6 @@ import {
   AdminRoute, 
   ClientRoute, 
   SourcerRoute, 
-  ClientOrAdminRoute,
   AuthenticatedRoute,
   PublicRoute 
 } from './components/auth/RoleBasedRoute';
@@ -44,24 +42,6 @@ import { SubscriptionSuccess } from './components/subscription/SubscriptionSucce
 import { SignOutWrapper } from './components/auth/SignOutWrapper';
 
 function App() {
-  useEffect(() => {
-    // Check environment variables on app start
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    console.log('🚀 App component mounting...');
-    
-    console.log('🚀 App starting with environment:', {
-      hasSupabaseUrl: !!supabaseUrl,
-      hasSupabaseKey: !!supabaseAnonKey,
-      nodeEnv: import.meta.env.MODE,
-      isDev: import.meta.env.DEV
-    });
-    
-    if (!supabaseUrl || !supabaseAnonKey) {
-      console.warn('⚠️ Supabase environment variables not configured. App will run in demo mode with local storage only.');
-    }
-  }, []);
   
   return (
     <AuthProvider>

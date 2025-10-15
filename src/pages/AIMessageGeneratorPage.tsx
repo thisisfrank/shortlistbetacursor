@@ -659,6 +659,17 @@ Output ONLY the final message text with NO signature or closing.`;
     setBodyText(message);
   }, [selectedJob, selectedCandidate, prefilledCandidate, prefilledJob, selectedTemplate, messageType, userProfile]);
 
+  // Auto-resize textarea when bodyText changes
+  React.useEffect(() => {
+    if (editingBody) {
+      const textarea = document.querySelector('textarea');
+      if (textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+      }
+    }
+  }, [bodyText, editingBody]);
+
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -902,7 +913,7 @@ Output ONLY the final message text with NO signature or closing.`;
            <div className="flex-1 flex flex-col">
 
                 {/* Message Body */}
-                <Card className="p-4 md:p-6 flex-1 flex flex-col">
+                <Card className="p-4 md:p-6 flex flex-col">
                   
                   {/* Action Buttons */}
                   <div className="flex flex-wrap gap-2 md:gap-3 pb-4 mb-4 border-b border-guardian/20">
@@ -983,19 +994,27 @@ Output ONLY the final message text with NO signature or closing.`;
                   </div>
                   
                   {editingBody ? (
-                    <div className="flex-1 flex flex-col">
-                      <textarea
-                        value={bodyText}
-                        onChange={(e) => setBodyText(e.target.value)}
-                         className={`w-full p-3 bg-shadowforce border-2 rounded-lg text-white-knight resize-none mb-2 h-[90%] ${
-                          isOverLimit 
-                            ? 'border-red-500' 
-                            : isNearLimit 
-                              ? 'border-yellow-500' 
-                              : 'border-guardian/30'
-                        }`}
-                        placeholder="Your personalized message will appear here..."
-                      />
+                   <div className="flex flex-col">
+                     <textarea
+                       value={bodyText}
+                       onChange={(e) => {
+                         setBodyText(e.target.value);
+                         e.target.style.height = 'auto';
+                         e.target.style.height = e.target.scrollHeight + 'px';
+                       }}
+                       onFocus={(e) => {
+                         e.target.style.height = 'auto';
+                         e.target.style.height = e.target.scrollHeight + 'px';
+                       }}
+                        className={`w-full p-3 bg-shadowforce border-2 rounded-lg text-white-knight resize-none mb-2 min-h-[200px] ${
+                         isOverLimit 
+                           ? 'border-red-500' 
+                           : isNearLimit 
+                             ? 'border-yellow-500' 
+                             : 'border-guardian/30'
+                       }`}
+                       placeholder="Your personalized message will appear here..."
+                     />
                       {/* Character Counter */}
                       <div className="flex justify-between items-center mb-4">
                         <div className={`text-xs md:text-sm font-medium ${
@@ -1020,16 +1039,16 @@ Output ONLY the final message text with NO signature or closing.`;
                       </div>
                     </div>
                   ) : (
-                    <div className="flex-1 flex flex-col">
-                       <div className={`p-3 bg-shadowforce/50 border-2 rounded-lg text-white-knight whitespace-pre-wrap mb-2 h-[90%] overflow-y-auto ${
-                        isOverLimit 
-                          ? 'border-red-500' 
-                          : isNearLimit 
-                            ? 'border-yellow-500' 
-                            : 'border-transparent'
-                      }`}>
-                        {bodyText}
-                      </div>
+                   <div className="flex flex-col">
+                      <div className={`p-3 bg-shadowforce/50 border-2 rounded-lg text-white-knight whitespace-pre-wrap mb-2 min-h-[200px] ${
+                       isOverLimit 
+                         ? 'border-red-500' 
+                         : isNearLimit 
+                           ? 'border-yellow-500' 
+                           : 'border-transparent'
+                     }`}>
+                       {bodyText}
+                     </div>
                       {/* Character Counter in view mode */}
                       <div className="flex justify-between items-center mb-4">
                         <div className={`text-xs md:text-sm font-medium ${

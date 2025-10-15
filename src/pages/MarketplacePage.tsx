@@ -188,9 +188,6 @@ export const MarketplacePage: React.FC = () => {
       setUnlockingItem(item);
       return;
     }
-
-    // Otherwise locked (shouldn't happen since button is disabled)
-    console.log('Item is locked');
   };
 
   const handleAccess = (item: MarketplaceItem) => {
@@ -232,8 +229,6 @@ export const MarketplacePage: React.FC = () => {
     const url = itemUrls[item.id];
     if (url) {
       window.open(url, '_blank');
-    } else {
-      console.log('Accessing:', item.title);
     }
   };
 
