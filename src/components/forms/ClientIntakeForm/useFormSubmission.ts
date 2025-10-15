@@ -83,6 +83,26 @@ export const useFormSubmission = ({ setCurrentStep }: UseFormSubmissionProps) =>
       // Use the actual DataContext addJob function
       const newJob = await addJob(jobData);
       
+      // Save company name to user profile if not already set
+      if (userProfile && formData.companyName && !userProfile.company) {
+        try {
+          const { supabase } = await import('../../../lib/supabase');
+          const { error: updateError } = await supabase
+            .from('user_profiles')
+            .update({ company: formData.companyName.trim() })
+            .eq('id', user.id);
+          
+          if (updateError) {
+            console.warn('⚠️ Failed to save company to user profile:', updateError);
+          } else {
+            console.log('✅ Company name saved to user profile:', formData.companyName);
+          }
+        } catch (error) {
+          console.warn('⚠️ Error saving company to user profile:', error);
+          // Don't fail the job submission if profile update fails
+        }
+      }
+      
       // Send job submission confirmation to Go High Level webhook
       if (userProfile && newJob) {
         try {

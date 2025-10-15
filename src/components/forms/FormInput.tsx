@@ -37,7 +37,7 @@ export const FormInput: React.FC<FormInputProps> = ({
     <div className="mb-8">
       <label 
         htmlFor={inputId} 
-        className={`block text-sm font-jakarta font-semibold mb-3 uppercase tracking-wide ${
+        className={`block text-sm font-jakarta font-semibold mb-1 uppercase tracking-wide ${
           props.disabled ? 'text-guardian/40' : 'text-supernova'
         }`}
       >
@@ -117,7 +117,7 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
     <div className="mb-8">
       <label 
         htmlFor={inputId} 
-        className="block text-sm font-jakarta font-semibold text-supernova mb-3 uppercase tracking-wide"
+        className="block text-sm font-jakarta font-semibold text-supernova mb-1 uppercase tracking-wide"
       >
         {label}
       </label>
@@ -164,7 +164,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
     <div className="mb-8">
       <label 
         htmlFor={inputId} 
-        className={`block text-sm font-jakarta font-semibold mb-3 uppercase tracking-wide ${
+        className={`block text-sm font-jakarta font-semibold mb-1 uppercase tracking-wide ${
           props.disabled ? 'text-guardian/40' : 'text-supernova'
         }`}
       >

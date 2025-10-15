@@ -18,7 +18,7 @@ export const Footer: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="mb-4 md:mb-0">
             <p className="text-guardian text-sm font-jakarta">
-              © 2025 Super Recruiter. Get high-quality candidates your job postings won't reach.
+              2025 Super Recruiter. Get high-quality candidates. Warning. Super Recruiter abilities.
             </p>
           </div>
           <div className="flex space-x-8">

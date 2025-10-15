@@ -238,7 +238,7 @@ export const MarketplacePage: React.FC = () => {
         
         {/* Header */}
         <div className="text-center mb-8 md:mb-16 mt-6 md:mt-12">
-          <h1 className="text-4xl md:text-6xl lg:text-8xl font-anton text-white-knight leading-tight uppercase mb-4">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-anton text-white-knight leading-tight uppercase mb-4">
             Superpowers
           </h1>
           <p className="text-base md:text-xl text-guardian mb-2">

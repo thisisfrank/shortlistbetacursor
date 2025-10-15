@@ -13,7 +13,6 @@ export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [company, setCompany] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -105,7 +104,7 @@ export const SignupPage: React.FC = () => {
 
     // Only proceed with signup if email doesn't exist
     console.log('📝 Email is available, proceeding with signup...');
-    const { data, error: signUpError } = await signUp(email, password, 'client', name, company);
+    const { data, error: signUpError } = await signUp(email, password, 'client', name);
 
     console.log('🔍 Signup response:', { data, error: signUpError, hasUser: !!data?.user });
 
@@ -140,10 +139,10 @@ export const SignupPage: React.FC = () => {
   // Note: success state removed since we now redirect to /confirm-email
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center px-4">
-      <Card className="w-full max-w-md">
-        <CardContent className="p-8">
-          <div className="text-center mb-8">
+    <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce flex items-center justify-center px-4 py-6">
+      <Card className="w-full max-w-4xl">
+        <CardContent className="p-6">
+          <div className="text-center mb-6">
             <div className="flex justify-center mb-4">
               <Link to="/">
                 <div className="relative cursor-pointer">
@@ -157,22 +156,26 @@ export const SignupPage: React.FC = () => {
                 </div>
               </Link>
             </div>
-            <h1 className="text-2xl font-anton text-white-knight uppercase tracking-wide mb-2">
+            <h1 className="text-2xl font-anton text-white-knight uppercase tracking-wide mb-1">
               Create Account
             </h1>
-            <p className="text-guardian font-jakarta">
-            “We hire twice as fast without posting to any job boards.” - Nate Reitcher, CEO of Collector            </p>
+            <p className="text-guardian font-jakarta mt-1">
+              "We don't rely on job boards anymore. Candidates are sent to us and we just schedule interviews from there."
+            </p>
+            <p className="text-guardian font-jakarta text-center mt-1">
+              - Nate Reitcher, CEO of Collector
+            </p>
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center">
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center">
               <AlertCircle className="text-red-400 mr-3 flex-shrink-0" size={20} />
               <p className="text-red-400 font-jakarta text-sm">{error}</p>
             </div>
           )}
 
           {emailExists && (
-            <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+            <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
               <div className="flex items-center mb-3">
                 <AlertCircle className="text-amber-400 mr-3 flex-shrink-0" size={20} />
                 <p className="text-amber-400 font-jakarta text-sm font-semibold">
@@ -200,61 +203,53 @@ export const SignupPage: React.FC = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <FormInput
-              label="Full Name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your full name"
-              required
-            />
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* First Row: Name and Email */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormInput
+                label="Full Name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your full name"
+                required
+              />
 
-            <FormInput
-              label="Company"
-              type="text"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              placeholder="Enter your company name"
-            />
+              <FormInput
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                hint="Business email required (no Gmail, Yahoo, etc.)"
+                required
+              />
+            </div>
 
-            <FormInput
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your business email"
-              hint="Business email required (no Gmail, Yahoo, etc.)"
-              required
-            />
+            {/* Second Row: Password and Confirm Password */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormInput
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Create a password"
+                hint="Must be at least 6 characters long"
+                showPasswordToggle={true}
+                required
+              />
 
-            <FormInput
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Create a password"
-              hint="Must be at least 6 characters long"
-              showPasswordToggle={true}
-              required
-            />
-
-            <FormInput
-              label="Confirm Password"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm your password"
-              showPasswordToggle={true}
-              showPasswordMatch={confirmPassword.length > 0}
-              isPasswordMatch={password === confirmPassword && password.length > 0}
-              required
-            />
-
-            <div className="text-center py-4">
-              <p className="text-guardian/80 font-jakarta text-sm">
-                By Creating an account you agree to our <Link to="/terms" className="text-supernova hover:text-supernova-light font-semibold transition-colors">Terms of Service</Link> and <Link to="/privacy" className="text-supernova hover:text-supernova-light font-semibold transition-colors">Privacy Policy</Link>
-              </p>
+              <FormInput
+                label="Confirm Password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm your password"
+                showPasswordToggle={true}
+                showPasswordMatch={confirmPassword.length > 0}
+                isPasswordMatch={password === confirmPassword && password.length > 0}
+                required
+              />
             </div>
 
             <Button
@@ -268,7 +263,7 @@ export const SignupPage: React.FC = () => {
             </Button>
           </form>
 
-          <div className="mt-8 text-center">
+          <div className="mt-6 text-center">
             <p className="text-guardian font-jakarta">
               Already have an account?{' '}
               <Link
@@ -277,6 +272,12 @@ export const SignupPage: React.FC = () => {
               >
                 Sign in
               </Link>
+            </p>
+          </div>
+
+          <div className="mt-4 text-center">
+            <p className="text-guardian/80 font-jakarta text-sm">
+              By Creating an account you agree to our <Link to="/terms" className="text-supernova hover:text-supernova-light font-semibold transition-colors">Terms of Service</Link> and <Link to="/privacy" className="text-supernova hover:text-supernova-light font-semibold transition-colors">Privacy Policy</Link>
             </p>
           </div>
         </CardContent>

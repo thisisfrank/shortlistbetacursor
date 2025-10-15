@@ -71,13 +71,6 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
           <h3 className="text-2xl font-anton text-white uppercase tracking-wide">How many candidates are you looking for?</h3>
         </div>
         
-        <div className="mb-6">
-          <p className="text-white-knight font-jakarta text-sm mb-4">
-            <strong>Choose the number of candidates you want - each comes with a full profile, LinkedIn, and summary</strong>
-      
-          </p>
-        </div>
-        
         <div className="mb-6 px-4">
           <div className="relative">
             <style>{`
@@ -136,7 +129,7 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
                  name="candidatesRequested"
                  min="20"
                  max="200"
-                 step="1"
+                 step="10"
                  value={candidatesRequested}
                  onChange={handleSliderChange}
                  className="diamond-slider relative w-full h-3 appearance-none cursor-pointer bg-transparent"
@@ -175,7 +168,7 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
             </div>
           </div>
           
-          <div className="text-center mt-12">
+          <div className="text-center mt-16">
             <div className="flex items-center justify-center gap-3">
               <input
                 type="number"
@@ -187,13 +180,13 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
                 className="w-24 px-3 py-2 bg-shadowforce border border-guardian/30 rounded-lg text-white-knight font-jakarta text-center text-xl font-bold focus:border-supernova focus:outline-none"
                 placeholder="#"
               />
-              <span className="text-guardian font-jakarta">/ {userAvailableCredits} credits available</span>
+              <span className="text-guardian font-jakarta">candidates</span>
             </div>
           </div>
           
           {exceedsCredits && (
             <div className="mt-4 space-y-4">
-              <p className="text-red-400 font-jakarta font-semibold">
+              <p className="text-red-400 font-jakarta font-semibold text-sm">
                 You've requested {candidatesRequested} candidates but only have {userAvailableCredits} credits available. <br/>
                 {userProfile?.tierId === '5841d1d6-20d7-4360-96f8-0444305fac5b' 
                   ? 'Free tier credits are one-time only - upgrade to a paid plan for monthly credits.'

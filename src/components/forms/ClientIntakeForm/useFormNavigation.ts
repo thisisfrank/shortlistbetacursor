@@ -38,6 +38,7 @@ export const useFormNavigation = ({ currentStep, setCurrentStep }: UseFormNaviga
     }
     
     setErrors(validationErrors);
+    
     return isValid;
   }, [currentStep, formData, setCurrentStep, setErrors, validateJobTitle, validateJobDetails]);
 

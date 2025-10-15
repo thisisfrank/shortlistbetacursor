@@ -68,7 +68,7 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ onReset }) =
       
       <div className="mb-4">
         <p className="text-lg font-jakarta font-semibold text-supernova">
-          Guaranteed delivery in less than 24 hours (normally, much faster)
+          Your candidates will be emailed to you shortly!
         </p>
       </div>
       

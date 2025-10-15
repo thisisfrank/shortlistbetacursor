@@ -147,7 +147,7 @@ export const SubscriptionPlans: React.FC = () => {
             </div>
           </div>
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-anton text-white-knight mb-4 uppercase tracking-wide px-4">
-            CANDIDATE PLANS
+            Start With The Plan That Fits You!
           </h1>
           <p className="text-base md:text-xl text-guardian font-jakarta max-w-xl mx-auto px-4">
           Get high-quality candidates for less than a job posting.

@@ -52,6 +52,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
     clearDescriptionForManualEntry
   } = useClientIntakeForm();
   const [newSkill, setNewSkill] = useState('');
+  const [showValidationWarning, setShowValidationWarning] = useState(false);
   
   // Get free tier for displaying limits
   const freeTier = tiers.find(tier => tier.name === 'Free');
@@ -160,8 +161,16 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowValidationWarning(true);
     onNext();
   };
+  
+  // Hide validation warning when errors are cleared
+  useEffect(() => {
+    if (Object.keys(errors).length === 0) {
+      setShowValidationWarning(false);
+    }
+  }, [errors]);
 
   const handleRadioChange = (name: string, value: string) => {
     const syntheticEvent = {
@@ -202,7 +211,12 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 animate-fadeIn">
-      <h2 className="text-3xl font-anton text-supernova mb-12 uppercase tracking-wide">Job Details & Requirements</h2>
+      <div className="mb-6">
+        <h2 className="text-3xl font-anton text-supernova uppercase tracking-wide">Job Details & Requirements</h2>
+        {formData.title && (
+          <p className="text-2xl font-anton text-white-knight mt-4">{formData.title}</p>
+        )}
+      </div>
       
       {/* Must Have Skills */}
       <div className="mb-8">
@@ -230,9 +244,9 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
             ADD
           </Button>
         </div>
-        {(errors.mustHaveSkills || formData.mustHaveSkills.length < 3) && (
+        {errors.mustHaveSkills && (
           <p className="mt-2 text-sm text-red-400 font-jakarta font-medium">
-            {errors.mustHaveSkills || `${3 - formData.mustHaveSkills.length} more skill${3 - formData.mustHaveSkills.length > 1 ? 's' : ''} required`}
+            {errors.mustHaveSkills}
           </p>
         )}
         {formData.mustHaveSkills.length > 0 && (
@@ -266,15 +280,30 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
         placeholder="Enter your company name"
       />
       
-      <FormTextarea
-        label="Describe your ideal candidate (1-2 sentences)"
-        name="idealCandidate"
-        value={formData.idealCandidate}
-        onChange={onChange}
-        error={errors.idealCandidate}
-        placeholder="Describe the perfect candidate for this role..."
-        rows={2}
-      />
+      <div className="space-y-3">
+        <label className="block text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">
+          Describe your ideal candidate (1-2 sentences)
+        </label>
+        
+        <textarea
+          name="idealCandidate"
+          value={formData.idealCandidate}
+          onChange={onChange}
+          placeholder="Describe your perfect candidate for this role..."
+          rows={2}
+          className={`w-full px-4 py-3 bg-transparent border-2 rounded-xl text-white-knight placeholder-guardian/60 font-jakarta focus:outline-none focus:ring-0 transition-all duration-200 resize-none ${
+            errors.idealCandidate
+              ? 'border-red-400 focus:border-red-400'
+              : 'border-guardian/40 hover:border-guardian/60 focus:border-supernova'
+          }`}
+        />
+        
+        {errors.idealCandidate && (
+          <p className="text-red-400 text-sm font-jakarta font-medium">
+            {errors.idealCandidate}
+          </p>
+        )}
+      </div>
       
       {/* Job Description with AI Generation */}
       <div className="space-y-3">
@@ -386,7 +415,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
           placeholder={
             formData.mustHaveSkills.length >= 3 && formData.title && !hasUserEditedDescription
               ? "AI will generate a description when you add 3 skills, or you can write your own..."
-              : "Paste Job Description"
+              : "Paste job description"
           }
           rows={6}
           required
@@ -447,9 +476,9 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
             </button>
           ))}
         </div>
-        {(errors.seniorityLevel || !formData.seniorityLevel) && (
+        {errors.seniorityLevel && (
           <p className="text-red-400 text-sm mt-2">
-            {errors.seniorityLevel || 'Experience level is required'}
+            {errors.seniorityLevel}
           </p>
         )}
       </div>
@@ -521,6 +550,15 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
         />
       </div>
 
+      {/* Validation Warning Message */}
+      {showValidationWarning && Object.keys(errors).length > 0 && (
+        <div className="p-4 bg-red-400/10 border border-red-400/30 rounded-lg animate-fadeIn">
+          <p className="text-sm text-red-400 font-jakarta font-medium">
+            ⚠️ Please fill out all required fields before continuing.
+          </p>
+        </div>
+      )}
+
       <div className="flex pt-8 gap-6">
         <Button 
           type="button" 
@@ -535,7 +573,6 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
           type="submit"
           className="flex-1"
           size="lg"
-          disabled={formData.mustHaveSkills.length < 3}
         >
           CONTINUE
         </Button>
