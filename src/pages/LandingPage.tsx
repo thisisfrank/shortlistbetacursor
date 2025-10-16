@@ -60,9 +60,9 @@ export const LandingPage: React.FC = () => {
                 <span className="block text-supernova">CANDIDATES, FAST!</span>
               </h1>
               <div className="flex flex-col gap-2 mb-8 max-w-2xl">
-                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Get high-quality candidates delivered straight to your inbox - for any role.</span></div>
-                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Skip the hours of research, list building, and endless LinkedIn scrolling.</span></div>
-                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Save thousands on tools, job boards, and LinkedIn Recruiter.</span></div>
+                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Get high-quality candidates delivered straight to your inbox</span></div>
+                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Skip hours of candidate list-building and endless scrolling</span></div>
+                <div className="flex items-center"><Check className="text-supernova mr-3 flex-shrink-0" size={18} /><span className="text-white-knight font-jakarta">Save thousands on tools, job boards, and LinkedIn Recruiter</span></div>
               </div>
               <div className="flex flex-col sm:flex-row gap-6 mb-4">
                 <div className="flex flex-col items-center gap-4 w-full sm:w-auto">
@@ -71,7 +71,7 @@ export const LandingPage: React.FC = () => {
                     size="lg"
                     className="glow-supernova text-base md:text-xl px-6 py-4 md:px-12 md:py-6 w-full sm:w-auto"
                   >
-                    Get My First Candidate List Free
+                     Get My First 20 Candidates Free
                   </Button>
                   
                   {/* Quality Guarantee Badge */}
@@ -101,7 +101,7 @@ export const LandingPage: React.FC = () => {
                     <video
                       className="w-full h-full object-cover"
                       controls
-                      poster="/screenshots/videoframe_1000.png"
+                      poster="/screenshots/Candidate Info Display.png"
                       preload="metadata"
                       onPlay={() => setIsVideoPlaying(true)}
                       onPause={() => setIsVideoPlaying(false)}
@@ -278,17 +278,24 @@ export const LandingPage: React.FC = () => {
             size="lg"
             className="glow-supernova text-base md:text-xl px-6 py-4 md:px-12 md:py-6"
           >
-            Get My Free Candidates
+            Get My First 20 Candidates Free
           </Button>
           
           {/* Quality Guarantee Badge */}
-          <div className="mt-4">
+          <div className="mt-4 flex flex-col items-center gap-4">
             <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-supernova/20 to-supernova/10 border border-supernova/30 rounded-full">
               <Check className="text-supernova mr-2" size={16} />
               <span className="text-supernova font-jakarta font-semibold text-sm uppercase tracking-wide">
                 100% Quality Guaranteed
               </span>
             </div>
+            
+            <a 
+              href="/login" 
+              className="text-supernova hover:text-supernova/80 font-jakarta text-lg transition-colors duration-200"
+            >
+              Sign In
+            </a>
           </div>
         </div>
       </div>

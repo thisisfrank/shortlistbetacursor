@@ -110,7 +110,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     <div className="mb-8 relative" ref={dropdownRef}>
       <label 
         htmlFor={inputId} 
-        className={`block text-sm font-jakarta font-semibold mb-3 uppercase tracking-wide ${
+        className={`block text-sm font-jakarta font-semibold mb-1 uppercase tracking-wide ${
           disabled ? 'text-guardian/40' : 'text-supernova'
         }`}
       >
@@ -129,7 +129,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
         <div className={`
-          flex items-center justify-between py-4 px-0 text-lg bg-transparent font-jakarta min-h-[56px]
+          flex items-center justify-between py-4 pl-4 pr-0 text-lg bg-transparent font-jakarta min-h-[56px]
           ${disabled ? 'text-guardian/40 cursor-not-allowed' : 'text-white-knight'}
         `}>
           <span className={displayValue ? 'text-white-knight' : 'text-guardian/60'}>

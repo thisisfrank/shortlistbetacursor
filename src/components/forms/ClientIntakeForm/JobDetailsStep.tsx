@@ -182,6 +182,34 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
     onChange(syntheticEvent);
   };
 
+  const handleRemoteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const isRemote = e.target.checked;
+    
+    // First, update the isRemote field
+    onChange(e);
+    
+    // If remote is checked, clear city and state
+    if (isRemote) {
+      // Clear city
+      const cityClearEvent = {
+        target: {
+          name: 'city',
+          value: ''
+        }
+      } as React.ChangeEvent<HTMLInputElement>;
+      onChange(cityClearEvent);
+      
+      // Clear state
+      const stateClearEvent = {
+        target: {
+          name: 'state',
+          value: ''
+        }
+      } as React.ChangeEvent<HTMLInputElement>;
+      onChange(stateClearEvent);
+    }
+  };
+
   const addSkill = () => {
     if (newSkill.trim() && formData.mustHaveSkills.length < 3) {
       onSkillsChange([...formData.mustHaveSkills, newSkill.trim()]);
@@ -516,7 +544,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
             id="isRemote"
             name="isRemote"
             checked={formData.isRemote}
-            onChange={onChange}
+            onChange={handleRemoteChange}
             className="w-5 h-5 text-supernova bg-gray-700 border-gray-600 rounded focus:ring-supernova focus:ring-2"
           />
           <label htmlFor="isRemote" className="ml-3 text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">
