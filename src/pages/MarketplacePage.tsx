@@ -26,8 +26,8 @@ const marketplaceItems: MarketplaceItem[] = [
   },
   {
     id: 'super-recruiter',
-    title: 'Convert Your List of Candidates into Real Interviews',
-    description: 'Book your free call 15-minute discovery call',
+    title: 'Convert Your Candidates\nInto Booked Interviews',
+    description: 'Design a candidate acquisition strategy that keeps your calendar full of high-quality interviews - and lowers your cost per hire.',
     requiredLevel: 50,
     icon: Target,
     category: 'free',
@@ -58,8 +58,8 @@ const marketplaceItems: MarketplaceItem[] = [
   },
   {
     id: 'employee-retention-kit',
-    title: 'Retention',
-    description: 'Proven strategies to keep your best people longer and reduce costly turnover.',
+    title: 'Candidate Interview & Evaluation Kit',
+    description: 'Proven interview frameworks and tools to help you avoid bad hires.',
     requiredLevel: 200,
     icon: Award,
     category: 'starter',
@@ -98,7 +98,7 @@ const marketplaceItems: MarketplaceItem[] = [
   },
   {
     id: 'infrastructure-build',
-    title: 'Time Machine',
+    title: 'Outbound Candidate Funnel Builder',
     description: 'A step-by-step guide to building your fully scalable outbound recruiting machine.',
     requiredLevel: 800,
     icon: Building,
@@ -122,7 +122,7 @@ const marketplaceItems: MarketplaceItem[] = [
   },
   {
     id: 'end-to-end-guide',
-    title: 'End-to-End Recruiter Guide',
+    title: 'The Ultimate Hiring Playbook',
     description: 'Master modern recruiting with a complete playbook that covers every step - from sourcing to hire.',
     requiredLevel: 1100,
     icon: BookOpen,
@@ -238,7 +238,7 @@ export const MarketplacePage: React.FC = () => {
         
         {/* Header */}
         <div className="text-center mb-8 md:mb-16 mt-6 md:mt-12">
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-anton text-white-knight leading-tight uppercase mb-4">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-anton text-supernova leading-tight uppercase mb-4">
             Superpowers
           </h1>
           <p className="text-base md:text-xl text-guardian mb-2">
@@ -260,7 +260,7 @@ export const MarketplacePage: React.FC = () => {
         {/* Categories */}
         {Object.entries(groupedItems).map(([category, items]) => (
           <div key={category} className="mb-8 md:mb-12">
-            <h2 className="text-xl md:text-2xl font-bold text-white-knight font-jakarta mb-4 md:mb-6 capitalize">
+            <h2 className="text-xl md:text-2xl font-bold text-supernova font-jakarta mb-4 md:mb-6 capitalize">
               {getCategoryLabel(category)}
             </h2>
             
@@ -280,7 +280,7 @@ export const MarketplacePage: React.FC = () => {
                     >
                     <div className="flex items-start gap-3 md:gap-4 mb-3 md:mb-4 flex-grow">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-white-knight font-jakarta mb-2 whitespace-pre-line">
+                        <h3 className="text-lg font-semibold text-supernova font-jakarta mb-2 whitespace-pre-line">
                           {item.title}
                         </h3>
                         <p className="text-guardian text-sm mb-2">
@@ -316,14 +316,14 @@ export const MarketplacePage: React.FC = () => {
                           className="w-full text-supernova hover:text-supernova/80 text-sm font-medium flex items-center justify-center gap-2 transition-colors py-2"
                         >
                           <ExternalLink size={14} />
-                          {item.id === 'super-recruiter' ? 'Book My Free Call' : 'Access Now'}
+                          {item.id === 'super-recruiter' ? 'Book My Free Strategy Session' : 'Access Now'}
                         </button>
                       ) : canUnlock ? (
                         <button 
                           onClick={() => handleUnlockClick(item)}
                           className="w-full bg-supernova text-shadowforce hover:bg-supernova/90 text-sm font-medium py-2 px-4 rounded-lg transition-colors"
                         >
-                          {item.id === 'super-recruiter' ? 'Book My Free Meeting' : 'Unlock Now'}
+                          {item.id === 'super-recruiter' ? 'Book My Free Strategy Session' : 'Unlock Now'}
                         </button>
                       ) : (
                         <button 

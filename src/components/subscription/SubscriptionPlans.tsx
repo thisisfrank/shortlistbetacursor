@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { CheckCircle, Zap, Crown, Star, Users } from 'lucide-react';
-import BoltIcon from '../../assets/v2.png';
+import { CheckCircle, Zap, Crown, Star, Users, X } from 'lucide-react';
 import { CreditTopOff } from './CreditTopOff';
 
 // Updated subscription plans with payment links
@@ -61,6 +60,7 @@ const subscriptionPlans = [
 
 export const SubscriptionPlans: React.FC = () => {
   const { userProfile } = useAuth();
+  const [showRefillModal, setShowRefillModal] = useState(false);
 
   // Map tier IDs to plan IDs for accurate current plan detection
   const tierIdToPlanId: Record<string, string> = {
@@ -86,11 +86,6 @@ export const SubscriptionPlans: React.FC = () => {
     basic: 1,
     premium: 2,
     topshelf: 3
-  };
-
-  const isUpgrade = (planId: string) => {
-    if (!currentTierPlan) return true; // No current plan means all are upgrades
-    return planTiers[planId as keyof typeof planTiers] > planTiers[currentTierPlan.id as keyof typeof planTiers];
   };
 
   const isDowngrade = (planId: string) => {
@@ -139,7 +134,7 @@ export const SubscriptionPlans: React.FC = () => {
           <div className="flex items-center justify-center mb-4 md:mb-6 mt-4 md:mt-8">
             <div className="relative">
               <img
-                src={BoltIcon}
+                src="/screenshots/v2.png"
                 alt="Super Recruiter Logo"
                 className="animate-pulse"
                 style={{ width: '120px', height: '50px', filter: 'drop-shadow(0 0 16px #FFD600)', objectFit: 'contain' }}
@@ -209,12 +204,12 @@ export const SubscriptionPlans: React.FC = () => {
                   fullWidth
                   size="lg"
                   variant={isCurrentPlan(plan.id) ? 'outline' : 'primary'}
-                  onClick={() => handleSubscribe(plan.paymentLink, plan.id)}
-                  disabled={isCurrentPlan(plan.id)}
+                  onClick={() => isCurrentPlan(plan.id) ? setShowRefillModal(true) : handleSubscribe(plan.paymentLink, plan.id)}
+                  disabled={false}
                   isLoading={false}
                 >
                   {isCurrentPlan(plan.id) 
-                    ? 'CURRENT PLAN' 
+                    ? 'REFILL' 
                     : isDowngrade(plan.id)
                     ? 'DOWNGRADE'
                     : (plan.id === 'topshelf' ? 'GO BEAST MODE' : 'LEVEL UP')}
@@ -225,19 +220,16 @@ export const SubscriptionPlans: React.FC = () => {
           ))}
         </div>
 
-        {/* Credit Top-Off Section */}
-        <CreditTopOff />
-
         {/* Premium Service Offering */}
         <div className="mb-8 md:mb-12 flex justify-center">
-          <div className="w-full lg:w-3/4 xl:w-1/2">
+          <div className="w-full lg:w-5/6 xl:w-2/3">
             <Card className="bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 border-yellow-500/30">
             <CardContent className="p-4 md:p-8">
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center mb-4">
                   <div className="relative">
                     <img
-                      src={BoltIcon}
+                      src="/screenshots/v2.png"
                       alt="Super Recruiter Logo"
                       style={{ width: '100px', height: '42px', filter: 'drop-shadow(0 0 12px #FACC15)', objectFit: 'contain' }}
                     />
@@ -261,12 +253,12 @@ export const SubscriptionPlans: React.FC = () => {
                 >
                   BOOK YOUR FREE STRATEGY CALL
                 </Button>
-                <p className="text-white-knight font-anton text-xl md:text-2xl lg:text-3xl uppercase tracking-wide px-4">
-                  Lower your cost per hire by over 30% in 60 days or pay nothing.
+                <p className="text-white-knight font-anton text-lg md:text-xl lg:text-2xl uppercase tracking-wide px-4">
+                  Lower your cost per hire by<br />30% in 60 days or pay nothing.
                 </p>
                 <div className="mt-6">
                   <p className="text-guardian font-jakarta text-lg italic">
-                    "Super Recruiter truly understand the nuances of quality recruitment and have a pricing model you can't beat"
+                    "Super Recruiter truly understand the nuances of quality recruitment and have a pricing model you can't beat."
                   </p>
                   <p className="text-supernova font-jakarta text-sm mt-2">
                     Michael Tibor, CEO of Credo
@@ -282,7 +274,7 @@ export const SubscriptionPlans: React.FC = () => {
                   <div className="flex items-start justify-center">
                     <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
                     <span className="text-guardian font-jakarta">
-                      Dedicated Super Recruiter for your roles
+                      Dedicated Super Recruiter
                     </span>
                   </div>
                   <div className="flex items-start justify-center">
@@ -300,19 +292,13 @@ export const SubscriptionPlans: React.FC = () => {
                   <div className="flex items-start justify-center">
                     <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
                     <span className="text-guardian font-jakarta">
-                      Pre-screened, qualified candidates on your calendar
+                     Pre-screened, qualified candidates -<br />scheduled straight to your calendar
                     </span>
                   </div>
                   <div className="flex items-start justify-center">
                     <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
                     <span className="text-guardian font-jakarta">
-                      A/B message testing to boost conversions
-                    </span>
-                  </div>
-                  <div className="flex items-start justify-center">
-                    <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
-                    <span className="text-guardian font-jakarta">
-                      Custom candidate pitch deck to win top talent
+                    A/B message testing to boost candidate response rates
                     </span>
                   </div>
                   <div className="flex items-start justify-center">
@@ -326,13 +312,31 @@ export const SubscriptionPlans: React.FC = () => {
 
               <div className="text-center border-t border-yellow-500/20 pt-6">
                 <p className="text-guardian font-jakarta">
-                  <strong className="text-white-knight">Perfect for:</strong> Hiring managers, recruiters, and founders who want high-quality candidates <br/>delivered straight to their calendars - without lifting a finger.
+                  <strong className="text-white-knight">Perfect for:</strong> Hiring managers, recruiters, and founders<br />who want high-quality candidates delivered straight to their calendars - without lifting a finger.
                 </p>
               </div>
             </CardContent>
           </Card>
           </div>
         </div>
+
+        {/* Refill Modal */}
+        {showRefillModal && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div className="relative w-full max-w-6xl my-8">
+              <button
+                onClick={() => setShowRefillModal(false)}
+                className="absolute -top-4 -right-4 bg-white-knight text-shadowforce rounded-full p-2 hover:bg-guardian transition-colors z-10"
+                aria-label="Close modal"
+              >
+                <X size={24} />
+              </button>
+              <div className="bg-shadowforce rounded-lg">
+                <CreditTopOff />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

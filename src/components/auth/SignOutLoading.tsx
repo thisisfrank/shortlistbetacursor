@@ -1,5 +1,4 @@
 import React from 'react';
-import BoltIcon from '../../assets/v2.png';
 
 export const SignOutLoading: React.FC = () => {
   return (
@@ -8,7 +7,7 @@ export const SignOutLoading: React.FC = () => {
         <div className="flex justify-center mb-8">
           <div className="relative">
             <img
-              src={BoltIcon}
+              src="/screenshots/v2.png"
               alt="Lightning Bolt"
               className="animate-pulse"
               style={{ width: '80px', height: '38px', filter: 'drop-shadow(0 0 12px #FFD600)', objectFit: 'contain' }}

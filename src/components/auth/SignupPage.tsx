@@ -5,7 +5,6 @@ import { Card, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { FormInput } from '../forms/FormInput';
 import { AlertCircle, CheckCircle } from 'lucide-react';
-import BoltIcon from '../../assets/v2.png';
 import { supabase } from '../../lib/supabase';
 
 export const SignupPage: React.FC = () => {
@@ -147,7 +146,7 @@ export const SignupPage: React.FC = () => {
               <Link to="/">
                 <div className="relative cursor-pointer">
                   <img
-                    src={BoltIcon}
+                    src="/screenshots/v2.png"
                     alt="Lightning Bolt"
                     className="animate-pulse"
                     style={{ width: '60px', height: '28px', filter: 'drop-shadow(0 0 8px #FFD600)', objectFit: 'contain' }}

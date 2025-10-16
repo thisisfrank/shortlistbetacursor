@@ -5,7 +5,6 @@ import { Card, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { JobDetailModal } from '../sourcer/JobDetailModal';
 import { Search, CalendarDays, Users, Filter, Zap, TrendingUp, Clock, CheckCircle } from 'lucide-react';
-import BoltIcon from '../../assets/v2.png';
 import { supabase } from '../../lib/supabase';
 
 export const AdminPanel: React.FC = () => {
@@ -117,7 +116,7 @@ export const AdminPanel: React.FC = () => {
           <div className="flex items-center justify-center mb-6">
             <div className="relative">
               <img
-                src={BoltIcon}
+                src="/screenshots/v2.png"
                 alt="Lightning Bolt"
                 className="animate-pulse"
                 style={{ width: '120px', height: '56px', filter: 'drop-shadow(0 0 10px #FFD600)', objectFit: 'contain' }}

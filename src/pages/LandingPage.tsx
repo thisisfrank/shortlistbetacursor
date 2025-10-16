@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navigate } from 'react-router-dom';
-import BoltIcon from '../assets/v2.png';
 import { Button } from '../components/ui/Button';
 import { Check, Play } from 'lucide-react';
-import Image3 from '../assets/image (3).png';
-import Image4 from '../assets/image (4).png';
-import Image5 from '../assets/image (5).png';
 
 export const LandingPage: React.FC = () => {
   const { user, userProfile, loading } = useAuth();
@@ -49,7 +45,7 @@ export const LandingPage: React.FC = () => {
             <div className="flex-[1] flex flex-col justify-center items-start text-left">
               <div className="mb-6">
                 <img
-                  src={BoltIcon}
+                  src="/screenshots/v2.png"
                   alt="Lightning Bolt"
                   className="animate-pulse"
                   style={{ width: '150px', height: '62px', filter: 'drop-shadow(0 0 16px #FFD600)', objectFit: 'contain' }}
@@ -152,34 +148,70 @@ export const LandingPage: React.FC = () => {
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-anton text-white-knight mb-6 md:mb-10 uppercase tracking-wide">
             TRUSTED BY RECRUITERS, FOUNDERS, AND HIRING MANAGERS            </h2>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 justify-items-center mb-8 md:mb-12">
-                <img src={Image3} alt="Testimonial 1" className="w-full max-w-sm md:max-w-xs object-contain shadow-lg rounded-lg" />
-                <img src={Image4} alt="Testimonial 2" className="w-full max-w-sm md:max-w-xs object-contain shadow-lg rounded-lg" />
-                <img src={Image5} alt="Testimonial 3" className="w-full max-w-sm md:max-w-xs object-contain shadow-lg rounded-lg" />
+                <img src="/screenshots/image (3).png" alt="Testimonial 1" className="w-full max-w-sm md:max-w-xs object-contain shadow-lg rounded-lg" />
+                <img src="/screenshots/image (4).png" alt="Testimonial 2" className="w-full max-w-sm md:max-w-xs object-contain shadow-lg rounded-lg" />
+                <img src="/screenshots/image (5).png" alt="Testimonial 3" className="w-full max-w-sm md:max-w-xs object-contain shadow-lg rounded-lg" />
               </div>
               
               {/* How it Works Section */}
-              <div className="max-w-4xl mx-auto">
-                <h3 className="text-xl md:text-2xl lg:text-3xl font-anton text-white-knight mb-6 md:mb-8 uppercase tracking-wide">
+              <div className="max-w-6xl mx-auto px-4">
+                <h3 className="text-xl md:text-2xl lg:text-3xl font-anton text-white-knight mb-12 md:mb-16 uppercase tracking-wide text-center">
                 How it Works
                 </h3>
-                <div className="space-y-4 md:space-y-6 text-center">
-                  <div className="flex items-center justify-center">
-                    <div className="bg-supernova text-shadowforce rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0 font-anton font-bold">1</div>
-                    <p className="text-lg text-white font-jakarta leading-relaxed">
-                    Submit job requirements
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <div className="bg-supernova text-shadowforce rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0 font-anton font-bold">2</div>
-                    <p className="text-lg text-white font-jakarta leading-relaxed">
-                    Get high-quality candidates sent to you
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <div className="bg-supernova text-shadowforce rounded-full w-8 h-8 flex items-center justify-center mr-3 flex-shrink-0 font-anton font-bold">3</div>
-                    <p className="text-lg text-white font-jakarta leading-relaxed">
-                    Interview quality people not active on job boards
-                    </p>
+                
+                {/* Timeline Container */}
+                <div className="relative py-20">
+                  {/* Horizontal Timeline Line */}
+                  <div className="absolute top-1/2 left-0 right-0 h-1 bg-supernova/30 transform -translate-y-1/2"></div>
+                  
+                  {/* Timeline Points Container */}
+                  <div className="relative flex justify-between items-start max-w-6xl mx-auto">
+                    
+                    {/* Stage 1 - Below Timeline */}
+                    <div className="flex flex-col items-center w-1/3 relative pt-20">
+                      {/* Bubble on the line */}
+                      <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+                        <div className="bg-supernova text-shadowforce rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center font-anton font-bold text-xl md:text-2xl shadow-lg">
+                          1
+                        </div>
+                      </div>
+                      
+                      {/* Text below - aligned to top */}
+                      <p className="text-base md:text-lg text-white font-jakarta leading-relaxed text-center px-4 mt-16 md:mt-20 whitespace-nowrap">
+                        Submit job requirements
+                      </p>
+                    </div>
+                    
+                    {/* Stage 2 - Above Timeline */}
+                    <div className="flex flex-col items-center w-1/3 relative pb-20">
+                      {/* Text above - at top */}
+                      <p className="text-base md:text-lg text-white font-jakarta leading-relaxed text-center px-4 mb-16 md:mb-20 whitespace-nowrap">
+                        Get high-quality candidates sent to you
+                      </p>
+                      
+                      {/* Bubble on the line */}
+                      <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+                        <div className="bg-supernova text-shadowforce rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center font-anton font-bold text-xl md:text-2xl shadow-lg">
+                          2
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Stage 3 - Below Timeline */}
+                    <div className="flex flex-col items-center w-1/3 relative pt-20">
+                      {/* Bubble on the line */}
+                      <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+                        <div className="bg-supernova text-shadowforce rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center font-anton font-bold text-xl md:text-2xl shadow-lg">
+                          3
+                        </div>
+                      </div>
+                      
+                      {/* Text below - aligned to top */}
+                      <p className="text-base md:text-lg text-white font-jakarta leading-relaxed text-center px-4 mt-16 md:mt-20 whitespace-nowrap">
+                        Interview quality people not active on job boards
+                      </p>
+                    </div>
+                    
                   </div>
                 </div>
               </div>
@@ -196,7 +228,7 @@ export const LandingPage: React.FC = () => {
                     How does the Shortlist improve my hiring process?
                     </h4>
                     <p className="text-white font-jakarta leading-relaxed">
-                    You get high-quality candidates sourced, scored, and sent directly to you so you don't have to rely on job boards and referrals.
+                    You get high-quality candidates sourced, scored, and sent directly to you - so you don’t have to rely on job boards or spend hours building candidate lists yourself.
                     </p>
                   </div>
                   
@@ -271,7 +303,7 @@ export const LandingPage: React.FC = () => {
             READY TO GET STARTED?
           </h2>
           <p className="text-lg md:text-xl text-guardian mb-6 md:mb-8 font-jakarta">
-          Get your first candidates on us.
+          Get your first batch of candidates on us!
           </p>
           <Button 
             onClick={() => window.location.href = '/signup'}

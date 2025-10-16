@@ -103,12 +103,6 @@ export const CreditTopOff: React.FC = () => {
           </Card>
         ))}
       </div>
-      
-      <div className="text-center mt-8">
-        <p className="text-guardian text-sm font-jakarta max-w-2xl mx-auto">
-          💡 <span className="font-semibold">Save more with a subscription:</span> Get credits at $0.28-0.40 each with monthly plans instead of $0.30-0.40 per top-off
-        </p>
-      </div>
     </div>
   );
 };

@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import { Card, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { CheckCircle, AlertCircle, Mail, RefreshCw } from 'lucide-react';
-import BoltIcon from '../../assets/v2.png';
 
 export const EmailConfirmationPage: React.FC = () => {
   const { user, userProfile, loading: authLoading, signOut } = useAuth();
@@ -153,7 +152,7 @@ export const EmailConfirmationPage: React.FC = () => {
               <Link to="/">
                 <div className="relative cursor-pointer">
                   <img
-                    src={BoltIcon}
+                    src="/screenshots/v2.png"
                     alt="Lightning Bolt"
                     className="animate-pulse"
                     style={{ width: '60px', height: '28px', filter: 'drop-shadow(0 0 8px #FFD600)', objectFit: 'contain' }}

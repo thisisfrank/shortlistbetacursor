@@ -4,7 +4,6 @@ import { ClientManagement } from './ClientManagement';
 import { SourcerManagement } from './SourcerManagement';
 import { BarChart3, Users, Briefcase } from 'lucide-react';
 import { Button } from '../ui/Button';
-import BoltIcon from '../../assets/v2.png';
 
 export const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'jobs' | 'clients' | 'sourcers'>('jobs');
@@ -23,7 +22,7 @@ export const AdminDashboard: React.FC = () => {
           <div className="flex items-center justify-center mb-4 md:mb-6">
             <div className="relative">
               <img
-                src={BoltIcon}
+                src="/screenshots/v2.png"
                 alt="Lightning Bolt"
                 className="animate-pulse"
                 style={{ width: '100px', height: '46px', filter: 'drop-shadow(0 0 10px #FFD600)', objectFit: 'contain' }}
