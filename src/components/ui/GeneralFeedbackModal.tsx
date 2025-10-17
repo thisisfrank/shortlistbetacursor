@@ -81,11 +81,11 @@ Future Needs: ${formData.futureNeeds}
       <div className="bg-shadowforce border border-guardian/30 rounded-lg p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="relative mb-6">
           <div className="text-center">
-            <h3 className="text-2xl font-anton text-white-knight uppercase tracking-wide mb-2">
+            <h3 className="text-3xl font-anton text-white-knight uppercase tracking-wide mb-2">
               We'd love your feedback
             </h3>
             <p className="text-guardian font-jakarta">
-              Share your thoughts and get 50 free candidates
+              Share your thoughts and get 50 free candidates!
             </p>
           </div>
           <button
@@ -136,7 +136,7 @@ Future Needs: ${formData.futureNeeds}
           {/* 3. Favorite Part */}
           <div>
             <label className="block text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide mb-3">
-              3. What's your favorite part of the app so far? *
+              3. What's your favorite part of the app and why? *
             </label>
             <textarea
               value={formData.favorite}
@@ -164,7 +164,7 @@ Future Needs: ${formData.futureNeeds}
           {/* 5. Time Saved */}
           <div>
             <label className="block text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide mb-4">
-              5. Since using the app, roughly how many hours per week has the app saved you on sourcing? *
+              5. Per week, how many hours of candidate sourcing time does this save you? *
             </label>
             <div className="flex gap-4 justify-center flex-wrap">
               {['0-2', '3-5', '6-10', '10+'].map((option) => (

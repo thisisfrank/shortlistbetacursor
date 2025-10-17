@@ -7,9 +7,8 @@ import { AlertModal } from '../ui/AlertModal';
 import { ShortlistModal } from '../ui/ShortlistModal';
 import { generateJobMatchScore } from '../../services/anthropicService';
 import { Card, CardContent } from '../ui/Card';
-import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List, Edit2, Trash2, Save, X, MessageSquare, CheckCircle, ArrowDown, MessageCircle, Eye, EyeOff, Minus, Plus, Clock } from 'lucide-react';
+import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List, Edit2, Trash2, Save, X, MessageSquare, MessageCircle, Eye, EyeOff, Minus, Plus, Clock } from 'lucide-react';
 import { ghlService } from '../../services/ghlService';
 
 // Helper function to calculate total years of experience
@@ -197,8 +196,8 @@ export const CandidatesView: React.FC = () => {
     feedback: '',
     isSubmitting: false
   });
-  const [showHidden, setShowHidden] = useState(false);
-  const [hiddenJobIds, setHiddenJobIds] = useState<Set<string>>(new Set());
+  const [showArchived, setShowArchived] = useState(false);
+  const [archivedJobIds, setArchivedJobIds] = useState<Set<string>>(new Set());
 
   
   // Define currentJobCandidates at component level with shortlist filtering
@@ -666,12 +665,12 @@ export const CandidatesView: React.FC = () => {
     }));
   };
 
-  const handleHideJob = (jobId: string) => {
-    setHiddenJobIds(prev => new Set([...prev, jobId]));
+  const handleArchiveJob = (jobId: string) => {
+    setArchivedJobIds(prev => new Set([...prev, jobId]));
   };
 
-  const handleUnhideJob = (jobId: string) => {
-    setHiddenJobIds(prev => {
+  const handleUnarchiveJob = (jobId: string) => {
+    setArchivedJobIds(prev => {
       const newSet = new Set(prev);
       newSet.delete(jobId);
       return newSet;
@@ -697,12 +696,12 @@ export const CandidatesView: React.FC = () => {
           name: userProfile?.name
         },
         context: {
-          jobId: selectedJobId,
+          jobId: selectedJobId || undefined,
           jobTitle: selectedJob?.title,
           companyName: selectedJob?.companyName,
           candidateCount: currentJobCandidates.length,
           currentView: currentView,
-          selectedShortlistId: currentView === 'shortlist' ? selectedShortlistId : null
+          selectedShortlistId: currentView === 'shortlist' ? selectedShortlistId : undefined
         },
         page: 'candidates'
       };
@@ -1533,12 +1532,12 @@ export const CandidatesView: React.FC = () => {
       if (!matchesSearch) return false;
     }
     
-    // Apply individual job hiding filter
-    const isJobHidden = hiddenJobIds.has(job.id);
-    if (!showHidden && isJobHidden) {
-      return false; // Hide jobs that are in hiddenJobIds when not showing hidden
+    // Apply individual job archiving filter
+    const isJobArchived = archivedJobIds.has(job.id);
+    if (!showArchived && isJobArchived) {
+      return false; // Hide jobs that are in archivedJobIds when not showing archived
     }
-    // When showHidden is true, show all jobs (both hidden and non-hidden)
+    // When showArchived is true, show all jobs (both archived and non-archived)
     
     return true;
   });
@@ -1548,8 +1547,8 @@ export const CandidatesView: React.FC = () => {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
   
-  // Calculate how many jobs are hidden
-  const hiddenJobsCount = hiddenJobIds.size;
+  // Calculate how many jobs are archived
+  const archivedJobsCount = archivedJobIds.size;
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
@@ -1566,7 +1565,7 @@ export const CandidatesView: React.FC = () => {
             MY OPEN JOBS
           </h1>
           <p className="text-xl text-guardian text-center font-jakarta max-w-2xl mx-auto">
-            Select a job to view your verified candidates
+            Select a job to view your candidates
           </p>
         </header>
         
@@ -1600,36 +1599,36 @@ export const CandidatesView: React.FC = () => {
                 </div>
                 
                 <Button
-                  variant={showHidden ? "primary" : "outline"}
+                  variant={showArchived ? "primary" : "outline"}
                   size="sm"
-                  onClick={() => setShowHidden(!showHidden)}
+                  onClick={() => setShowArchived(!showArchived)}
                   className="flex items-center gap-2 whitespace-nowrap"
-                  disabled={hiddenJobsCount === 0}
+                  disabled={archivedJobsCount === 0}
                 >
-                  {showHidden ? <Eye size={16} /> : <EyeOff size={16} />}
-                  SHOW HIDDEN ({hiddenJobsCount})
+                  {showArchived ? <Eye size={16} /> : <EyeOff size={16} />}
+                  SHOW ARCHIVED ({archivedJobsCount})
                 </Button>
               </div>
             </div>
             
-            {/* Hidden jobs indicator */}
-            {showHidden && hiddenJobsCount > 0 && (
+            {/* Archived jobs indicator */}
+            {showArchived && archivedJobsCount > 0 && (
               <div className="mb-4 p-3 bg-supernova/10 border border-supernova/20 rounded-lg">
                 <div className="flex items-center justify-center gap-2 text-supernova">
                   <Eye size={16} />
                   <span className="text-sm font-jakarta">
-                    Showing {hiddenJobsCount} hidden job{hiddenJobsCount !== 1 ? 's' : ''}
+                    Showing {archivedJobsCount} archived job{archivedJobsCount !== 1 ? 's' : ''}
                   </span>
                 </div>
               </div>
             )}
             
-            {!showHidden && hiddenJobsCount > 0 && (
+            {!showArchived && archivedJobsCount > 0 && (
               <div className="mb-4 p-3 bg-guardian/10 border border-guardian/20 rounded-lg">
                 <div className="flex items-center justify-center gap-2 text-guardian">
                   <EyeOff size={16} />
                   <span className="text-sm font-jakarta">
-                    {hiddenJobsCount} job{hiddenJobsCount !== 1 ? 's' : ''} hidden
+                    {archivedJobsCount} job{archivedJobsCount !== 1 ? 's' : ''} archived
                   </span>
                 </div>
               </div>
@@ -1642,10 +1641,10 @@ export const CandidatesView: React.FC = () => {
                 </div>
                 <h3 className="font-anton text-2xl text-guardian mb-2">NO JOBS FOUND</h3>
                 <p className="text-guardian/80 font-jakarta">
-                  {showHidden
-                    ? 'No hidden jobs match your search criteria.'
-                    : hiddenJobsCount > 0
-                    ? `No jobs match your current search criteria. ${hiddenJobsCount} job${hiddenJobsCount !== 1 ? 's are' : ' is'} currently hidden.`
+                  {showArchived
+                    ? 'No archived jobs match your search criteria.'
+                    : archivedJobsCount > 0
+                    ? `No jobs match your current search criteria. ${archivedJobsCount} job${archivedJobsCount !== 1 ? 's are' : ' is'} currently archived.`
                     : 'No jobs match your current search criteria.'
                   }
                 </p>
@@ -1659,12 +1658,12 @@ export const CandidatesView: React.FC = () => {
                     const clientStatus = isCompleted ? 'COMPLETED' : 
                                          hasCandidates ? 'IN PROGRESS - CANDIDATES AVAILABLE' : 'IN PROGRESS';
                     const isExpanded = expandedJobs.has(job.id);
-                    const isJobHidden = hiddenJobIds.has(job.id);
+                    const isJobArchived = archivedJobIds.has(job.id);
                   
                   return (
                     <Card 
                       key={job.id} 
-                      className={`hover:shadow-2xl transition-all duration-300 ${isCompleted ? 'cursor-pointer' : 'cursor-default opacity-75'} ${isJobHidden && showHidden ? 'border-orange-500/50 bg-orange-500/5' : ''}`}
+                      className={`hover:shadow-2xl transition-all duration-300 ${isCompleted ? 'cursor-pointer' : 'cursor-default opacity-75'} ${isJobArchived && showArchived ? 'border-orange-500/50 bg-orange-500/5' : ''}`}
                     >
                       <CardContent className="p-6">
                         <div className="mb-4 p-3 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
@@ -1705,23 +1704,23 @@ export const CandidatesView: React.FC = () => {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (showHidden) {
-                                  handleUnhideJob(job.id);
+                                if (showArchived) {
+                                  handleUnarchiveJob(job.id);
                                 } else {
-                                  handleHideJob(job.id);
+                                  handleArchiveJob(job.id);
                                 }
                               }}
-                              className={`flex items-center gap-2 ${isJobHidden && showHidden ? 'text-orange-400 border-orange-400' : ''}`}
+                              className={`flex items-center gap-2 ${isJobArchived && showArchived ? 'text-orange-400 border-orange-400' : ''}`}
                             >
-                              {showHidden && isJobHidden ? (
+                              {showArchived && isJobArchived ? (
                                 <>
                                   <Plus size={16} />
-                                  UNHIDE
+                                  UNARCHIVE
                                 </>
                               ) : (
                                 <>
                                   <Minus size={16} />
-                                  HIDE
+                                  ARCHIVE
                                 </>
                               )}
                             </Button>
@@ -1737,7 +1736,7 @@ export const CandidatesView: React.FC = () => {
                             <Users size={16} className="mr-2" />
                             <span>Requested Candidates: {job.candidatesRequested}</span>
                           </div>
-                          <DeliveryCountdown jobCreatedAt={job.createdAt} />
+                          <DeliveryCountdown jobCreatedAt={typeof job.createdAt === 'string' ? job.createdAt : new Date(job.createdAt).toISOString()} />
                         </div>
                         
                         {/* Expanded Job Details */}
@@ -1874,7 +1873,7 @@ export const CandidatesView: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-guardian font-anton text-xl uppercase tracking-wide">
-                      Unlock unlimited job submissions and more candidates upgrading your plan!
+                    Get more candidates and unlimited job submissions by upgrading your plan today
                     </h3>
                   </div>
                 </div>
