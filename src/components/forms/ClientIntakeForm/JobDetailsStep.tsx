@@ -14,6 +14,7 @@ interface JobDetailsStepProps {
     description: string;
     industry: string;
     seniorityLevel: string;
+    country: string;
     city: string;
     state: string;
     isRemote: boolean;
@@ -73,6 +74,32 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
       generateJobDescription();
     }
   }, [formData.mustHaveSkills.length, formData.title, formData.description, isGeneratingDescription, hasUserEditedDescription, generateJobDescription]);
+
+  // Country options
+  const countryOptions = [
+    { value: '', label: formData.isRemote ? 'Not Required' : 'Select Country' },
+    { value: 'US', label: 'United States' },
+    { value: 'CA', label: 'Canada' },
+    { value: 'GB', label: 'United Kingdom' },
+    { value: 'AU', label: 'Australia' },
+    { value: 'DE', label: 'Germany' },
+    { value: 'FR', label: 'France' },
+    { value: 'IN', label: 'India' },
+    { value: 'MX', label: 'Mexico' },
+    { value: 'BR', label: 'Brazil' },
+    { value: 'JP', label: 'Japan' },
+    { value: 'SG', label: 'Singapore' },
+    { value: 'NL', label: 'Netherlands' },
+    { value: 'SE', label: 'Sweden' },
+    { value: 'CH', label: 'Switzerland' },
+    { value: 'IE', label: 'Ireland' },
+    { value: 'NZ', label: 'New Zealand' },
+    { value: 'ES', label: 'Spain' },
+    { value: 'IT', label: 'Italy' },
+    { value: 'PT', label: 'Portugal' },
+    { value: 'PL', label: 'Poland' },
+    { value: 'OTHER', label: 'Other' }
+  ];
 
   // US States options - dynamically set first option based on remote status
   const stateOptions = [
@@ -513,6 +540,20 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
       
       {/* Location */}
       <div>
+        <div className="mb-4">
+          <SearchableSelect
+            label="Country"
+            name="country"
+            value={formData.country}
+            onChange={onChange}
+            options={countryOptions}
+            error={errors.country}
+            required={!formData.isRemote}
+            disabled={formData.isRemote}
+            placeholder="Select country..."
+          />
+        </div>
+        
         <div className="grid grid-cols-2 gap-8 mb-2">
           <FormInput
             label="City"
@@ -525,17 +566,30 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
             placeholder={formData.isRemote ? "Not required for remote positions" : "Enter city name"}
           />
           
-          <SearchableSelect
-            label="State"
-            name="state"
-            value={formData.state}
-            onChange={onChange}
-            options={stateOptions}
-            error={errors.state}
-            required={!formData.isRemote}
-            disabled={formData.isRemote}
-            placeholder="Type to search states..."
-          />
+          {formData.country === 'US' ? (
+            <SearchableSelect
+              label="State"
+              name="state"
+              value={formData.state}
+              onChange={onChange}
+              options={stateOptions}
+              error={errors.state}
+              required={!formData.isRemote}
+              disabled={formData.isRemote}
+              placeholder="Type to search states..."
+            />
+          ) : (
+            <FormInput
+              label="State/Province/Region"
+              name="state"
+              value={formData.state}
+              onChange={onChange}
+              error={errors.state}
+              required={false}
+              disabled={formData.isRemote}
+              placeholder={formData.isRemote ? "Not required" : "Enter state/province (optional)"}
+            />
+          )}
         </div>
         
         <div className="flex items-center mb-12">
@@ -548,7 +602,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
             className="w-5 h-5 text-supernova bg-gray-700 border-gray-600 rounded focus:ring-supernova focus:ring-2"
           />
           <label htmlFor="isRemote" className="ml-3 text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">
-            Remote Position
+            Remote Position (Any Location)
           </label>
         </div>
       </div>

@@ -41,13 +41,18 @@ export const useFormValidation = () => {
       errors.seniorityLevel = 'Seniority level is required';
     }
     
-    // Only validate city and state if not remote
+    // Only validate location fields if not remote
     if (!formData.isRemote) {
+      if (!formData.country?.trim()) {
+        errors.country = 'Country is required';
+      }
+      
       if (!formData.city.trim()) {
         errors.city = 'City is required';
       }
       
-      if (!formData.state) {
+      // State is only required for US
+      if (formData.country === 'US' && !formData.state) {
         errors.state = 'State is required';
       }
     }

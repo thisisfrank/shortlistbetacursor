@@ -12,6 +12,7 @@ interface SimpleSummaryStepProps {
     description: string;
     industry: string;
     seniorityLevel: string;
+    country: string;
     city: string;
     state: string;
     isRemote: boolean;
@@ -240,7 +241,41 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
           
           <div>
             <p className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Location</p>
-            <p className="text-lg text-white-knight font-jakarta font-medium">{formData.isRemote ? 'Remote' : `${formData.city}, ${formData.state}`}</p>
+            <p className="text-lg text-white-knight font-jakarta font-medium">
+              {formData.isRemote ? 'Remote' : (() => {
+                const countryLabels: { [key: string]: string } = {
+                  'US': 'USA',
+                  'CA': 'Canada',
+                  'GB': 'United Kingdom',
+                  'AU': 'Australia',
+                  'DE': 'Germany',
+                  'FR': 'France',
+                  'IN': 'India',
+                  'MX': 'Mexico',
+                  'BR': 'Brazil',
+                  'JP': 'Japan',
+                  'SG': 'Singapore',
+                  'NL': 'Netherlands',
+                  'SE': 'Sweden',
+                  'CH': 'Switzerland',
+                  'IE': 'Ireland',
+                  'NZ': 'New Zealand',
+                  'ES': 'Spain',
+                  'IT': 'Italy',
+                  'PT': 'Portugal',
+                  'PL': 'Poland',
+                  'OTHER': 'Other'
+                };
+                const countryName = countryLabels[formData.country] || formData.country;
+                if (formData.country === 'US' && formData.state) {
+                  return `${formData.city}, ${formData.state}, ${countryName}`;
+                } else if (formData.state && formData.state.trim()) {
+                  return `${formData.city}, ${formData.state}, ${countryName}`;
+                } else {
+                  return `${formData.city}, ${countryName}`;
+                }
+              })()}
+            </p>
           </div>
           
           <div>

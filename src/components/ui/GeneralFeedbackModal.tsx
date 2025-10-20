@@ -247,13 +247,13 @@ Future Needs: ${formData.futureNeeds}
             className="px-8 glow-supernova flex items-center gap-2"
           >
             <Gift size={20} />
-            {isSubmitting ? 'SUBMITTING...' : 'UNLOCK MY CANDIDATE CONVERSION KIT'}
+            {isSubmitting ? 'SUBMITTING...' : 'GET MY 50 FREE CANDIDATES'}
           </Button>
         </div>
 
         {!isFormValid() && (
           <p className="text-center text-guardian/60 text-sm mt-3 font-jakarta">
-            All fields are required to unlock your conversion kit
+            All fields are required to claim your 50 free candidates
           </p>
         )}
       </div>

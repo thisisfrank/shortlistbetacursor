@@ -10,6 +10,7 @@ export interface FormData {
   description: string;
   industry: string;
   seniorityLevel: string;
+  country: string;
   city: string;
   state: string;
   isRemote: boolean;
@@ -75,6 +76,7 @@ const initialFormData: FormData = {
   description: '',
   industry: '',
   seniorityLevel: '',
+  country: 'US',
   city: '',
   state: '',
   isRemote: false,

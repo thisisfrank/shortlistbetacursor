@@ -114,20 +114,30 @@ export const formatJobDescription = async (data: FormatJobDescriptionRequest): P
       ? `\n\nContext:\n${contextInfo.join('\n')}` 
       : '';
 
-    const prompt = `Take this job description and improve its formatting and readability while preserving all key information:
+    const prompt = `Format this job description to be clean and well-organized while preserving ALL content and meaning exactly as stated:
 
 ${data.description}${contextSection}
 
-Please:
-- Structure it into clear, well-organized paragraphs
-- Fix any grammar, spelling, or punctuation issues
-- Make it more professional and engaging
-- Ensure proper spacing and flow
-- Keep the same core content and meaning
-- Remove any redundant or unclear phrasing
-- Make it ATS-friendly and recruiter-ready
+FORMATTING GUIDELINES:
+- Keep all original ideas, points, and information exactly as written - DO NOT rephrase or rewrite
+- If the description is already well-formatted, respect and preserve that structure
+- If the description needs structure, organize it into this preferred format:
 
-Return only the improved job description, no explanations or additional commentary.`;
+  Overview: (2-3 sentences introducing the role/company)
+  
+  Main Responsibilities: 
+  - (4-6 bullet points of key duties)
+  
+  Qualifications:
+  - (4-6 bullet points of requirements)
+
+- Use actual bullet characters (•, -, or *) for lists
+- Add section headers (Overview:, Main Responsibilities:, Qualifications:, etc.) if missing
+- Ensure proper spacing between sections
+- If content doesn't fit this structure perfectly, organize it in the most logical way
+- The goal is to make it clean and readable, not to rewrite it
+
+Return only the formatted job description, no explanations.`;
 
     // Call Anthropic API via our proxy
     const response = await fetch(`${supabaseUrl}/functions/v1/anthropic-proxy`, {

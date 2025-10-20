@@ -47,8 +47,43 @@ export const useFormSubmission = ({ setCurrentStep }: UseFormSubmissionProps) =>
         return;
       }
 
-      // Combine city and state into location for backend
-      const location = formData.isRemote ? 'Remote' : `${formData.city}, ${formData.state}`;
+      // Combine location fields for backend
+      let location = 'Remote';
+      if (!formData.isRemote) {
+        const countryLabels: { [key: string]: string } = {
+          'US': 'USA',
+          'CA': 'Canada',
+          'GB': 'United Kingdom',
+          'AU': 'Australia',
+          'DE': 'Germany',
+          'FR': 'France',
+          'IN': 'India',
+          'MX': 'Mexico',
+          'BR': 'Brazil',
+          'JP': 'Japan',
+          'SG': 'Singapore',
+          'NL': 'Netherlands',
+          'SE': 'Sweden',
+          'CH': 'Switzerland',
+          'IE': 'Ireland',
+          'NZ': 'New Zealand',
+          'ES': 'Spain',
+          'IT': 'Italy',
+          'PT': 'Portugal',
+          'PL': 'Poland',
+          'OTHER': 'Other'
+        };
+        
+        const countryName = countryLabels[formData.country] || formData.country;
+        
+        if (formData.country === 'US' && formData.state) {
+          location = `${formData.city}, ${formData.state}, ${countryName}`;
+        } else if (formData.state && formData.state.trim()) {
+          location = `${formData.city}, ${formData.state}, ${countryName}`;
+        } else {
+          location = `${formData.city}, ${countryName}`;
+        }
+      }
 
       // Format the job description before submission
       let formattedDescription = formData.description;

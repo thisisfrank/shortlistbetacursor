@@ -133,7 +133,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
           ${disabled ? 'text-guardian/40 cursor-not-allowed' : 'text-white-knight'}
         `}>
           <span className={displayValue ? 'text-white-knight' : 'text-guardian/60'}>
-            {displayValue || (disabled ? 'Not Required' : 'Select State')}
+            {displayValue || (disabled ? 'Not Required' : placeholder)}
           </span>
           
           <div className="flex items-center space-x-2">
@@ -174,7 +174,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
             <div className="max-h-48 overflow-y-auto">
               {filteredOptions.length === 0 ? (
                 <div className="px-3 py-2 text-guardian/60 font-jakarta text-sm">
-                  No states found
+                  No options found
                 </div>
               ) : (
                 filteredOptions.map((option) => (

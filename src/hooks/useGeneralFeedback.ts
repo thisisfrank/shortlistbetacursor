@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ghlService } from '../services/ghlService';
+import { supabase } from '../lib/supabase';
 
 interface GeneralFeedbackModal {
   isOpen: boolean;
@@ -59,6 +60,21 @@ export const useGeneralFeedback = (currentContext?: string) => {
     setGeneralFeedbackModal(prev => ({ ...prev, isSubmitting: true }));
     
     try {
+      // Check if user has already claimed feedback bonus
+      const { data: existingBonus, error: checkError } = await supabase
+        .from('credit_transactions')
+        .select('id')
+        .eq('user_id', user?.id)
+        .eq('description', 'Feedback bonus')
+        .limit(1);
+
+      if (checkError) {
+        console.error('Error checking feedback bonus:', checkError);
+        throw checkError;
+      }
+
+      const hasClaimedBonus = existingBonus && existingBonus.length > 0;
+
       // Prepare general feedback data for webhook
       const feedbackData = {
         feedback: generalFeedbackModal.feedback.trim(),
@@ -73,7 +89,8 @@ export const useGeneralFeedback = (currentContext?: string) => {
           currentContext: currentContext || 'header',
           page: window.location.pathname
         },
-        feedbackType: 'general'
+        feedbackType: 'general',
+        bonusGranted: !hasClaimedBonus
       };
 
       // Submit to Make.com webhook (existing)
@@ -95,13 +112,71 @@ export const useGeneralFeedback = (currentContext?: string) => {
       } catch (ghlError) {
         console.warn('⚠️ GHL feedback webhook failed (non-blocking):', ghlError);
       }
-      
-      setAlertModal({
-        isOpen: true,
-        title: 'Feedback Submitted',
-        message: 'Thank you for your feedback! We appreciate your input.',
-        type: 'warning'
-      });
+
+      // Grant 50 credits if this is their first feedback submission
+      if (!hasClaimedBonus && user?.id) {
+        try {
+          // Get current credits
+          const { data: profileData, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('available_credits')
+            .eq('id', user.id)
+            .single();
+
+          if (profileError) throw profileError;
+
+          const currentCredits = profileData?.available_credits || 0;
+          const newCredits = currentCredits + 50;
+
+          // Update user credits
+          const { error: updateError } = await supabase
+            .from('user_profiles')
+            .update({ available_credits: newCredits })
+            .eq('id', user.id);
+
+          if (updateError) throw updateError;
+
+          // Record the credit transaction
+          const { error: transactionError } = await supabase
+            .from('credit_transactions')
+            .insert({
+              user_id: user.id,
+              transaction_type: 'addition',
+              amount: 50,
+              description: 'Feedback bonus'
+            });
+
+          if (transactionError) throw transactionError;
+
+          console.log('✅ 50 credits granted for feedback submission');
+
+          setAlertModal({
+            isOpen: true,
+            title: 'Thank You! 🎁',
+            message: 'Your feedback has been submitted and 50 candidate credits have been added to your account!',
+            type: 'warning'
+          });
+        } catch (creditError) {
+          console.error('❌ Error granting feedback bonus credits:', creditError);
+          // Still show success for feedback submission even if credit grant fails
+          setAlertModal({
+            isOpen: true,
+            title: 'Feedback Submitted',
+            message: 'Thank you for your feedback! We appreciate your input.',
+            type: 'warning'
+          });
+        }
+      } else {
+        // Already claimed bonus
+        setAlertModal({
+          isOpen: true,
+          title: 'Feedback Submitted',
+          message: hasClaimedBonus 
+            ? 'Thank you for your feedback! (Note: The 50 credit bonus can only be claimed once per account)'
+            : 'Thank you for your feedback! We appreciate your input.',
+          type: 'warning'
+        });
+      }
       
       handleCloseGeneralFeedbackModal();
     } catch (error) {
