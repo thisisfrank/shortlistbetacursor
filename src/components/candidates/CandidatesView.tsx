@@ -1704,7 +1704,7 @@ export const CandidatesView: React.FC = () => {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (showArchived) {
+                                if (isJobArchived) {
                                   handleUnarchiveJob(job.id);
                                 } else {
                                   handleArchiveJob(job.id);
@@ -1741,84 +1741,86 @@ export const CandidatesView: React.FC = () => {
                         
                         {/* Expanded Job Details */}
                         {isExpanded && (
-                          <div className="border-t border-guardian/20 pt-6 space-y-6 mb-6">
-                            {/* Job Description - Full Width */}
-                            <div>
-                              <div className="flex items-center mb-3">
-                                <Briefcase size={16} className="text-supernova mr-2" />
-                                <span className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Job Description</span>
-                              </div>
-                              <div className="bg-gradient-to-br from-supernova/10 to-supernova/5 border border-supernova/20 p-4 rounded-lg">
-                                <p className="text-white-knight font-jakarta text-sm leading-relaxed">
-                                  {job.description || 'No description provided'}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            {/* 3-Column Section: Seniority, Skills, Location */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                              {/* Seniority Level */}
-                              <div>
-                                <div className="flex items-center mb-3">
-                                  <Target size={16} className="text-green-400 mr-2" />
-                                  <span className="text-sm font-jakarta font-semibold text-green-400 uppercase tracking-wide">Seniority Level</span>
-                                </div>
-                                <div className="bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 p-4 rounded-lg">
-                                  <p className="text-white-knight font-jakarta font-semibold">
-                                    {job.seniorityLevel === 'Junior' ? 'Junior (1-3 years)' :
-                                     job.seniorityLevel === 'Mid' ? 'Mid (4-6 years)' :
-                                     job.seniorityLevel === 'Senior' ? 'Senior (7-10 years)' :
-                                     job.seniorityLevel === 'Super Senior' ? 'Super Senior (10+ years)' :
-                                     job.seniorityLevel || 'Not specified'}
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              {/* Must-Have Skills */}
-                              <div>
-                                <div className="flex items-center mb-3">
-                                  <Zap size={16} className="text-orange-400 mr-2" />
-                                  <span className="text-sm font-jakarta font-semibold text-orange-400 uppercase tracking-wide">Must-Have Skills</span>
-                                </div>
-                                <div className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/20 p-4 rounded-lg min-h-[60px] flex items-center">
-                                  {job.mustHaveSkills && job.mustHaveSkills.length > 0 ? (
-                                    <div className="flex flex-wrap gap-1">
-                                      {job.mustHaveSkills.map((skill, index) => (
-                                        <span 
-                                          key={index}
-                                          className="px-2 py-1 bg-gradient-to-r from-orange-500/30 to-orange-500/20 border border-orange-500/40 text-orange-300 text-xs rounded-full font-jakarta font-medium"
-                                        >
-                                          {skill}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <p className="text-white-knight font-jakarta font-semibold">Not specified</p>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              {/* Location */}
-                              <div>
-                                <div className="flex items-center mb-3">
-                                  <MapPin size={16} className="text-purple-400 mr-2" />
-                                  <span className="text-sm font-jakarta font-semibold text-purple-400 uppercase tracking-wide">Location</span>
-                                </div>
-                                <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 p-4 rounded-lg">
-                                  <p className="text-white-knight font-jakarta font-semibold">
-                                    {job.location || 'Not specified'}
-                                  </p>
-                                  {job.workArrangement && (
-                                    <p className="text-purple-300 font-jakarta text-sm mt-1">
-                                      {job.workArrangement}
+                          <div className="border-t border-guardian/20 pt-6 mb-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                              {/* Left Column - 1/3 width: Seniority, Skills, Location */}
+                              <div className="lg:col-span-1 space-y-6">
+                                {/* Seniority Level */}
+                                <div>
+                                  <div className="flex items-center mb-3">
+                                    <Target size={16} className="text-green-400 mr-2" />
+                                    <span className="text-sm font-jakarta font-semibold text-green-400 uppercase tracking-wide">Seniority Level</span>
+                                  </div>
+                                  <div className="bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 p-4 rounded-lg">
+                                    <p className="text-white-knight font-jakarta font-semibold">
+                                      {job.seniorityLevel === 'Junior' ? 'Junior (1-3 years)' :
+                                       job.seniorityLevel === 'Mid' ? 'Mid (4-6 years)' :
+                                       job.seniorityLevel === 'Senior' ? 'Senior (7-10 years)' :
+                                       job.seniorityLevel === 'Super Senior' ? 'Super Senior (10+ years)' :
+                                       job.seniorityLevel || 'Not specified'}
                                     </p>
-                                  )}
+                                  </div>
+                                </div>
+                                
+                                {/* Must-Have Skills */}
+                                <div>
+                                  <div className="flex items-center mb-3">
+                                    <Zap size={16} className="text-orange-400 mr-2" />
+                                    <span className="text-sm font-jakarta font-semibold text-orange-400 uppercase tracking-wide">Must-Have Skills</span>
+                                  </div>
+                                  <div className="bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/20 p-4 rounded-lg min-h-[60px]">
+                                    {job.mustHaveSkills && job.mustHaveSkills.length > 0 ? (
+                                      <div className="flex flex-wrap gap-2">
+                                        {job.mustHaveSkills.map((skill, index) => (
+                                          <span 
+                                            key={index}
+                                            className="px-2 py-1 bg-gradient-to-r from-orange-500/30 to-orange-500/20 border border-orange-500/40 text-orange-300 text-xs rounded-full font-jakarta font-medium"
+                                          >
+                                            {skill}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <p className="text-white-knight font-jakarta font-semibold">Not specified</p>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                {/* Location */}
+                                <div>
+                                  <div className="flex items-center mb-3">
+                                    <MapPin size={16} className="text-purple-400 mr-2" />
+                                    <span className="text-sm font-jakarta font-semibold text-purple-400 uppercase tracking-wide">Location</span>
+                                  </div>
+                                  <div className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 p-4 rounded-lg">
+                                    <p className="text-white-knight font-jakarta font-semibold">
+                                      {job.location || 'Not specified'}
+                                    </p>
+                                    {job.workArrangement && (
+                                      <p className="text-purple-300 font-jakarta text-sm mt-1">
+                                        {job.workArrangement}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Right Column - 2/3 width: Job Description */}
+                              <div className="lg:col-span-2">
+                                <div className="flex items-center mb-3">
+                                  <Briefcase size={16} className="text-supernova mr-2" />
+                                  <span className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Job Description</span>
+                                </div>
+                                <div className="bg-gradient-to-br from-supernova/10 to-supernova/5 border border-supernova/20 p-4 rounded-lg h-[288px] overflow-y-auto">
+                                  <p className="text-white-knight font-jakarta text-sm leading-relaxed whitespace-pre-wrap">
+                                    {job.description || 'No description provided'}
+                                  </p>
                                 </div>
                               </div>
                             </div>
                           </div>
                         )}
-                        
+
                         <div className="flex flex-col sm:flex-row gap-3">
                           <Button 
                             variant="outline" 

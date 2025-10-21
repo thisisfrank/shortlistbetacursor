@@ -550,16 +550,46 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             return newData;
           });
           
-          // Record job credit deduction (non-blocking)
-          recordCreditTransaction(user?.id, 'job', 1, newJob.id).catch(error => 
-            console.warn('⚠️ Job credit transaction failed but job was created:', error)
-          );
-
-          // Record candidate credit deduction for requested candidates (non-blocking)
-          const requestedCandidates = jobData.candidatesRequested || 20;
-          recordCreditTransaction(user?.id, 'candidate', requestedCandidates, newJob.id).catch(error => 
-            console.warn('⚠️ Candidate credit transaction failed but job was created:', error)
-          );
+          // ACTUAL CREDIT DEDUCTION at job submission time
+          try {
+            if (user?.id) {
+              const { data: userProfile, error: profileError } = await supabase
+                .from('user_profiles')
+                .select('available_credits')
+                .eq('id', user.id)
+                .single();
+              
+              if (!profileError && userProfile) {
+                const currentCredits = userProfile.available_credits || 0;
+                const requestedCandidates = jobData.candidatesRequested || 20;
+                const newCredits = Math.max(0, currentCredits - requestedCandidates);
+                
+                // Update available_credits in user_profiles
+                await supabase
+                  .from('user_profiles')
+                  .update({ available_credits: newCredits })
+                  .eq('id', user.id);
+                
+                // Log to audit trail
+                await supabase
+                  .from('credit_transactions')
+                  .insert({
+                    user_id: user.id,
+                    transaction_type: 'deduction',
+                    amount: requestedCandidates,
+                    description: `Job submission: ${requestedCandidates} candidates requested`,
+                    job_id: newJob.id
+                  });
+                
+                console.log(`✅ Credits deducted at job submission: ${currentCredits} → ${newCredits} (${requestedCandidates} used)`);
+              } else {
+                console.warn('⚠️ Could not load user profile for credit deduction');
+              }
+            }
+          } catch (error) {
+            console.error('❌ Credit deduction failed:', error);
+            // Don't fail job creation if credit tracking fails
+          }
 
           // Send webhook notification (non-blocking)
           if (user) {
@@ -643,16 +673,46 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             return newData;
           });
           
-          // Record job credit deduction (non-blocking)
-          recordCreditTransaction(user?.id, 'job', 1, newJob.id).catch(error => 
-            console.warn('⚠️ Job credit transaction failed but job was created:', error)
-          );
-
-          // Record candidate credit deduction for requested candidates (non-blocking)
-          const requestedCandidates = insertedJob.candidates_requested || 1;
-          recordCreditTransaction(user?.id, 'candidate', requestedCandidates, newJob.id).catch(error => 
-            console.warn('⚠️ Candidate credit transaction failed but job was created:', error)
-          );
+          // ACTUAL CREDIT DEDUCTION at job submission time
+          try {
+            if (user?.id) {
+              const { data: userProfile, error: profileError } = await supabase
+                .from('user_profiles')
+                .select('available_credits')
+                .eq('id', user.id)
+                .single();
+              
+              if (!profileError && userProfile) {
+                const currentCredits = userProfile.available_credits || 0;
+                const requestedCandidates = insertedJob.candidates_requested || 20;
+                const newCredits = Math.max(0, currentCredits - requestedCandidates);
+                
+                // Update available_credits in user_profiles
+                await supabase
+                  .from('user_profiles')
+                  .update({ available_credits: newCredits })
+                  .eq('id', user.id);
+                
+                // Log to audit trail
+                await supabase
+                  .from('credit_transactions')
+                  .insert({
+                    user_id: user.id,
+                    transaction_type: 'deduction',
+                    amount: requestedCandidates,
+                    description: `Job submission: ${requestedCandidates} candidates requested`,
+                    job_id: newJob.id
+                  });
+                
+                console.log(`✅ Credits deducted at job submission: ${currentCredits} → ${newCredits} (${requestedCandidates} used)`);
+              } else {
+                console.warn('⚠️ Could not load user profile for credit deduction');
+              }
+            }
+          } catch (error) {
+            console.error('❌ Credit deduction failed:', error);
+            // Don't fail job creation if credit tracking fails
+          }
 
           // Send webhook notification (non-blocking)
           if (user) {
@@ -1071,67 +1131,9 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       resultMessage += `\n📊 JOB PROGRESS: ${newTotalAccepted}/${job.candidatesRequested} candidates (${progressPercentage}% complete)\n\n`;
       resultMessage += `🎯 NEXT STEPS: Submit ${stillNeeded} more quality candidate${stillNeeded !== 1 ? 's' : ''} to complete this job.`;
 
-      // CREDIT DEDUCTION: Deduct credits for accepted candidates
-      if (acceptedCandidates.length > 0) {
-        try {
-          
-          // Get current user profile
-          const { data: { user: currentUser } } = await supabase.auth.getUser();
-          if (!currentUser) {
-            console.warn('⚠️ No authenticated user found for credit deduction');
-          } else {
-            // Get current user profile
-            const { data: userProfile, error: profileError } = await supabase
-              .from('user_profiles')
-              .select('available_credits')
-              .eq('id', currentUser.id || '')
-              .single();
-            
-            if (profileError) {
-              console.error('❌ Error loading user profile for credit deduction:', profileError);
-            } else if (userProfile) {
-              const currentCredits = userProfile.available_credits || 0;
-              const creditsToDeduct = acceptedCandidates.length;
-              const newCredits = Math.max(0, currentCredits - creditsToDeduct);
-              
-              // Update user profile with new credit count
-              const { error: updateError } = await supabase
-                .from('user_profiles')
-                .update({ available_credits: newCredits })
-                .eq('id', currentUser.id || '');
-              
-              if (updateError) {
-                console.error('❌ Error updating credits:', updateError);
-              } else {
-                console.log(`✅ Credits deducted: ${currentCredits} → ${newCredits} (${creditsToDeduct} used)`);
-                
-                // Log transaction to audit trail (optional - won't break if table doesn't exist)
-                try {
-                  const { error: auditError } = await supabase
-                    .from('credit_transactions')
-                    .insert({
-                      user_id: currentUser.id || '',
-                      transaction_type: 'deduction',
-                      amount: creditsToDeduct,
-                      description: `Candidate submission for job ${jobId}: ${acceptedCandidates.length} candidates accepted`,
-                      job_id: jobId
-                    });
-                  
-                  if (auditError) {
-                    console.error('❌ Error logging credit transaction:', auditError);
-                    // Don't fail the entire operation if audit logging fails
-                  }
-                } catch (auditError) {
-                  console.error('❌ Error logging credit transaction:', auditError);
-                }
-              }
-            }
-          }
-        } catch (creditError) {
-          console.error('❌ Error in credit deduction:', creditError);
-          // Don't fail the entire operation if credit deduction fails
-        }
-      }
+      // NOTE: Credit deduction now happens at job submission time (in addJob function),
+      // not when candidates are submitted by sourcers. This ensures clients are charged
+      // when they request candidates, not when sourcers deliver them.
       
       // Return results with detailed information
       return {
