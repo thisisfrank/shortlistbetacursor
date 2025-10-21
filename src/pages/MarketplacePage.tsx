@@ -5,6 +5,7 @@ import { useMarketplaceUnlock, MarketplaceItem } from '../hooks/useMarketplaceUn
 import { CandidateEmailsModal } from '../components/ui/CandidateEmailsModal';
 import { OutreachTemplatesModal } from '../components/ui/OutreachTemplatesModal';
 import { UnlockModal } from '../components/ui/UnlockModal';
+import { UnlockSuccessModal } from '../components/ui/UnlockSuccessModal';
 import { useData } from '../context/DataContext';
 
 const marketplaceItems: MarketplaceItem[] = [
@@ -164,6 +165,8 @@ export const MarketplacePage: React.FC = () => {
   const [showEmailsModal, setShowEmailsModal] = useState(false);
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   const [unlockingItem, setUnlockingItem] = useState<MarketplaceItem | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successItem, setSuccessItem] = useState<MarketplaceItem | null>(null);
 
   // Group items by category
   const allItems = marketplaceItems;
@@ -175,6 +178,11 @@ export const MarketplacePage: React.FC = () => {
     acc[item.category].push(item);
     return acc;
   }, {} as Record<string, MarketplaceItem[]>);
+
+  // Helper function to check if an item has a custom unlock workflow
+  const hasCustomUnlockWorkflow = (itemId: string) => {
+    return ['ai-message-generator', 'clay-table-emails', 'outreach-templates'].includes(itemId);
+  };
 
   const handleUnlockClick = (item: MarketplaceItem) => {
     // If already unlocked in DB, proceed with access
@@ -190,8 +198,25 @@ export const MarketplacePage: React.FC = () => {
     }
   };
 
-  const handleAccess = (item: MarketplaceItem) => {
+  const getItemUrl = (itemId: string): string | null => {
+    const itemUrls: Record<string, string> = {
+      'cost-per-hire-calculator': 'https://superrecruiterresources.notion.site/Cost-Per-Hire-Calculation-Kit-2467773d39ea80ab9b84c6a99591ba9d?pvs=74',
+      'ai-recruiter-kit': 'https://superrecruiterresources.notion.site/AI-Recruiting-Tools-2387773d39ea8041ae0ac722c76c47be?pvs=74',
+      'employee-retention-kit': 'https://superrecruiterresources.notion.site/Employee-Retention-Guide-2467773d39ea80e99ea4e5b295658f10?pvs=74',
+      'interview-kit': 'https://superrecruiterresources.notion.site/Evaluating-Interviewing-Candidates-2467773d39ea80bda8b6c2e09693a97e?pvs=74',
+      'candidate-scheduling-automation': 'https://superrecruiterresources.notion.site/Candidate-Scheduling-Automation-2477773d39ea81139252c1cd7443f98d?pvs=74',
+      'candidate-conversion-kit': 'https://superrecruiterresources.notion.site/?pvs=74',
+      'candidate-conversion-kit-agency': 'https://superrecruiterresources.notion.site/Candidate-Conversion-Kit-Agency-Edition-2567773d39ea804fa10af5f0b1a75f02',
+      'infrastructure-build': 'https://superrecruiterresources.notion.site/Outbound-Candidate-Funnel-Builder-2277773d39ea80519727d2463b9cc7b5?pvs=74',
+      'end-to-end-guide': 'https://ultimatehiringplaybook.notion.site/?pvs=74',
+      'outbound-pipelines': 'https://100xrecruiterstack.notion.site/100x-Recruiting-Stack-22d7773d39ea806882d5d5519f675bf6?pvs=74',
+      'outbound-pipelines-agency': 'https://www.notion.so/100x-Recruiter-Stack-agency-edition-21b7773d39ea8005a2b4cca0652e3f1c',
+      'super-recruiter': 'https://api.leadconnectorhq.com/widget/bookings/superrecruiter-strategy-call'
+    };
+    return itemUrls[itemId] || null;
+  };
 
+  const handleAccess = (item: MarketplaceItem, isFirstUnlock: boolean = false) => {
     // Navigate to AI Message Generator if it's unlocked
     if (item.id === 'ai-message-generator') {
       window.location.href = '/ai-message-generator';
@@ -210,23 +235,23 @@ export const MarketplacePage: React.FC = () => {
       return;
     }
 
-    // Handle external links for marketplace items
-    const itemUrls: Record<string, string> = {
-      'cost-per-hire-calculator': 'https://superrecruiterresources.notion.site/Cost-Per-Hire-Calculation-Kit-2467773d39ea80ab9b84c6a99591ba9d?pvs=74',
-      'ai-recruiter-kit': 'https://superrecruiterresources.notion.site/AI-Recruiting-Tools-2387773d39ea8041ae0ac722c76c47be?pvs=74',
-      'employee-retention-kit': 'https://superrecruiterresources.notion.site/Employee-Retention-Guide-2467773d39ea80e99ea4e5b295658f10?pvs=74',
-      'interview-kit': 'https://superrecruiterresources.notion.site/Evaluating-Interviewing-Candidates-2467773d39ea80bda8b6c2e09693a97e?pvs=74',
-      'candidate-scheduling-automation': 'https://superrecruiterresources.notion.site/Candidate-Scheduling-Automation-2477773d39ea81139252c1cd7443f98d?pvs=74',
-      'candidate-conversion-kit': 'https://superrecruiterresources.notion.site/?pvs=74',
-      'candidate-conversion-kit-agency': 'https://superrecruiterresources.notion.site/Candidate-Conversion-Kit-Agency-Edition-2567773d39ea804fa10af5f0b1a75f02',
-      'infrastructure-build': 'https://superrecruiterresources.notion.site/Outbound-Candidate-Funnel-Builder-2277773d39ea80519727d2463b9cc7b5?pvs=74',
-      'end-to-end-guide': 'https://ultimatehiringplaybook.notion.site/?pvs=74',
-      'outbound-pipelines': 'https://100xrecruiterstack.notion.site/100x-Recruiting-Stack-22d7773d39ea806882d5d5519f675bf6?pvs=74',
-      'outbound-pipelines-agency': 'https://www.notion.so/100x-Recruiter-Stack-agency-edition-21b7773d39ea8005a2b4cca0652e3f1c',
-      'super-recruiter': 'https://api.leadconnectorhq.com/widget/bookings/superrecruiter-strategy-call'
-    };
+    // For external link items, show success modal on first unlock
+    const url = getItemUrl(item.id);
+    if (url) {
+      if (isFirstUnlock) {
+        // First time unlocking, show success modal
+        setSuccessItem(item);
+        setShowSuccessModal(true);
+      } else {
+        // Already unlocked, open directly
+        window.open(url, '_blank');
+      }
+    }
+  };
 
-    const url = itemUrls[item.id];
+  const handleSuccessModalAccess = () => {
+    if (!successItem) return;
+    const url = getItemUrl(successItem.id);
     if (url) {
       window.open(url, '_blank');
     }
@@ -367,10 +392,21 @@ export const MarketplacePage: React.FC = () => {
           if (unlockingItem) {
             const success = await unlockMarketplaceItem(unlockingItem.id);
             if (success) {
-              handleAccess(unlockingItem);
+              handleAccess(unlockingItem, true);
             }
           }
         }}
+      />
+
+      {/* Unlock Success Modal */}
+      <UnlockSuccessModal 
+        isOpen={showSuccessModal}
+        onClose={() => {
+          setShowSuccessModal(false);
+          setSuccessItem(null);
+        }}
+        item={successItem}
+        onAccessLink={handleSuccessModalAccess}
       />
     </div>
   );

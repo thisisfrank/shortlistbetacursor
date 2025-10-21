@@ -50,7 +50,8 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
     handleDescriptionChange,
     previousDescription,
     undoAIGeneration,
-    clearDescriptionForManualEntry
+    clearDescriptionForManualEntry,
+    hasNewInputForRegeneration
   } = useClientIntakeForm();
   const [newSkill, setNewSkill] = useState('');
   const [showValidationWarning, setShowValidationWarning] = useState(false);
@@ -391,10 +392,13 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
                       variant="outline"
                       size="sm"
                       onClick={generateJobDescription}
-                      className="flex items-center gap-2 text-xs"
+                      className="flex items-center gap-2 text-xs relative"
                     >
                       <RefreshCw size={14} />
                       Regenerate
+                      {hasNewInputForRegeneration && (
+                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse" title="New input available"></span>
+                      )}
                     </Button>
                     
                     {/* Undo button - only show if there's a previous description to undo to */}

@@ -55,6 +55,7 @@ export interface ClientIntakeFormContextType {
   previousDescription: string;
   undoAIGeneration: () => void;
   clearDescriptionForManualEntry: () => void;
+  hasNewInputForRegeneration: boolean;
   
   // Alert Modal State
   alertModal: AlertModalState;
@@ -108,6 +109,7 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
   const [descriptionGenerationError, setDescriptionGenerationError] = useState<string | null>(null);
   const [hasUserEditedDescription, setHasUserEditedDescription] = useState(false);
   const [previousDescription, setPreviousDescription] = useState<string>(''); // Track previous description for undo
+  const [lastGeneratedWithIdealCandidate, setLastGeneratedWithIdealCandidate] = useState<string>(''); // Track if idealCandidate has changed
 
   // Auto-fill company name from user profile when available
   useEffect(() => {
@@ -178,12 +180,14 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
         mustHaveSkills: formData.mustHaveSkills,
         companyName: formData.companyName || undefined,
         industry: formData.industry || undefined,
-        seniorityLevel: formData.seniorityLevel || undefined
+        seniorityLevel: formData.seniorityLevel || undefined,
+        idealCandidate: formData.idealCandidate || undefined
       });
 
       updateFormField('description', generatedDescription);
       clearFieldError('description');
       setHasUserEditedDescription(false); // Reset flag since AI generated this
+      setLastGeneratedWithIdealCandidate(formData.idealCandidate); // Track that we've incorporated this idealCandidate value
     } catch (error) {
       setDescriptionGenerationError(
         error instanceof Error ? error.message : 'Failed to generate job description. Please try again.'
@@ -216,7 +220,14 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
     setDescriptionGenerationError(null);
     setHasUserEditedDescription(false);
     setPreviousDescription('');
+    setLastGeneratedWithIdealCandidate('');
   };
+
+  // Computed value: Check if there's new input (idealCandidate) that hasn't been incorporated
+  const hasNewInputForRegeneration = 
+    formData.description.length > 0 && // Description exists
+    formData.idealCandidate.trim().length > 0 && // idealCandidate has content
+    formData.idealCandidate !== lastGeneratedWithIdealCandidate; // idealCandidate has changed since last generation
 
   const value: ClientIntakeFormContextType = {
     // Form State
@@ -244,6 +255,7 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
     previousDescription,
     undoAIGeneration,
     clearDescriptionForManualEntry,
+    hasNewInputForRegeneration,
     
     // Alert Modal State
     alertModal,

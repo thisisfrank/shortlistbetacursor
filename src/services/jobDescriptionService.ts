@@ -4,6 +4,7 @@ export interface JobDescriptionRequest {
   companyName?: string;
   industry?: string;
   seniorityLevel?: string;
+  idealCandidate?: string;
 }
 
 export const generateJobDescription = async (data: JobDescriptionRequest): Promise<string> => {
@@ -19,6 +20,7 @@ export const generateJobDescription = async (data: JobDescriptionRequest): Promi
     if (data.companyName) contextInfo.push(`Company: ${data.companyName}`);
     if (data.industry) contextInfo.push(`Industry: ${data.industry}`);
     if (data.seniorityLevel) contextInfo.push(`Experience Level: ${data.seniorityLevel}`);
+    if (data.idealCandidate) contextInfo.push(`Ideal Candidate Profile: ${data.idealCandidate}`);
     
     const contextSection = contextInfo.length > 0 
       ? `\n\nAdditional Context:\n${contextInfo.join('\n')}` 
@@ -32,7 +34,7 @@ Required Skills: ${data.mustHaveSkills.join(', ')}${contextSection}
 Create a compelling 1-2 paragraph job description that:
 - Starts with a brief company/role overview
 - Highlights key responsibilities and impact
-- Emphasizes the required skills (${data.mustHaveSkills.join(', ')})
+- Emphasizes the required skills (${data.mustHaveSkills.join(', ')})${data.idealCandidate ? `\n- Tailors the description to attract candidates matching this profile: ${data.idealCandidate}` : ''}
 - Mentions growth opportunities or benefits
 
 Keep it concise, professional, and engaging to attract top talent. Focus on what makes this role exciting and impactful.
