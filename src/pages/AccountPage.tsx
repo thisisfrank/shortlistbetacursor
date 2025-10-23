@@ -31,7 +31,7 @@ export const AccountPage: React.FC = () => {
 
   // Avatar editing state
   const [isAvatarSelectorOpen, setIsAvatarSelectorOpen] = useState(false);
-  const [avatar, setAvatar] = useState(userProfile?.avatar || '👤');
+  const [avatar, setAvatar] = useState(userProfile?.avatar || '/avatars/avatar-1.png');
   const [avatarLoading, setAvatarLoading] = useState(false);
 
   // General feedback functionality
@@ -49,7 +49,7 @@ export const AccountPage: React.FC = () => {
   React.useEffect(() => {
     setName(userProfile?.name || '');
     setCompany(userProfile?.company || '');
-    setAvatar(userProfile?.avatar || '👤');
+    setAvatar(userProfile?.avatar || '/avatars/avatar-1.png');
   }, [userProfile?.name, userProfile?.company, userProfile?.avatar]);
 
   const stats = getUserUsageStats(userProfile as any, jobs, candidates, tiers, creditTransactions);
@@ -201,7 +201,42 @@ export const AccountPage: React.FC = () => {
             PROFILE INFORMATION
           </h2>
           
-          <div className="flex items-start gap-4">
+          <div className="flex flex-col md:flex-row gap-8 items-center">
+            {/* Avatar Section - Left Side */}
+            <div className="flex items-center justify-center">
+              <button
+                onClick={handleOpenAvatarSelector}
+                disabled={avatarLoading}
+                className="bg-supernova rounded-full w-32 h-32 hover:bg-supernova-light transition-colors cursor-pointer group relative flex-shrink-0 overflow-hidden flex items-center justify-center"
+                title="Click to change avatar"
+              >
+                {avatar?.startsWith('/avatars/') ? (
+                  <img 
+                    src={avatar} 
+                    alt="User avatar" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement!.innerHTML = '<div class="text-5xl">👤</div>';
+                    }}
+                  />
+                ) : avatar && avatar !== '👤' ? (
+                  <span className="text-5xl">{avatar}</span>
+                ) : (
+                  <User size={48} className="text-shadowforce" />
+                )}
+                {avatarLoading && (
+                  <div className="absolute inset-0 bg-supernova/80 rounded-full flex items-center justify-center">
+                    <div className="animate-spin w-8 h-8 border-2 border-shadowforce border-t-transparent rounded-full"></div>
+                  </div>
+                )}
+                <div className="absolute inset-0 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Edit3 size={20} className="text-white" />
+                </div>
+              </button>
+            </div>
+
+            {/* Profile Fields - Right Side */}
             <div className="flex-1">
               <div className="space-y-4">
                 {/* Name Field */}
@@ -325,26 +360,6 @@ export const AccountPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            <button
-              onClick={handleOpenAvatarSelector}
-              disabled={avatarLoading}
-              className="bg-supernova rounded-full p-4 hover:bg-supernova-light transition-colors cursor-pointer group relative flex-shrink-0"
-              title="Click to change avatar"
-            >
-              {avatar && avatar !== '👤' ? (
-                <span className="text-3xl">{avatar}</span>
-              ) : (
-                <User size={32} className="text-shadowforce" />
-              )}
-              {avatarLoading && (
-                <div className="absolute inset-0 bg-supernova/80 rounded-full flex items-center justify-center">
-                  <div className="animate-spin w-6 h-6 border-2 border-shadowforce border-t-transparent rounded-full"></div>
-                </div>
-              )}
-              <div className="absolute inset-0 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Edit3 size={16} className="text-white" />
-              </div>
-            </button>
           </div>
         </div>
 

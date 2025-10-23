@@ -10,7 +10,7 @@ function mapDbProfileToUserProfile(profile: any): UserProfile {
     email: profile.email,
     name: profile.name || '',
     company: profile.company || undefined,
-    avatar: profile.avatar || '👤',
+    avatar: profile.avatar || '/avatars/avatar-1.png',
     role: profile.role,
     tierId: profile.tier_id || '5841d1d6-20d7-4360-96f8-0444305fac5b', // Free tier ID from production
     availableCredits: profile.available_credits,
@@ -229,7 +229,7 @@ export const useAuth = () => {
                     email: currentUser.email,
                     name: '', // Leave name empty for user to set
                     company: null, // No company info available in fallback scenario
-                    avatar: '👤', // Default avatar
+                    avatar: '/avatars/avatar-1.png', // Default avatar
                     role: 'client',
                     tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                     available_credits: 20,
@@ -245,7 +245,7 @@ export const useAuth = () => {
                       id: currentUser.id,
                       email: currentUser.email || '',
                       name: '', // Leave name empty for user to set
-                      avatar: '👤', // Default avatar
+                      avatar: '/avatars/avatar-1.png', // Default avatar
                       role: 'client',
                       tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                       availableCredits: 20,
@@ -324,7 +324,7 @@ export const useAuth = () => {
                 email: currentUser.email,
                 name: '', // Leave name empty for user to set
                 company: null, // No company info available in fallback scenario
-                avatar: '👤', // Default avatar
+                avatar: '/avatars/avatar-1.png', // Default avatar
                 role: 'client',
                 tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                 available_credits: 20,
@@ -340,7 +340,7 @@ export const useAuth = () => {
                   id: currentUser.id,
                   email: currentUser.email || '',
                   name: '', // Leave name empty for user to set
-                  avatar: '👤', // Default avatar
+                  avatar: '/avatars/avatar-1.png', // Default avatar
                   role: 'client',
                   tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
                   availableCredits: 20,

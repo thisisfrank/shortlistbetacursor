@@ -603,7 +603,7 @@ export const CandidatesView: React.FC = () => {
           `"${(candidate.summary || 'N/A').replace(/"/g, '""')}"`,
           `"${experienceText.replace(/"/g, '""')}"`,
           `"${educationText.replace(/"/g, '""')}"`,
-          `"${skillsText.replace(/"/g, '""')}""`
+          `"${skillsText.replace(/"/g, '""')}"`
         ];
       });
 

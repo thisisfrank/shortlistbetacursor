@@ -244,8 +244,20 @@ export const Header: React.FC = () => {
               to="/account"
               className="text-white-knight hover:text-supernova transition-colors cursor-pointer flex items-center gap-3"
             >
-              <div className="w-8 h-8 bg-shadowforce-light rounded-full flex items-center justify-center border border-guardian/20">
-                <span className="text-lg">{userProfile.avatar || '👤'}</span>
+              <div className="w-8 h-8 bg-shadowforce-light rounded-full flex items-center justify-center border border-guardian/20 overflow-hidden">
+                {userProfile.avatar?.startsWith('/avatars/') ? (
+                  <img 
+                    src={userProfile.avatar} 
+                    alt="User avatar" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement!.innerHTML = '👤';
+                    }}
+                  />
+                ) : (
+                  <span className="text-lg">{userProfile.avatar || '👤'}</span>
+                )}
               </div>
               <div className="flex flex-col items-start">
                 <span className="text-sm font-semibold">
@@ -390,8 +402,20 @@ export const Header: React.FC = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 bg-shadowforce rounded-lg border border-guardian/20 hover:border-supernova/30 transition-all"
               >
-                <div className="w-10 h-10 bg-shadowforce-light rounded-full flex items-center justify-center border border-guardian/20">
-                  <span className="text-xl">{userProfile.avatar || '👤'}</span>
+                <div className="w-10 h-10 bg-shadowforce-light rounded-full flex items-center justify-center border border-guardian/20 overflow-hidden">
+                  {userProfile.avatar?.startsWith('/avatars/') ? (
+                    <img 
+                      src={userProfile.avatar} 
+                      alt="User avatar" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement!.innerHTML = '👤';
+                      }}
+                    />
+                  ) : (
+                    <span className="text-xl">{userProfile.avatar || '👤'}</span>
+                  )}
                 </div>
                 <div className="flex flex-col items-start">
                   <span className="text-sm font-semibold text-white-knight">
