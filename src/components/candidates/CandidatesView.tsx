@@ -10,6 +10,9 @@ import { Card, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Search, Users, ExternalLink, Calendar, Briefcase, Zap, User, ChevronDown, ChevronRight, Target, CreditCard, Crown, MapPin, Download, List, Edit2, Trash2, Save, X, MessageSquare, MessageCircle, Eye, EyeOff, Minus, Plus, Clock } from 'lucide-react';
 import { ghlService } from '../../services/ghlService';
+import { supabase } from '../../lib/supabase';
+import { webhookService } from '../../services/webhookService';
+import { getUserUsageStats } from '../../utils/userUsageStats';
 
 // Helper function to calculate total years of experience
 const calculateYearsOfExperience = (experience?: Array<{ title: string; company: string; duration: string }>): number => {
@@ -113,7 +116,9 @@ export const CandidatesView: React.FC = () => {
     getCandidatesByShortlist,
     updateShortlist,
     deleteShortlist,
-    updateJob
+    updateJob,
+    tiers,
+    creditTransactions
   } = useData();
   const { user, userProfile } = useAuth();
   const navigate = useNavigate();
@@ -156,8 +161,8 @@ export const CandidatesView: React.FC = () => {
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean;
     title: string;
-    message: string;
-    type?: 'warning' | 'error' | 'upgrade';
+    message: string | React.ReactNode;
+    type?: 'warning' | 'error' | 'upgrade' | 'success';
     actionLabel?: string;
     onAction?: () => void;
   }>({
@@ -180,10 +185,12 @@ export const CandidatesView: React.FC = () => {
     isOpen: boolean;
     jobId: string | null;
     additionalCandidates: number;
+    searchInstructions: string;
   }>({
     isOpen: false,
     jobId: null,
-    additionalCandidates: 5
+    additionalCandidates: 50,
+    searchInstructions: ''
   });
   const [showGenerateMessageTip, setShowGenerateMessageTip] = useState(false);
   const [showCandidateListPopup, setShowCandidateListPopup] = useState(false);
@@ -394,7 +401,8 @@ export const CandidatesView: React.FC = () => {
     setRequestMoreModal({
       isOpen: true,
       jobId: jobId,
-      additionalCandidates: 5
+      additionalCandidates: 50,
+      searchInstructions: ''
     });
   };
 
@@ -404,39 +412,113 @@ export const CandidatesView: React.FC = () => {
     try {
       const job = getJobById(requestMoreModal.jobId);
       if (!job) {
+        setAlertModal({ isOpen: true, title: 'Error', message: 'Job not found', type: 'error' });
+        return;
+      }
+
+      const additionalCandidates = requestMoreModal.additionalCandidates;
+      
+      // CHECK CREDITS
+      const userStats = getUserUsageStats(userProfile as any, jobs, candidates, tiers, creditTransactions);
+      const availableCredits = userStats?.candidatesRemaining ?? userProfile?.availableCredits ?? 0;
+      
+      if (availableCredits < additionalCandidates) {
         setAlertModal({
           isOpen: true,
-          title: 'Error',
-          message: 'Job not found'
+          title: 'Insufficient Credits',
+          message: `You need ${additionalCandidates} candidate credit${additionalCandidates > 1 ? 's' : ''} but only have ${availableCredits} remaining. Upgrade your plan to request more candidates.`,
+          type: 'upgrade',
+          actionLabel: 'View Pricing',
+          onAction: () => {
+            setRequestMoreModal({ isOpen: false, jobId: null, additionalCandidates: 50, searchInstructions: '' });
+            navigate('/subscription');
+          }
         });
         return;
       }
 
-      const newCandidatesRequested = job.candidatesRequested + requestMoreModal.additionalCandidates;
+      // DEDUCT CREDITS
+      if (user?.id) {
+        const { data: currentProfile } = await supabase
+          .from('user_profiles')
+          .select('available_credits')
+          .eq('id', user.id)
+          .single();
+
+        const currentCredits = currentProfile?.available_credits ?? 0;
+        const newCredits = currentCredits - additionalCandidates;
+
+        await supabase.from('user_profiles').update({ available_credits: newCredits }).eq('id', user.id);
+        await supabase.from('credit_transactions').insert({
+          user_id: user.id,
+          transaction_type: 'deduction',
+          amount: additionalCandidates,
+          description: `Request more candidates: ${additionalCandidates} additional for "${job.title}"`,
+          job_id: job.id
+        });
+
+        console.log(`✅ Credits deducted: ${currentCredits} → ${newCredits}`);
+      }
+
+      // UPDATE JOB - Restart delivery timer by updating createdAt
+      const newCandidatesRequested = job.candidatesRequested + additionalCandidates;
+      const now = new Date();
       
+      // Update in Supabase to restart the delivery timer
+      await supabase
+        .from('jobs')
+        .update({
+          candidates_requested: newCandidatesRequested,
+          status: 'Unclaimed',
+          created_at: now.toISOString() // Restart 24-hour delivery countdown
+        })
+        .eq('id', requestMoreModal.jobId);
+      
+      // Also update local state
       await updateJob(requestMoreModal.jobId, {
         candidatesRequested: newCandidatesRequested,
-        status: 'Unclaimed' // Set back to unclaimed so sourcers can pick it up
+        status: 'Unclaimed'
       });
 
-      setRequestMoreModal({
-        isOpen: false,
-        jobId: null,
-        additionalCandidates: 5
-      });
+      // SEND WEBHOOK
+      if (user) {
+        webhookService.sendRequestMoreCandidatesWebhook(
+          { ...job, candidatesRequested: newCandidatesRequested },
+          {
+            id: user.id,
+            email: user.email || '',
+            name: userProfile?.name || user.email?.split('@')[0] || 'Unknown'
+          },
+          additionalCandidates,
+          requestMoreModal.searchInstructions
+        ).catch(error => console.warn('⚠️ Webhook failed:', error));
+      }
 
+      setRequestMoreModal({ isOpen: false, jobId: null, additionalCandidates: 50, searchInstructions: '' });
       setAlertModal({
         isOpen: true,
-        title: 'Request Submitted',
-        message: `Successfully requested ${requestMoreModal.additionalCandidates} additional candidates for "${job.title}". Your job has been added back to the sourcer queue.`
+        title: 'Request Submitted Successfully!',
+        message: (
+          <div>
+            <p className="mb-3">
+              {additionalCandidates} additional candidate{additionalCandidates > 1 ? 's' : ''} requested for
+            </p>
+            <p className="text-supernova font-bold text-lg mb-4">
+              "{job.title}"
+            </p>
+            <p className="mb-2">
+              {additionalCandidates} credit{additionalCandidates > 1 ? 's have' : ' has'} been deducted from your account.
+            </p>
+            <p className="text-sm text-guardian/80 mt-4">
+              Your job has been added to the sourcer queue with a fresh 24-hour delivery window.
+            </p>
+          </div>
+        ),
+        type: 'success'
       });
     } catch (error) {
       console.error('Error requesting more candidates:', error);
-      setAlertModal({
-        isOpen: true,
-        title: 'Request Failed',
-        message: 'Failed to request more candidates. Please try again.'
-      });
+      setAlertModal({ isOpen: true, title: 'Request Failed', message: 'Failed to request more candidates.', type: 'error' });
     }
   };
 
@@ -1938,42 +2020,60 @@ export const CandidatesView: React.FC = () => {
               Request More Candidates
             </h3>
             
-            <div className="mb-6">
-              <label className="block text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide mb-3">
-                Additional Candidates Needed
-              </label>
-              <div className="space-y-4">
-                <div className="relative">
-                  <input
-                    type="range"
-                    min="1"
-                    max="20"
-                    value={requestMoreModal.additionalCandidates}
-                    onChange={(e) => setRequestMoreModal(prev => ({
-                      ...prev,
-                      additionalCandidates: parseInt(e.target.value)
-                    }))}
-                    className="w-full h-2 bg-guardian/30 rounded-lg appearance-none cursor-pointer slider"
-                    style={{
-                      background: `linear-gradient(to right, #FFD700 0%, #FFD700 ${(requestMoreModal.additionalCandidates - 1) / 19 * 100}%, #374151 ${(requestMoreModal.additionalCandidates - 1) / 19 * 100}%, #374151 100%)`
-                    }}
-                  />
-                  <div className="flex justify-between text-xs text-guardian mt-1">
-                    <span>1</span>
-                    <span>10</span>
-                    <span>20</span>
+              <div className="mb-6">
+                <label className="block text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide mb-3 text-center">
+                  Additional Candidates Needed
+                </label>
+                <div className="space-y-4">
+                  <div className="relative">
+                    <input
+                      type="range"
+                      min="1"
+                      max="100"
+                      value={requestMoreModal.additionalCandidates}
+                      onChange={(e) => setRequestMoreModal(prev => ({
+                        ...prev,
+                        additionalCandidates: parseInt(e.target.value)
+                      }))}
+                      className="w-full cursor-pointer slider-diamond"
+                      style={{
+                        background: `linear-gradient(to right, #FFD700 0%, #FFD700 ${(requestMoreModal.additionalCandidates - 1) / 99 * 100}%, #374151 ${(requestMoreModal.additionalCandidates - 1) / 99 * 100}%, #374151 100%)`,
+                        height: '8px',
+                        borderRadius: '4px'
+                      }}
+                    />
+                    <div className="flex justify-between text-xs text-guardian mt-3">
+                      <span className="inline-block" style={{marginLeft: '-2px'}}>1</span>
+                      <span>50</span>
+                      <span className="inline-block" style={{marginRight: '-2px'}}>100</span>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <span className="text-3xl font-anton text-supernova">
+                      {requestMoreModal.additionalCandidates}
+                    </span>
+                    <span className="text-white-knight font-jakarta ml-2">
+                      additional candidate{requestMoreModal.additionalCandidates !== 1 ? 's' : ''}
+                    </span>
                   </div>
                 </div>
-                <div className="text-center">
-                  <span className="text-3xl font-anton text-supernova">
-                    {requestMoreModal.additionalCandidates}
-                  </span>
-                  <span className="text-white-knight font-jakarta ml-2">
-                    additional candidate{requestMoreModal.additionalCandidates !== 1 ? 's' : ''}
-                  </span>
-                </div>
               </div>
-            </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-jakarta font-medium text-white-knight mb-2 text-center">
+                  Would you like to tweak the search in any way?<br />Tell us what you want to see less or more of.
+                </label>
+                <textarea
+                  value={requestMoreModal.searchInstructions}
+                  onChange={(e) => setRequestMoreModal(prev => ({
+                    ...prev,
+                    searchInstructions: e.target.value
+                  }))}
+                  className="w-full bg-shadowforce border border-guardian/30 rounded-lg p-3 text-white-knight font-jakarta text-sm focus:outline-none focus:border-supernova/50 focus:ring-1 focus:ring-supernova/50 resize-none"
+                  rows={4}
+                  placeholder="e.g., 'More candidates with startup experience' or 'Less candidates from large corporations'"
+                />
+              </div>
 
             <div className="flex gap-3">
               <Button
@@ -1983,7 +2083,8 @@ export const CandidatesView: React.FC = () => {
                 onClick={() => setRequestMoreModal({
                   isOpen: false,
                   jobId: null,
-                  additionalCandidates: 5
+                  additionalCandidates: 50,
+                  searchInstructions: ''
                 })}
               >
                 CANCEL

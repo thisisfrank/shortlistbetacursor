@@ -79,6 +79,39 @@ class WebhookService {
   }
 
   /**
+   * Sends a webhook when client requests more candidates
+   */
+  async sendRequestMoreCandidatesWebhook(
+    jobData: any,
+    userData: { id: string; email: string; name: string },
+    additionalCandidates: number,
+    searchInstructions: string,
+    webhookUrl?: string
+  ): Promise<{ success: boolean; error?: string }> {
+    const url = webhookUrl || import.meta.env.VITE_SECOND_REQUEST_WEBHOOK_URL;
+    if (!url) {
+      console.log('📞 No request more candidates webhook URL configured');
+      return { success: true };
+    }
+
+    const payload = {
+      jobId: jobData.id,
+      title: jobData.title,
+      companyName: jobData.companyName,
+      previousCandidatesRequested: jobData.candidatesRequested - additionalCandidates,
+      additionalCandidatesRequested: additionalCandidates,
+      newTotalCandidatesRequested: jobData.candidatesRequested,
+      searchInstructions: searchInstructions || undefined,
+      userId: userData.id,
+      userEmail: userData.email,
+      userName: userData.name,
+      requestTimestamp: new Date().toISOString(),
+    };
+
+    return this.sendWebhookWithRetry(url, payload as any);
+  }
+
+  /**
    * Sends webhook with retry logic
    */
   private async sendWebhookWithRetry(

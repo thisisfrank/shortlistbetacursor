@@ -1,13 +1,13 @@
 import React from 'react';
-import { AlertTriangle, Crown, X } from 'lucide-react';
+import { AlertTriangle, Crown, X, CheckCircle } from 'lucide-react';
 import { Button } from './Button';
 
 interface AlertModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  message: string;
-  type?: 'warning' | 'error' | 'upgrade';
+  message: string | React.ReactNode;
+  type?: 'warning' | 'error' | 'upgrade' | 'success';
   actionLabel?: string;
   onAction?: () => void;
 }
@@ -25,6 +25,8 @@ export const AlertModal: React.FC<AlertModalProps> = ({
 
   const getIcon = () => {
     switch (type) {
+      case 'success':
+        return <CheckCircle size={48} className="text-green-400" />;
       case 'upgrade':
         return <Crown size={32} className="text-supernova" />;
       case 'error':
@@ -36,6 +38,8 @@ export const AlertModal: React.FC<AlertModalProps> = ({
 
   const getGradient = () => {
     switch (type) {
+      case 'success':
+        return 'from-green-500/20 to-green-500/10 border-green-500/30';
       case 'upgrade':
         return 'from-supernova/20 to-supernova/10 border-supernova/30';
       case 'error':
@@ -68,7 +72,11 @@ export const AlertModal: React.FC<AlertModalProps> = ({
           <div className="flex justify-center mb-6">
             <div className="relative">
               {getIcon()}
-              <div className="absolute inset-0 bg-supernova/30 blur-lg rounded-full"></div>
+              <div className={`absolute inset-0 blur-lg rounded-full ${
+                type === 'success' ? 'bg-green-400/30' : 
+                type === 'error' ? 'bg-red-500/30' : 
+                'bg-supernova/30'
+              }`}></div>
             </div>
           </div>
 
@@ -78,9 +86,13 @@ export const AlertModal: React.FC<AlertModalProps> = ({
           </h2>
 
           {/* Message */}
-          <p className="text-guardian font-jakarta text-center leading-relaxed mb-8">
-            {message}
-          </p>
+          <div className="text-guardian font-jakarta text-center leading-relaxed mb-8">
+            {typeof message === 'string' ? (
+              <p className="whitespace-pre-line">{message}</p>
+            ) : (
+              message
+            )}
+          </div>
 
           {/* Actions */}
           <div className="flex gap-3 justify-center">

@@ -11,6 +11,7 @@ interface FeedbackFormData {
   mostValuableFeature: string;
   otherFeature: string;
   futureNeeds: string;
+  testimonialPermission: boolean;
 }
 
 interface GeneralFeedbackModalProps {
@@ -38,12 +39,13 @@ export const GeneralFeedbackModal: React.FC<GeneralFeedbackModalProps> = ({
     timeSaved: '',
     mostValuableFeature: '',
     otherFeature: '',
-    futureNeeds: ''
+    futureNeeds: '',
+    testimonialPermission: false
   });
 
   if (!isOpen) return null;
 
-  const handleInputChange = (field: keyof FeedbackFormData, value: string | number) => {
+  const handleInputChange = (field: keyof FeedbackFormData, value: string | number | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -69,6 +71,7 @@ Suggestions: ${formData.suggestions}
 Time Saved: ${formData.timeSaved} hours per week
 Most Valuable Feature: ${formData.mostValuableFeature}${formData.mostValuableFeature === 'other' ? ` - ${formData.otherFeature}` : ''}
 Future Needs: ${formData.futureNeeds}
+Testimonial Permission: ${formData.testimonialPermission ? 'Yes - May be used as testimonial' : 'No - Private feedback only'}
       `.trim();
       
       onFeedbackChange(feedbackText);
@@ -234,6 +237,21 @@ Future Needs: ${formData.futureNeeds}
               className="w-full p-4 bg-shadowforce-light border border-guardian/30 rounded-lg text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta resize-vertical min-h-[100px]"
               rows={4}
             />
+          </div>
+
+          {/* Testimonial Permission */}
+          <div className="pt-4">
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={formData.testimonialPermission}
+                onChange={(e) => handleInputChange('testimonialPermission', e.target.checked)}
+                className="w-4 h-4 mt-0.5 text-supernova bg-shadowforce border-guardian/40 rounded focus:ring-supernova focus:ring-offset-0 cursor-pointer"
+              />
+              <span className="text-guardian/80 text-sm font-jakarta group-hover:text-guardian transition-colors">
+                You can use this feedback to help others learn about Shortlist
+              </span>
+            </label>
           </div>
         </div>
 
