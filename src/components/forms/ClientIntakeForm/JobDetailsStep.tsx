@@ -4,7 +4,8 @@ import { SearchableSelect } from '../../ui/SearchableSelect';
 import { Button } from '../../ui/Button';
 import { useData } from '../../../context/DataContext';
 import { useClientIntakeForm } from './ClientIntakeFormContext';
-import { X, Plus, Wand2, RefreshCw, Undo2, Edit3 } from 'lucide-react';
+import { ProfileCard } from '../ProfileCard';
+import { X, Plus, Wand2, RefreshCw, Undo2, Edit3, Users } from 'lucide-react';
 
 interface JobDetailsStepProps {
   formData: {
@@ -22,6 +23,7 @@ interface JobDetailsStepProps {
     salaryRangeMax: string;
     mustHaveSkills: string[];
     candidatesRequested: string;
+    selectedProfileTemplate: string;
   };
   onChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -51,7 +53,13 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
     previousDescription,
     undoAIGeneration,
     clearDescriptionForManualEntry,
-    hasNewInputForRegeneration
+    hasNewInputForRegeneration,
+    isGeneratingProfiles,
+    generatedProfiles,
+    profileGenerationError,
+    setProfileGenerationError,
+    generateProfiles,
+    handleProfileSelection
   } = useClientIntakeForm();
   const [newSkill, setNewSkill] = useState('');
   const [showValidationWarning, setShowValidationWarning] = useState(false);
@@ -75,6 +83,19 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
       generateJobDescription();
     }
   }, [formData.mustHaveSkills.length, formData.title, formData.description, isGeneratingDescription, hasUserEditedDescription, generateJobDescription]);
+
+  // Auto-trigger profile generation when experience level is selected
+  useEffect(() => {
+    if (
+      formData.mustHaveSkills.length >= 3 && 
+      formData.title && 
+      formData.seniorityLevel &&
+      generatedProfiles.length === 0 && // Only auto-generate if profiles haven't been generated yet
+      !isGeneratingProfiles
+    ) {
+      generateProfiles();
+    }
+  }, [formData.seniorityLevel, formData.mustHaveSkills.length, formData.title, generatedProfiles.length, isGeneratingProfiles, generateProfiles]);
 
   // Country options
   const countryOptions = [
@@ -361,138 +382,6 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
         )}
       </div>
       
-      {/* Job Description with AI Generation */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <label className="block text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">
-            Job Description <span className="text-red-400">*</span>
-          </label>
-          
-          {/* AI Generation Controls */}
-          <div className="flex items-center gap-2">
-            {formData.mustHaveSkills.length >= 3 && formData.title && (
-              <>
-                {!formData.description && !isGeneratingDescription && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={generateJobDescription}
-                    className="flex items-center gap-2 text-xs"
-                  >
-                    <Wand2 size={14} />
-                    Generate with AI
-                  </Button>
-                )}
-                
-                {formData.description && !isGeneratingDescription && (
-                  <>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={generateJobDescription}
-                      className="flex items-center gap-2 text-xs relative"
-                    >
-                      <RefreshCw size={14} />
-                      Regenerate
-                      {hasNewInputForRegeneration && (
-                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse" title="New input available"></span>
-                      )}
-                    </Button>
-                    
-                    {/* Undo button - only show if there's a previous description to undo to */}
-                    {previousDescription !== undefined && previousDescription !== formData.description && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={undoAIGeneration}
-                        className="flex items-center gap-2 text-xs"
-                      >
-                        <Undo2 size={14} />
-                        Undo
-                      </Button>
-                    )}
-                    
-                    {/* Clear button - show if AI has generated content (indicated by previousDescription existing) */}
-                    {previousDescription !== undefined && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={clearDescriptionForManualEntry}
-                        className="flex items-center gap-2 text-xs"
-                      >
-                        <Edit3 size={14} />
-                        Enter your own
-                      </Button>
-                    )}
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-        
-        {/* Loading State */}
-        {isGeneratingDescription && (
-          <div className="flex items-center gap-3 p-4 bg-supernova/10 border border-supernova/30 rounded-lg">
-            <div className="animate-spin">
-              <Wand2 size={16} className="text-supernova" />
-            </div>
-            <span className="text-sm text-supernova font-jakarta font-medium">
-              Generating job description with AI...
-            </span>
-          </div>
-        )}
-        
-        {/* Error State */}
-        {descriptionGenerationError && (
-          <div className="p-4 bg-red-400/10 border border-red-400/30 rounded-lg">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-red-400 font-jakarta font-medium">
-                {descriptionGenerationError}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setDescriptionGenerationError(null)}
-                className="text-xs"
-              >
-                Dismiss
-              </Button>
-            </div>
-          </div>
-        )}
-        
-        <textarea
-          name="description"
-          value={formData.description}
-          onChange={handleDescriptionChange}
-          placeholder={
-            formData.mustHaveSkills.length >= 3 && formData.title && !hasUserEditedDescription
-              ? "AI will generate a description when you add 3 skills, or you can write your own..."
-              : "Paste job description"
-          }
-          rows={6}
-          required
-          disabled={isGeneratingDescription}
-          className={`w-full px-4 py-3 bg-transparent border-2 rounded-xl text-white-knight placeholder-guardian/60 font-jakarta focus:outline-none focus:ring-0 transition-all duration-200 resize-none ${
-            errors.description
-              ? 'border-red-400 focus:border-red-400'
-              : 'border-guardian/40 hover:border-guardian/60 focus:border-supernova'
-          } ${isGeneratingDescription ? 'opacity-50 cursor-not-allowed' : ''}`}
-        />
-        
-        {errors.description && (
-          <p className="text-red-400 text-sm font-jakarta font-medium">
-            {errors.description}
-          </p>
-        )}
-      </div>
-      
       <FormInput
         label="Industry"
         name="industry"
@@ -634,6 +523,229 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
           required
           placeholder="$80,000"
         />
+      </div>
+
+      {/* Multi-Select for Profile Templates */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <label className="block text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">
+              Select Profile Template (Optional)
+            </label>
+            <p className="text-sm text-guardian font-jakarta mt-1">
+              Choose 1 templated profile to help guide your candidate search
+            </p>
+          </div>
+          
+          {/* Regenerate Profiles Button - Only show after profiles are generated */}
+          {generatedProfiles.length > 0 && !isGeneratingProfiles && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={generateProfiles}
+              className="flex items-center gap-2 text-xs"
+            >
+              <RefreshCw size={14} />
+              Regenerate
+            </Button>
+          )}
+        </div>
+
+        {/* Requirement message */}
+        {(!formData.mustHaveSkills.length || formData.mustHaveSkills.length < 3 || !formData.seniorityLevel) && (
+          <div className="p-4 bg-guardian/10 border border-guardian/30 rounded-lg">
+            <p className="text-sm text-guardian font-jakarta">
+              Complete the required fields above (3 skills and experience level) to generate profile templates
+            </p>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isGeneratingProfiles && (
+          <div className="flex items-center gap-3 p-4 bg-supernova/10 border border-supernova/30 rounded-lg">
+            <div className="animate-spin">
+              <Users size={16} className="text-supernova" />
+            </div>
+            <span className="text-sm text-supernova font-jakarta font-medium">
+              Generating candidate profile templates...
+            </span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {profileGenerationError && (
+          <div className="p-4 bg-red-400/10 border border-red-400/30 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-red-400 font-jakarta font-medium">
+                {profileGenerationError}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setProfileGenerationError(null)}
+                className="text-xs"
+              >
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Generated Profiles */}
+        {generatedProfiles.length > 0 && !isGeneratingProfiles && (
+          <div className="space-y-3">
+            {formData.selectedProfileTemplate && (
+              <p className="text-xs text-supernova font-jakarta uppercase tracking-wide">
+                ✓ 1 profile selected
+              </p>
+            )}
+            <div className="grid grid-cols-1 gap-3">
+              {generatedProfiles.map((profile) => (
+                <ProfileCard
+                  key={profile.id}
+                  profile={profile}
+                  isSelected={formData.selectedProfileTemplate === profile.id}
+                  onToggle={() => handleProfileSelection(profile.id)}
+                  disabled={false}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Job Description with AI Generation - MOVED TO BOTTOM */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="block text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">
+            Job Description <span className="text-red-400">*</span>
+          </label>
+          
+          {/* AI Generation Controls */}
+          <div className="flex items-center gap-2">
+            {formData.mustHaveSkills.length >= 3 && formData.title && (
+              <>
+                {!formData.description && !isGeneratingDescription && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={generateJobDescription}
+                    className="flex items-center gap-2 text-xs"
+                  >
+                    <Wand2 size={14} />
+                    Generate with AI
+                  </Button>
+                )}
+                
+                {formData.description && !isGeneratingDescription && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={generateJobDescription}
+                      className="flex items-center gap-2 text-xs relative"
+                    >
+                      <RefreshCw size={14} />
+                      Regenerate
+                      {hasNewInputForRegeneration && (
+                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse" title="New input available"></span>
+                      )}
+                    </Button>
+                    
+                    {/* Undo button - only show if there's a previous description to undo to */}
+                    {previousDescription !== undefined && previousDescription !== formData.description && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={undoAIGeneration}
+                        className="flex items-center gap-2 text-xs"
+                      >
+                        <Undo2 size={14} />
+                        Undo
+                      </Button>
+                    )}
+                    
+                    {/* Clear button - show if AI has generated content (indicated by previousDescription existing) */}
+                    {previousDescription !== undefined && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={clearDescriptionForManualEntry}
+                        className="flex items-center gap-2 text-xs"
+                      >
+                        <Edit3 size={14} />
+                        Enter your own
+                      </Button>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+        
+        {/* Loading State */}
+        {isGeneratingDescription && (
+          <div className="flex items-center gap-3 p-4 bg-supernova/10 border border-supernova/30 rounded-lg">
+            <div className="animate-spin">
+              <Wand2 size={16} className="text-supernova" />
+            </div>
+            <span className="text-sm text-supernova font-jakarta font-medium">
+              Generating job description with AI...
+            </span>
+          </div>
+        )}
+        
+        {/* Error State */}
+        {descriptionGenerationError && (
+          <div className="p-4 bg-red-400/10 border border-red-400/30 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-red-400 font-jakarta font-medium">
+                {descriptionGenerationError}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDescriptionGenerationError(null)}
+                className="text-xs"
+              >
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        )}
+        
+        <textarea
+          name="description"
+          value={formData.description}
+          onChange={handleDescriptionChange}
+          placeholder={
+            formData.mustHaveSkills.length >= 3 && formData.title && !hasUserEditedDescription
+              ? "AI will generate a description when you add 3 skills, or you can write your own..."
+              : "Paste job description"
+          }
+          rows={6}
+          required
+          disabled={isGeneratingDescription}
+          className={`w-full px-4 py-3 bg-transparent border-2 rounded-xl text-white-knight placeholder-guardian/60 font-jakarta focus:outline-none focus:ring-0 transition-all duration-200 resize-none ${
+            errors.description
+              ? 'border-red-400 focus:border-red-400'
+              : 'border-guardian/40 hover:border-guardian/60 focus:border-supernova'
+          } ${isGeneratingDescription ? 'opacity-50 cursor-not-allowed' : ''}`}
+        />
+        
+        {errors.description && (
+          <p className="text-red-400 text-sm font-jakarta font-medium">
+            {errors.description}
+          </p>
+        )}
       </div>
 
       {/* Validation Warning Message */}

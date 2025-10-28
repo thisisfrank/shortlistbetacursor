@@ -58,7 +58,8 @@ export const FormStepRenderer: React.FC<FormStepRendererProps> = ({
             salaryRangeMin: formData.salaryRangeMin,
             salaryRangeMax: formData.salaryRangeMax,
             mustHaveSkills: formData.mustHaveSkills,
-            candidatesRequested: formData.candidatesRequested
+            candidatesRequested: formData.candidatesRequested,
+            selectedProfileTemplate: formData.selectedProfileTemplate
           }}
           onChange={handleInputChange}
           onSkillsChange={handleSkillsChange}

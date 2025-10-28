@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { FormStep } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
 import { generateJobDescription as generateJobDescriptionService } from '../../../services/jobDescriptionService';
+import { generateCandidateProfiles, CandidateProfile } from '../../../services/candidateProfileService';
 
 export interface FormData {
   companyName: string;
@@ -18,6 +19,7 @@ export interface FormData {
   salaryRangeMax: string;
   mustHaveSkills: string[];
   candidatesRequested: string;
+  selectedProfileTemplate: string;
 }
 
 export interface AlertModalState {
@@ -57,6 +59,14 @@ export interface ClientIntakeFormContextType {
   clearDescriptionForManualEntry: () => void;
   hasNewInputForRegeneration: boolean;
   
+  // Candidate Profile Generation State
+  isGeneratingProfiles: boolean;
+  generatedProfiles: CandidateProfile[];
+  profileGenerationError: string | null;
+  setProfileGenerationError: (error: string | null) => void;
+  generateProfiles: () => Promise<void>;
+  handleProfileSelection: (profileId: string) => void;
+  
   // Alert Modal State
   alertModal: AlertModalState;
   setAlertModal: (modal: AlertModalState) => void;
@@ -84,7 +94,8 @@ const initialFormData: FormData = {
   salaryRangeMin: '',
   salaryRangeMax: '',
   mustHaveSkills: [],
-  candidatesRequested: '20'
+  candidatesRequested: '20',
+  selectedProfileTemplate: ''
 };
 
 const initialAlertModal: AlertModalState = {
@@ -110,6 +121,11 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
   const [hasUserEditedDescription, setHasUserEditedDescription] = useState(false);
   const [previousDescription, setPreviousDescription] = useState<string>(''); // Track previous description for undo
   const [lastGeneratedWithIdealCandidate, setLastGeneratedWithIdealCandidate] = useState<string>(''); // Track if idealCandidate has changed
+
+  // Candidate Profile Generation State
+  const [isGeneratingProfiles, setIsGeneratingProfiles] = useState(false);
+  const [generatedProfiles, setGeneratedProfiles] = useState<CandidateProfile[]>([]);
+  const [profileGenerationError, setProfileGenerationError] = useState<string | null>(null);
 
   // Auto-fill company name from user profile when available
   useEffect(() => {
@@ -211,6 +227,56 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
     setHasUserEditedDescription(true); // Mark as edited to prevent auto-generation from firing
   };
 
+  const generateProfiles = async () => {
+    if (!formData.title || formData.mustHaveSkills.length < 3 || !formData.seniorityLevel) {
+      setProfileGenerationError('Title, 3 skills, and seniority level are required to generate profiles');
+      return;
+    }
+
+    setIsGeneratingProfiles(true);
+    setProfileGenerationError(null);
+
+    try {
+      // Build location string
+      let location: string | undefined;
+      if (!formData.isRemote && formData.city) {
+        location = formData.state 
+          ? `${formData.city}, ${formData.state}`
+          : formData.city;
+      }
+
+      const profiles = await generateCandidateProfiles({
+        title: formData.title,
+        mustHaveSkills: formData.mustHaveSkills,
+        seniorityLevel: formData.seniorityLevel,
+        location,
+        isRemote: formData.isRemote,
+        industry: formData.industry || undefined,
+        idealCandidate: formData.idealCandidate || undefined
+      });
+
+      setGeneratedProfiles(profiles);
+    } catch (error) {
+      setProfileGenerationError(
+        error instanceof Error ? error.message : 'Failed to generate candidate profiles. Please try again.'
+      );
+    } finally {
+      setIsGeneratingProfiles(false);
+    }
+  };
+
+  const handleProfileSelection = (profileId: string) => {
+    const currentSelection = formData.selectedProfileTemplate;
+    
+    if (currentSelection === profileId) {
+      // Deselect if clicking the same profile
+      updateFormField('selectedProfileTemplate', '');
+    } else {
+      // Select the new profile (only one allowed)
+      updateFormField('selectedProfileTemplate', profileId);
+    }
+  };
+
   const resetForm = () => {
     setFormData(initialFormData);
     setErrors({});
@@ -221,6 +287,9 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
     setHasUserEditedDescription(false);
     setPreviousDescription('');
     setLastGeneratedWithIdealCandidate('');
+    setIsGeneratingProfiles(false);
+    setGeneratedProfiles([]);
+    setProfileGenerationError(null);
   };
 
   // Computed value: Check if there's new input (idealCandidate) that hasn't been incorporated
@@ -256,6 +325,14 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
     undoAIGeneration,
     clearDescriptionForManualEntry,
     hasNewInputForRegeneration,
+    
+    // Candidate Profile Generation State
+    isGeneratingProfiles,
+    generatedProfiles,
+    profileGenerationError,
+    setProfileGenerationError,
+    generateProfiles,
+    handleProfileSelection,
     
     // Alert Modal State
     alertModal,
