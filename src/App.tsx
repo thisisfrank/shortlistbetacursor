@@ -23,6 +23,7 @@ import { AccountPage } from './pages/AccountPage';
 import { SourcerAccountPage } from './pages/SourcerAccountPage';
 import { MarketplacePage } from './pages/MarketplacePage';
 import { AIMessageGeneratorPage } from './pages/AIMessageGeneratorPage';
+import { FormatJobsPage } from './pages/FormatJobsPage';
 
 // Auth Pages
 import { LoginPage } from './components/auth/LoginPage';
@@ -69,6 +70,7 @@ function App() {
                     
                     {/* Role-Specific Routes */}
                     <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+                    <Route path="/admin/format-jobs" element={<AdminRoute><FormatJobsPage /></AdminRoute>} />
                     <Route path="/sourcer" element={<SourcerRoute><SourcerPage /></SourcerRoute>} />
                     
                     {/* Client Routes */}

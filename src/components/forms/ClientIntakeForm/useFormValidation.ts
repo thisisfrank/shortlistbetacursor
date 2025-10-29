@@ -71,8 +71,6 @@ export const useFormValidation = () => {
     
     if (formData.mustHaveSkills.length < 3) {
       errors.mustHaveSkills = `${3 - formData.mustHaveSkills.length} more skill${3 - formData.mustHaveSkills.length > 1 ? 's' : ''} required`;
-    } else if (formData.mustHaveSkills.length > 3) {
-      errors.mustHaveSkills = 'No more than 3 skills allowed';
     }
     
     return errors;

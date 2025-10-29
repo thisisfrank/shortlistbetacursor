@@ -353,9 +353,9 @@ export const CandidatesView: React.FC = () => {
     }
   }, [getJobById, candidates]);
   
-  // Calculate match scores for selected job candidates
+  // Calculate match scores for selected job candidates (only for sourcers)
   useEffect(() => {
-    if (selectedJobId) {
+    if (selectedJobId && userProfile?.role === 'sourcer') {
       const selectedJob = getJobById(selectedJobId);
       const jobCandidates = getCandidatesByJob(selectedJobId);
       
@@ -363,7 +363,7 @@ export const CandidatesView: React.FC = () => {
         jobCandidates.forEach(candidate => getMatchScore(candidate.id, selectedJob.id));
       }
     }
-  }, [selectedJobId, getJobById, getCandidatesByJob, getMatchScore]);
+  }, [selectedJobId, getJobById, getCandidatesByJob, getMatchScore, userProfile?.role]);
   
   // Handle direct Stripe checkout
   const handleGetMoreCredits = async () => {
@@ -1104,26 +1104,28 @@ export const CandidatesView: React.FC = () => {
                     <Card key={candidate.id} className="hover:shadow-2xl transition-all duration-300 border-l-4 border-l-supernova">
                       <CardContent className="p-4 md:p-8">
                         {/* Main candidate info row - always visible */}
-                        <div className="flex flex-col md:grid md:grid-cols-7 gap-4 md:gap-6 items-start md:items-center mb-4 md:mb-6">
-                          {/* AI Match Score */}
-                          <div className="md:col-span-1 flex items-center justify-start md:justify-center w-full md:h-full">
-                            {matchScores[candidate.id]?.loading ? (
-                              <div className="flex items-center justify-center">
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-supernova mr-2"></div>
-                                <span className="text-guardian font-jakarta text-sm">Calculating...</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-center">
-                                <Target className="text-supernova mr-2" size={16} />
-                                <div>
-                                  <div className="text-2xl font-anton text-supernova">
-                                    {matchScores[candidate.id]?.score || 0}%
-                                  </div>
-                                  <div className="text-xs text-guardian font-jakarta">MATCH</div>
+                        <div className={`flex flex-col md:grid ${userProfile?.role === 'sourcer' ? 'md:grid-cols-7' : 'md:grid-cols-6'} gap-4 md:gap-6 items-start md:items-center mb-4 md:mb-6`}>
+                          {/* AI Match Score - Only visible to sourcers */}
+                          {userProfile?.role === 'sourcer' && (
+                            <div className="md:col-span-1 flex items-center justify-start md:justify-center w-full md:h-full">
+                              {matchScores[candidate.id]?.loading ? (
+                                <div className="flex items-center justify-center">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-supernova mr-2"></div>
+                                  <span className="text-guardian font-jakarta text-sm">Calculating...</span>
                                 </div>
-                              </div>
-                            )}
-                          </div>
+                              ) : (
+                                <div className="flex items-center justify-center">
+                                  <Target className="text-supernova mr-2" size={16} />
+                                  <div>
+                                    <div className="text-2xl font-anton text-supernova">
+                                      {matchScores[candidate.id]?.score || 0}%
+                                    </div>
+                                    <div className="text-xs text-guardian font-jakarta">MATCH</div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                           {/* Name and basic info */}
                           <div className="md:col-span-2 flex items-center w-full md:h-full">
                             <h4 className="text-2xl md:text-3xl font-anton text-white-knight mb-0 uppercase tracking-wide">
@@ -1163,8 +1165,8 @@ export const CandidatesView: React.FC = () => {
                           </div>
                         </div>
                         
-                        {/* Match Score Reasoning */}
-                        {matchScores[candidate.id] && !matchScores[candidate.id].loading && (
+                        {/* Match Score Reasoning - Only visible to sourcers */}
+                        {userProfile?.role === 'sourcer' && matchScores[candidate.id] && !matchScores[candidate.id].loading && (
                           <div className="mb-6 p-4 bg-supernova/10 border border-supernova/30 rounded-lg">
                             <div className="flex items-center mb-1">
                               <span className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide">Match Analysis</span>

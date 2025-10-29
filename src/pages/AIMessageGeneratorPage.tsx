@@ -1015,28 +1015,24 @@ Output ONLY the final message text with NO signature or closing.`;
                        }`}
                        placeholder="Your personalized message will appear here..."
                      />
-                      {/* Character Counter */}
-                      <div className="flex justify-between items-center mb-4">
-                        <div className={`text-xs md:text-sm font-medium ${
-                          isOverLimit 
-                            ? 'text-red-400' 
-                            : isNearLimit 
-                              ? 'text-yellow-400' 
-                              : 'text-guardian'
-                        }`}>
-                          {characterCount}/{currentLimit} characters
-                        </div>
-                        {isOverLimit && (
-                          <div className="text-red-400 text-xs">
-                            ⚠️ Message exceeds {messageType === 'linkedin' ? 'LinkedIn' : 'email'} character limit
-                          </div>
-                        )}
-                        {isNearLimit && !isOverLimit && (
-                          <div className="text-yellow-400 text-xs">
-                            ⚠️ Approaching character limit
-                          </div>
-                        )}
-                      </div>
+                     {/* Character Counter */}
+                     <div className="flex justify-end items-center mb-4">
+                       <div className={`text-xs md:text-sm font-medium ${
+                         isOverLimit 
+                           ? 'text-red-400' 
+                           : isNearLimit 
+                             ? 'text-yellow-400' 
+                             : 'text-guardian'
+                       }`}>
+                         {characterCount}/{currentLimit} characters
+                         {isOverLimit && (
+                           <span className="ml-2">⚠️ Message exceeds {messageType === 'linkedin' ? 'LinkedIn' : 'email'} character limit</span>
+                         )}
+                         {isNearLimit && !isOverLimit && (
+                           <span className="ml-2">⚠️ Approaching character limit</span>
+                         )}
+                       </div>
+                     </div>
                     </div>
                   ) : (
                    <div className="flex flex-col">
@@ -1049,28 +1045,24 @@ Output ONLY the final message text with NO signature or closing.`;
                      }`}>
                        {bodyText}
                      </div>
-                      {/* Character Counter in view mode */}
-                      <div className="flex justify-between items-center mb-4">
-                        <div className={`text-xs md:text-sm font-medium ${
-                          isOverLimit 
-                            ? 'text-red-400' 
-                            : isNearLimit 
-                              ? 'text-yellow-400' 
-                              : 'text-guardian'
-                        }`}>
-                          {characterCount}/{currentLimit} characters
-                        </div>
-                        {isOverLimit && (
-                          <div className="text-red-400 text-xs">
-                            ⚠️ Message exceeds {messageType === 'linkedin' ? 'LinkedIn' : 'email'} character limit
-                          </div>
-                        )}
-                        {isNearLimit && !isOverLimit && (
-                          <div className="text-yellow-400 text-xs">
-                            ⚠️ Approaching character limit
-                          </div>
-                        )}
-                      </div>
+                     {/* Character Counter in view mode */}
+                     <div className="flex justify-end items-center mb-4">
+                       <div className={`text-xs md:text-sm font-medium ${
+                         isOverLimit 
+                           ? 'text-red-400' 
+                           : isNearLimit 
+                             ? 'text-yellow-400' 
+                             : 'text-guardian'
+                       }`}>
+                         {characterCount}/{currentLimit} characters
+                         {isOverLimit && (
+                           <span className="ml-2">⚠️ Message exceeds {messageType === 'linkedin' ? 'LinkedIn' : 'email'} character limit</span>
+                         )}
+                         {isNearLimit && !isOverLimit && (
+                           <span className="ml-2">⚠️ Approaching character limit</span>
+                         )}
+                       </div>
+                     </div>
                     </div>
                   )}
 

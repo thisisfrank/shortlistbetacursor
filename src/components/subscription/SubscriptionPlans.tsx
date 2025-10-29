@@ -128,23 +128,23 @@ export const SubscriptionPlans: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
-      <div className="max-w-7xl mx-auto px-4 py-6 md:py-12">
+      <div className="max-w-7xl mx-auto px-4 py-4 md:py-6">
         {/* Header */}
-        <header className="mb-8 md:mb-12 text-center">
-          <div className="flex items-center justify-center mb-4 md:mb-6 mt-4 md:mt-8">
+        <header className="mb-4 md:mb-6 text-center">
+          <div className="flex items-center justify-center mb-2 md:mb-3 mt-2 md:mt-4">
             <div className="relative">
               <img
                 src="/screenshots/v2.png"
                 alt="Super Recruiter Logo"
                 className="animate-pulse"
-                style={{ width: '120px', height: '50px', filter: 'drop-shadow(0 0 16px #FFD600)', objectFit: 'contain' }}
+                style={{ width: '100px', height: '42px', filter: 'drop-shadow(0 0 16px #FFD600)', objectFit: 'contain' }}
               />
             </div>
           </div>
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-anton text-white-knight mb-4 uppercase tracking-wide px-4">
+          <h1 className="text-2xl md:text-4xl lg:text-5xl font-anton text-white-knight mb-2 md:mb-3 uppercase tracking-wide px-4">
             Start With The Plan That Fits You!
           </h1>
-          <p className="text-base md:text-xl text-guardian font-jakarta max-w-xl mx-auto px-4">
+          <p className="text-sm md:text-lg text-guardian font-jakarta max-w-xl mx-auto px-4">
           Get high-quality candidates for less than a job posting.
           </p>
         </header>
@@ -152,7 +152,7 @@ export const SubscriptionPlans: React.FC = () => {
 
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
           {subscriptionPlans.map((plan) => (
             <Card 
               key={plan.id} 
@@ -166,14 +166,14 @@ export const SubscriptionPlans: React.FC = () => {
                 </div>
               )}
               
-              <CardHeader className="text-center">
-                <div className="flex justify-center mb-4">
+              <CardHeader className="text-center !py-3 !px-4 !border-b-0">
+                <div className="flex justify-center mb-1">
                   {getPlanIcon(plan.name)}
                 </div>
-                <h3 className="text-2xl font-anton text-white-knight uppercase tracking-wide mb-2">
+                <h3 className="text-xl font-anton text-white-knight uppercase tracking-wide mb-1">
                   {plan.name}
                 </h3>
-                <div className="mb-4">
+                <div className="mb-1">
                   <span className="text-2xl font-anton text-supernova">${plan.price}</span>
                   <span className="text-guardian font-jakarta">/month</span>
                 </div>
@@ -184,16 +184,16 @@ export const SubscriptionPlans: React.FC = () => {
                 </p>
               </CardHeader>
 
-              <CardContent className="pt-0">
-                <div className="space-y-4 mb-8 flex-1">
-                  <div className="text-center mt-6">
-                    <div className="text-4xl font-anton text-supernova mb-2">
+              <CardContent className="!pt-2 !pb-3 !px-4">
+                <div className="mb-4 flex-1">
+                  <div className="text-center">
+                    <div className="text-2xl font-anton text-supernova mb-0.5">
                       {plan.features.credits} CANDIDATES
                     </div>
-                    <div className="text-sm text-guardian font-jakarta">
+                    <div className="text-xs text-guardian font-jakarta mb-0.5">
                       per month
                     </div>
-                    <div className="text-sm text-guardian font-jakarta">
+                    <div className="text-xs text-guardian font-jakarta">
                       [${(plan.price / plan.features.credits).toFixed(2)}/per candidate]
                     </div>
                   </div>
@@ -202,7 +202,7 @@ export const SubscriptionPlans: React.FC = () => {
                 <div>
                   <Button
                   fullWidth
-                  size="lg"
+                  size="md"
                   variant={isCurrentPlan(plan.id) ? 'outline' : 'primary'}
                   onClick={() => isCurrentPlan(plan.id) ? setShowRefillModal(true) : handleSubscribe(plan.paymentLink, plan.id)}
                   disabled={false}
@@ -221,88 +221,76 @@ export const SubscriptionPlans: React.FC = () => {
         </div>
 
         {/* Premium Service Offering */}
-        <div className="mb-8 md:mb-12 flex justify-center">
+        <div className="mb-6 md:mb-8 flex justify-center">
           <div className="w-full lg:w-5/6 xl:w-2/3">
             <Card className="bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 border-yellow-500/30">
-            <CardContent className="p-4 md:p-8">
-              <div className="text-center mb-6">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="relative">
-                    <img
-                      src="/screenshots/v2.png"
-                      alt="Super Recruiter Logo"
-                      style={{ width: '100px', height: '42px', filter: 'drop-shadow(0 0 12px #FACC15)', objectFit: 'contain' }}
-                    />
-                  </div>
-                </div>
-                <h3 className="text-2xl md:text-3xl font-anton text-white-knight mb-4 uppercase tracking-wide px-4">
-                CANDIDATE ACCELERATOR PROGRAM
+            <CardContent className="p-4 md:p-6">
+              <div className="text-center mb-3">
+                <h3 className="text-lg md:text-xl lg:text-2xl font-anton text-white-knight uppercase tracking-wide px-4">
+                  Want help turning your candidate lists into real interviews?
                 </h3>
-                <p className="text-base md:text-xl text-yellow-300 font-jakarta mb-6 px-4">
-                  Want help turning your candidate lists into real interviews? 
-                </p>
               </div>
 
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 
                 <Button 
-                  onClick={() => window.open('https://calendly.com/superrecruiter/outboundcandidatepipelines', '_blank')}
+                  onClick={() => window.open('https://superrecruiterinfo.com/candidate-accelerator-page', '_blank')}
                   variant="primary"
-                  size="lg"
-                  className="bg-yellow-400 hover:bg-yellow-500 text-black font-anton uppercase tracking-wide px-6 md:px-8 py-3 md:py-4 mb-4 w-full sm:w-auto"
+                  size="md"
+                  className="bg-yellow-400 hover:bg-yellow-500 text-black font-anton uppercase tracking-wide px-4 md:px-6 py-2 mb-2 w-full sm:w-auto text-sm"
                 >
-                  BOOK YOUR FREE STRATEGY CALL
+                  See How to Lower Your Cost Per Hire
                 </Button>
-                <p className="text-white-knight font-anton text-lg md:text-xl lg:text-2xl uppercase tracking-wide px-4">
-                  Lower your cost per hire by<br />30% in 60 days or pay nothing.
+                <p className="text-white-knight font-anton text-base md:text-lg lg:text-xl uppercase tracking-wide px-4">
+                  Lower your cost per hire by 30% in 60 days or pay nothing.
                 </p>
-                <div className="mt-6">
-                  <p className="text-guardian font-jakarta text-lg italic">
+                <div className="mt-4">
+                  <p className="text-guardian font-jakarta text-base italic">
                     "Super Recruiter truly understand the nuances of quality recruitment and have a pricing model you can't beat."
                   </p>
-                  <p className="text-supernova font-jakarta text-sm mt-2">
+                  <p className="text-supernova font-jakarta text-sm mt-1">
                     Michael Tibor, CEO of Credo
                   </p>
                 </div>
               </div>
 
-              <div className="mb-8">
-                <h4 className="text-xl font-anton text-white-knight uppercase tracking-wide mb-6 text-center">
+              <div className="mb-6">
+                <h4 className="text-lg font-anton text-white-knight uppercase tracking-wide mb-4 text-center">
                   WHAT'S INCLUDED:
                 </h4>
-                <div className="space-y-4 max-w-2xl mx-auto">
+                <div className="space-y-2 max-w-2xl mx-auto">
                   <div className="flex items-start justify-center">
-                    <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                    <CheckCircle className="text-yellow-400 mr-2 mt-1 flex-shrink-0" size={18} />
                     <span className="text-guardian font-jakarta">
                       Dedicated Super Recruiter
                     </span>
                   </div>
                   <div className="flex items-start justify-center">
-                    <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                    <CheckCircle className="text-yellow-400 mr-2 mt-1 flex-shrink-0" size={18} />
                     <span className="text-guardian font-jakarta">
                       Outbound candidate pipelines built & managed for you
                     </span>
                   </div>
                   <div className="flex items-start justify-center">
-                    <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                    <CheckCircle className="text-yellow-400 mr-2 mt-1 flex-shrink-0" size={18} />
                     <span className="text-guardian font-jakarta">
                       100% sourced candidates (not job board spam)
                     </span>
                   </div>
                   <div className="flex items-start justify-center">
-                    <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                    <CheckCircle className="text-yellow-400 mr-2 mt-1 flex-shrink-0" size={18} />
                     <span className="text-guardian font-jakarta">
                      Pre-screened, qualified candidates -<br />scheduled straight to your calendar
                     </span>
                   </div>
                   <div className="flex items-start justify-center">
-                    <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                    <CheckCircle className="text-yellow-400 mr-2 mt-1 flex-shrink-0" size={18} />
                     <span className="text-guardian font-jakarta">
                     A/B message testing to boost candidate response rates
                     </span>
                   </div>
                   <div className="flex items-start justify-center">
-                    <CheckCircle className="text-yellow-400 mr-3 mt-1 flex-shrink-0" size={20} />
+                    <CheckCircle className="text-yellow-400 mr-2 mt-1 flex-shrink-0" size={18} />
                     <span className="text-guardian font-jakarta">
                       Proven multi-channel outreach (email, LinkedIn, SMS)
                     </span>
@@ -310,8 +298,8 @@ export const SubscriptionPlans: React.FC = () => {
                 </div>
               </div>
 
-              <div className="text-center border-t border-yellow-500/20 pt-6">
-                <p className="text-guardian font-jakarta">
+              <div className="text-center border-t border-yellow-500/20 pt-4">
+                <p className="text-guardian font-jakarta text-sm">
                   <strong className="text-white-knight">Perfect for:</strong> Hiring managers, recruiters, and founders<br />who want high-quality candidates delivered straight to their calendars - without lifting a finger.
                 </p>
               </div>

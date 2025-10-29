@@ -18,19 +18,19 @@ const marketplaceItems: MarketplaceItem[] = [
     category: 'free',
   },
   {
-    id: 'clay-table-emails',
-    title: 'Get Candidate Emails',
-    description: 'Unlock a Clay table with verified candidate emails to power your outreach.',
-    requiredLevel: 50,
-    icon: Download,
-    category: 'free',
-  },
-  {
     id: 'super-recruiter',
     title: 'Convert Your Candidates\nInto Booked Interviews',
     description: 'Design a candidate acquisition strategy that keeps your calendar full of high-quality interviews - and lowers your cost per hire.',
     requiredLevel: 50,
     icon: Target,
+    category: 'free',
+  },
+  {
+    id: 'clay-table-emails',
+    title: 'Get Candidate Emails',
+    description: 'Unlock a Clay table with verified candidate emails to power your outreach.',
+    requiredLevel: 50,
+    icon: Download,
     category: 'free',
   },
   {
@@ -276,7 +276,7 @@ export const MarketplacePage: React.FC = () => {
             <div className="inline-flex items-center gap-2 bg-supernova/20 border border-supernova px-4 py-2 rounded-lg">
               <Zap className="text-supernova" size={20} />
               <span className="text-white-knight font-semibold text-sm">
-                Level {userPoints}
+                XP {userPoints}
               </span>
             </div>
           </div>
@@ -331,7 +331,7 @@ export const MarketplacePage: React.FC = () => {
                         <div className="flex items-center gap-2 text-supernova mb-2">
                           <Lock size={16} />
                           <span className="text-sm">
-                            Requires Level {item.requiredLevel}
+                            Requires XP {item.requiredLevel}
                           </span>
                         </div>
                       )}

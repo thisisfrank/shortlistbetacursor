@@ -183,6 +183,46 @@ export const AdminPanel: React.FC = () => {
           </Card>
         </div>
         
+        {/* Format All Jobs Button */}
+        <Card className="mb-6 bg-gradient-to-br from-supernova/10 to-supernova/5 border-supernova/30">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div>
+                <h3 className="font-anton text-lg text-supernova uppercase tracking-wide mb-1">
+                  Format Job Descriptions
+                </h3>
+                <p className="text-sm text-guardian font-jakarta">
+                  Apply AI formatting to all existing job descriptions retroactively
+                </p>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <Button
+                  onClick={handleFormatAllJobs}
+                  disabled={isFormattingJobs || totalJobs === 0}
+                  className="bg-supernova hover:bg-supernova/90 text-shadowforce font-anton uppercase tracking-wide"
+                >
+                  {isFormattingJobs ? (
+                    <>
+                      <RefreshCw className="mr-2 animate-spin" size={18} />
+                      Formatting...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2" size={18} />
+                      Format All {totalJobs} Jobs
+                    </>
+                  )}
+                </Button>
+                {formattingStatus && (
+                  <p className="text-xs text-guardian font-jakarta max-w-xs text-right">
+                    {formattingStatus}
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
         {/* Job List */}
         <Card className="mb-12">
           <CardContent className="p-8">

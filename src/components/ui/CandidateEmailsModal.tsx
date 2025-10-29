@@ -9,12 +9,8 @@ interface CandidateEmailsModalProps {
 
 const clayTemplates = [
   {
-    title: 'How Clay Uses Clay to Find, Prioritize, and Reach Out to Job Candidates',
+    title: 'Get Candidate Emails',
     url: 'https://www.clay.com/templates/how-clay-uses-clay-to-find-prioritize-and-reach-out-to-job-candidates'
-  },
-  {
-    title: 'Scrape Indeed and Send to Clay for Enrichment',
-    url: 'https://www.clay.com/templates/scrape-indeed-and-send-to-clay-for-enrichment'
   }
 ];
 
@@ -63,18 +59,13 @@ export const CandidateEmailsModal: React.FC<CandidateEmailsModalProps> = ({
           </div>
 
           {/* Title */}
-          <h2 className="text-2xl font-anton text-white-knight text-center mb-3 uppercase tracking-wide">
+          <h2 className="text-2xl font-anton text-white-knight text-center mb-6 uppercase tracking-wide">
             Get Candidate Emails
           </h2>
 
-          {/* Description */}
-          <p className="text-guardian font-jakarta text-center leading-relaxed mb-6">
-            Access pre-built Clay tables with verified candidate email addresses and supercharge your outreach.
-          </p>
-
           {/* Features List */}
           <div className="bg-shadowforce/50 rounded-lg p-6 mb-6 border border-guardian/20">
-            <h3 className="text-lg font-semibold text-white-knight font-jakarta mb-4">
+            <h3 className="text-lg font-semibold text-white-knight font-jakarta mb-4 text-center">
               What's Included:
             </h3>
             <ul className="grid grid-cols-2 gap-3">
@@ -99,8 +90,7 @@ export const CandidateEmailsModal: React.FC<CandidateEmailsModalProps> = ({
 
           {/* Pre-built Templates */}
           <div className="bg-shadowforce/50 rounded-lg p-5 mb-6 border border-guardian/20">
-            <h3 className="text-lg font-semibold text-white-knight font-jakarta mb-3 flex items-center gap-2">
-              <FileText size={20} className="text-supernova" />
+            <h3 className="text-lg font-semibold text-white-knight font-jakarta mb-3 text-center">
               Pre-Built Templates:
             </h3>
             <div className="space-y-2">
@@ -122,20 +112,13 @@ export const CandidateEmailsModal: React.FC<CandidateEmailsModalProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 justify-center">
+          <div className="flex justify-center">
             <Button
               variant="primary"
               onClick={handleAccessClay}
-              className="glow-supernova flex items-center gap-2"
+              className="glow-supernova"
             >
-              <ExternalLink size={18} />
-              Go to Clay
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={onClose}
-            >
-              Close
+              Unlock 3,000 Free Clay Credits
             </Button>
           </div>
         </div>

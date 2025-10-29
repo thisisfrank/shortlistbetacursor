@@ -102,15 +102,15 @@ export const UnlockModal: React.FC<UnlockModalProps> = ({
             </p>
           </div>
 
-          {/* Level Display */}
+          {/* XP Display */}
           {!isUnlocked && (
             <div className="bg-shadowforce-light border border-guardian/20 rounded-lg p-4 mb-6">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Zap className="text-supernova" size={20} />
-                  <span className="text-white-knight font-semibold">Your Level</span>
+                  <span className="text-white-knight font-semibold">Your XP</span>
                 </div>
-                <span className="text-white-knight text-lg font-bold">Level {userPoints}</span>
+                <span className="text-white-knight text-lg font-bold">XP {userPoints}</span>
               </div>
               
               <div className="flex items-center justify-between">
@@ -121,7 +121,7 @@ export const UnlockModal: React.FC<UnlockModalProps> = ({
                 <span className={`text-lg font-bold ${
                   hasEnoughPoints ? 'text-green-500' : 'text-red-500'
                 }`}>
-                  Level {requiredPoints}
+                  XP {requiredPoints}
                 </span>
               </div>
             </div>

@@ -184,7 +184,7 @@ export const Header: React.FC = () => {
                   <Link
                     key={item.key}
                     to={item.path}
-                    className={`px-6 py-3 rounded-lg text-sm font-jakarta font-semibold transition-all duration-200 ${
+                    className={`px-6 py-2 rounded-lg text-sm font-jakarta font-semibold transition-all duration-200 ${
                       active
                         ? 'bg-supernova text-shadowforce shadow-lg glow-supernova' 
                         : 'text-guardian hover:bg-shadowforce-light hover:text-supernova'
@@ -203,7 +203,7 @@ export const Header: React.FC = () => {
               <div className="relative">
                 <button 
                   onClick={() => setIsCandidatesDropdownOpen(!isCandidatesDropdownOpen)}
-                  className="flex items-center gap-1 bg-shadowforce-light/50 px-3 py-1 rounded-lg border border-guardian/20 hover:bg-shadowforce-light/70 hover:border-supernova/30 transition-all cursor-pointer"
+                  className="flex items-center gap-1 bg-shadowforce-light/50 px-3 py-3.5 rounded-lg border border-guardian/20 hover:bg-shadowforce-light/70 hover:border-supernova/30 transition-all cursor-pointer"
                 >
                   <span className="text-xs font-jakarta text-guardian">Candidates</span>
                 </button>

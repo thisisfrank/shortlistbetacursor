@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ghlService } from '../services/ghlService';
 import { supabase } from '../lib/supabase';
+import { FeedbackFormData } from '../components/ui/GeneralFeedbackModal';
 
 interface GeneralFeedbackModal {
   isOpen: boolean;
@@ -54,8 +55,13 @@ export const useGeneralFeedback = (currentContext?: string) => {
     }));
   };
 
-  const handleSubmitGeneralFeedback = async () => {
-    if (!generalFeedbackModal.feedback.trim()) return;
+  const handleSubmitGeneralFeedback = async (formData?: FeedbackFormData) => {
+    // Handle both old string format and new structured format
+    const hasValidFeedback = formData 
+      ? (formData.scaleRating !== null) 
+      : generalFeedbackModal.feedback.trim();
+    
+    if (!hasValidFeedback) return;
     
     setGeneralFeedbackModal(prev => ({ ...prev, isSubmitting: true }));
     
@@ -76,7 +82,34 @@ export const useGeneralFeedback = (currentContext?: string) => {
       const hasClaimedBonus = existingBonus && existingBonus.length > 0;
 
       // Prepare general feedback data for webhook
-      const feedbackData = {
+      const feedbackData = formData ? {
+        // Structured feedback data
+        feedbackData: {
+          scaleRating: formData.scaleRating,
+          leastFavorite: formData.leastFavorite,
+          favoritePart: formData.favorite,
+          futureNeeds: formData.futureNeeds,
+          timeSaved: formData.timeSaved,
+          mostValuableFeatures: formData.mostValuableFeature,
+          otherFeature: formData.otherFeature || null,
+          testimonialPermission: formData.testimonialPermission,
+          testimonialText: formData.testimonialText || null
+        },
+        timestamp: new Date().toISOString(),
+        user: {
+          id: user?.id,
+          email: user?.email,
+          role: userProfile?.role,
+          name: userProfile?.name
+        },
+        context: {
+          currentContext: currentContext || 'header',
+          page: window.location.pathname
+        },
+        feedbackType: 'general',
+        bonusGranted: !hasClaimedBonus
+      } : {
+        // Legacy string format
         feedback: generalFeedbackModal.feedback.trim(),
         timestamp: new Date().toISOString(),
         user: {
@@ -152,9 +185,9 @@ export const useGeneralFeedback = (currentContext?: string) => {
 
           setAlertModal({
             isOpen: true,
-            title: 'Thank You! 🎁',
-            message: 'Your feedback has been submitted and 50 candidate credits have been added to your account!',
-            type: 'warning'
+            title: 'Thank You!',
+            message: 'Your feedback has been submitted!\n50 candidate credits have been added to your account.',
+            type: 'success'
           });
         } catch (creditError) {
           console.error('❌ Error granting feedback bonus credits:', creditError);

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Format All Job Descriptions</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 214, 0, 0.3);
+      border-radius: 12px;
+      padding: 30px;
+    }
+    h1 {
+      color: #ffd600;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    p {
+      text-align: center;
+      color: #a0a0a0;
+      margin-bottom: 30px;
+    }
+    button {
+      width: 100%;
+      padding: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      background: #ffd600;
+      color: #1a1a2e;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+    }
+    button:hover:not(:disabled) {
+      background: #ffed4e;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 214, 0, 0.4);
+    }
+    button:disabled {
+      background: #666;
+      cursor: not-allowed;
+    }
+    #status {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      min-height: 50px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .success { color: #4ade80; }
+    .error { color: #f87171; }
+    .info { color: #60a5fa; }
+    .warning { color: #fbbf24; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⚡ Format All Job Descriptions</h1>
+    <p>This will apply AI formatting to all existing job descriptions in your database</p>
+    
+    <button id="formatBtn" onclick="formatAllJobs()">Start Formatting</button>
+    
+    <div id="status"></div>
+  </div>
+
+  <script type="module">
+    import { supabase } from './src/lib/supabase.ts';
+    
+    window.supabaseClient = supabase;
+    
+    async function formatJobDescription(job) {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const contextInfo = [];
+      if (job.company_name) contextInfo.push(`Company: ${job.company_name}`);
+      if (job.title) contextInfo.push(`Position: ${job.title}`);
+      if (job.seniority_level) contextInfo.push(`Level: ${job.seniority_level}`);
+      
+      const contextSection = contextInfo.length > 0 
+        ? `\n\nContext:\n${contextInfo.join('\n')}` 
+        : '';
+
+      const prompt = `Format this job description to be clean and well-organized while preserving ALL content and meaning exactly as stated:
+
+${job.description}${contextSection}
+
+FORMATTING GUIDELINES:
+- Keep all original ideas, points, and information exactly as written - DO NOT rephrase or rewrite
+- If the description is already well-formatted, respect and preserve that structure
+- If the description needs structure, organize it into this preferred format:
+
+  Overview: (2-3 sentences introducing the role/company)
+  
+  Main Responsibilities: 
+  - (4-6 bullet points of key duties)
+  
+  Qualifications:
+  - (4-6 bullet points of requirements)
+
+- Use actual bullet characters (•, -, or *) for lists
+- Add section headers (Overview:, Main Responsibilities:, Qualifications:, etc.) if missing
+- Ensure proper spacing between sections
+- If content doesn't fit this structure perfectly, organize it in the most logical way
+- The goal is to make it clean and readable, not to rewrite it
+
+Return only the formatted job description, no explanations.`;
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/anthropic-proxy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 800,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Formatting failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.content && data.content.length > 0 && data.content[0].text) {
+        return data.content[0].text.trim();
+      }
+      
+      throw new Error('Invalid response format');
+    }
+
+    window.formatAllJobs = async function() {
+      const btn = document.getElementById('formatBtn');
+      const status = document.getElementById('status');
+      
+      btn.disabled = true;
+      status.innerHTML = '<span class="info">🚀 Starting formatting process...</span>';
+      
+      try {
+        // Fetch all jobs
+        const { data: jobs, error: fetchError } = await window.supabaseClient
+          .from('jobs')
+          .select('id, title, description, company_name, seniority_level')
+          .order('created_at', { ascending: false });
+
+        if (fetchError) {
+          throw new Error(`Failed to fetch jobs: ${fetchError.message}`);
+        }
+
+        if (!jobs || jobs.length === 0) {
+          status.innerHTML = '<span class="warning">⚠️ No jobs found to format</span>';
+          btn.disabled = false;
+          return;
+        }
+
+        status.innerHTML = `<span class="info">📋 Found ${jobs.length} jobs to format</span>`;
+        
+        let success = 0;
+        let failed = 0;
+        const errors = [];
+
+        for (let i = 0; i < jobs.length; i++) {
+          const job = jobs[i];
+          
+          try {
+            status.innerHTML = `<span class="info">🔄 Formatting ${i + 1}/${jobs.length}: ${job.title}...</span>`;
+            
+            const formattedDescription = await formatJobDescription(job);
+            
+            const { error: updateError } = await window.supabaseClient
+              .from('jobs')
+              .update({ description: formattedDescription })
+              .eq('id', job.id);
+
+            if (updateError) {
+              throw new Error(`Update failed: ${updateError.message}`);
+            }
+
+            success++;
+            
+            // Rate limiting delay
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+          } catch (error) {
+            failed++;
+            errors.push({ job: job.title, error: error.message });
+            console.error(`Failed to format job ${job.id}:`, error);
+          }
+        }
+
+        let resultHTML = `
+          <div class="success">✅ Formatting complete!</div>
+          <div class="info">Successful: ${success} / ${jobs.length}</div>
+        `;
+        
+        if (failed > 0) {
+          resultHTML += `<div class="error">Failed: ${failed}</div>`;
+        }
+        
+        status.innerHTML = resultHTML;
+        
+        setTimeout(() => {
+          alert('Formatting complete! Page will reload to show updated descriptions.');
+          window.location.reload();
+        }, 2000);
+        
+      } catch (error) {
+        status.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+        console.error('Formatting error:', error);
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
+

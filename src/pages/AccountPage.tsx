@@ -7,7 +7,6 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { GeneralFeedbackModal } from '../components/ui/GeneralFeedbackModal';
 import { AlertModal } from '../components/ui/AlertModal';
-import { AvatarSelector } from '../components/ui/AvatarSelector';
 import { useGeneralFeedback } from '../hooks/useGeneralFeedback';
 import { supabase } from '../lib/supabase';
 import { Users, Briefcase, CreditCard, LogOut, Crown, User, Edit3, Check, X, MessageCircle } from 'lucide-react';
@@ -30,7 +29,6 @@ export const AccountPage: React.FC = () => {
   const [companyError, setCompanyError] = useState('');
 
   // Avatar editing state
-  const [isAvatarSelectorOpen, setIsAvatarSelectorOpen] = useState(false);
   const [avatar, setAvatar] = useState(userProfile?.avatar || '/avatars/avatar-1.png');
   const [avatarLoading, setAvatarLoading] = useState(false);
 
@@ -144,14 +142,6 @@ export const AccountPage: React.FC = () => {
     setCompanyError('');
   };
 
-  const handleOpenAvatarSelector = () => {
-    setIsAvatarSelectorOpen(true);
-  };
-
-  const handleCloseAvatarSelector = () => {
-    setIsAvatarSelectorOpen(false);
-  };
-
   const handleSelectAvatar = async (selectedAvatar: string) => {
     if (!userProfile) return;
     
@@ -168,7 +158,6 @@ export const AccountPage: React.FC = () => {
       }
       
       setAvatar(selectedAvatar);
-      setIsAvatarSelectorOpen(false);
       
       // Refresh the profile to get updated data
       if (refreshProfile) {
@@ -193,23 +182,18 @@ export const AccountPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8">
-      {/* Profile Information and Current Plan Side by Side */}
+      {/* Profile Information and Avatar Selection Side by Side */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 md:mb-8">
-        {/* Profile Information Section */}
+        {/* Profile Information Section - Left Side */}
         <div className="bg-shadowforce-light/30 rounded-xl p-4 md:p-6 border border-guardian/10">
           <h2 className="font-anton text-xl text-white-knight uppercase tracking-wide mb-6">
             PROFILE INFORMATION
           </h2>
           
-          <div className="flex flex-col md:flex-row gap-8 items-center">
-            {/* Avatar Section - Left Side */}
-            <div className="flex items-center justify-center">
-              <button
-                onClick={handleOpenAvatarSelector}
-                disabled={avatarLoading}
-                className="bg-supernova rounded-full w-32 h-32 hover:bg-supernova-light transition-colors cursor-pointer group relative flex-shrink-0 overflow-hidden flex items-center justify-center"
-                title="Click to change avatar"
-              >
+          <div className="space-y-4">
+            {/* Selected Avatar Display */}
+            <div className="flex justify-center mb-4">
+              <div className="bg-supernova rounded-full w-32 h-32 flex items-center justify-center overflow-hidden relative">
                 {avatar?.startsWith('/avatars/') ? (
                   <img 
                     src={avatar} 
@@ -230,146 +214,129 @@ export const AccountPage: React.FC = () => {
                     <div className="animate-spin w-8 h-8 border-2 border-shadowforce border-t-transparent rounded-full"></div>
                   </div>
                 )}
-                <div className="absolute inset-0 rounded-full bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Edit3 size={20} className="text-white" />
-                </div>
-              </button>
-            </div>
-
-            {/* Profile Fields - Right Side */}
-            <div className="flex-1">
-              <div className="space-y-4">
-                {/* Name Field */}
-                <div>
-                  <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
-                    Name
-                  </label>
-                  <div className="flex items-center gap-3">
-                    {!isEditingName ? (
-                      <>
-                        <h3 className="font-jakarta font-bold text-white-knight text-xl">
-                          {userProfile.name && userProfile.name.trim() !== '' 
-                            ? userProfile.name 
-                            : 'Complete Your Profile'}
-                        </h3>
-                        <button
-                          onClick={handleEditName}
-                          className="p-1 text-guardian hover:text-supernova transition-colors flex items-end"
-                          title="Edit name"
-                        >
-                          <Edit3 size={14} />
-                        </button>
-                      </>
-                    ) : (
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="text"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          className="font-jakarta font-bold text-white-knight text-xl bg-transparent border-b-2 border-supernova focus:outline-none focus:border-supernova-light"
-                          placeholder="Enter your name"
-                          autoFocus
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            onClick={handleSaveName}
-                            disabled={!name.trim() || nameLoading}
-                            className="p-1 bg-supernova text-shadowforce rounded text-sm font-semibold hover:bg-supernova-light disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Save name"
-                          >
-                            {nameLoading ? '...' : <Check size={16} />}
-                          </button>
-                          <button
-                            onClick={handleCancelName}
-                            className="p-1 bg-guardian/20 text-guardian rounded text-sm font-semibold hover:bg-guardian/30"
-                            title="Cancel"
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  {nameError && (
-                    <p className="text-red-400 text-sm mt-2">{nameError}</p>
-                  )}
-                </div>
-
-                {/* Email Field */}
-                <div>
-                  <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
-                    Email
-                  </label>
-                  <p className="text-white-knight text-lg">{userProfile.email}</p>
-                </div>
-                
-                {/* Company Field */}
-                <div>
-                  <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
-                    Company
-                  </label>
-                  <div className="flex items-center gap-3">
-                    {!isEditingCompany ? (
-                      <>
-                        <p className="text-white-knight text-lg">
-                          {userProfile.company && userProfile.company.trim() !== '' 
-                            ? userProfile.company 
-                            : 'No company specified'}
-                        </p>
-                        <button
-                          onClick={handleEditCompany}
-                          className="p-1 text-guardian hover:text-supernova transition-colors"
-                          title="Edit company"
-                        >
-                          <Edit3 size={14} />
-                        </button>
-                      </>
-                    ) : (
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="text"
-                          value={company}
-                          onChange={(e) => setCompany(e.target.value)}
-                          className="text-white-knight text-lg bg-transparent border-b-2 border-supernova focus:outline-none focus:border-supernova-light"
-                          placeholder="Enter your company name"
-                          autoFocus
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            onClick={handleSaveCompany}
-                            disabled={companyLoading}
-                            className="p-1 bg-supernova text-shadowforce rounded text-sm font-semibold hover:bg-supernova-light disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Save company"
-                          >
-                            {companyLoading ? '...' : <Check size={14} />}
-                          </button>
-                          <button
-                            onClick={handleCancelCompany}
-                            className="p-1 bg-guardian/20 text-guardian rounded text-sm font-semibold hover:bg-guardian/30"
-                            title="Cancel"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  {companyError && (
-                    <p className="text-red-400 text-sm mt-2">{companyError}</p>
-                  )}
-                </div>
               </div>
             </div>
-          </div>
-        </div>
+            
+            {/* Name Field */}
+            <div>
+              <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                Name
+              </label>
+              <div className="flex items-center gap-3">
+                {!isEditingName ? (
+                  <>
+                    <h3 className="font-jakarta font-bold text-white-knight text-xl">
+                      {userProfile.name && userProfile.name.trim() !== '' 
+                        ? userProfile.name 
+                        : 'Complete Your Profile'}
+                    </h3>
+                    <button
+                      onClick={handleEditName}
+                      className="p-1 text-guardian hover:text-supernova transition-colors flex items-end"
+                      title="Edit name"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="font-jakarta font-bold text-white-knight text-xl bg-transparent border-b-2 border-supernova focus:outline-none focus:border-supernova-light"
+                      placeholder="Enter your name"
+                      autoFocus
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveName}
+                        disabled={!name.trim() || nameLoading}
+                        className="p-1 bg-supernova text-shadowforce rounded text-sm font-semibold hover:bg-supernova-light disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Save name"
+                      >
+                        {nameLoading ? '...' : <Check size={16} />}
+                      </button>
+                      <button
+                        onClick={handleCancelName}
+                        className="p-1 bg-guardian/20 text-guardian rounded text-sm font-semibold hover:bg-guardian/30"
+                        title="Cancel"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {nameError && (
+                <p className="text-red-400 text-sm mt-2">{nameError}</p>
+              )}
+            </div>
 
-        {/* Current Plan Section */}
-        <div className="bg-shadowforce-light/30 rounded-xl p-4 md:p-6 border border-guardian/10">
-          <h2 className="font-anton text-xl text-white-knight uppercase tracking-wide mb-6">
-            CURRENT PLAN
-          </h2>
-          
-          <div className="space-y-4">
+            {/* Email Field */}
+            <div>
+              <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                Email
+              </label>
+              <p className="text-white-knight text-lg">{userProfile.email}</p>
+            </div>
+            
+            {/* Company Field */}
+            <div>
+              <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                Company
+              </label>
+              <div className="flex items-center gap-3">
+                {!isEditingCompany ? (
+                  <>
+                    <p className="text-white-knight text-lg">
+                      {userProfile.company && userProfile.company.trim() !== '' 
+                        ? userProfile.company 
+                        : 'No company specified'}
+                    </p>
+                    <button
+                      onClick={handleEditCompany}
+                      className="p-1 text-guardian hover:text-supernova transition-colors"
+                      title="Edit company"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
+                      className="text-white-knight text-lg bg-transparent border-b-2 border-supernova focus:outline-none focus:border-supernova-light"
+                      placeholder="Enter your company name"
+                      autoFocus
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveCompany}
+                        disabled={companyLoading}
+                        className="p-1 bg-supernova text-shadowforce rounded text-sm font-semibold hover:bg-supernova-light disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Save company"
+                      >
+                        {companyLoading ? '...' : <Check size={14} />}
+                      </button>
+                      <button
+                        onClick={handleCancelCompany}
+                        className="p-1 bg-guardian/20 text-guardian rounded text-sm font-semibold hover:bg-guardian/30"
+                        title="Cancel"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {companyError && (
+                <p className="text-red-400 text-sm mt-2">{companyError}</p>
+              )}
+            </div>
+
             {/* Plan */}
             <div>
               <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
@@ -377,30 +344,6 @@ export const AccountPage: React.FC = () => {
               </label>
               <p className="text-white-knight text-lg">
                 {stats?.tierName || 'TIER 2'}
-              </p>
-            </div>
-            
-            {/* Status */}
-            <div>
-              <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
-                Status
-              </label>
-              <p className={`text-lg ${
-                userProfile?.subscriptionStatus === 'active' 
-                  ? 'text-white-knight'
-                  : userProfile?.subscriptionStatus === 'trialing'
-                  ? 'text-blue-500'
-                  : userProfile?.subscriptionStatus === 'past_due'
-                  ? 'text-red-500'
-                  : userProfile?.subscriptionStatus === 'canceled'
-                  ? 'text-gray-500'
-                  : 'text-white-knight'
-              }`}>
-                {userProfile?.subscriptionStatus === 'active' && 'Active'}
-                {userProfile?.subscriptionStatus === 'trialing' && 'Trial'}
-                {userProfile?.subscriptionStatus === 'past_due' && 'Past Due'}
-                {userProfile?.subscriptionStatus === 'canceled' && 'Canceled'}
-                {(!userProfile?.subscriptionStatus || userProfile?.subscriptionStatus === 'free') && 'Free'}
               </p>
             </div>
             
@@ -421,25 +364,66 @@ export const AccountPage: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Choose Your Avatar Section - Right Side */}
+        <div className="bg-shadowforce-light/30 rounded-xl p-4 md:p-6 border border-guardian/10">
+          <h2 className="font-anton text-xl text-white-knight uppercase tracking-wide mb-6">
+            CHOOSE YOUR AVATAR
+          </h2>
+          
+          {/* Avatar Grid */}
+          <div className="grid grid-cols-6 gap-3 max-h-[500px] overflow-y-auto p-2">
+            {Array.from({ length: 60 }, (_, i) => `/avatars/avatar-${i + 1}.png`).map((avatarOption, index) => (
+              <button
+                key={index}
+                onClick={() => handleSelectAvatar(avatarOption)}
+                disabled={avatarLoading}
+                className={`
+                  w-full aspect-square rounded-full flex items-center justify-center overflow-hidden
+                  transition-all duration-200 hover:scale-110
+                  ${avatar === avatarOption 
+                    ? 'ring-4 ring-supernova' 
+                    : 'border-2 border-guardian/30 hover:border-supernova/50'
+                  }
+                  ${avatarLoading ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+                title={`Avatar ${index + 1}`}
+              >
+                <img 
+                  src={avatarOption} 
+                  alt={`Avatar ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement!.innerHTML = '👤';
+                  }}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Action Buttons */}
       <div className="mb-6 md:mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          <Button 
-            onClick={handleOpenGeneralFeedbackModal}
-            variant="outline"
-            size="lg"
-            className="flex items-center justify-center gap-3 py-4 text-lg text-guardian hover:text-shadowforce border-guardian/30 hover:border-supernova/50 transition-all duration-300"
-          >
-            <MessageCircle size={20} />
-            SUBMIT FEEDBACK
-          </Button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
+          <div className="flex flex-col items-center gap-2">
+            <Button 
+              onClick={handleOpenGeneralFeedbackModal}
+              variant="outline"
+              size="lg"
+              className="flex items-center justify-center gap-3 py-4 text-lg text-guardian hover:text-shadowforce border-guardian/30 hover:border-supernova/50 transition-all duration-300 w-full h-[60px]"
+            >
+              <MessageCircle size={20} />
+              SUBMIT FEEDBACK
+            </Button>
+            <span className="text-guardian text-sm">(50 free candidate reward)</span>
+          </div>
           
           <Button 
             variant="outline"
             size="lg"
-            className="flex items-center justify-center gap-3 py-4 text-lg text-guardian hover:text-shadowforce border-guardian/30 hover:border-supernova/50 transition-all duration-300"
+            className="flex items-center justify-center gap-3 py-4 text-lg text-guardian hover:text-shadowforce border-guardian/30 hover:border-supernova/50 transition-all duration-300 h-[60px]"
             onClick={() => window.open('https://billing.stripe.com/p/login/test_fZu7sLaoK9lN1oRfap9R600', '_blank')}
           >
             <CreditCard size={20} />
@@ -450,7 +434,7 @@ export const AccountPage: React.FC = () => {
             onClick={() => navigate('/subscription')}
             variant="outline"
             size="lg"
-            className="flex items-center justify-center gap-3 py-4 text-lg text-guardian hover:text-shadowforce border-guardian/30 hover:border-supernova/50 transition-all duration-300"
+            className="flex items-center justify-center gap-3 py-4 text-lg text-guardian hover:text-shadowforce border-guardian/30 hover:border-supernova/50 transition-all duration-300 h-[60px]"
           >
             <Crown size={20} />
             GET MORE CANDIDATES
@@ -463,6 +447,15 @@ export const AccountPage: React.FC = () => {
         <h2 className="font-anton text-xl md:text-2xl text-white-knight uppercase tracking-wide mb-6 md:mb-8">
           USAGE STATISTICS
         </h2>
+
+        {/* Candidates Remaining - Full Width */}
+        <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10 mb-6">
+          <div className="flex items-center justify-center gap-4">
+            <Users size={24} className="text-supernova" />
+            <span className="text-guardian text-lg font-semibold">Candidates Remaining:</span>
+            <span className="text-white-knight font-bold text-3xl">{stats?.candidatesRemaining || 0}</span>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
           <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10">
@@ -532,14 +525,6 @@ export const AccountPage: React.FC = () => {
           type={alertModal.type}
         />
       )}
-
-      {/* Avatar Selector Modal */}
-      <AvatarSelector
-        isOpen={isAvatarSelectorOpen}
-        currentAvatar={avatar}
-        onClose={handleCloseAvatarSelector}
-        onSelect={handleSelectAvatar}
-      />
     </div>
   );
 };

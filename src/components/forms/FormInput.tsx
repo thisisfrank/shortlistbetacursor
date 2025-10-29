@@ -42,6 +42,7 @@ export const FormInput: React.FC<FormInputProps> = ({
         }`}
       >
         {label}
+        {props.required && <span className="text-red-400 ml-1">*</span>}
       </label>
       <div className="relative">
         <input
@@ -120,6 +121,7 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
         className="block text-sm font-jakarta font-semibold text-supernova mb-1 uppercase tracking-wide"
       >
         {label}
+        {props.required && <span className="text-red-400 ml-1">*</span>}
       </label>
       <textarea
         id={inputId}
@@ -169,6 +171,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
         }`}
       >
         {label}
+        {props.required && <span className="text-red-400 ml-1">*</span>}
       </label>
       <select
         id={inputId}

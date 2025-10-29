@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { X, Gift } from 'lucide-react';
 import { Button } from './Button';
 
-interface FeedbackFormData {
+export interface FeedbackFormData {
   scaleRating: number | null;
   leastFavorite: string;
   favorite: string;
-  suggestions: string;
-  timeSaved: string;
-  mostValuableFeature: string;
-  otherFeature: string;
   futureNeeds: string;
+  timeSaved: string;
+  mostValuableFeature: string[];
+  otherFeature: string;
   testimonialPermission: boolean;
+  testimonialText: string;
 }
 
 interface GeneralFeedbackModalProps {
@@ -20,7 +20,7 @@ interface GeneralFeedbackModalProps {
   isSubmitting: boolean;
   onClose: () => void;
   onFeedbackChange: (feedback: string) => void;
-  onSubmit: () => void;
+  onSubmit: (formData: FeedbackFormData) => void;
 }
 
 export const GeneralFeedbackModal: React.FC<GeneralFeedbackModalProps> = ({
@@ -35,47 +35,46 @@ export const GeneralFeedbackModal: React.FC<GeneralFeedbackModalProps> = ({
     scaleRating: null,
     leastFavorite: '',
     favorite: '',
-    suggestions: '',
-    timeSaved: '',
-    mostValuableFeature: '',
-    otherFeature: '',
     futureNeeds: '',
-    testimonialPermission: false
+    timeSaved: '',
+    mostValuableFeature: [],
+    otherFeature: '',
+    testimonialPermission: false,
+    testimonialText: ''
   });
 
   if (!isOpen) return null;
 
-  const handleInputChange = (field: keyof FeedbackFormData, value: string | number | boolean) => {
+  const handleInputChange = (field: keyof FeedbackFormData, value: string | number | boolean | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFeatureToggle = (feature: string) => {
+    setFormData(prev => {
+      const currentFeatures = prev.mostValuableFeature;
+      if (currentFeatures.includes(feature)) {
+        return { ...prev, mostValuableFeature: currentFeatures.filter(f => f !== feature) };
+      } else {
+        return { ...prev, mostValuableFeature: [...currentFeatures, feature] };
+      }
+    });
   };
 
   const isFormValid = () => {
     return formData.scaleRating !== null &&
            formData.leastFavorite.trim() !== '' &&
            formData.favorite.trim() !== '' &&
-           formData.suggestions.trim() !== '' &&
-           formData.timeSaved !== '' &&
-           formData.mostValuableFeature !== '' &&
            formData.futureNeeds.trim() !== '' &&
-           (formData.mostValuableFeature !== 'other' || formData.otherFeature.trim() !== '');
+           formData.timeSaved !== '' &&
+           formData.mostValuableFeature.length > 0 &&
+           (!formData.mostValuableFeature.includes('other') || formData.otherFeature.trim() !== '') &&
+           (!formData.testimonialPermission || formData.testimonialText.trim() !== '');
   };
 
   const handleSubmit = () => {
     if (isFormValid()) {
-      // Convert form data to feedback string for compatibility
-      const feedbackText = `
-Scale Rating: ${formData.scaleRating}/10
-Least Favorite: ${formData.leastFavorite}
-Favorite Part: ${formData.favorite}
-Suggestions: ${formData.suggestions}
-Time Saved: ${formData.timeSaved} hours per week
-Most Valuable Feature: ${formData.mostValuableFeature}${formData.mostValuableFeature === 'other' ? ` - ${formData.otherFeature}` : ''}
-Future Needs: ${formData.futureNeeds}
-Testimonial Permission: ${formData.testimonialPermission ? 'Yes - May be used as testimonial' : 'No - Private feedback only'}
-      `.trim();
-      
-      onFeedbackChange(feedbackText);
-      onSubmit();
+      // Pass structured form data to parent
+      onSubmit(formData);
     }
   };
 
@@ -150,15 +149,15 @@ Testimonial Permission: ${formData.testimonialPermission ? 'Yes - May be used as
             />
           </div>
 
-          {/* 4. Suggestions */}
+          {/* 4. Future Needs */}
           <div>
             <label className="block text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide mb-3">
-              4. Please share your suggestions, feature requests, or other general feedback *
+              4. If we could build one feature that would save you the most time or get you better candidates, what would it be? *
             </label>
             <textarea
-              value={formData.suggestions}
-              onChange={(e) => handleInputChange('suggestions', e.target.value)}
-              placeholder="Share your ideas for improvements, new features, or general thoughts..."
+              value={formData.futureNeeds}
+              onChange={(e) => handleInputChange('futureNeeds', e.target.value)}
+              placeholder="Describe the feature that would make the biggest impact for you..."
               className="w-full p-4 bg-shadowforce-light border border-guardian/30 rounded-lg text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta resize-vertical min-h-[100px]"
               rows={4}
             />
@@ -189,7 +188,7 @@ Testimonial Permission: ${formData.testimonialPermission ? 'Yes - May be used as
           {/* 6. Feature Relevance */}
           <div>
             <label className="block text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide mb-4">
-              6. Which feature do you find most valuable right now? *
+              6. Which features do you find most valuable right now? (Select all that apply) *
             </label>
             <div className="space-y-3">
               {[
@@ -201,18 +200,17 @@ Testimonial Permission: ${formData.testimonialPermission ? 'Yes - May be used as
               ].map((feature) => (
                 <label key={feature.value} className="flex items-center gap-3 cursor-pointer">
                   <input
-                    type="radio"
-                    name="mostValuableFeature"
+                    type="checkbox"
                     value={feature.value}
-                    checked={formData.mostValuableFeature === feature.value}
-                    onChange={(e) => handleInputChange('mostValuableFeature', e.target.value)}
-                    className="w-4 h-4 text-supernova bg-shadowforce-light border-guardian/30 focus:ring-supernova"
+                    checked={formData.mostValuableFeature.includes(feature.value)}
+                    onChange={() => handleFeatureToggle(feature.value)}
+                    className="w-4 h-4 text-supernova bg-shadowforce-light border-guardian/30 rounded focus:ring-supernova"
                   />
                   <span className="text-white-knight font-jakarta">{feature.label}</span>
                 </label>
               ))}
             </div>
-            {formData.mostValuableFeature === 'other' && (
+            {formData.mostValuableFeature.includes('other') && (
               <div className="mt-3">
                 <input
                   type="text"
@@ -225,20 +223,6 @@ Testimonial Permission: ${formData.testimonialPermission ? 'Yes - May be used as
             )}
           </div>
 
-          {/* 7. Future Needs */}
-          <div>
-            <label className="block text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide mb-3">
-              7. If we could build one feature that would save you the most time or get you better candidates, what would it be? *
-            </label>
-            <textarea
-              value={formData.futureNeeds}
-              onChange={(e) => handleInputChange('futureNeeds', e.target.value)}
-              placeholder="Describe the feature that would make the biggest impact for you..."
-              className="w-full p-4 bg-shadowforce-light border border-guardian/30 rounded-lg text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta resize-vertical min-h-[100px]"
-              rows={4}
-            />
-          </div>
-
           {/* Testimonial Permission */}
           <div className="pt-4">
             <label className="flex items-start gap-3 cursor-pointer group">
@@ -249,9 +233,20 @@ Testimonial Permission: ${formData.testimonialPermission ? 'Yes - May be used as
                 className="w-4 h-4 mt-0.5 text-supernova bg-shadowforce border-guardian/40 rounded focus:ring-supernova focus:ring-offset-0 cursor-pointer"
               />
               <span className="text-guardian/80 text-sm font-jakarta group-hover:text-guardian transition-colors">
-                You can use this feedback to help others learn about Shortlist
+                You can use my testimonial for marketing purposes.
               </span>
             </label>
+            {formData.testimonialPermission && (
+              <div className="mt-3">
+                <textarea
+                  value={formData.testimonialText}
+                  onChange={(e) => handleInputChange('testimonialText', e.target.value)}
+                  placeholder="Write your testimonial here... (e.g., how Shortlist has helped you, what results you've achieved, etc.)"
+                  className="w-full p-4 bg-shadowforce-light border border-guardian/30 rounded-lg text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta resize-vertical min-h-[100px]"
+                  rows={4}
+                />
+              </div>
+            )}
           </div>
         </div>
 

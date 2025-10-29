@@ -298,7 +298,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
       {/* Must Have Skills */}
       <div className="mb-8">
         <label className="block text-sm font-jakarta font-semibold text-supernova mb-3 uppercase tracking-wide">
-          Must Have Skills (3+ required)
+          Must Have Skills <span className="text-red-400">*</span>
         </label>
         <div className="flex gap-3">
           <input
@@ -307,14 +307,14 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
             onChange={(e) => setNewSkill(e.target.value)}
             onKeyDown={handleSkillKeyDown}
             placeholder="Enter skills here"
-            className="flex-1 border-0 border-b-2 px-0 py-4 text-lg bg-transparent text-white-knight placeholder-guardian/60 font-jakarta focus:ring-0 focus:border-supernova transition-colors duration-200 border-guardian/40 hover:border-guardian/60"
+            className="flex-1 border-0 border-b-2 pl-4 pr-0 py-4 text-lg bg-transparent text-white-knight placeholder-guardian/60 font-jakarta focus:ring-0 focus:border-supernova transition-colors duration-200 border-guardian/40 hover:border-guardian/60"
           />
           <Button
             type="button"
             onClick={addSkill}
             variant="outline"
             size="md"
-            disabled={!newSkill.trim() || formData.mustHaveSkills.length >= 3}
+            disabled={!newSkill.trim()}
             className="flex items-center gap-2"
           >
             <Plus size={16} />
