@@ -35,7 +35,19 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`Anthropic API error: ${response.status} - ${errorText}`)
-      throw new Error(`Anthropic API error: ${response.status}`)
+      
+      // Return more detailed error to help with debugging
+      return new Response(
+        JSON.stringify({ 
+          error: `Anthropic API error: ${response.status}`,
+          details: errorText,
+          timestamp: new Date().toISOString()
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: response.status,
+        },
+      )
     }
 
     const data = await response.json()
@@ -52,7 +64,9 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString()
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

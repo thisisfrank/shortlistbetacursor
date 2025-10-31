@@ -102,7 +102,14 @@ IMPORTANT: Return ONLY the 3 profiles in the exact format shown above. Each fiel
     });
 
     if (!response.ok) {
-      throw new Error(`Profile generation failed: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ Anthropic API Error (profiles):', {
+        status: response.status,
+        error: errorData.error,
+        details: errorData.details,
+        timestamp: errorData.timestamp
+      });
+      throw new Error(`Profile generation failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
     }
 
     const responseData = await response.json();

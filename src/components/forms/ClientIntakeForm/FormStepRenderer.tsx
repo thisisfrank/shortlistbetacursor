@@ -21,7 +21,7 @@ export const FormStepRenderer: React.FC<FormStepRendererProps> = ({
   onSubmit,
   onReset
 }) => {
-  const { formData, handleInputChange, handleSkillsChange, errors, isSubmitting } = useClientIntakeForm();
+  const { formData, handleInputChange, handleSkillsChange, errors, isSubmitting, generatedProfiles } = useClientIntakeForm();
 
   // Scroll to top whenever the current step changes
   useEffect(() => {

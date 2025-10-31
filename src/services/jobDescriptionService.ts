@@ -61,7 +61,14 @@ Return only the job description text, no additional formatting or headers.`;
     });
 
     if (!response.ok) {
-      throw new Error(`Job description generation failed: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ Anthropic API Error:', {
+        status: response.status,
+        error: errorData.error,
+        details: errorData.details,
+        timestamp: errorData.timestamp
+      });
+      throw new Error(`Job description generation failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
     }
 
     const data_response = await response.json();
@@ -161,7 +168,14 @@ Return only the formatted job description, no explanations.`;
     });
 
     if (!response.ok) {
-      throw new Error(`Job description formatting failed: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      console.error('❌ Anthropic API Error (formatting):', {
+        status: response.status,
+        error: errorData.error,
+        details: errorData.details,
+        timestamp: errorData.timestamp
+      });
+      throw new Error(`Job description formatting failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
     }
 
     const data_response = await response.json();
