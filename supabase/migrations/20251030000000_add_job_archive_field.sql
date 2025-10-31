@@ -14,3 +14,7 @@ CREATE INDEX idx_jobs_user_archived ON jobs(user_id, is_archived);
 
 
 
+
+
+
+

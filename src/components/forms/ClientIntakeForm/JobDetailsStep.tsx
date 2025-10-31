@@ -68,13 +68,13 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
   const freeTier = tiers.find(tier => tier.name === 'Free');
   const maxCandidates = freeTier?.monthlyCandidateAllotment || 50;
 
-  // Auto-trigger job description generation when 3 skills are added
+  // Auto-trigger job description generation when at least 3 skills are added
   // ONLY if the description field is empty and hasn't been edited by the user
   useEffect(() => {
     const hasExistingDescription = formData.description && formData.description.trim().length > 0;
     
     if (
-      formData.mustHaveSkills.length === 3 && 
+      formData.mustHaveSkills.length >= 3 && 
       formData.title && 
       !hasExistingDescription && // Don't auto-generate if description already has content
       !isGeneratingDescription &&
@@ -260,7 +260,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
   };
 
   const addSkill = () => {
-    if (newSkill.trim() && formData.mustHaveSkills.length < 3) {
+    if (newSkill.trim()) {
       onSkillsChange([...formData.mustHaveSkills, newSkill.trim()]);
       setNewSkill('');
     }
