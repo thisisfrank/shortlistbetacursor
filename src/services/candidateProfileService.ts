@@ -5,6 +5,7 @@ export interface CandidateProfile {
   yearsOfExperience: number;
   previousWorkExperience: string[];
   relevantSkills: string[];
+  keyProjects: string[];
 }
 
 export interface ProfileGenerationRequest {
@@ -49,6 +50,7 @@ Location: [realistic US city, state]
 Total Years of Experience: [number between appropriate range for ${data.seniorityLevel}]
 Previous Work Experience: [2-3 previous relevant job titles and companies, format: "Title at Company"]
 Relevant Skills: [4-5 skills from the required skills and related technologies]
+Key Projects: [2-3 specific projects with measurable impact, format: "Brief project description with tech or metrics"]
 
 Profile 2:
 [same format, different person with varied background]
@@ -66,6 +68,14 @@ CRITICAL Guidelines:
   * Profile 3: Mix of agency/consultancy and product companies
 - Each profile should have DIFFERENT company types, industries, and specializations
 - Skills should overlap with required skills but each profile should emphasize different strengths
+- Key Projects should showcase DIFFERENT types of work:
+  * System architecture/infrastructure projects
+  * Customer-facing features with business impact
+  * Technical migrations or modernization efforts
+  * Scale/performance optimizations
+  * New product development
+- Include specific metrics in projects when relevant (users, revenue, performance improvement)
+- Mention key technologies used in project context
 - Use specific, recognizable company names (not generic "Tech Company" or "Startup")
 - Use industry-accurate job titles
 - Keep content professional and concise
@@ -122,6 +132,7 @@ const parseProfilesFromText = (text: string): CandidateProfile[] => {
     let yearsOfExperience = 0;
     const previousWorkExperience: string[] = [];
     let relevantSkills: string[] = [];
+    let keyProjects: string[] = [];
     
     lines.forEach(line => {
       const trimmedLine = line.trim();
@@ -148,6 +159,13 @@ const parseProfilesFromText = (text: string): CandidateProfile[] => {
         if (skillsText) {
           relevantSkills = skillsText.split(',').map(s => s.trim()).filter(s => s);
         }
+      } else if (trimmedLine.match(/^-?\s*Key Projects:/i)) {
+        const projectsText = trimmedLine.replace(/^-?\s*Key Projects:\s*/i, '').trim();
+        if (projectsText) {
+          // Split by comma or semicolon
+          const projects = projectsText.split(/[,;]/).map(p => p.trim()).filter(p => p);
+          keyProjects.push(...projects);
+        }
       }
     });
     
@@ -158,7 +176,8 @@ const parseProfilesFromText = (text: string): CandidateProfile[] => {
         location,
         yearsOfExperience,
         previousWorkExperience,
-        relevantSkills
+        relevantSkills,
+        keyProjects
       });
     }
   });
@@ -194,7 +213,12 @@ const generateFallbackProfiles = (data: ProfileGenerationRequest): CandidateProf
         'Software Engineer at Microsoft',
         'Junior Developer at IBM'
       ],
-      relevantSkills: [...skills.slice(0, 3), 'AWS', 'Git']
+      relevantSkills: [...skills.slice(0, 3), 'AWS', 'Git'],
+      keyProjects: [
+        'Built microservices architecture handling 10M+ daily requests',
+        'Led team of 5 engineers on cloud migration reducing costs 40%',
+        'Developed real-time analytics dashboard for 50K+ users'
+      ]
     },
     {
       id: 'profile-2',
@@ -206,7 +230,12 @@ const generateFallbackProfiles = (data: ProfileGenerationRequest): CandidateProf
         'Tech Lead at Series B Startup',
         'Developer at Y Combinator Company'
       ],
-      relevantSkills: [...skills.slice(0, 3), 'Docker', 'CI/CD']
+      relevantSkills: [...skills.slice(0, 3), 'Docker', 'CI/CD'],
+      keyProjects: [
+        'Architected payment system processing $20M annually',
+        'Built ML pipeline improving recommendation accuracy by 35%',
+        'Led API redesign serving 1M+ mobile app users'
+      ]
     },
     {
       id: 'profile-3',
@@ -218,7 +247,12 @@ const generateFallbackProfiles = (data: ProfileGenerationRequest): CandidateProf
         'Full Stack Developer at Huge Inc',
         'Web Developer at Local Agency'
       ],
-      relevantSkills: [...skills.slice(0, 3), 'Agile', 'REST APIs']
+      relevantSkills: [...skills.slice(0, 3), 'Agile', 'REST APIs'],
+      keyProjects: [
+        'Developed e-commerce platform generating $5M in first year',
+        'Migrated legacy system to modern stack with zero downtime',
+        'Created customer portal increasing engagement by 60%'
+      ]
     }
   ];
 };

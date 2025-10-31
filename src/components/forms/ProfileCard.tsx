@@ -1,6 +1,6 @@
 import React from 'react';
 import { CandidateProfile } from '../../services/candidateProfileService';
-import { MapPin, Briefcase, Award } from 'lucide-react';
+import { MapPin, Briefcase, Award, Layers } from 'lucide-react';
 
 interface ProfileCardProps {
   profile: CandidateProfile;
@@ -82,6 +82,23 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
           {profile.previousWorkExperience.map((exp, index) => (
             <p key={index} className="text-sm text-white-knight font-jakarta">
               • {exp}
+            </p>
+          ))}
+        </div>
+      </div>
+
+      {/* Key Projects */}
+      <div className="mb-3">
+        <div className="flex items-center gap-2 mb-2">
+          <Layers size={14} className="text-supernova" />
+          <span className="text-xs font-jakarta font-semibold text-supernova uppercase tracking-wide">
+            Key Projects
+          </span>
+        </div>
+        <div className="space-y-1 ml-5">
+          {profile.keyProjects.map((project, index) => (
+            <p key={index} className="text-sm text-white-knight font-jakarta">
+              • {project}
             </p>
           ))}
         </div>
