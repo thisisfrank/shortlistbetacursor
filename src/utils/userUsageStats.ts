@@ -1,4 +1,5 @@
 import { UserProfile, Job, Candidate, Tier, UserUsageStats, CreditTransaction } from '../types';
+import { FREE_TIER_ID } from '../config/tiers.config';
 
 export function getUserUsageStats(
   userProfile: UserProfile | null,
@@ -12,7 +13,6 @@ export function getUserUsageStats(
   // Find the user's tier
   const tier = tiers.find(t => t.id === userProfile.tierId);
   const tierName = tier?.name ?? 'Free';
-  const FREE_TIER_ID = '5841d1d6-20d7-4360-96f8-0444305fac5b';
   const isFreeTier = userProfile.tierId === FREE_TIER_ID;
 
   // Jobs submitted by this user (for display purposes only - no limits)
@@ -59,7 +59,7 @@ export function getUserUsageStats(
     });
   } else {
     // Paid tiers: Use available_credits as source of truth
-    candidatesLimit = tier?.monthlyCandidateAllotment ?? 20;
+    candidatesLimit = tier?.monthlyCandidateAllotment ?? 50;
     
     // Use available_credits from database as the remaining credits
     // This field is updated when candidates are submitted and reset by Stripe webhook
@@ -104,15 +104,13 @@ export function getUserUsageStats(
   }
 
   return {
-    jobsUsed,
-    jobsLimit: 0, // No longer used - unlimited jobs
-    jobsRemaining: 0, // No longer used - unlimited jobs
+    jobsUsed, // For display only - no limits enforced
     candidatesUsed,
     candidatesLimit,
     candidatesRemaining,
     creditsResetDate,
     tierName,
-    // New fields for account page display
+    // Account page display fields
     totalCandidatesSourced,
     candidatesSourcedThisMonth,
     totalJobs,

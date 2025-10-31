@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../../ui/Button';
 import { Badge } from '../../ui/Badge';
 import { Users } from 'lucide-react';
+import { FREE_TIER_ID } from '../../../config/tiers.config';
 
 interface SimpleSummaryStepProps {
   formData: {
@@ -49,9 +50,9 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
   // Get user's actual available credits
   const userAvailableCredits = userProfile?.availableCredits || 0;
   
-  // Set default based on user tier - free tier gets 20, paid users get 50
-  const isFreeUser = userProfile?.tierId === '5841d1d6-20d7-4360-96f8-0444305fac5b';
-  const defaultCandidates = isFreeUser ? 20 : 50;
+  // Set default based on user tier - all users get 50 by default
+  const isFreeUser = userProfile?.tierId === FREE_TIER_ID;
+  const defaultCandidates = 50;
   const candidatesRequested = parseInt(formData.candidatesRequested) || defaultCandidates;
   
   // Handle slider changes with continuous values
@@ -189,7 +190,7 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
             <div className="mt-4 space-y-4">
               <p className="text-red-400 font-jakarta font-semibold text-sm">
                 You've requested {candidatesRequested} candidates but only have {userAvailableCredits} credits available. <br/>
-                {userProfile?.tierId === '5841d1d6-20d7-4360-96f8-0444305fac5b' 
+                {userProfile?.tierId === FREE_TIER_ID
                   ? 'Free tier credits are one-time only - upgrade to a paid plan for monthly credits.'
                   : 'Please reduce your request or upgrade to a paid tier for more credits.'
                 }
@@ -201,7 +202,7 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
                   className="bg-supernova hover:bg-supernova/90 text-shadowforce font-anton px-6 py-2"
                   size="sm"
                 >
-                  {userProfile?.tierId === '5841d1d6-20d7-4360-96f8-0444305fac5b' ? 'UPGRADE PLAN' : 'GET MORE CREDITS'}
+                  {userProfile?.tierId === FREE_TIER_ID ? 'UPGRADE PLAN' : 'GET MORE CREDITS'}
                 </Button>
               </div>
             </div>

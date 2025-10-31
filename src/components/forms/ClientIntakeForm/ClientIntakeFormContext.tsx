@@ -3,6 +3,7 @@ import { FormStep } from '../../../types';
 import { useAuth } from '../../../context/AuthContext';
 import { generateJobDescription as generateJobDescriptionService } from '../../../services/jobDescriptionService';
 import { generateCandidateProfiles, CandidateProfile } from '../../../services/candidateProfileService';
+import { FREE_TIER_ID } from '../../../config/tiers.config';
 
 export interface FormData {
   companyName: string;
@@ -137,8 +138,8 @@ export const ClientIntakeFormProvider: React.FC<ClientIntakeFormProviderProps> =
   // Set default candidates requested based on user tier (only on mount)
   useEffect(() => {
     if (userProfile && formData.candidatesRequested === '20') {
-      const isFreeUser = userProfile.tierId === '5841d1d6-20d7-4360-96f8-0444305fac5b';
-      const defaultCandidates = isFreeUser ? '20' : '50';
+      const isFreeUser = userProfile.tierId === FREE_TIER_ID;
+      const defaultCandidates = isFreeUser ? '50' : '50';
       setFormData(prev => ({ ...prev, candidatesRequested: defaultCandidates }));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -204,7 +204,6 @@ export const CandidatesView: React.FC = () => {
     isSubmitting: false
   });
   const [showArchived, setShowArchived] = useState(false);
-  const [archivedJobIds, setArchivedJobIds] = useState<Set<string>>(new Set());
 
   
   // Define currentJobCandidates at component level with shortlist filtering
@@ -747,16 +746,48 @@ export const CandidatesView: React.FC = () => {
     }));
   };
 
-  const handleArchiveJob = (jobId: string) => {
-    setArchivedJobIds(prev => new Set([...prev, jobId]));
+  const handleArchiveJob = async (jobId: string) => {
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .update({ is_archived: true })
+        .eq('id', jobId);
+      
+      if (error) throw error;
+      
+      // Update local state via DataContext
+      await updateJob(jobId, { isArchived: true });
+    } catch (error) {
+      console.error('Error archiving job:', error);
+      setAlertModal({
+        isOpen: true,
+        title: 'Archive Error',
+        message: 'Failed to archive job. Please try again.',
+        type: 'error'
+      });
+    }
   };
 
-  const handleUnarchiveJob = (jobId: string) => {
-    setArchivedJobIds(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(jobId);
-      return newSet;
-    });
+  const handleUnarchiveJob = async (jobId: string) => {
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .update({ is_archived: false })
+        .eq('id', jobId);
+      
+      if (error) throw error;
+      
+      // Update local state via DataContext
+      await updateJob(jobId, { isArchived: false });
+    } catch (error) {
+      console.error('Error unarchiving job:', error);
+      setAlertModal({
+        isOpen: true,
+        title: 'Unarchive Error',
+        message: 'Failed to unarchive job. Please try again.',
+        type: 'error'
+      });
+    }
   };
 
   const handleSubmitFeedback = async () => {
@@ -1617,9 +1648,9 @@ export const CandidatesView: React.FC = () => {
     }
     
     // Apply individual job archiving filter
-    const isJobArchived = archivedJobIds.has(job.id);
+    const isJobArchived = job.isArchived || false;
     if (!showArchived && isJobArchived) {
-      return false; // Hide jobs that are in archivedJobIds when not showing archived
+      return false; // Hide archived jobs when not showing archived
     }
     // When showArchived is true, show all jobs (both archived and non-archived)
     
@@ -1632,7 +1663,7 @@ export const CandidatesView: React.FC = () => {
   });
   
   // Calculate how many jobs are archived
-  const archivedJobsCount = archivedJobIds.size;
+  const archivedJobsCount = userJobs.filter(job => job.isArchived).length;
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
@@ -1742,7 +1773,7 @@ export const CandidatesView: React.FC = () => {
                     const clientStatus = isCompleted ? 'COMPLETED' : 
                                          hasCandidates ? 'IN PROGRESS - CANDIDATES AVAILABLE' : 'IN PROGRESS';
                     const isExpanded = expandedJobs.has(job.id);
-                    const isJobArchived = archivedJobIds.has(job.id);
+                    const isJobArchived = job.isArchived || false;
                   
                   return (
                     <Card 

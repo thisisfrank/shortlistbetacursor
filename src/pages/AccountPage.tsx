@@ -1,36 +1,49 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { getUserUsageStats } from '../utils/userUsageStats';
-import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { GeneralFeedbackModal } from '../components/ui/GeneralFeedbackModal';
 import { AlertModal } from '../components/ui/AlertModal';
 import { useGeneralFeedback } from '../hooks/useGeneralFeedback';
-import { supabase } from '../lib/supabase';
+import { useProfileEdit } from '../hooks/useProfileEdit';
 import { Users, Briefcase, CreditCard, LogOut, Crown, User, Edit3, Check, X, MessageCircle } from 'lucide-react';
 
 export const AccountPage: React.FC = () => {
-  const { userProfile, signOut, refreshProfile } = useAuth();
+  const { userProfile, signOut } = useAuth();
   const { jobs, candidates, tiers, creditTransactions } = useData();
   const navigate = useNavigate();
+
+  // Redirect sourcers to their dedicated account page
+  useEffect(() => {
+    if (userProfile?.role === 'sourcer') {
+      navigate('/sourcer/account', { replace: true });
+    }
+  }, [userProfile, navigate]);
   
-  // Name editing state
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [name, setName] = useState(userProfile?.name || '');
-  const [nameLoading, setNameLoading] = useState(false);
-  const [nameError, setNameError] = useState('');
-
-  // Company editing state
-  const [isEditingCompany, setIsEditingCompany] = useState(false);
-  const [company, setCompany] = useState(userProfile?.company || '');
-  const [companyLoading, setCompanyLoading] = useState(false);
-  const [companyError, setCompanyError] = useState('');
-
-  // Avatar editing state
-  const [avatar, setAvatar] = useState(userProfile?.avatar || '/avatars/avatar-1.png');
-  const [avatarLoading, setAvatarLoading] = useState(false);
+  // Use the profile editing hook
+  const {
+    name,
+    isEditingName,
+    nameLoading,
+    nameError,
+    setName,
+    handleEditName,
+    handleSaveName,
+    handleCancelName,
+    company,
+    isEditingCompany,
+    companyLoading,
+    companyError,
+    setCompany,
+    handleEditCompany,
+    handleSaveCompany,
+    handleCancelCompany,
+    avatar,
+    avatarLoading,
+    handleSelectAvatar,
+  } = useProfileEdit();
 
   // General feedback functionality
   const {
@@ -43,13 +56,6 @@ export const AccountPage: React.FC = () => {
     setAlertModal
   } = useGeneralFeedback('account');
 
-  // Update local state when userProfile changes
-  React.useEffect(() => {
-    setName(userProfile?.name || '');
-    setCompany(userProfile?.company || '');
-    setAvatar(userProfile?.avatar || '/avatars/avatar-1.png');
-  }, [userProfile?.name, userProfile?.company, userProfile?.avatar]);
-
   const stats = getUserUsageStats(userProfile as any, jobs, candidates, tiers, creditTransactions);
 
   const handleSignOut = async () => {
@@ -57,118 +63,6 @@ export const AccountPage: React.FC = () => {
       await signOut();
     } catch (error) {
       console.error('Error signing out:', error);
-    }
-  };
-
-  const handleSaveName = async () => {
-    if (!userProfile || !name.trim()) return;
-    
-    setNameLoading(true);
-    setNameError('');
-    
-    try {
-      const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update({ name: name.trim() })
-        .eq('id', userProfile.id);
-      
-      if (updateError) {
-        throw updateError;
-      }
-      
-      setIsEditingName(false);
-      
-      // Refresh the profile to get updated data
-      if (refreshProfile) {
-        await refreshProfile();
-      }
-      
-    } catch (err: any) {
-      setNameError(err.message || 'Failed to update name');
-    } finally {
-      setNameLoading(false);
-    }
-  };
-
-  const handleCancelName = () => {
-    setName(userProfile?.name || '');
-    setIsEditingName(false);
-    setNameError('');
-  };
-
-  const handleEditName = () => {
-    setIsEditingName(true);
-    setNameError('');
-  };
-
-  const handleSaveCompany = async () => {
-    if (!userProfile) return;
-    
-    setCompanyLoading(true);
-    setCompanyError('');
-    
-    try {
-      const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update({ company: company.trim() || null })
-        .eq('id', userProfile.id);
-      
-      if (updateError) {
-        throw updateError;
-      }
-      
-      setIsEditingCompany(false);
-      
-      // Refresh the profile to get updated data
-      if (refreshProfile) {
-        await refreshProfile();
-      }
-      
-    } catch (err: any) {
-      setCompanyError(err.message || 'Failed to update company');
-    } finally {
-      setCompanyLoading(false);
-    }
-  };
-
-  const handleCancelCompany = () => {
-    setCompany(userProfile?.company || '');
-    setIsEditingCompany(false);
-    setCompanyError('');
-  };
-
-  const handleEditCompany = () => {
-    setIsEditingCompany(true);
-    setCompanyError('');
-  };
-
-  const handleSelectAvatar = async (selectedAvatar: string) => {
-    if (!userProfile) return;
-    
-    setAvatarLoading(true);
-    
-    try {
-      const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update({ avatar: selectedAvatar })
-        .eq('id', userProfile.id);
-      
-      if (updateError) {
-        throw updateError;
-      }
-      
-      setAvatar(selectedAvatar);
-      
-      // Refresh the profile to get updated data
-      if (refreshProfile) {
-        await refreshProfile();
-      }
-      
-    } catch (err: any) {
-      console.error('Failed to update avatar:', err.message);
-      // Could show an error message here if needed
-    } finally {
-      setAvatarLoading(false);
     }
   };
 

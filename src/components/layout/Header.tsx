@@ -198,7 +198,7 @@ export const Header: React.FC = () => {
           )}
 
           {/* Candidates dropdown - positioned between center nav and right side */}
-          {userProfile && (
+          {userProfile && userProfile.role !== 'sourcer' && (
             <div className="absolute right-64 flex items-center" ref={dropdownRef}>
               <div className="relative">
                 <button 
@@ -241,7 +241,7 @@ export const Header: React.FC = () => {
           {/* Show user info when authenticated */}
           {userProfile && (
             <Link 
-              to="/account"
+              to={userProfile.role === 'sourcer' ? '/sourcer/account' : '/account'}
               className="text-white-knight hover:text-supernova transition-colors cursor-pointer flex items-center gap-3"
             >
               <div className="w-8 h-8 bg-shadowforce-light rounded-full flex items-center justify-center border border-guardian/20 overflow-hidden">
@@ -361,7 +361,7 @@ export const Header: React.FC = () => {
             )}
 
             {/* Candidates - Mobile */}
-            {userProfile && (
+            {userProfile && userProfile.role !== 'sourcer' && (
               <div className="space-y-2">
                 <button 
                   onClick={() => setIsCandidatesDropdownOpen(!isCandidatesDropdownOpen)}
@@ -398,7 +398,7 @@ export const Header: React.FC = () => {
             {/* User Info - Mobile */}
             {userProfile && (
               <Link 
-                to="/account"
+                to={userProfile.role === 'sourcer' ? '/sourcer/account' : '/account'}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 bg-shadowforce rounded-lg border border-guardian/20 hover:border-supernova/30 transition-all"
               >

@@ -5,125 +5,58 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { CheckCircle, Zap, Crown, Star, Users, X } from 'lucide-react';
 import { CreditTopOff } from './CreditTopOff';
-
-// Updated subscription plans with payment links
-const subscriptionPlans = [
-  {
-    id: 'basic',
-    name: 'Average Recruiter',
-    price: 29,
-    priceId: 'price_1SALD5Hb6LdHADWYbyDzUv7a', // Updated Stripe price ID
-    paymentLink: 'https://buy.stripe.com/test_00w14neF09lNgjLd2h9R603', // Average Recruiter
-    description: 'Perfect for getting started',
-    features: {
-      jobs: 3,
-      credits: 100,
-      companyEmails: false,
-      unlimited: false
-    },
-    popular: false,
-    color: 'from-green-500/20 to-green-500/10 border-green-500/30'
-  },
-  {
-    id: 'premium',
-    name: 'Super Recruiter',
-    price: 99,
-    priceId: 'price_1SALDYHb6LdHADWYwZ8almdN', // Updated Stripe price ID
-    paymentLink: 'https://buy.stripe.com/test_6oU7sLgN89lNaZr8M19R604', // Pro
-    description: 'Advanced features for scaling businesses',
-    features: {
-      jobs: 3,
-      credits: 400,
-      companyEmails: true,
-      unlimited: false
-    },
-    popular: true,
-    color: 'from-blue-500/20 to-blue-500/10 border-blue-500/30'
-  },
-  {
-    id: 'topshelf',
-    name: 'Beast Mode',
-    price: 699,
-    priceId: 'price_1SALDtHb6LdHADWYY5NBNKj5l', // Updated Stripe price ID
-    paymentLink: 'https://buy.stripe.com/test_14AaEX40m0PhgjL1jz9R605', // Beast Mode
-    description: 'Unlimited access for enterprise teams',
-    features: {
-      jobs: 10,
-      credits: 2500,
-      companyEmails: true,
-      unlimited: true
-    },
-    popular: false,
-    color: 'from-supernova/20 to-supernova/10 border-supernova/30'
-  }
-];
+import { 
+  getSubscriptionTiers, 
+  getTierByUuid, 
+  isDowngrade as checkIsDowngrade,
+  STRIPE_BILLING_PORTAL,
+  type TierConfig 
+} from '../../config/tiers.config';
 
 export const SubscriptionPlans: React.FC = () => {
   const { userProfile } = useAuth();
   const [showRefillModal, setShowRefillModal] = useState(false);
 
-  // Map tier IDs to plan IDs for accurate current plan detection
-  const tierIdToPlanId: Record<string, string> = {
-    '88c433cf-0a8d-44de-82fa-71c7dcbe31ff': 'basic',    // Average Recruiter tier  
-    'd8b7d6ae-8a44-49c9-9dc3-1c6b1838815fd': 'premium',  // Super Recruiter tier (Pro - 400 credits)
-    'f871eb1b-6756-447d-a1c0-20a373d1d5a2': 'topshelf'  // Beast Mode tier
+  // Get all subscription tiers from config
+  const subscriptionTiers = getSubscriptionTiers();
+
+  // Get user's current tier configuration
+  const currentTier = userProfile?.tierId ? getTierByUuid(userProfile.tierId) : null;
+
+  const isDowngrade = (targetTierUuid: string) => {
+    if (!userProfile?.tierId) return false;
+    return checkIsDowngrade(userProfile.tierId, targetTierUuid);
   };
 
-  // Get current plan based on user's actual tier_id
-  const getCurrentPlanFromTier = () => {
-    if (!userProfile?.tierId) return null;
-    const planId = tierIdToPlanId[userProfile.tierId];
-    return subscriptionPlans.find(plan => plan.id === planId) || null;
-  };
-
-  const currentTierPlan = getCurrentPlanFromTier();
-
-  // Stripe Billing Portal URL for managing subscriptions
-  const STRIPE_BILLING_PORTAL = 'https://billing.stripe.com/p/login/test_fZu7sLaoK9lN1oRfap9R600';
-
-  // Define plan order for upgrade/downgrade detection
-  const planTiers = {
-    basic: 1,
-    premium: 2,
-    topshelf: 3
-  };
-
-  const isDowngrade = (planId: string) => {
-    if (!currentTierPlan) return false;
-    return planTiers[planId as keyof typeof planTiers] < planTiers[currentTierPlan.id as keyof typeof planTiers];
-  };
-
-  const handleSubscribe = (paymentLink: string | null, planId: string) => {
-    if (!paymentLink) {
-      return;
-    }
+  const handleSubscribe = (tier: TierConfig) => {
+    if (!tier.paymentLink) return;
 
     // If it's a downgrade, redirect to Stripe Billing Portal
-    if (isDowngrade(planId)) {
+    if (isDowngrade(tier.tierId)) {
       window.open(STRIPE_BILLING_PORTAL, '_blank');
     } else {
       // For upgrades, use the payment link
-      window.open(paymentLink, '_blank');
+      window.open(tier.paymentLink, '_blank');
     }
   };
 
 
-  const getPlanIcon = (planName: string) => {
-    switch (planName) {
-      case 'Beast Mode':
+  const getPlanIcon = (iconName?: string) => {
+    switch (iconName) {
+      case 'Crown':
         return <Crown className="text-supernova" size={32} />;
-      case 'Super Recruiter':
+      case 'Star':
         return <Star className="text-blue-400" size={32} />;
-      case 'Average Recruiter':
+      case 'Zap':
         return <Zap className="text-green-400" size={32} />;
+      case 'Users':
       default:
         return <Users className="text-guardian" size={32} />;
     }
   };
 
-  const isCurrentPlan = (planId: string) => {
-    // Use user's actual tier from database instead of Stripe subscription
-    return currentTierPlan?.id === planId;
+  const isCurrentPlan = (tierUuid: string) => {
+    return currentTier?.tierId === tierUuid;
   };
 
   return (
@@ -153,12 +86,12 @@ export const SubscriptionPlans: React.FC = () => {
 
         {/* Plans Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-          {subscriptionPlans.map((plan) => (
+          {subscriptionTiers.map((tier) => (
             <Card 
-              key={plan.id} 
-              className={`relative hover:shadow-2xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-br ${plan.color} flex flex-col h-full`}
+              key={tier.tierId} 
+              className={`relative hover:shadow-2xl transition-all duration-300 transform hover:scale-105 bg-gradient-to-br ${tier.color} flex flex-col h-full`}
             >
-              {plan.popular && (
+              {tier.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                   <Badge variant="default" className="px-4 py-1">
                     MOST POPULAR
@@ -168,19 +101,17 @@ export const SubscriptionPlans: React.FC = () => {
               
               <CardHeader className="text-center !py-3 !px-4 !border-b-0">
                 <div className="flex justify-center mb-1">
-                  {getPlanIcon(plan.name)}
+                  {getPlanIcon(tier.icon)}
                 </div>
                 <h3 className="text-xl font-anton text-white-knight uppercase tracking-wide mb-1">
-                  {plan.name}
+                  {tier.displayName}
                 </h3>
                 <div className="mb-1">
-                  <span className="text-2xl font-anton text-supernova">${plan.price}</span>
+                  <span className="text-2xl font-anton text-supernova">${tier.price}</span>
                   <span className="text-guardian font-jakarta">/month</span>
                 </div>
                 <p className="text-guardian font-jakarta text-sm">
-                  {plan.id === 'basic' && 'Hiring for 1 position'}
-                  {plan.id === 'premium' && 'Hiring for 2-4 positions'}
-                  {plan.id === 'topshelf' && 'Hiring for 5+ positions'}
+                  {tier.description}
                 </p>
               </CardHeader>
 
@@ -188,13 +119,13 @@ export const SubscriptionPlans: React.FC = () => {
                 <div className="mb-4 flex-1">
                   <div className="text-center">
                     <div className="text-2xl font-anton text-supernova mb-0.5">
-                      {plan.features.credits} CANDIDATES
+                      {tier.credits} CANDIDATES
                     </div>
                     <div className="text-xs text-guardian font-jakarta mb-0.5">
                       per month
                     </div>
                     <div className="text-xs text-guardian font-jakarta">
-                      [${(plan.price / plan.features.credits).toFixed(2)}/per candidate]
+                      [${(tier.price / tier.credits).toFixed(2)}/per candidate]
                     </div>
                   </div>
                 </div>
@@ -203,16 +134,16 @@ export const SubscriptionPlans: React.FC = () => {
                   <Button
                   fullWidth
                   size="md"
-                  variant={isCurrentPlan(plan.id) ? 'outline' : 'primary'}
-                  onClick={() => isCurrentPlan(plan.id) ? setShowRefillModal(true) : handleSubscribe(plan.paymentLink, plan.id)}
+                  variant={isCurrentPlan(tier.tierId) ? 'outline' : 'primary'}
+                  onClick={() => isCurrentPlan(tier.tierId) ? setShowRefillModal(true) : handleSubscribe(tier)}
                   disabled={false}
                   isLoading={false}
                 >
-                  {isCurrentPlan(plan.id) 
+                  {isCurrentPlan(tier.tierId) 
                     ? 'REFILL' 
-                    : isDowngrade(plan.id)
+                    : isDowngrade(tier.tierId)
                     ? 'DOWNGRADE'
-                    : (plan.id === 'topshelf' ? 'GO BEAST MODE' : 'LEVEL UP')}
+                    : (tier.buttonText || 'LEVEL UP')}
                   </Button>
                 </div>
               </CardContent>

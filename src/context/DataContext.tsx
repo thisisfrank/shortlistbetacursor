@@ -71,7 +71,7 @@ const createEmptyData = () => {
     {
       id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
       name: 'Free',
-      monthlyCandidateAllotment: 20,
+      monthlyCandidateAllotment: 50,
       includesCompanyEmails: false,
       createdAt: new Date('2024-01-01')
     },
@@ -373,6 +373,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         sourcerId: j.sourcer_name || null, // Temporarily using sourcer_name to test production schema
         completionLink: j.completion_link || null,
         candidatesRequested: j.candidates_requested ?? 0,
+        isArchived: j.is_archived || false,
         createdAt: j.created_at ? new Date(j.created_at) : new Date(),
         updatedAt: j.updated_at ? new Date(j.updated_at) : new Date(),
       }));
@@ -550,47 +551,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             return newData;
           });
           
-          // ACTUAL CREDIT DEDUCTION at job submission time
-          try {
-            if (user?.id) {
-              const { data: userProfile, error: profileError } = await supabase
-                .from('user_profiles')
-                .select('available_credits')
-                .eq('id', user.id)
-                .single();
-              
-              if (!profileError && userProfile) {
-                const currentCredits = userProfile.available_credits || 0;
-                const requestedCandidates = jobData.candidatesRequested || 20;
-                const newCredits = Math.max(0, currentCredits - requestedCandidates);
-                
-                // Update available_credits in user_profiles
-                await supabase
-                  .from('user_profiles')
-                  .update({ available_credits: newCredits })
-                  .eq('id', user.id);
-                
-                // Log to audit trail
-                await supabase
-                  .from('credit_transactions')
-                  .insert({
-                    user_id: user.id,
-                    transaction_type: 'deduction',
-                    amount: requestedCandidates,
-                    description: `Job submission: ${requestedCandidates} candidates requested`,
-                    job_id: newJob.id
-                  });
-                
-                console.log(`✅ Credits deducted at job submission: ${currentCredits} → ${newCredits} (${requestedCandidates} used)`);
-              } else {
-                console.warn('⚠️ Could not load user profile for credit deduction');
-              }
-            }
-          } catch (error) {
-            console.error('❌ Credit deduction failed:', error);
-            // Don't fail job creation if credit tracking fails
-          }
-
           // Send webhook notification (non-blocking)
           if (user) {
             webhookService.sendJobPostedWebhook(newJob, {
@@ -1163,6 +1123,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         if (updates.status) dbUpdates.status = updates.status;
         if (updates.sourcerId !== undefined) dbUpdates.sourcer_name = updates.sourcerId; // Temporarily using sourcer_name to test production schema
         if (updates.completionLink !== undefined) dbUpdates.completion_link = updates.completionLink;
+        if (updates.isArchived !== undefined) dbUpdates.is_archived = updates.isArchived;
         
         const { data: updatedJobData, error } = await supabase
           .from('jobs')
@@ -1193,6 +1154,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           sourcerId: updatedJobData.sourcer_name || null, // Temporarily using sourcer_name to test production schema
           completionLink: updatedJobData.completion_link || null,
           candidatesRequested: updatedJobData.candidates_requested ?? 0,
+          isArchived: updatedJobData.is_archived || false,
           createdAt: updatedJobData.created_at ? new Date(updatedJobData.created_at) : new Date(),
           updatedAt: updatedJobData.updated_at ? new Date(updatedJobData.updated_at) : new Date(),
         };

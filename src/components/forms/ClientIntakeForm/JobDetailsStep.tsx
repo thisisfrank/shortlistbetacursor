@@ -66,7 +66,7 @@ export const JobDetailsStep: React.FC<JobDetailsStepProps> = ({
   
   // Get free tier for displaying limits
   const freeTier = tiers.find(tier => tier.name === 'Free');
-  const maxCandidates = freeTier?.monthlyCandidateAllotment || 20;
+  const maxCandidates = freeTier?.monthlyCandidateAllotment || 50;
 
   // Auto-trigger job description generation when 3 skills are added
   // ONLY if the description field is empty and hasn't been edited by the user

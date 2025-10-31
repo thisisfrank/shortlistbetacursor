@@ -51,6 +51,7 @@ export interface Job {
   sourcerId?: string | null; // UUID of the sourcer who claimed the job (optional for client job submission)
   completionLink: string | null;
   candidatesRequested: number;
+  isArchived?: boolean; // Whether the job is archived (hidden from main view)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -85,15 +86,13 @@ export type FormStep =
   | 'confirmation';
 
 export interface UserUsageStats {
-  jobsUsed: number;
-  jobsLimit: number; // Kept for backward compatibility, always 0
-  jobsRemaining: number; // Kept for backward compatibility, always 0
+  jobsUsed: number; // For display purposes only - no limits enforced
   candidatesUsed: number;
   candidatesLimit: number;
   candidatesRemaining: number;
   creditsResetDate: Date | null;
   tierName: string;
-  // New fields for account page display
+  // Account page display fields
   totalCandidatesSourced: number;
   candidatesSourcedThisMonth: number;
   totalJobs: number;

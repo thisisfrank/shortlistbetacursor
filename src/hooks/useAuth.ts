@@ -3,6 +3,7 @@ import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../types';
 import { ghlService } from '../services/ghlService';
+import { FREE_TIER_ID } from '../config/tiers.config';
 
 function mapDbProfileToUserProfile(profile: any): UserProfile {
   return {
@@ -12,7 +13,7 @@ function mapDbProfileToUserProfile(profile: any): UserProfile {
     company: profile.company || undefined,
     avatar: profile.avatar || '/avatars/avatar-1.png',
     role: profile.role,
-    tierId: profile.tier_id || '5841d1d6-20d7-4360-96f8-0444305fac5b', // Free tier ID from production
+    tierId: profile.tier_id || FREE_TIER_ID, // Free tier as default
     availableCredits: profile.available_credits,
     creditsResetDate: profile.credits_reset_date ? new Date(profile.credits_reset_date) : null,
     stripeCustomerId: profile.stripe_customer_id,
@@ -231,8 +232,8 @@ export const useAuth = () => {
                     company: null, // No company info available in fallback scenario
                     avatar: '/avatars/avatar-1.png', // Default avatar
                     role: 'client',
-                    tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
-                    available_credits: 20,
+                    tier_id: FREE_TIER_ID,
+                    available_credits: 50,
                     // No credits_reset_date for free tier - one-time credits only
                   });
                   
@@ -247,8 +248,8 @@ export const useAuth = () => {
                       name: '', // Leave name empty for user to set
                       avatar: '/avatars/avatar-1.png', // Default avatar
                       role: 'client',
-                      tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
-                      availableCredits: 20,
+                      tierId: FREE_TIER_ID,
+                      availableCredits: 50,
                       creditsResetDate: null, // No reset date for free tier - one-time credits
                       createdAt: new Date(),
                       updatedAt: new Date(),
