@@ -5,6 +5,7 @@ import { Button } from '../../ui/Button';
 import { Badge } from '../../ui/Badge';
 import { Users } from 'lucide-react';
 import { FREE_TIER_ID } from '../../../config/tiers.config';
+import { CandidateProfile } from '../../../types';
 
 interface SimpleSummaryStepProps {
   formData: {
@@ -21,7 +22,9 @@ interface SimpleSummaryStepProps {
     salaryRangeMax: string;
     mustHaveSkills: string[];
     candidatesRequested: string;
+    selectedProfileTemplate?: string;
   };
+  selectedProfile?: CandidateProfile;
   onChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => void;
@@ -33,6 +36,7 @@ interface SimpleSummaryStepProps {
 
 export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
   formData,
+  selectedProfile,
   onChange,
   onSubmit,
   onBack,
@@ -297,6 +301,55 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
               ${extractNumericValue(formData.salaryRangeMin).toLocaleString()} - ${extractNumericValue(formData.salaryRangeMax).toLocaleString()} USD
             </p>
           </div>
+
+          {/* Profile Template Section */}
+          {selectedProfile && (
+            <div className="pt-4 border-t border-guardian/30">
+              <p className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide mb-3">
+                Selected Ideal Candidate Profile
+              </p>
+              <div className="bg-supernova/10 border border-supernova/30 rounded-lg p-4 space-y-3">
+                <div className="flex items-baseline justify-between">
+                  <p className="text-lg font-jakarta font-bold text-white-knight">
+                    {selectedProfile.name}
+                  </p>
+                  <p className="text-xs text-guardian">
+                    {selectedProfile.location} • {selectedProfile.yearsOfExperience} years
+                  </p>
+                </div>
+                
+                {selectedProfile.previousWorkExperience.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-supernova mb-1 uppercase tracking-wide">Previous Experience</p>
+                    <ul className="space-y-1">
+                      {selectedProfile.previousWorkExperience.slice(0, 2).map((exp, i) => (
+                        <li key={i} className="flex items-start">
+                          <span className="text-supernova mr-2 text-xs">•</span>
+                          <span className="text-white-knight font-jakarta text-xs">{exp}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {selectedProfile.relevantSkills.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-supernova mb-1 uppercase tracking-wide">Relevant Skills</p>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedProfile.relevantSkills.slice(0, 5).map((skill, i) => (
+                        <span 
+                          key={i}
+                          className="px-2 py-0.5 bg-supernova/20 text-white-knight font-jakarta text-xs rounded-full border border-supernova/40"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
       

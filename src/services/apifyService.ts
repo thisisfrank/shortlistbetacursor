@@ -101,6 +101,11 @@ const extractName = (fullName: string): { firstName: string; lastName: string } 
 
 export const scrapeLinkedInProfiles = async (linkedinUrls: string[]): Promise<ApifyScrapingResult> => {
   try {
+    console.log(`🔍 Attempting to scrape ${linkedinUrls.length} LinkedIn profiles:`);
+    linkedinUrls.forEach((url, index) => {
+      console.log(`  ${index + 1}. ${url}`);
+    });
+    
     // Prepare the input for the Apify actor
     const input = {
       profileUrls: linkedinUrls
@@ -125,11 +130,33 @@ export const scrapeLinkedInProfiles = async (linkedinUrls: string[]): Promise<Ap
 
     const data = await response.json();
     
+    console.log(`✅ Apify returned ${data.length} profiles out of ${linkedinUrls.length} requested`);
+    
+    if (data.length < linkedinUrls.length) {
+      console.warn(`⚠️ WARNING: Only ${data.length} out of ${linkedinUrls.length} profiles were returned by Apify`);
+      console.warn(`⚠️ This usually means:`);
+      console.warn(`   - Some LinkedIn URLs are invalid or incorrectly formatted`);
+      console.warn(`   - Some profiles are private or restricted`);
+      console.warn(`   - Some URLs may have been blocked by LinkedIn`);
+    }
+    
     // Transform the Apify response and generate AI summaries
     const profiles: LinkedInProfile[] = await Promise.all(
-      data.map(async (item: any) => {
+      data.map(async (item: any, index: number) => {
+        console.log(`🔍 Processing profile ${index + 1}/${data.length}: ${item.fullName || 'Unknown'}`);
+        console.log(`📊 Raw Apify data for profile ${index + 1}:`, {
+          fullName: item.fullName,
+          headline: item.headline,
+          linkedinUrl: item.linkedinUrl,
+          hasExperience: !!item.experiences,
+          hasEducation: !!item.educations,
+          hasSkills: !!item.skills
+        });
+        
         // Extract name from fullName field
         const nameInfo = extractName(item.fullName || '');
+        console.log(`🔍 Debug - firstName extracted:`, nameInfo.firstName);
+        
         const experience = transformExperience(item.experiences || []);
         const education = transformEducation(item.educations || []);
         const skills = transformSkills(item.skills || []);
@@ -146,8 +173,17 @@ export const scrapeLinkedInProfiles = async (linkedinUrls: string[]): Promise<Ap
           about: item.about || undefined
         };
         
-        // Generate AI summary
-        const aiSummary = await generateCandidateSummary(candidateData);
+        // Generate AI summary with better error handling
+        let aiSummary: string;
+        try {
+          console.log(`🤖 Generating AI summary for ${nameInfo.firstName} ${nameInfo.lastName}...`);
+          aiSummary = await generateCandidateSummary(candidateData);
+          console.log(`✅ AI summary generated successfully for ${nameInfo.firstName} ${nameInfo.lastName}`);
+        } catch (error) {
+          console.warn(`⚠️ AI summary generation failed for ${nameInfo.firstName} ${nameInfo.lastName}, using basic fallback:`, error);
+          // Generate a simple fallback summary without AI
+          aiSummary = `${nameInfo.firstName} ${nameInfo.lastName} is a ${item.headline || 'professional'} based in ${item.addressWithCountry || 'Unknown location'}.`;
+        }
         
         return {
           firstName: nameInfo.firstName,
@@ -162,6 +198,8 @@ export const scrapeLinkedInProfiles = async (linkedinUrls: string[]): Promise<Ap
         };
       })
     );
+    
+    console.log(`✅ Successfully processed ${profiles.length} profiles`);
 
     return {
       success: true,

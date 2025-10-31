@@ -85,8 +85,14 @@ export const FormStepRenderer: React.FC<FormStepRendererProps> = ({
             salaryRangeMin: formData.salaryRangeMin,
             salaryRangeMax: formData.salaryRangeMax,
             mustHaveSkills: formData.mustHaveSkills,
-            candidatesRequested: formData.candidatesRequested
+            candidatesRequested: formData.candidatesRequested,
+            selectedProfileTemplate: formData.selectedProfileTemplate
           }}
+          selectedProfile={
+            formData.selectedProfileTemplate
+              ? generatedProfiles.find(p => p.id === formData.selectedProfileTemplate)
+              : undefined
+          }
           onChange={handleInputChange}
           onSubmit={onSubmit}
           onBack={onBack}

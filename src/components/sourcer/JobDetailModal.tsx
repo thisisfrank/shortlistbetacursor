@@ -24,7 +24,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   onClaim,
   onComplete
 }) => {
-  const { addCandidatesFromLinkedIn, getCandidatesByJob, loading } = useData();
+  const { addCandidatesFromLinkedIn, getCandidatesByJob, loading, deleteCandidate } = useData();
   const { userProfile } = useAuth();
   
   // Use the authenticated user's name from their profile
@@ -40,6 +40,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   const [showAcceptedCandidates, setShowAcceptedCandidates] = useState(false);
   const [showJobCompletionConfirmation, setShowJobCompletionConfirmation] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [deletingCandidateId, setDeletingCandidateId] = useState<string | null>(null);
   
   const MAX_CANDIDATES_PER_SUBMISSION = 200;
   
@@ -69,6 +70,34 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
     onClose();
   };
 
+  const handleDeleteCandidate = async (candidateId: string, candidateName: string) => {
+    if (!confirm(`Are you sure you want to remove ${candidateName} from this job?`)) {
+      return;
+    }
+    
+    setDeletingCandidateId(candidateId);
+    
+    try {
+      const success = await deleteCandidate(candidateId);
+      
+      if (success) {
+        // Update local state to remove the candidate
+        setAcceptedCandidates(prev => prev.filter(c => c.id !== candidateId));
+        
+        // Show success message
+        setSuccessMessage(`✅ ${candidateName} removed successfully`);
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setError('Failed to remove candidate. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error deleting candidate:', error);
+      setError('Failed to remove candidate. Please try again.');
+    } finally {
+      setDeletingCandidateId(null);
+    }
+  };
+
   const parseCsvFile = (file: File): Promise<string[]> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -76,24 +105,39 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
       reader.onload = (e) => {
         try {
           const text = e.target?.result as string;
+          console.log('📄 CSV file content:', text.substring(0, 500)); // Show first 500 chars
+          
           const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+          console.log(`📄 CSV has ${lines.length} lines (including potential header)`);
           
           // Skip header row if it exists (check if first line contains 'linkedin' or 'url')
           const startIndex = lines[0]?.toLowerCase().includes('linkedin') || lines[0]?.toLowerCase().includes('url') ? 1 : 0;
+          console.log(`📄 Starting from line ${startIndex + 1} (${startIndex === 1 ? 'header detected' : 'no header'})`);
           
           const urls: string[] = [];
           
           for (let i = startIndex; i < lines.length; i++) {
             const line = lines[i];
+            console.log(`📄 Parsing line ${i + 1}: "${line}"`);
             
             // Handle CSV with commas - take the first column that looks like a LinkedIn URL
             const columns = line.split(',').map(col => col.trim().replace(/"/g, ''));
             const linkedinUrl = columns.find(col => col.includes('linkedin.com')) || columns[0];
             
+            console.log(`📄   Found ${columns.length} columns, LinkedIn URL: "${linkedinUrl}"`);
+            
             if (linkedinUrl && linkedinUrl.includes('linkedin.com')) {
               urls.push(linkedinUrl);
+              console.log(`✅   Added URL: ${linkedinUrl}`);
+            } else {
+              console.warn(`⚠️   Skipped (not a LinkedIn URL): ${linkedinUrl}`);
             }
           }
+          
+          console.log(`📄 CSV parsing complete: ${urls.length} valid LinkedIn URLs extracted`);
+          urls.forEach((url, index) => {
+            console.log(`  ${index + 1}. ${url}`);
+          });
           
           if (urls.length === 0) {
             reject(new Error('No valid LinkedIn URLs found in CSV file'));
@@ -189,7 +233,15 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
       if (!candidatesError && latestCandidates) {
         setAcceptedCandidates(latestCandidates);
         
-
+        // Check for N/A names (incomplete Apify data)
+        const incompleteProfiles = latestCandidates.filter((c: any) => 
+          c.first_name === 'N/A' || c.last_name === 'N/A' || 
+          !c.first_name || !c.last_name
+        ).length;
+        
+        if (incompleteProfiles > 0) {
+          console.warn(`⚠️ ${incompleteProfiles} candidates have incomplete profile data from LinkedIn`);
+        }
       }
       
       // Show a success message and reset form, do not close modal
@@ -198,6 +250,12 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
       // Add rejection information if any candidates were rejected
       if (result.rejectedCount > 0) {
         message += ` (${result.rejectedCount} rejected - may include current employees of ${job.companyName})`;
+      }
+      
+      // Add warning about profiles that couldn't be fully scraped
+      const scrapingFailures = validUrls.length - result.acceptedCount - result.rejectedCount;
+      if (scrapingFailures > 0) {
+        message += `\n\n⚠️ ${scrapingFailures} LinkedIn profile${scrapingFailures === 1 ? '' : 's'} could not be scraped. This usually means the profile${scrapingFailures === 1 ? ' is' : 's are'} private, restricted, or blocked by LinkedIn.`;
       }
       
       setSuccessMessage(message);
@@ -372,6 +430,69 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 ))}
               </ul>
             </div>
+
+            {/* Profile Template Section */}
+            {job.selectedProfileTemplate && (
+              <div className="bg-supernova/10 border border-supernova/30 rounded-lg p-6 mb-6">
+                <p className="text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide mb-4">
+                  Ideal Candidate Profile
+                </p>
+                <div className="space-y-4">
+                  <div className="flex items-baseline justify-between">
+                    <p className="text-lg font-jakarta font-bold text-white-knight">
+                      {job.selectedProfileTemplate.name}
+                    </p>
+                    <p className="text-sm text-guardian">
+                      {job.selectedProfileTemplate.location} • {job.selectedProfileTemplate.yearsOfExperience} years experience
+                    </p>
+                  </div>
+                  
+                  {job.selectedProfileTemplate.previousWorkExperience.length > 0 && (
+                    <div>
+                      <p className="text-sm font-semibold text-supernova mb-2 uppercase tracking-wide">Previous Experience</p>
+                      <ul className="space-y-1">
+                        {job.selectedProfileTemplate.previousWorkExperience.map((exp, i) => (
+                          <li key={i} className="flex items-start">
+                            <span className="text-supernova mr-2">•</span>
+                            <span className="text-white-knight font-jakarta text-sm">{exp}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {job.selectedProfileTemplate.relevantSkills.length > 0 && (
+                    <div>
+                      <p className="text-sm font-semibold text-supernova mb-2 uppercase tracking-wide">Relevant Skills</p>
+                      <div className="flex flex-wrap gap-2">
+                        {job.selectedProfileTemplate.relevantSkills.map((skill, i) => (
+                          <span 
+                            key={i}
+                            className="px-3 py-1 bg-supernova/20 text-white-knight font-jakarta text-sm rounded-full border border-supernova/40"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {job.selectedProfileTemplate.keyProjects.length > 0 && (
+                    <div>
+                      <p className="text-sm font-semibold text-supernova mb-2 uppercase tracking-wide">Key Projects</p>
+                      <ul className="space-y-1">
+                        {job.selectedProfileTemplate.keyProjects.map((project, i) => (
+                          <li key={i} className="flex items-start">
+                            <span className="text-supernova mr-2">•</span>
+                            <span className="text-white-knight font-jakarta text-sm">{project}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             
             {/* Remove Company Information box and its contents */}
             {/* <div className="bg-supernova/10 border border-supernova/30 p-6 rounded-lg mb-6">
@@ -643,8 +764,20 @@ https://linkedin.com/in/candidate2
                   </div>
                 )}
                 {successMessage && (
-                  <div className="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400 font-jakarta font-semibold text-center">
-                    {successMessage}
+                  <div className="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                    <div className="text-green-400 font-jakarta font-semibold whitespace-pre-line">
+                      {successMessage}
+                    </div>
+                    {successMessage.includes('could not be scraped') && (
+                      <div className="mt-3 text-sm text-guardian">
+                        <p className="font-semibold text-supernova mb-1">💡 Tips for better results:</p>
+                        <ul className="space-y-1 ml-4">
+                          <li>• Use LinkedIn profiles that are public or have minimal privacy settings</li>
+                          <li>• Verify the LinkedIn URLs are correct and accessible</li>
+                          <li>• Try profiles of people with "Open to Work" badges</li>
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 )}
                 <Button 
@@ -728,15 +861,29 @@ https://linkedin.com/in/candidate2
                                   </div>
                                 </div>
                               </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => window.open(candidate.linkedinUrl, '_blank')}
-                                className="flex items-center gap-2"
-                              >
-                                <ExternalLink size={14} />
-                                VIEW
-                              </Button>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => window.open(candidate.linkedinUrl, '_blank')}
+                                  className="flex items-center gap-2"
+                                >
+                                  <ExternalLink size={14} />
+                                  VIEW
+                                </Button>
+                                <button
+                                  onClick={() => handleDeleteCandidate(candidate.id, `${candidate.firstName} ${candidate.lastName}`)}
+                                  disabled={deletingCandidateId === candidate.id}
+                                  className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500/50 text-red-400 hover:text-red-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title="Remove candidate"
+                                >
+                                  {deletingCandidateId === candidate.id ? (
+                                    <Loader className="animate-spin" size={14} />
+                                  ) : (
+                                    <X size={14} />
+                                  )}
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>

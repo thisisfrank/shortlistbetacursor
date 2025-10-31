@@ -24,6 +24,7 @@ interface DataContextType {
     rejectedCount: number; 
     error?: string 
   }>;
+  deleteCandidate: (candidateId: string) => Promise<boolean>;
   updateJob: (jobId: string, updates: Partial<Job>) => Promise<Job | null>;
   getCandidatesByJob: (jobId: string) => Candidate[];
   getCandidatesByUser: (userId: string) => Candidate[];
@@ -363,16 +364,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         userEmail: j.user_email || '',
         companyName: j.company_name || '',
         title: j.title || '',
+        idealCandidate: j.ideal_candidate || undefined,
         description: j.description || '',
         seniorityLevel: j.seniority_level || '',
+        workArrangement: j.work_arrangement || undefined,
         location: j.location || '',
         salaryRangeMin: j.salary_range_min ?? 0,
         salaryRangeMax: j.salary_range_max ?? 0,
-                    mustHaveSkills: j.must_have_skills || [],
+        mustHaveSkills: j.must_have_skills || [],
+        selectedProfileTemplate: j.selected_profile_template || undefined,
         status: j.status || '',
         sourcerId: j.sourcer_name || null, // Temporarily using sourcer_name to test production schema
         completionLink: j.completion_link || null,
         candidatesRequested: j.candidates_requested ?? 0,
+        moreRequested: j.more_requested || false,
         isArchived: j.is_archived || false,
         createdAt: j.created_at ? new Date(j.created_at) : new Date(),
         updatedAt: j.updated_at ? new Date(j.updated_at) : new Date(),
@@ -537,6 +542,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             salaryRangeMin: jobData.salaryRangeMin ?? 0,
             salaryRangeMax: jobData.salaryRangeMax ?? 0,
             mustHaveSkills: jobData.mustHaveSkills || [],
+            selectedProfileTemplate: jobData.selectedProfileTemplate,
             status: 'Unclaimed',
             sourcerId: null,
             completionLink: null,
@@ -580,7 +586,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             salary_range_max: jobData.salaryRangeMax ?? 0,
             must_have_skills: jobData.mustHaveSkills || [],
             candidates_requested: jobData.candidatesRequested ?? 0,
-            status: 'Unclaimed'
+            status: 'Unclaimed',
+            selected_profile_template: jobData.selectedProfileTemplate || null
           };
 
           // Add company_name if it exists in the schema
@@ -619,6 +626,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
             salaryRangeMin: insertedJob.salary_range_min ?? 0,
             salaryRangeMax: insertedJob.salary_range_max ?? 0,
             mustHaveSkills: insertedJob.must_have_skills || [],
+            selectedProfileTemplate: insertedJob.selected_profile_template || undefined,
             status: insertedJob.status || '',
             sourcerId: insertedJob.sourcer_name || null,
             completionLink: insertedJob.completion_link || null,
@@ -793,8 +801,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     });
   };
 
-  // Step 1: Add a bypass flag at the top of the file
-  const BYPASS_AI_SCORING = true; // TODO: Set to false in production or make configurable
+  // Bypass AI scoring - accept all candidates without requiring AI to work
+  const BYPASS_AI_SCORING = true; // Set to true to accept all candidates regardless of AI match score
 
   const addCandidatesFromLinkedIn = async (jobId: string, linkedinUrls: string[]): Promise<{ 
     success: boolean; 
@@ -925,7 +933,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           continue; // Skip this candidate
         }
         if (BYPASS_AI_SCORING) {
-          // Accept all candidates, skip AI
+          // Accept all candidates, skip AI scoring entirely
+          console.log(`✅ Auto-accepting candidate (AI scoring bypassed): ${candidateData.firstName} ${candidateData.lastName}`);
           const candidate: Candidate = {
             id: crypto.randomUUID(),
             jobId,
@@ -977,8 +986,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               });
             }
           } catch (error) {
-            // Step 2: On AI scoring error, accept candidate and log warning
-            console.warn('AI scoring failed, auto-accepting candidate:', error);
+            // Fallback: If AI scoring fails, auto-accept candidate (don't require AI to work)
+            console.warn(`⚠️ AI scoring failed for ${candidateData.firstName} ${candidateData.lastName}, auto-accepting candidate:`, error);
             const candidate: Candidate = {
               id: crypto.randomUUID(),
               jobId,
@@ -994,6 +1003,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               submittedAt: new Date()
             };
             acceptedCandidates.push(candidate);
+            console.log(`✅ Candidate auto-accepted despite AI failure: ${candidateData.firstName} ${candidateData.lastName}`);
           }
         }
       }
@@ -1111,6 +1121,39 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         rejectedCount: 0,
         error: error instanceof Error ? error.message : 'Failed to scrape LinkedIn profiles' 
       };
+    }
+  };
+
+  const deleteCandidate = async (candidateId: string): Promise<boolean> => {
+    try {
+      console.log(`🗑️ Deleting candidate: ${candidateId}`);
+      
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('candidates')
+        .delete()
+        .eq('id', candidateId);
+      
+      if (error) {
+        console.error('Error deleting candidate from Supabase:', error);
+        throw error;
+      }
+      
+      // Update local state
+      setData(prev => {
+        const newData = {
+          ...prev,
+          candidates: prev.candidates.filter((c: Candidate) => c.id !== candidateId)
+        };
+        saveDataToCache(newData);
+        return newData;
+      });
+      
+      console.log(`✅ Candidate deleted successfully: ${candidateId}`);
+      return true;
+    } catch (error) {
+      console.error('Error deleting candidate:', error);
+      return false;
     }
   };
 
@@ -1497,6 +1540,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     addJob,
     addCandidate,
     addCandidatesFromLinkedIn,
+    deleteCandidate,
     updateJob,
     getCandidatesByJob,
     getCandidatesByUser,

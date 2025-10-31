@@ -17,7 +17,7 @@ export const useFormSubmission = ({ setCurrentStep }: UseFormSubmissionProps) =>
   const navigate = useNavigate();
   const { addJob, jobs, candidates, tiers, creditTransactions } = useData();
   const { user, userProfile } = useAuth();
-  const { formData, setIsSubmitting, setAlertModal, resetForm } = useClientIntakeForm();
+  const { formData, setIsSubmitting, setAlertModal, resetForm, generatedProfiles } = useClientIntakeForm();
   const { extractNumericValue } = useFormValidation();
 
   const handleSubmit = useCallback(async () => {
@@ -100,6 +100,11 @@ export const useFormSubmission = ({ setCurrentStep }: UseFormSubmissionProps) =>
         // Continue with original description if formatting fails
       }
 
+      // Find the selected profile template if one was chosen
+      const selectedProfile = formData.selectedProfileTemplate 
+        ? generatedProfiles.find(p => p.id === formData.selectedProfileTemplate)
+        : undefined;
+
       // Create the job data to submit
       const jobData = {
         userId: user.id,
@@ -112,6 +117,7 @@ export const useFormSubmission = ({ setCurrentStep }: UseFormSubmissionProps) =>
         salaryRangeMin: extractNumericValue(formData.salaryRangeMin),
         salaryRangeMax: extractNumericValue(formData.salaryRangeMax),
         mustHaveSkills: formData.mustHaveSkills,
+        selectedProfileTemplate: selectedProfile,
         candidatesRequested: parseInt(formData.candidatesRequested)
       };
       
@@ -165,6 +171,7 @@ export const useFormSubmission = ({ setCurrentStep }: UseFormSubmissionProps) =>
     user?.id,
     userProfile,
     formData,
+    generatedProfiles,
     jobs,
     candidates,
     tiers,

@@ -70,8 +70,13 @@ export const JobCard: React.FC<JobCardProps> = ({
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
             <h3 className="text-xl font-anton text-white-knight mb-2 uppercase tracking-wide line-clamp-2">{job.title}</h3>
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-3 mb-3 flex-wrap">
               <Badge variant={getStatusBadgeVariant()}>{job.status}</Badge>
+              {job.moreRequested && job.status === 'Unclaimed' && (
+                <Badge variant="warning" className="bg-orange-500/20 border-orange-500 text-orange-400 animate-pulse">
+                  MORE REQUESTED
+                </Badge>
+              )}
               {(job.status === 'Unclaimed' || job.status === 'Claimed') && (
                 <JobTimer jobCreatedAt={job.createdAt} size="sm" />
               )}

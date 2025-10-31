@@ -469,6 +469,7 @@ export const CandidatesView: React.FC = () => {
         .update({
           candidates_requested: newCandidatesRequested,
           status: 'Unclaimed',
+          more_requested: true, // Mark that client requested more candidates
           created_at: now.toISOString() // Restart 24-hour delivery countdown
         })
         .eq('id', requestMoreModal.jobId);
@@ -476,7 +477,8 @@ export const CandidatesView: React.FC = () => {
       // Also update local state
       await updateJob(requestMoreModal.jobId, {
         candidatesRequested: newCandidatesRequested,
-        status: 'Unclaimed'
+        status: 'Unclaimed',
+        moreRequested: true // Mark that client requested more candidates
       });
 
       // SEND WEBHOOK

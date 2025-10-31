@@ -33,6 +33,16 @@ export interface Tier {
   createdAt: Date;
 }
 
+export interface CandidateProfile {
+  id: string;
+  name: string;
+  location: string;
+  yearsOfExperience: number;
+  previousWorkExperience: string[];
+  relevantSkills: string[];
+  keyProjects: string[];
+}
+
 export interface Job {
   id: string;
   userId: string; // Changed from clientId to userId
@@ -47,10 +57,12 @@ export interface Job {
   salaryRangeMin: number;
   salaryRangeMax: number;
   mustHaveSkills: string[];
+  selectedProfileTemplate?: CandidateProfile; // AI-generated profile template selected by client
   status: 'Unclaimed' | 'Claimed' | 'Completed';
   sourcerId?: string | null; // UUID of the sourcer who claimed the job (optional for client job submission)
   completionLink: string | null;
   candidatesRequested: number;
+  moreRequested?: boolean; // Whether client has requested more candidates (shows badge in sourcer hub)
   isArchived?: boolean; // Whether the job is archived (hidden from main view)
   createdAt: Date;
   updatedAt: Date;
