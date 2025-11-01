@@ -163,58 +163,18 @@ class GHLService {
     try {
       // Get the app URL for the direct link to candidates
       const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
-      const candidatesPageLink = `${appUrl}/candidates`;
+      // Job-specific link with jobId parameter
+      const candidatesPageLink = `${appUrl}/candidates?jobId=${job.id}`;
 
       const payload = {
         event: 'job_completion_notification',
-        userId: userProfile.id,
-        userEmail: userProfile.email, // This will be used by GHL to send to the specific user
-        userProfile: {
-          id: userProfile.id,
-          email: userProfile.email,
-          name: userProfile.name,
-          role: userProfile.role,
-          tierId: userProfile.tierId,
-          createdAt: userProfile.createdAt,
-          updatedAt: userProfile.updatedAt,
-        },
-        jobData: {
-          id: job.id,
-          title: job.title,
-          companyName: job.companyName,
-          location: job.location,
-          seniorityLevel: job.seniorityLevel,
-          workArrangement: job.workArrangement,
-          salaryRangeMin: job.salaryRangeMin,
-          salaryRangeMax: job.salaryRangeMax,
-          mustHaveSkills: job.mustHaveSkills,
-          status: job.status,
-          candidatesRequested: job.candidatesRequested,
-          createdAt: job.createdAt,
-          updatedAt: job.updatedAt,
-        },
-        candidatesData: candidates.map(candidate => ({
-          id: candidate.id,
-          firstName: candidate.firstName,
-          lastName: candidate.lastName,
-          linkedinUrl: candidate.linkedinUrl,
-          headline: candidate.headline,
-          location: candidate.location,
-          experience: candidate.experience,
-          education: candidate.education,
-          skills: candidate.skills,
-          summary: candidate.summary,
-          submittedAt: candidate.submittedAt,
-        })),
-        completionSummary: {
-          totalCandidates: candidates.length,
-          requestedCandidates: job.candidatesRequested,
-          completionDate: new Date().toISOString(),
-        },
-        // Direct link to view candidates
+        userEmail: userProfile.email,
+        userName: userProfile.name,
+        jobTitle: job.title,
+        companyName: job.companyName,
+        totalCandidates: candidates.length,
         viewCandidatesLink: candidatesPageLink,
-        viewCandidatesText: 'View Your Candidates',
-        message: `Job completed: ${job.title} at ${job.companyName} - ${candidates.length} candidates submitted`,
+        message: `Your ${candidates.length} candidates are ready for ${job.title} at ${job.companyName}!`,
       };
 
       const response = await fetch(this.jobCompletionNotificationWebhookUrl, {

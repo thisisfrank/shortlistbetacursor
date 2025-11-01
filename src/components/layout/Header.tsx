@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, User } from 'lucide-react';
 
 import { Button } from '../ui/Button';
 import { getUserUsageStats } from '../../utils/userUsageStats';
@@ -244,7 +244,7 @@ export const Header: React.FC = () => {
               to={userProfile.role === 'sourcer' ? '/sourcer/account' : '/account'}
               className="text-white-knight hover:text-supernova transition-colors cursor-pointer flex items-center gap-3"
             >
-              <div className="w-8 h-8 bg-shadowforce-light rounded-full flex items-center justify-center border border-guardian/20 overflow-hidden">
+              <div className="w-8 h-8 bg-supernova rounded-full flex items-center justify-center border border-guardian/20 overflow-hidden">
                 {userProfile.avatar?.startsWith('/avatars/') ? (
                   <img 
                     src={userProfile.avatar} 
@@ -252,11 +252,17 @@ export const Header: React.FC = () => {
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
-                      e.currentTarget.parentElement!.innerHTML = '👤';
+                      const parent = e.currentTarget.parentElement;
+                      if (parent) {
+                        parent.innerHTML = '';
+                        const iconDiv = document.createElement('div');
+                        iconDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-shadowforce"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg>';
+                        parent.appendChild(iconDiv);
+                      }
                     }}
                   />
                 ) : (
-                  <span className="text-lg">{userProfile.avatar || '👤'}</span>
+                  <User size={20} className="text-shadowforce" />
                 )}
               </div>
               <div className="flex flex-col items-start">
@@ -402,7 +408,7 @@ export const Header: React.FC = () => {
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 bg-shadowforce rounded-lg border border-guardian/20 hover:border-supernova/30 transition-all"
               >
-                <div className="w-10 h-10 bg-shadowforce-light rounded-full flex items-center justify-center border border-guardian/20 overflow-hidden">
+                <div className="w-10 h-10 bg-supernova rounded-full flex items-center justify-center border border-guardian/20 overflow-hidden">
                   {userProfile.avatar?.startsWith('/avatars/') ? (
                     <img 
                       src={userProfile.avatar} 
@@ -410,11 +416,17 @@ export const Header: React.FC = () => {
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
-                        e.currentTarget.parentElement!.innerHTML = '👤';
+                        const parent = e.currentTarget.parentElement;
+                        if (parent) {
+                          parent.innerHTML = '';
+                          const iconDiv = document.createElement('div');
+                          iconDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-shadowforce"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg>';
+                          parent.appendChild(iconDiv);
+                        }
                       }}
                     />
                   ) : (
-                    <span className="text-xl">{userProfile.avatar || '👤'}</span>
+                    <User size={24} className="text-shadowforce" />
                   )}
                 </div>
                 <div className="flex flex-col items-start">

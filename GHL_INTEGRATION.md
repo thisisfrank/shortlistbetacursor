@@ -128,70 +128,17 @@ When a job is completed, the following payload is sent to the job completion not
 ```json
 {
   "event": "job_completion_notification",
-  "userId": "user-uuid",
   "userEmail": "user@company.com",
-  "userProfile": {
-    "id": "user-uuid",
-    "email": "user@company.com",
-    "name": "John Doe",
-    "role": "client",
-    "tierId": "tier-uuid",
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
-  },
-  "jobData": {
-    "id": "job-uuid",
-    "title": "Software Engineer",
-    "companyName": "Tech Corp",
-    "location": "San Francisco, CA",
-    "seniorityLevel": "Mid",
-    "workArrangement": "Remote",
-    "salaryRangeMin": 80000,
-    "salaryRangeMax": 120000,
-    "mustHaveSkills": ["React", "TypeScript"],
-    "status": "Completed",
-    "candidatesRequested": 3,
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z"
-  },
-  "candidatesData": [
-    {
-      "id": "candidate-uuid",
-      "firstName": "John",
-      "lastName": "Doe",
-      "linkedinUrl": "https://linkedin.com/in/johndoe",
-      "headline": "Senior Software Engineer",
-      "location": "San Francisco, CA",
-      "experience": [
-        {
-          "title": "Senior Software Engineer",
-          "company": "Tech Corp",
-          "duration": "2 years"
-        }
-      ],
-      "education": [
-        {
-          "school": "Stanford University",
-          "degree": "Computer Science"
-        }
-      ],
-      "skills": ["React", "TypeScript", "Node.js"],
-      "summary": "Experienced software engineer...",
-      "submittedAt": "2024-01-01T00:00:00.000Z"
-    }
-  ],
-  "completionSummary": {
-    "totalCandidates": 2,
-    "requestedCandidates": 3,
-    "completionDate": "2024-01-01T00:00:00.000Z"
-  },
-  "viewCandidatesLink": "https://yourapp.com/candidates",
-  "viewCandidatesText": "View Your Candidates",
-  "message": "Job completed: Software Engineer at Tech Corp - 2 candidates submitted"
+  "userName": "John Doe",
+  "jobTitle": "Software Engineer",
+  "companyName": "Tech Corp",
+  "totalCandidates": 5,
+  "viewCandidatesLink": "https://yourapp.com/candidates?jobId=job-uuid",
+  "message": "Your 5 candidates are ready for Software Engineer at Tech Corp!"
 }
 ```
 
-**Note**: The `viewCandidatesLink` field contains a direct URL to the candidates page where the client can view their completed list. Use this in your GHL email template as a clickable button or link (e.g., `{{viewCandidatesLink}}`). The `viewCandidatesText` field provides suggested button text.
+**Note**: The `viewCandidatesLink` field contains a job-specific URL that will automatically open that job's candidates when clicked. Use this in your GHL email template as a clickable button or link (e.g., `{{viewCandidatesLink}}`).
 
 ### 5. Plan Purchase Welcome Event
 When a user purchases a subscription plan, the following payload is sent to trigger a welcome email with Clay table and referral information:
@@ -272,9 +219,16 @@ When a user submits feedback (general or job-specific), the following payload is
 
 ### Sign Up Thank You Event (Automatic)
 ```javascript
-// Automatically fires when user signs up
+// Automatically fires when user confirms email and logs in for the first time
+// Triggered in useAuth.ts when a profile created within last 5 minutes is loaded
 await ghlService.sendSignupThankYouNotification(userProfile, 'web_signup');
 ```
+
+**How it works:**
+- User signs up → receives email confirmation
+- User clicks confirmation link → email confirmed, profile created by database trigger
+- User logs in → profile is loaded and checked if created within last 5 minutes
+- If new profile detected → signup thank you webhook is sent
 
 ### Job Submission Confirmation Event (Automatic)
 ```javascript
@@ -333,9 +287,9 @@ testJobCompletionWebhook()
 
 ## Available Events
 
-- `user_signup`: Sent when a new user registers (Sign Up Thank You)
-- `job_submission_confirmation`: Sent when a job is submitted (Job Submission Confirmation)
-- `candidate_ready_notification`: Sent when candidates are submitted (Candidate Ready Notification)
-- `job_completion_notification`: Sent when a job is completed (Job Completion Notification)
-- `plan_purchase_welcome`: Sent when a user purchases a subscription plan (includes Clay referral link)
-- `feedback_submission`: Sent when a user submits feedback (general or job-specific) 
+- `user_signup`: Sent when a new user confirms email and logs in for the first time (Sign Up Thank You) ✅
+- `job_submission_confirmation`: Sent when a job is submitted (Job Submission Confirmation) ✅
+- `candidate_ready_notification`: Sent when candidates are submitted (Candidate Ready Notification) ⚠️ Not implemented
+- `job_completion_notification`: Sent when a job is completed (Job Completion Notification) ✅
+- `plan_purchase_welcome`: Sent when a user purchases a subscription plan (includes Clay referral link) ✅
+- `feedback_submission`: Sent when a user submits feedback (general or job-specific) ✅ 

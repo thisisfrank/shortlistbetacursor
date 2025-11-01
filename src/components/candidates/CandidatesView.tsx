@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { AlertModal } from '../ui/AlertModal';
@@ -122,6 +122,7 @@ export const CandidatesView: React.FC = () => {
   } = useData();
   const { user, userProfile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   // Add error boundary
   const [hasError, setHasError] = React.useState(false);
@@ -234,6 +235,15 @@ export const CandidatesView: React.FC = () => {
     // If neither has a score, maintain original order
     return 0;
   });
+  
+  // Auto-select job from URL parameter on mount
+  useEffect(() => {
+    const jobIdFromUrl = searchParams.get('jobId');
+    if (jobIdFromUrl && !selectedJobId) {
+      setSelectedJobId(jobIdFromUrl);
+      setCurrentView('all'); // Switch to all candidates view to show the job
+    }
+  }, [searchParams, selectedJobId, setCurrentView]);
   
   // Update ref when state changes
   useEffect(() => {

@@ -169,7 +169,22 @@ export const useAuth = () => {
             setUserProfile(null);
           } else {
             console.log('✅ User profile loaded:', profile?.role);
-            setUserProfile(mapDbProfileToUserProfile(profile));
+            const mappedProfile = mapDbProfileToUserProfile(profile);
+            setUserProfile(mappedProfile);
+            
+            // Check if this is a new signup (profile created within last 5 minutes)
+            const profileCreatedAt = new Date(profile.created_at);
+            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+            const isNewSignup = profileCreatedAt > fiveMinutesAgo;
+            
+            if (isNewSignup) {
+              console.log('🎉 New user signup detected, sending welcome webhook');
+              // Send signup thank you webhook (non-blocking)
+              ghlService.sendSignupThankYouNotification(mappedProfile, 'web_signup')
+                .catch(error => {
+                  console.error('⚠️ Signup webhook failed (non-blocking):', error);
+                });
+            }
           }
         } else {
           setUserProfile(null);
@@ -260,7 +275,22 @@ export const useAuth = () => {
                 }
               } else {
                 console.log('✅ User profile loaded:', profile?.role);
-                setUserProfile(mapDbProfileToUserProfile(profile));
+                const mappedProfile = mapDbProfileToUserProfile(profile);
+                setUserProfile(mappedProfile);
+                
+                // Check if this is a new signup (profile created within last 5 minutes)
+                const profileCreatedAt = new Date(profile.created_at);
+                const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+                const isNewSignup = profileCreatedAt > fiveMinutesAgo;
+                
+                if (isNewSignup) {
+                  console.log('🎉 New user signup detected, sending welcome webhook');
+                  // Send signup thank you webhook (non-blocking)
+                  ghlService.sendSignupThankYouNotification(mappedProfile, 'web_signup')
+                    .catch(error => {
+                      console.error('⚠️ Signup webhook failed (non-blocking):', error);
+                    });
+                }
               }
             });
         }
@@ -328,7 +358,7 @@ export const useAuth = () => {
                 avatar: '/avatars/avatar-1.png', // Default avatar
                 role: 'client',
                 tier_id: '5841d1d6-20d7-4360-96f8-0444305fac5b',
-                available_credits: 20,
+                available_credits: 50,
                 // No credits_reset_date for free tier - one-time credits only
               });
               
@@ -344,7 +374,7 @@ export const useAuth = () => {
                   avatar: '/avatars/avatar-1.png', // Default avatar
                   role: 'client',
                   tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
-                  availableCredits: 20,
+                  availableCredits: 50,
                   creditsResetDate: null, // No reset date for free tier - one-time credits
                   createdAt: new Date(),
                   updatedAt: new Date(),
