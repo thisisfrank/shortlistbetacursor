@@ -67,7 +67,7 @@ export const LandingPage: React.FC = () => {
                     size="lg"
                     className="glow-supernova text-base md:text-xl px-6 py-4 md:px-12 md:py-6 w-full sm:w-auto"
                   >
-                     Get My First 20 Candidates Free
+                     Get My First 50 Candidates Free
                   </Button>
                   
                   {/* Quality Guarantee Badge */}
@@ -177,7 +177,7 @@ export const LandingPage: React.FC = () => {
                       </div>
                       
                       {/* Text below - aligned to top */}
-                      <p className="text-base md:text-lg text-white font-jakarta leading-relaxed text-center px-4 mt-16 md:mt-20 whitespace-nowrap">
+                      <p className="text-sm md:text-base lg:text-lg text-white font-jakarta leading-relaxed text-center px-2 md:px-4 mt-16 md:mt-20">
                         Submit job requirements
                       </p>
                     </div>
@@ -185,7 +185,7 @@ export const LandingPage: React.FC = () => {
                     {/* Stage 2 - Above Timeline */}
                     <div className="flex flex-col items-center w-1/3 relative pb-20">
                       {/* Text above - at top */}
-                      <p className="text-base md:text-lg text-white font-jakarta leading-relaxed text-center px-4 mb-16 md:mb-20 whitespace-nowrap">
+                      <p className="text-sm md:text-base lg:text-lg text-white font-jakarta leading-relaxed text-center px-2 md:px-4 mb-16 md:mb-20">
                         Get high-quality candidates sent to you
                       </p>
                       
@@ -207,7 +207,7 @@ export const LandingPage: React.FC = () => {
                       </div>
                       
                       {/* Text below - aligned to top */}
-                      <p className="text-base md:text-lg text-white font-jakarta leading-relaxed text-center px-4 mt-16 md:mt-20 whitespace-nowrap">
+                      <p className="text-sm md:text-base lg:text-lg text-white font-jakarta leading-relaxed text-center px-2 md:px-4 mt-16 md:mt-20">
                         Interview quality people not active on job boards
                       </p>
                     </div>
@@ -238,7 +238,7 @@ export const LandingPage: React.FC = () => {
                       Can I try it for free?
                     </h4>
                     <p className="text-white font-jakarta leading-relaxed">
-                      Yes, your first 20 candidates are on us!
+                      Yes, your first 50 candidates are on us!
                     </p>
                   </div>
                   
@@ -310,7 +310,7 @@ export const LandingPage: React.FC = () => {
             size="lg"
             className="glow-supernova text-base md:text-xl px-6 py-4 md:px-12 md:py-6"
           >
-            Get My First 20 Candidates Free
+            Get My First 50 Candidates Free
           </Button>
           
           {/* Quality Guarantee Badge */}

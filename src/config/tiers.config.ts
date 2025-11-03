@@ -61,7 +61,7 @@ export const TIER_CONFIG: Record<TierLevel, TierConfig> = {
     buttonText: 'LEVEL UP'
   },
   tier_3: {
-    tierId: 'd8b7d6ae-8a44-49c9-9dc3-1c6b1838815fd',
+    tierId: 'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd',
     displayName: 'Super Recruiter',
     price: 99,
     credits: 400,
@@ -83,7 +83,7 @@ export const TIER_CONFIG: Record<TierLevel, TierConfig> = {
     displayName: 'Beast Mode',
     price: 699,
     credits: 2500,
-    priceId: 'price_1SALDtHb6LdHADWYY5NBNKj5l',
+    priceId: 'price_1SALDtHb6LdHADWY5NBNKj5l',
     paymentLink: 'https://buy.stripe.com/test_14AaEX40m0PhgjL1jz9R605',
     description: 'Hiring for 5+ positions',
     features: {
@@ -104,7 +104,7 @@ export const STRIPE_BILLING_PORTAL = 'https://billing.stripe.com/p/login/test_fZ
 // Common tier ID constants for easy reference
 export const FREE_TIER_ID = '5841d1d6-20d7-4360-96f8-0444305fac5b';
 export const STARTER_TIER_ID = '88c433cf-0a8d-44de-82fa-71c7dcbe31ff';
-export const PRO_TIER_ID = 'd8b7d6ae-8a44-49c9-9dc3-1c6b1838815fd';
+export const PRO_TIER_ID = 'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd';
 export const ENTERPRISE_TIER_ID = 'f871eb1b-6756-447d-a1c0-20a373d1d5a2';
 
 // Helper functions

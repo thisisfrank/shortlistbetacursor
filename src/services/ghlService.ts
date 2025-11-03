@@ -408,7 +408,7 @@ if (typeof window !== 'undefined') {
       name: 'Test User',
       role: 'client' as const,
       tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
-      availableCredits: 20,
+      availableCredits: 50,
 
       creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       createdAt: new Date(),
@@ -447,7 +447,7 @@ if (typeof window !== 'undefined') {
       name: 'Test User',
       role: 'client' as const,
       tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
-      availableCredits: 20,
+      availableCredits: 50,
 
       creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       createdAt: new Date(),

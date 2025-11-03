@@ -28,15 +28,15 @@ const supabase = createClient(
 // Map payment link URLs to database tier IDs (UPDATED with new payment links)
 const PAYMENT_LINK_TO_TIER_MAPPING: Record<string, string> = {
   'https://buy.stripe.com/test_00w14neF09lNgjLd2h9R603': '88c433cf-0a8d-44de-82fa-71c7dcbe31ff',    // Average Recruiter - 100 credits
-  'https://buy.stripe.com/test_6oU7sLgN89lNaZr8M19R604': 'd8b7d6ae-8a44-49c9-9dc3-1c6b1838815fd',  // Super Recruiter - 400 credits
+  'https://buy.stripe.com/test_6oU7sLgN89lNaZr8M19R604': 'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd',  // Super Recruiter - 400 credits
   'https://buy.stripe.com/test_14AaEX40m0PhgjL1jz9R605': 'f871eb1b-6756-447d-a1c0-20a373d1d5a2', // Beast Mode - 2500 credits
 }
 
 // Also keep price mapping as fallback for subscription events
 const PRICE_TO_TIER_MAPPING: Record<string, string> = {
   'price_1SALD5Hb6LdHADWYbyDzUv7a': '88c433cf-0a8d-44de-82fa-71c7dcbe31ff',    // Average Recruiter - 100 credits
-  'price_1SALDYHb6LdHADWYwZ8almdN': 'd8b7d6ae-8a44-49c9-9dc3-1c6b1838815fd',  // Super Recruiter - 400 credits
-  'price_1SALDtHb6LdHADWYY5NBNKj5l': 'f871eb1b-6756-447d-a1c0-20a373d1d5a2', // Beast Mode - 2500 credits
+  'price_1SALDYHb6LdHADWYwZ8almdN': 'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd',  // Super Recruiter - 400 credits
+  'price_1SALDtHb6LdHADWY5NBNKj5l': 'f871eb1b-6756-447d-a1c0-20a373d1d5a2', // Beast Mode - 2500 credits
 }
 
 // Map credit pack price IDs to credit amounts

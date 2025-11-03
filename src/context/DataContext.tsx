@@ -84,7 +84,7 @@ const createEmptyData = () => {
       createdAt: new Date('2024-01-01')
     },
     {
-      id: 'd8b7d6ae-8a44-49c9-9dc3-1c6b1838815fd',
+      id: 'd8b7d6ae-8a44-49c9-9dc3-1c6b183815fd',
       name: 'Super Recruiter',
       monthlyCandidateAllotment: 400,
       includesCompanyEmails: true,
