@@ -14,7 +14,7 @@ An AI-powered recruitment that connects clients with expert sourcers to find top
 
 ### For Sourcers
 - **Job Marketplace** - Browse and claim available job requests
-- **LinkedIn Integration** - Automated profile scraping with Apify
+- **LinkedIn Integration** - Automated profile scraping with ScrapingDog
 - **AI-Enhanced Submissions** - Automatic candidate summary generation
 - **Performance Tracking** - Monitor completion rates and earnings
 
@@ -30,7 +30,7 @@ An AI-powered recruitment that connects clients with expert sourcers to find top
 - **Styling**: Tailwind CSS with custom design system
 - **Backend**: Supabase (PostgreSQL + Auth + Edge Functions)
 - **AI Integration**: Anthropic Claude for candidate analysis
-- **Data Scraping**: Apify for LinkedIn profile extraction
+- **Data Scraping**: ScrapingDog for LinkedIn profile extraction
 - **Payments**: Stripe for subscription management
 - **State Management**: React Context + localStorage persistence
 
@@ -47,7 +47,7 @@ An AI-powered recruitment that connects clients with expert sourcers to find top
 - npm or yarn
 - Supabase account
 - Anthropic API key
-- Apify account
+- ScrapingDog account
 - Stripe account (for payments)
 
 ### Installation
@@ -71,8 +71,8 @@ cp .env.example .env
 Fill in your environment variables:
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
+- `VITE_SCRAPINGDOG_API_KEY`
 - Anthropic API key (in Supabase Edge Functions)
-- Apify API token (in code)
 - Stripe keys (in Supabase Edge Functions)
 
 4. Start the development server:

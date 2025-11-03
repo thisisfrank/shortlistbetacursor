@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { Job, Candidate, Tier, CreditTransaction, UserProfile, Shortlist, ShortlistCandidate, MarketplaceUnlock } from '../types';
-import { scrapeLinkedInProfiles } from '../services/apifyService';
+import { scrapeLinkedInProfiles } from '../services/scrapingDogService';
 import { generateJobMatchScore } from '../services/anthropicService';
 import { webhookService } from '../services/webhookService';
 import { useAuth } from './AuthContext';
@@ -877,7 +877,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         };
       }
       
-      // Use the actual Apify scraping service
+      // Use the actual ScrapingDog scraping service
       const scrapingResult = await scrapeLinkedInProfiles(uniqueUrls);
       
       if (!scrapingResult.success) {

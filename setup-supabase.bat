@@ -20,6 +20,7 @@ if exist ".env" (
     echo. >> .env.example
     echo # Optional: Additional API Keys >> .env.example
     echo VITE_APIFY_API_TOKEN=your_apify_api_token >> .env.example
+    echo VITE_SCRAPINGDOG_API_KEY=your_scrapingdog_api_key >> .env.example
     echo.
     echo Please copy .env.example to .env and fill in your values
 )

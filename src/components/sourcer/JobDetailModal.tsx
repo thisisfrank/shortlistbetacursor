@@ -3,7 +3,7 @@ import { Job } from '../../types';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { JobTimer } from '../ui/JobTimer';
-import { testApifyResponse } from '../../services/apifyService';
+import { testScrapingDogResponse } from '../../services/scrapingDogService';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { FormInput } from '../forms/FormInput';
@@ -233,7 +233,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
       if (!candidatesError && latestCandidates) {
         setAcceptedCandidates(latestCandidates);
         
-        // Check for N/A names (incomplete Apify data)
+        // Check for N/A names (incomplete scraping data)
         const incompleteProfiles = latestCandidates.filter((c: any) => 
           c.first_name === 'N/A' || c.last_name === 'N/A' || 
           !c.first_name || !c.last_name
@@ -327,7 +327,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
     setError('');
 
     try {
-      const result = await testApifyResponse(url);
+      const result = await testScrapingDogResponse(url);
       setTestResult(result);
       
       if (!result.success) {
@@ -728,7 +728,7 @@ https://linkedin.com/in/candidate2
                 {testResult && (
                   <div className="mb-6 p-6 bg-shadowforce border border-guardian/20 rounded-lg">
                     <h5 className="font-anton text-lg text-white-knight mb-4 uppercase tracking-wide">
-                      Apify Test Result
+                      ScrapingDog Test Result
                     </h5>
                     {testResult.success ? (
                       <div className="space-y-4">
@@ -746,7 +746,7 @@ https://linkedin.com/in/candidate2
                         </div>
                         <details className="bg-shadowforce-light border border-guardian/20 rounded-lg">
                           <summary className="p-3 cursor-pointer text-guardian font-jakarta font-semibold">
-                            View Raw Apify Response
+                            View Raw Scraping Response
                           </summary>
                           <div className="p-3 border-t border-guardian/20">
                             <pre className="text-xs text-guardian overflow-auto max-h-64">
