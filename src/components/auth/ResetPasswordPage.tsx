@@ -308,22 +308,11 @@ export const ResetPasswordPage: React.FC = () => {
               fullWidth
               size="lg"
               isLoading={loading}
-              disabled={!password || !confirmPassword || !user}
+              disabled={!password || !confirmPassword || !isValidSession}
             >
               UPDATE PASSWORD
             </Button>
           </form>
-
-          {!user && (
-            <div className="mt-6 text-center">
-              <Link
-                to="/forgot-password"
-                className="block text-supernova hover:text-supernova-light font-semibold transition-colors font-jakarta"
-              >
-                Request a new password reset
-              </Link>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

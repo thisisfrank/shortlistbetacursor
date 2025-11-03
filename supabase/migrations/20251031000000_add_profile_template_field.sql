@@ -6,3 +6,4 @@ ALTER TABLE jobs ADD COLUMN IF NOT EXISTS selected_profile_template JSONB;
 COMMENT ON COLUMN jobs.selected_profile_template IS 'AI-generated candidate profile template selected by client to guide sourcer search';
 
 
+
