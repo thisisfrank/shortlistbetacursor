@@ -17,3 +17,8 @@ COMMENT ON COLUMN jobs.selected_profile_template IS 'AI-generated candidate prof
 
 
 
+
+
+
+
+

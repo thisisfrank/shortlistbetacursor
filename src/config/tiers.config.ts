@@ -47,8 +47,8 @@ export const TIER_CONFIG: Record<TierLevel, TierConfig> = {
     displayName: 'Average Recruiter',
     price: 29,
     credits: 100,
-    priceId: 'price_1SALD5Hb6LdHADWYbyDzUv7a',
-    paymentLink: 'https://buy.stripe.com/test_00w14neF09lNgjLd2h9R603',
+    priceId: 'price_1SPK3TQZ6mxDPDqbgiAc8b0d',
+    paymentLink: 'https://buy.stripe.com/aFa6oJ5Y41OD3HHf372Ry07',
     description: 'Hiring for 1 position',
     features: {
       credits: 100,
@@ -65,8 +65,8 @@ export const TIER_CONFIG: Record<TierLevel, TierConfig> = {
     displayName: 'Super Recruiter',
     price: 99,
     credits: 400,
-    priceId: 'price_1SALDYHb6LdHADWYwZ8almdN',
-    paymentLink: 'https://buy.stripe.com/test_6oU7sLgN89lNaZr8M19R604',
+    priceId: 'price_1SPK4oQZ6mxDPDqbfIRqTsqJ',
+    paymentLink: 'https://buy.stripe.com/3cI3cx86c1ODa65g7b2Ry08',
     description: 'Hiring for 2-4 positions',
     features: {
       credits: 400,
@@ -83,8 +83,8 @@ export const TIER_CONFIG: Record<TierLevel, TierConfig> = {
     displayName: 'Beast Mode',
     price: 699,
     credits: 2500,
-    priceId: 'price_1SALDtHb6LdHADWY5NBNKj5l',
-    paymentLink: 'https://buy.stripe.com/test_14AaEX40m0PhgjL1jz9R605',
+    priceId: 'price_1SPK4sQZ6mxDPDqblE0q1Q89',
+    paymentLink: 'https://buy.stripe.com/8x200l0DKcth1zzdZ32Ry09',
     description: 'Hiring for 5+ positions',
     features: {
       credits: 2500,
