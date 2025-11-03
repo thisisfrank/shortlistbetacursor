@@ -182,7 +182,7 @@ export const ResetPasswordPage: React.FC = () => {
     setError('');
 
     try {
-      if (!user) {
+      if (!isValidSession) {
         setError('You must be authenticated to reset your password.');
         return;
       }
