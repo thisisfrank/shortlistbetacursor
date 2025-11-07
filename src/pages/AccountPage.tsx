@@ -262,7 +262,7 @@ export const AccountPage: React.FC = () => {
         {/* Choose Your Avatar Section - Right Side */}
         <div className="bg-shadowforce-light/30 rounded-xl p-4 md:p-6 border border-guardian/10">
           <h2 className="font-anton text-xl text-white-knight uppercase tracking-wide mb-6">
-            CHOOSE YOUR AVATAR
+            CHOOSE YOUR SUPER RECRUITER
           </h2>
           
           {/* Avatar Grid */}

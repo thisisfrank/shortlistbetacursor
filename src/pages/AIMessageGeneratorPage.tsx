@@ -965,32 +965,52 @@ Output ONLY the final message text with NO signature or closing.`;
                        </Button>
                      </Tooltip>
                      
-                     <Tooltip content={isOverLimit ? `Message exceeds ${messageType === 'linkedin' ? 'LinkedIn' : 'email'} character limit` : `Copy the message to use in ${messageType === 'linkedin' ? 'LinkedIn' : 'email'} to contact your candidate`}>
-                       <Button
-                         onClick={() => copyToClipboard(bodyText)}
-                         disabled={messageType === 'linkedin' && isOverLimit}
-                         className={`flex items-center gap-1 md:gap-2 text-xs md:text-sm ${
-                           messageType === 'linkedin' && isOverLimit
-                             ? 'bg-gray-500 cursor-not-allowed opacity-50 text-white' 
-                             : 'bg-supernova hover:bg-supernova/90 text-shadowforce'
-                         }`}
-                         size="sm"
-                       >
-                         {copiedBody ? (
-                           <>
-                             <Check size={14} className="md:w-4 md:h-4" />
-                             <span className="hidden sm:inline">Copied!</span>
-                             <span className="sm:hidden">✓</span>
-                           </>
-                       ) : (
-                           <>
-                             <Copy size={14} className="md:w-4 md:h-4" />
-                             <span className="hidden sm:inline">{messageType === 'linkedin' && isOverLimit ? 'Exceeds Limit' : 'Copy Message'}</span>
-                             <span className="sm:hidden">Copy</span>
-                           </>
-                         )}
-                       </Button>
-                     </Tooltip>
+                    <Tooltip content={isOverLimit ? `Message exceeds ${messageType === 'linkedin' ? 'LinkedIn' : 'email'} character limit` : `Copy the message to use in ${messageType === 'linkedin' ? 'LinkedIn' : 'email'} to contact your candidate`}>
+                      <Button
+                        onClick={() => copyToClipboard(bodyText)}
+                        disabled={messageType === 'linkedin' && isOverLimit}
+                        className={`flex items-center gap-1 md:gap-2 text-xs md:text-sm ${
+                          messageType === 'linkedin' && isOverLimit
+                            ? 'bg-gray-500 cursor-not-allowed opacity-50 text-white' 
+                            : 'bg-supernova hover:bg-supernova/90 text-shadowforce'
+                        }`}
+                        size="sm"
+                      >
+                        {copiedBody ? (
+                          <>
+                            <Check size={14} className="md:w-4 md:h-4" />
+                            <span className="hidden sm:inline">Copied!</span>
+                            <span className="sm:hidden">✓</span>
+                          </>
+                      ) : (
+                          <>
+                            <Copy size={14} className="md:w-4 md:h-4" />
+                            <span className="hidden sm:inline">{messageType === 'linkedin' && isOverLimit ? 'Exceeds Limit' : 'Copy Message'}</span>
+                            <span className="sm:hidden">Copy</span>
+                          </>
+                        )}
+                      </Button>
+                    </Tooltip>
+
+                    {/* LinkedIn Profile Button - Only show when candidate is selected */}
+                    {(selectedCandidate || prefilledCandidate) && (selectedCandidate?.linkedinUrl || prefilledCandidate?.linkedinUrl) && (
+                      <Tooltip content="Open candidate's LinkedIn profile">
+                        <Button
+                          onClick={() => {
+                            const linkedinUrl = (prefilledCandidate || selectedCandidate)?.linkedinUrl;
+                            if (linkedinUrl) {
+                              window.open(linkedinUrl, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                          className="bg-[#0077B5] hover:bg-[#006399] text-white flex items-center gap-1 md:gap-2 text-xs md:text-sm"
+                          size="sm"
+                        >
+                          <User size={14} className="md:w-4 md:h-4" />
+                          <span className="hidden sm:inline">View LinkedIn</span>
+                          <span className="sm:hidden">LinkedIn</span>
+                        </Button>
+                      </Tooltip>
+                    )}
                   </div>
                   
                   {editingBody ? (

@@ -109,7 +109,7 @@ const marketplaceItems: MarketplaceItem[] = [
     id: 'outbound-pipelines',
     title: '100x Recruiter Stack',
     description: 'Build repeatable pipelines to consistently reach and convert top talent - without relying on job boards, referrals, or staffing firms.',
-    requiredLevel: 900,
+    requiredLevel: 1500,
     icon: TrendingUp,
     category: 'enterprise',
   },
@@ -125,7 +125,7 @@ const marketplaceItems: MarketplaceItem[] = [
     id: 'end-to-end-guide',
     title: 'The Ultimate Hiring Playbook',
     description: 'Master modern recruiting with a complete playbook that covers every step - from sourcing to hire.',
-    requiredLevel: 1100,
+    requiredLevel: 2000,
     icon: BookOpen,
     category: 'enterprise',
   }

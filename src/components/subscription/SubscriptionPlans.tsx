@@ -3,7 +3,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { CheckCircle, Zap, Crown, Star, Users, X } from 'lucide-react';
+import { Zap, Crown, Star, Users, X } from 'lucide-react';
 import { CreditTopOff } from './CreditTopOff';
 import { 
   getSubscriptionTiers, 
@@ -64,17 +64,7 @@ export const SubscriptionPlans: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 py-4 md:py-6">
         {/* Header */}
         <header className="mb-4 md:mb-6 text-center">
-          <div className="flex items-center justify-center mb-2 md:mb-3 mt-2 md:mt-4">
-            <div className="relative">
-              <img
-                src="/screenshots/v2.png"
-                alt="Super Recruiter Logo"
-                className="animate-pulse"
-                style={{ width: '100px', height: '42px', filter: 'drop-shadow(0 0 16px #FFD600)', objectFit: 'contain' }}
-              />
-            </div>
-          </div>
-          <h1 className="text-2xl md:text-4xl lg:text-5xl font-anton text-white-knight mb-2 md:mb-3 uppercase tracking-wide px-4">
+          <h1 className="text-2xl md:text-4xl lg:text-5xl font-anton text-white-knight mb-2 md:mb-3 uppercase tracking-wide px-4 mt-2 md:mt-4">
             Start With The Plan That Fits You!
           </h1>
           <p className="text-sm md:text-lg text-guardian font-jakarta max-w-xl mx-auto px-4">
@@ -85,7 +75,7 @@ export const SubscriptionPlans: React.FC = () => {
 
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
           {subscriptionTiers.map((tier) => (
             <Card 
               key={tier.tierId} 
@@ -153,86 +143,35 @@ export const SubscriptionPlans: React.FC = () => {
 
         {/* Premium Service Offering */}
         <div className="mb-6 md:mb-8 flex justify-center">
-          <div className="w-full lg:w-5/6 xl:w-2/3">
+          <div className="w-full lg:w-3/4 xl:w-1/2">
             <Card className="bg-gradient-to-r from-yellow-500/20 to-yellow-500/10 border-yellow-500/30">
-            <CardContent className="p-4 md:p-6">
-              <div className="text-center mb-3">
-                <h3 className="text-lg md:text-xl lg:text-2xl font-anton text-white-knight uppercase tracking-wide px-4">
-                  Want help turning your candidate lists into real interviews?
+            <CardContent className="p-6 md:p-8">
+              <div className="text-center mb-6">
+                <h3 className="text-xl md:text-2xl lg:text-3xl font-anton text-white-knight uppercase tracking-wide px-4">
+                  Want Help Converting Your Candidates<br />Into Real Interviews?
                 </h3>
               </div>
 
-              <div className="text-center mb-6">
-                
+              <div className="text-center">
                 <Button 
                   onClick={() => window.open('https://superrecruiterinfo.com/candidate-accelerator-page', '_blank')}
                   variant="primary"
                   size="md"
-                  className="bg-yellow-400 hover:bg-yellow-500 text-black font-anton uppercase tracking-wide px-4 md:px-6 py-2 mb-2 w-full sm:w-auto text-sm"
+                  className="bg-yellow-400 hover:bg-yellow-500 text-black font-anton uppercase tracking-wide px-4 md:px-6 py-2 mb-6 w-full sm:w-auto text-sm"
                 >
-                  See How to Lower Your Cost Per Hire
+                  Let's Do It
                 </Button>
-                <p className="text-white-knight font-anton text-base md:text-lg lg:text-xl uppercase tracking-wide px-4">
-                  Lower your cost per hire by 30% in 60 days or pay nothing.
+                <p className="text-white-knight font-anton text-lg md:text-xl lg:text-2xl uppercase tracking-wide px-4 mb-8">
+                  Your 1st Candidate Pipeline is 100% FREE
                 </p>
-                <div className="mt-4">
-                  <p className="text-guardian font-jakarta text-base italic">
-                    "Super Recruiter truly understand the nuances of quality recruitment and have a pricing model you can't beat."
+                <div>
+                  <p className="text-guardian font-jakarta text-base italic max-w-3xl mx-auto">
+                    "Super Recruiter truly understand the nuances of quality recruitment<br />and have a pricing model you can't beat."
                   </p>
-                  <p className="text-supernova font-jakarta text-sm mt-1">
+                  <p className="text-supernova font-jakarta text-sm mt-2">
                     Michael Tibor, CEO of Credo
                   </p>
                 </div>
-              </div>
-
-              <div className="mb-6">
-                <h4 className="text-lg font-anton text-white-knight uppercase tracking-wide mb-4 text-center">
-                  WHAT'S INCLUDED:
-                </h4>
-                <div className="space-y-2 max-w-2xl mx-auto">
-                  <div className="flex items-start justify-center">
-                    <CheckCircle className="text-yellow-400 mr-2 mt-1 flex-shrink-0" size={18} />
-                    <span className="text-guardian font-jakarta">
-                      Dedicated Super Recruiter
-                    </span>
-                  </div>
-                  <div className="flex items-start justify-center">
-                    <CheckCircle className="text-yellow-400 mr-2 mt-1 flex-shrink-0" size={18} />
-                    <span className="text-guardian font-jakarta">
-                      Outbound candidate pipelines built & managed for you
-                    </span>
-                  </div>
-                  <div className="flex items-start justify-center">
-                    <CheckCircle className="text-yellow-400 mr-2 mt-1 flex-shrink-0" size={18} />
-                    <span className="text-guardian font-jakarta">
-                      100% sourced candidates (not job board spam)
-                    </span>
-                  </div>
-                  <div className="flex items-start justify-center">
-                    <CheckCircle className="text-yellow-400 mr-2 mt-1 flex-shrink-0" size={18} />
-                    <span className="text-guardian font-jakarta">
-                     Pre-screened, qualified candidates -<br />scheduled straight to your calendar
-                    </span>
-                  </div>
-                  <div className="flex items-start justify-center">
-                    <CheckCircle className="text-yellow-400 mr-2 mt-1 flex-shrink-0" size={18} />
-                    <span className="text-guardian font-jakarta">
-                    A/B message testing to boost candidate response rates
-                    </span>
-                  </div>
-                  <div className="flex items-start justify-center">
-                    <CheckCircle className="text-yellow-400 mr-2 mt-1 flex-shrink-0" size={18} />
-                    <span className="text-guardian font-jakarta">
-                      Proven multi-channel outreach (email, LinkedIn, SMS)
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-center border-t border-yellow-500/20 pt-4">
-                <p className="text-guardian font-jakarta text-sm">
-                  <strong className="text-white-knight">Perfect for:</strong> Hiring managers, recruiters, and founders<br />who want high-quality candidates delivered straight to their calendars - without lifting a finger.
-                </p>
               </div>
             </CardContent>
           </Card>

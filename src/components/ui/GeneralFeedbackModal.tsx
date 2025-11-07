@@ -67,8 +67,7 @@ export const GeneralFeedbackModal: React.FC<GeneralFeedbackModalProps> = ({
            formData.futureNeeds.trim() !== '' &&
            formData.timeSaved !== '' &&
            formData.mostValuableFeature.length > 0 &&
-           (!formData.mostValuableFeature.includes('other') || formData.otherFeature.trim() !== '') &&
-           (!formData.testimonialPermission || formData.testimonialText.trim() !== '');
+           (!formData.mostValuableFeature.includes('other') || formData.otherFeature.trim() !== '');
   };
 
   const handleSubmit = () => {
@@ -223,9 +222,19 @@ export const GeneralFeedbackModal: React.FC<GeneralFeedbackModalProps> = ({
             )}
           </div>
 
-          {/* Testimonial Permission */}
+          {/* Testimonial */}
           <div className="pt-4">
-            <label className="flex items-start gap-3 cursor-pointer group">
+            <label className="block text-sm font-jakarta font-semibold text-supernova uppercase tracking-wide mb-3">
+              7. Share your testimonial (optional)
+            </label>
+            <textarea
+              value={formData.testimonialText}
+              onChange={(e) => handleInputChange('testimonialText', e.target.value)}
+              placeholder="Write your testimonial here... (e.g., how Shortlist has helped you, what results you've achieved, etc.)"
+              className="w-full p-4 bg-shadowforce-light border border-guardian/30 rounded-lg text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta resize-vertical min-h-[100px]"
+              rows={4}
+            />
+            <label className="flex items-start gap-3 cursor-pointer group mt-3">
               <input
                 type="checkbox"
                 checked={formData.testimonialPermission}
@@ -236,17 +245,6 @@ export const GeneralFeedbackModal: React.FC<GeneralFeedbackModalProps> = ({
                 You can use my testimonial for marketing purposes.
               </span>
             </label>
-            {formData.testimonialPermission && (
-              <div className="mt-3">
-                <textarea
-                  value={formData.testimonialText}
-                  onChange={(e) => handleInputChange('testimonialText', e.target.value)}
-                  placeholder="Write your testimonial here... (e.g., how Shortlist has helped you, what results you've achieved, etc.)"
-                  className="w-full p-4 bg-shadowforce-light border border-guardian/30 rounded-lg text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta resize-vertical min-h-[100px]"
-                  rows={4}
-                />
-              </div>
-            )}
           </div>
         </div>
 
@@ -266,7 +264,7 @@ export const GeneralFeedbackModal: React.FC<GeneralFeedbackModalProps> = ({
 
         {!isFormValid() && (
           <p className="text-center text-guardian/60 text-sm mt-3 font-jakarta">
-            All fields are required to claim your 50 free candidates
+            Please complete all required fields (1-6) to claim your 50 free candidates
           </p>
         )}
       </div>
