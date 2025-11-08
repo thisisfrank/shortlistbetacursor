@@ -802,7 +802,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   // Bypass AI scoring - accept all candidates without requiring AI to work
-  const BYPASS_AI_SCORING = true; // Set to true to accept all candidates regardless of AI match score
+  const BYPASS_AI_SCORING = false; // Set to true to accept all candidates regardless of AI match score
 
   const addCandidatesFromLinkedIn = async (jobId: string, linkedinUrls: string[]): Promise<{ 
     success: boolean; 
@@ -910,6 +910,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       // Step 1 & 2: Bypass AI scoring if flag is set, or fallback to always accept on error
       const acceptedCandidates: Candidate[] = [];
       const rejectedCandidates: any[] = [];
+      const failedScrapes = uniqueUrls.length - scrapingResult.profiles.length; // URLs that failed to scrape
+      
       for (const profile of scrapingResult.profiles) {
         // Fix for string | undefined and string | null issues in candidate mapping and job mapping
         const candidateData = {
@@ -960,7 +962,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               candidateData
             };
             const scoreResult = await generateJobMatchScore(matchData);
-            if (scoreResult.score >= 50) {
+            if (scoreResult.score >= 60) {
               // Accept candidate - meets threshold
               const candidate: Candidate = {
                 id: crypto.randomUUID(),
@@ -1092,6 +1094,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         resultMessage += `❌ ${rejectedCandidates.length} candidates REJECTED (below 60% AI match)\n`;
         const rejectedNames = rejectedCandidates.map(r => `${r.name} (${r.score}%)`).join(', ');
         resultMessage += `\nREJECTED: ${rejectedNames}\n`;
+      }
+      
+      if (failedScrapes > 0) {
+        resultMessage += `⚠️ ${failedScrapes} LinkedIn profile${failedScrapes !== 1 ? 's' : ''} FAILED to scrape (private/blocked/invalid)\n`;
+        resultMessage += `   Check that URLs are correct and profiles are public. LinkedIn may also be blocking automated access.\n`;
       }
       
       if (duplicateUrls.length > 0) {

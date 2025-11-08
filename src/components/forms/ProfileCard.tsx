@@ -73,8 +73,8 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
       {/* Previous Work Experience */}
       <div className="mb-3">
         <div className="flex items-center gap-2 mb-2">
-          <Briefcase size={14} className="text-guardian" />
-          <span className="text-xs font-jakarta font-semibold text-guardian uppercase tracking-wide">
+          <Briefcase size={14} className="text-supernova" />
+          <span className="text-xs font-jakarta font-semibold text-supernova uppercase tracking-wide">
             Previous Experience
           </span>
         </div>
@@ -106,7 +106,7 @@ export const ProfileCard: React.FC<ProfileCardProps> = ({
 
       {/* Skills */}
       <div>
-        <span className="text-xs font-jakarta font-semibold text-guardian uppercase tracking-wide block mb-2">
+        <span className="text-xs font-jakarta font-semibold text-supernova uppercase tracking-wide block mb-2">
           Relevant Skills
         </span>
         <div className="flex flex-wrap gap-2">

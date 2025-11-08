@@ -322,10 +322,24 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
                   <div>
                     <p className="text-xs font-semibold text-supernova mb-1 uppercase tracking-wide">Previous Experience</p>
                     <ul className="space-y-1">
-                      {selectedProfile.previousWorkExperience.slice(0, 2).map((exp, i) => (
+                      {selectedProfile.previousWorkExperience.map((exp, i) => (
                         <li key={i} className="flex items-start">
                           <span className="text-supernova mr-2 text-xs">•</span>
                           <span className="text-white-knight font-jakarta text-xs">{exp}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {selectedProfile.keyProjects.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-supernova mb-1 uppercase tracking-wide">Key Projects</p>
+                    <ul className="space-y-1">
+                      {selectedProfile.keyProjects.map((project, i) => (
+                        <li key={i} className="flex items-start">
+                          <span className="text-supernova mr-2 text-xs">•</span>
+                          <span className="text-white-knight font-jakarta text-xs">{project}</span>
                         </li>
                       ))}
                     </ul>
@@ -336,7 +350,7 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
                   <div>
                     <p className="text-xs font-semibold text-supernova mb-1 uppercase tracking-wide">Relevant Skills</p>
                     <div className="flex flex-wrap gap-1">
-                      {selectedProfile.relevantSkills.slice(0, 5).map((skill, i) => (
+                      {selectedProfile.relevantSkills.map((skill, i) => (
                         <span 
                           key={i}
                           className="px-2 py-0.5 bg-supernova/20 text-white-knight font-jakarta text-xs rounded-full border border-supernova/40"

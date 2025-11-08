@@ -578,7 +578,6 @@ export const CandidatesView: React.FC = () => {
         'Current Role',
         'Location',
         'Years of Experience',
-        'Match Score',
         'AI Summary',
         'Experience',
         'Education',
@@ -586,7 +585,6 @@ export const CandidatesView: React.FC = () => {
       ];
 
       const csvRows = selectedCandidateData.map(candidate => {
-        const matchScore = matchScores[candidate.id]?.score || 'N/A';
         const yearsOfExperience = calculateYearsOfExperience(candidate.experience);
         
         // Format experience as text
@@ -610,7 +608,6 @@ export const CandidatesView: React.FC = () => {
           `"${candidate.headline || 'N/A'}"`,
           `"${candidate.location || 'N/A'}"`,
           `"${yearsOfExperience} years"`,
-          `"${matchScore}${typeof matchScore === 'number' ? '%' : ''}"`,
           `"${(candidate.summary || 'N/A').replace(/"/g, '""')}"`,
           `"${experienceText.replace(/"/g, '""')}"`,
           `"${educationText.replace(/"/g, '""')}"`,
@@ -1580,10 +1577,10 @@ export const CandidatesView: React.FC = () => {
                 
                 <div className="text-center">
                   <h2 className="text-3xl md:text-4xl font-anton text-supernova mb-6 leading-tight uppercase tracking-wide">
-                    Want qualified candidates booked on your calendar - without lifting a finger?
+                    Want Help Converting Your Candidates Into Interviews?
                   </h2>
                   
-                  <div className="mb-8">
+                  <div className="mb-6">
                     <Button
                       onClick={() => {
                         handleDismissCandidateListPopup();
@@ -1593,15 +1590,22 @@ export const CandidatesView: React.FC = () => {
                       size="lg"
                       className="bg-supernova hover:bg-supernova/90 text-shadowforce font-anton text-xl px-12 py-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg glow-supernova uppercase tracking-wide"
                     >
-                      Book My Call
+                      Show Me How
                     </Button>
                   </div>
                   
-                  <p className="text-supernova text-lg md:text-xl font-jakarta font-medium">
-                    You'll get the 100x Recruiter Stack Guide ($197 value) - 
-                    <br />
-                    <span className="text-white-knight font-bold">FREE, just for showing up.</span>
+                  <p className="text-supernova text-lg font-jakarta font-medium mb-6">
+                    You'll get the 100× Recruiter Stack ($97 value) free - just for showing up.
                   </p>
+                  
+                  <div className="mt-8 pt-6 border-t border-supernova/20">
+                    <p className="text-white-knight text-base md:text-lg font-jakarta italic mb-2">
+                      "This is by far the fastest, easiest, most affordable way to hire."
+                    </p>
+                    <p className="text-guardian text-sm font-jakarta">
+                      Nate Reitcher, CEO of the Collector
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

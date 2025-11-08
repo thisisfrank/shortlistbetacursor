@@ -105,7 +105,7 @@ export const generateCandidateSummary = async (candidateData: CandidateData): Pr
         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20240620',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 200,
         messages: [
           {
@@ -209,7 +209,7 @@ export const generateJobMatchScore = async (matchData: JobMatchData): Promise<{ 
         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20240620',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 200,
         messages: [
           {
@@ -463,7 +463,7 @@ export const reviewMessageGrammar = async (message: string): Promise<GrammarRevi
         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20240620',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
         messages: [
           {

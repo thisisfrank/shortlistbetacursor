@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Job } from '../../types';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
@@ -7,9 +7,10 @@ import { testScrapingDogResponse } from '../../services/scrapingDogService';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { FormInput } from '../forms/FormInput';
-import { X, CheckCircle, AlertCircle, Plus, Trash2, Users, ExternalLink, Loader, Zap } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Plus, Trash2, Users, ExternalLink, Loader, Zap, Target } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { ghlService } from '../../services/ghlService';
+import { generateJobMatchScore } from '../../services/anthropicService';
 
 interface JobDetailModalProps {
   job: Job;
@@ -41,6 +42,7 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
   const [showJobCompletionConfirmation, setShowJobCompletionConfirmation] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [deletingCandidateId, setDeletingCandidateId] = useState<string | null>(null);
+  const [matchScores, setMatchScores] = useState<Record<string, { score: number; reasoning: string; loading: boolean }>>({});
   
   const MAX_CANDIDATES_PER_SUBMISSION = 200;
   
@@ -54,6 +56,58 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({
       year: 'numeric'
     }).format(new Date(date));
   };
+
+  // Calculate match score for a candidate
+  const getMatchScore = useCallback(async (candidate: any) => {
+    if (matchScores[candidate.id]) return; // Already calculated or loading
+    
+    // Set loading state
+    setMatchScores(prev => ({
+      ...prev,
+      [candidate.id]: { score: 0, reasoning: '', loading: true }
+    }));
+    
+    try {
+      const matchData = {
+        jobTitle: job.title,
+        jobDescription: job.description,
+        seniorityLevel: job.seniorityLevel,
+        keySkills: job.mustHaveSkills || [],
+        candidateData: {
+          firstName: candidate.firstName,
+          lastName: candidate.lastName,
+          headline: candidate.headline,
+          location: candidate.location,
+          experience: candidate.experience,
+          education: candidate.education,
+          skills: candidate.skills,
+          about: candidate.summary
+        }
+      };
+      
+      const result = await generateJobMatchScore(matchData);
+      
+      setMatchScores(prev => ({
+        ...prev,
+        [candidate.id]: { ...result, loading: false }
+      }));
+    } catch (error) {
+      console.error('Error calculating match score:', error);
+      setMatchScores(prev => ({
+        ...prev,
+        [candidate.id]: { score: 0, reasoning: 'Error calculating match score', loading: false }
+      }));
+    }
+  }, [job, matchScores]);
+
+  // Calculate match scores when candidates are shown
+  useEffect(() => {
+    if (showAcceptedCandidates && acceptedCandidates.length > 0) {
+      acceptedCandidates.forEach(candidate => {
+        getMatchScore(candidate);
+      });
+    }
+  }, [showAcceptedCandidates, acceptedCandidates, getMatchScore]);
 
   const handleClaim = async () => {
     if (!userProfile) {
@@ -851,13 +905,32 @@ https://linkedin.com/in/candidate2
                               <div className="flex-1">
                                 <div className="flex items-center">
                                   <span className="text-supernova font-anton text-sm mr-3">#{index + 1}</span>
-                                  <div>
+                                  <div className="flex-1">
                                     <p className="text-white-knight font-jakarta font-semibold text-2xl">
                                       {candidate.firstName} {candidate.lastName}
                                     </p>
                                     <p className="text-guardian font-jakarta text-sm">
                                       {candidate.headline || 'No headline available'}
                                     </p>
+                                  </div>
+                                  {/* Match Score Display */}
+                                  <div className="ml-4 mr-4">
+                                    {matchScores[candidate.id]?.loading ? (
+                                      <div className="flex items-center">
+                                        <Loader className="animate-spin text-supernova mr-2" size={16} />
+                                        <span className="text-guardian font-jakarta text-sm">Calculating...</span>
+                                      </div>
+                                    ) : matchScores[candidate.id]?.score ? (
+                                      <div className="flex items-center">
+                                        <Target className="text-supernova mr-2" size={16} />
+                                        <div>
+                                          <div className="text-2xl font-anton text-supernova">
+                                            {matchScores[candidate.id]?.score}%
+                                          </div>
+                                          <div className="text-xs text-guardian font-jakarta">MATCH</div>
+                                        </div>
+                                      </div>
+                                    ) : null}
                                   </div>
                                 </div>
                               </div>

@@ -90,7 +90,7 @@ IMPORTANT: Return ONLY the 3 profiles in the exact format shown above. Each fiel
         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 1200,
         messages: [
           {

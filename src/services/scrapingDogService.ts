@@ -185,7 +185,8 @@ const scrapeSingleProfile = async (linkedinUrl: string): Promise<LinkedInProfile
     const encodedUrl = encodeURIComponent(linkedinUrl);
     
     // Build ScrapingDog API URL with dynamic rendering enabled for JavaScript
-    const apiUrl = `https://api.scrapingdog.com/scrape?api_key=${SCRAPINGDOG_API_KEY}&url=${encodedUrl}&dynamic=true`;
+    // Using premium=true for better success rate with LinkedIn's anti-bot protection
+    const apiUrl = `https://api.scrapingdog.com/scrape?api_key=${SCRAPINGDOG_API_KEY}&url=${encodedUrl}&dynamic=true&premium=true`;
     
     console.log(`📡 Fetching from ScrapingDog...`);
     const response = await fetch(apiUrl);
@@ -199,11 +200,17 @@ const scrapeSingleProfile = async (linkedinUrl: string): Promise<LinkedInProfile
     const html = await response.text();
     console.log(`✅ Received HTML (${html.length} characters)`);
     
+    // If HTML is suspiciously short, log it for debugging
+    if (html.length < 1000) {
+      console.warn(`⚠️ Received very short HTML response (${html.length} chars). This may indicate an error or blocked request.`);
+      console.warn(`Response preview:`, html.substring(0, 200));
+    }
+    
     // Parse the HTML to extract profile data
     const profileData = parseLinkedInHTML(html, linkedinUrl);
     
-    if (!profileData || !profileData.firstName) {
-      console.warn(`⚠️ Could not extract profile data from ${linkedinUrl}`);
+    if (!profileData || !profileData.firstName || profileData.firstName === 'N/A') {
+      console.warn(`⚠️ Could not extract profile data from ${linkedinUrl}. This usually means the profile is private, restricted, or LinkedIn blocked the request.`);
       return null;
     }
     

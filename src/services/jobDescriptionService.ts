@@ -31,15 +31,24 @@ export const generateJobDescription = async (data: JobDescriptionRequest): Promi
 Position Title: ${data.title}
 Required Skills: ${data.mustHaveSkills.join(', ')}${contextSection}
 
-Create a compelling 1-2 paragraph job description that:
-- Starts with a brief company/role overview
-- Highlights key responsibilities and impact
-- Emphasizes the required skills (${data.mustHaveSkills.join(', ')})${data.idealCandidate ? `\n- Tailors the description to attract candidates matching this profile: ${data.idealCandidate}` : ''}
-- Mentions growth opportunities or benefits
+Format the job description with this structure:
 
-Keep it concise, professional, and engaging to attract top talent. Focus on what makes this role exciting and impactful.
+Overview: (2-3 sentences introducing the role/company and what makes it exciting)
 
-Return only the job description text, no additional formatting or headers.`;
+Main Responsibilities:
+- (4-6 bullet points of key duties and impact)
+
+Qualifications:
+- (4-6 bullet points covering required skills: ${data.mustHaveSkills.join(', ')})${data.idealCandidate ? `\n- Tailor qualifications to attract candidates matching: ${data.idealCandidate}` : ''}
+
+GUIDELINES:
+- Use actual bullet characters (•, -, or *) for lists
+- Keep it professional and engaging to attract top talent
+- Focus on impact and growth opportunities
+- Emphasize the required skills naturally within the qualifications
+- Keep each bullet point concise but specific
+
+Return only the formatted job description with clear section headers.`;
 
     // Call Anthropic API via our proxy
     const response = await fetch(`${supabaseUrl}/functions/v1/anthropic-proxy`, {
@@ -49,8 +58,8 @@ Return only the job description text, no additional formatting or headers.`;
         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 400, // Shorter for 1-2 paragraphs
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 700, // Increased for structured format with bullets
         messages: [
           {
             role: 'user',
@@ -93,9 +102,19 @@ const generateFallbackDescription = (data: JobDescriptionRequest): string => {
   const companyText = companyName ? `${companyName} is` : 'We are';
   const levelText = seniorityLevel ? ` ${seniorityLevel.toLowerCase()}` : '';
   
-  return `${companyText} seeking a talented${levelText} ${title} to join our growing team. This role offers the opportunity to work with cutting-edge technologies and make a significant impact on our products and services.
+  return `Overview: ${companyText} seeking a talented${levelText} ${title} to join our growing team. This role offers the opportunity to work with cutting-edge technologies and make a significant impact on our products and services.
 
-The ideal candidate will have strong expertise in ${mustHaveSkills.join(', ')} and be passionate about delivering high-quality solutions. You'll collaborate with cross-functional teams, contribute to technical decisions, and help drive innovation while growing your career in a supportive environment.`;
+Main Responsibilities:
+- Design and implement technical solutions aligned with business objectives
+- Collaborate with cross-functional teams to deliver high-quality products
+- Contribute to technical decisions and architecture discussions
+- Mentor team members and drive best practices
+
+Qualifications:
+- Strong expertise in ${mustHaveSkills.join(', ')}
+- Proven track record of delivering complex projects
+- Excellent problem-solving and communication skills
+- Passion for continuous learning and innovation`;
 };
 
 export interface FormatJobDescriptionRequest {
@@ -156,7 +175,7 @@ Return only the formatted job description, no explanations.`;
         'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 800, // More tokens for formatting longer descriptions
         messages: [
           {
