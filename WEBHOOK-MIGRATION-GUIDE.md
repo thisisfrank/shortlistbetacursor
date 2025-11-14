@@ -145,7 +145,7 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 SCRAPINGDOG_API_KEY=daa41463ff8a6a569a033ea739029dba10255f6f370c...
 
 # Webhooks (NEW - Add these)
-JOB_WEBHOOK_URL=https://hook.us1.make.com/ymemot9h7rnfocccrl8nhedvjlw7mj1l
+JOB_WEBHOOK_URL=
 REQUEST_MORE_CANDIDATES_WEBHOOK_URL=your_second_webhook_url_here
 ```
 
