@@ -37,17 +37,20 @@ class WebhookService {
 
   /**
    * Sends a webhook notification when a new job is posted
+   * Now uses secure Supabase proxy to hide webhook URL
    */
   async sendJobPostedWebhook(
     jobData: any,
     userData: { id: string; email: string; name: string },
     webhookUrl?: string
   ): Promise<{ success: boolean; error?: string }> {
-    // Skip if no webhook URL is configured
-    const url = webhookUrl || import.meta.env.VITE_JOB_WEBHOOK_URL || 'https://hook.us1.make.com/ymemot9h7rnfocccrl8nhedvjlw7mj1l';
-    if (!url) {
-      console.log('📞 No webhook URL configured, skipping job webhook');
-      return { success: true };
+    // Get Supabase configuration
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('❌ Supabase configuration missing');
+      return { success: false, error: 'Supabase not configured' };
     }
 
     const payload: JobWebhookPayload = {
@@ -75,11 +78,17 @@ class WebhookService {
       webhookTimestamp: new Date().toISOString(),
     };
 
-    return this.sendWebhookWithRetry(url, payload);
+    // Call secure proxy instead of direct webhook
+    return this.sendWebhookViaProxy(
+      `${supabaseUrl}/functions/v1/job-webhook-proxy`,
+      supabaseAnonKey,
+      payload
+    );
   }
 
   /**
    * Sends a webhook when client requests more candidates
+   * Now uses secure Supabase proxy to hide webhook URL
    */
   async sendRequestMoreCandidatesWebhook(
     jobData: any,
@@ -88,10 +97,13 @@ class WebhookService {
     searchInstructions: string,
     webhookUrl?: string
   ): Promise<{ success: boolean; error?: string }> {
-    const url = webhookUrl || import.meta.env.VITE_SECOND_REQUEST_WEBHOOK_URL;
-    if (!url) {
-      console.log('📞 No request more candidates webhook URL configured');
-      return { success: true };
+    // Get Supabase configuration
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('❌ Supabase configuration missing');
+      return { success: false, error: 'Supabase not configured' };
     }
 
     const payload = {
@@ -108,7 +120,12 @@ class WebhookService {
       requestTimestamp: new Date().toISOString(),
     };
 
-    return this.sendWebhookWithRetry(url, payload as any);
+    // Call secure proxy instead of direct webhook
+    return this.sendWebhookViaProxy(
+      `${supabaseUrl}/functions/v1/request-more-candidates-proxy`,
+      supabaseAnonKey,
+      payload
+    );
   }
 
   /**
@@ -168,6 +185,41 @@ class WebhookService {
     }
 
     return { success: false, error: 'Unexpected error in retry logic' };
+  }
+
+  /**
+   * Sends webhook via secure Supabase proxy
+   */
+  private async sendWebhookViaProxy(
+    proxyUrl: string,
+    anonKey: string,
+    payload: any
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      console.log(`📞 Sending webhook via secure proxy: ${proxyUrl}`);
+      
+      const response = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        console.log(`✅ Webhook sent successfully via proxy`);
+        return { success: true };
+      } else {
+        throw new Error(data.error || 'Webhook proxy failed');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`❌ Webhook proxy failed: ${errorMessage}`);
+      return { success: false, error: errorMessage };
+    }
   }
 
   /**

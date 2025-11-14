@@ -1,18 +1,7 @@
 import { generateCandidateSummary } from './anthropicService';
 
-const SCRAPINGDOG_API_KEY = import.meta.env.VITE_SCRAPINGDOG_API_KEY;
-
-// Debug logging for environment variables
-console.log('🔧 ScrapingDog Debug Info:', {
-  hasKey: !!SCRAPINGDOG_API_KEY,
-  keyLength: SCRAPINGDOG_API_KEY?.length || 0,
-  keyPreview: SCRAPINGDOG_API_KEY ? `${SCRAPINGDOG_API_KEY.substring(0, 15)}...` : 'undefined',
-  allEnvVars: Object.keys(import.meta.env).filter(key => key.startsWith('VITE_'))
-});
-
-if (!SCRAPINGDOG_API_KEY) {
-  console.warn('⚠️ VITE_SCRAPINGDOG_API_KEY not configured. LinkedIn scraping will not work.');
-}
+// ScrapingDog is now accessed via Supabase proxy for security
+// API key is stored securely in Supabase Edge Functions
 
 export interface LinkedInProfile {
   firstName: string;
@@ -181,24 +170,39 @@ const scrapeSingleProfile = async (linkedinUrl: string): Promise<LinkedInProfile
   try {
     console.log(`🔍 Scraping profile: ${linkedinUrl}`);
     
-    // Encode the LinkedIn URL
-    const encodedUrl = encodeURIComponent(linkedinUrl);
+    // Get Supabase configuration
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
     
-    // Build ScrapingDog API URL with dynamic rendering enabled for JavaScript
-    // Using premium=true for better success rate with LinkedIn's anti-bot protection
-    const apiUrl = `https://api.scrapingdog.com/scrape?api_key=${SCRAPINGDOG_API_KEY}&url=${encodedUrl}&dynamic=true&premium=true`;
-    
-    console.log(`📡 Fetching from ScrapingDog...`);
-    const response = await fetch(apiUrl);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ ScrapingDog API error for ${linkedinUrl}: ${response.status} - ${errorText}`);
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('❌ Supabase configuration missing');
       return null;
     }
     
-    const html = await response.text();
-    console.log(`✅ Received HTML (${html.length} characters)`);
+    // Call our secure proxy function instead of ScrapingDog directly
+    console.log(`📡 Calling ScrapingDog proxy...`);
+    const response = await fetch(`${supabaseUrl}/functions/v1/scrapingdog-proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({
+        linkedinUrl,
+        dynamic: true,
+        premium: true
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error(`❌ ScrapingDog proxy error for ${linkedinUrl}: ${response.status}`, errorData);
+      return null;
+    }
+    
+    const data = await response.json();
+    const html = data.html;
+    console.log(`✅ Received HTML (${html?.length || 0} characters)`);
     
     // If HTML is suspiciously short, log it for debugging
     if (html.length < 1000) {

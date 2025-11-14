@@ -47,6 +47,7 @@ GUIDELINES:
 - Focus on impact and growth opportunities
 - Emphasize the required skills naturally within the qualifications
 - Keep each bullet point concise but specific
+- DO NOT use hashtags (#) anywhere in the output
 
 Return only the formatted job description with clear section headers.`;
 
@@ -164,6 +165,7 @@ FORMATTING GUIDELINES:
 - Ensure proper spacing between sections
 - If content doesn't fit this structure perfectly, organize it in the most logical way
 - The goal is to make it clean and readable, not to rewrite it
+- DO NOT use hashtags (#) anywhere in the output
 
 Return only the formatted job description, no explanations.`;
 

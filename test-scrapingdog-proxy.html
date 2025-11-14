@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test ScrapingDog Proxy</title>
+</head>
+<body>
+    <h1>Test ScrapingDog Proxy</h1>
+    <input type="text" id="supabaseUrl" placeholder="Your Supabase URL" style="width: 400px;" value="https://awhanhqdqgrvgghmulox.supabase.co">
+    <br><br>
+    <input type="text" id="anonKey" placeholder="Your Anon Key" style="width: 400px;">
+    <br><br>
+    <input type="text" id="linkedinUrl" placeholder="LinkedIn URL" style="width: 400px;" value="https://www.linkedin.com/in/williamhgates/">
+    <br><br>
+    <button onclick="testProxy()">Test Proxy</button>
+    <br><br>
+    <pre id="result"></pre>
+
+    <script>
+        async function testProxy() {
+            const supabaseUrl = document.getElementById('supabaseUrl').value;
+            const anonKey = document.getElementById('anonKey').value;
+            const linkedinUrl = document.getElementById('linkedinUrl').value;
+            const resultEl = document.getElementById('result');
+
+            if (!supabaseUrl || !anonKey || !linkedinUrl) {
+                resultEl.textContent = 'Please fill in all fields';
+                return;
+            }
+
+            resultEl.textContent = 'Testing... (this may take 10-20 seconds)';
+
+            try {
+                const response = await fetch(`${supabaseUrl}/functions/v1/scrapingdog-proxy`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${anonKey}`,
+                    },
+                    body: JSON.stringify({
+                        linkedinUrl: linkedinUrl,
+                        dynamic: true,
+                        premium: true
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultEl.textContent = JSON.stringify({
+                        success: data.success,
+                        htmlLength: data.length,
+                        message: 'Successfully scraped LinkedIn profile!'
+                    }, null, 2);
+                } else {
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                resultEl.textContent = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
+

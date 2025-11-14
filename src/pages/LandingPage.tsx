@@ -165,7 +165,7 @@ export const LandingPage: React.FC = () => {
                   <div className="absolute top-1/2 left-0 right-0 h-1 bg-supernova/30 transform -translate-y-1/2"></div>
                   
                   {/* Timeline Points Container */}
-                  <div className="relative flex justify-between items-start max-w-6xl mx-auto">
+                  <div className="relative flex justify-between items-center max-w-6xl mx-auto">
                     
                     {/* Stage 1 - Below Timeline */}
                     <div className="flex flex-col items-center w-1/3 relative pt-20">
