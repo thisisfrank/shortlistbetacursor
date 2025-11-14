@@ -1,0 +1,196 @@
+import { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useData } from '../../../context/DataContext';
+import { useAuth } from '../../../context/AuthContext';
+import { getUserUsageStats } from '../../../utils/userUsageStats';
+import { ghlService } from '../../../services/ghlService';
+import { formatJobDescription } from '../../../services/jobDescriptionService';
+import { useClientIntakeForm } from './ClientIntakeFormContext';
+import { useFormValidation } from './useFormValidation';
+import { FormStep } from '../../../types';
+
+interface UseFormSubmissionProps {
+  setCurrentStep: (step: FormStep) => void;
+}
+
+export const useFormSubmission = ({ setCurrentStep }: UseFormSubmissionProps) => {
+  const navigate = useNavigate();
+  const { addJob, jobs, candidates, tiers, creditTransactions } = useData();
+  const { user, userProfile } = useAuth();
+  const { formData, setIsSubmitting, setAlertModal, resetForm, generatedProfiles } = useClientIntakeForm();
+  const { extractNumericValue } = useFormValidation();
+
+  const handleSubmit = useCallback(async () => {
+    setIsSubmitting(true);
+    
+    try {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      // Check candidate credit limits before submission (job limits removed)
+      const stats = getUserUsageStats(userProfile as any, jobs, candidates, tiers, creditTransactions);
+      const requestedCandidates = parseInt(formData.candidatesRequested) || 20;
+      
+      // Only check candidate limit, job submissions are now unlimited
+      const candidateLimitReached = stats && stats.candidatesRemaining < requestedCandidates;
+      
+      if (candidateLimitReached) {
+        setAlertModal({
+          isOpen: true,
+          title: 'Insufficient Candidate Credits',
+          message: `You need ${requestedCandidates} candidate credit${requestedCandidates > 1 ? 's' : ''} but only have ${stats.candidatesRemaining} remaining. Upgrade your plan to get more candidate credits.`,
+          type: 'upgrade',
+          actionLabel: 'Upgrade Plan',
+          onAction: () => navigate('/subscription')
+        });
+        return;
+      }
+
+      // Combine location fields for backend
+      let location = 'Remote';
+      if (!formData.isRemote) {
+        const countryLabels: { [key: string]: string } = {
+          'US': 'USA',
+          'CA': 'Canada',
+          'GB': 'United Kingdom',
+          'AU': 'Australia',
+          'DE': 'Germany',
+          'FR': 'France',
+          'IN': 'India',
+          'MX': 'Mexico',
+          'BR': 'Brazil',
+          'JP': 'Japan',
+          'SG': 'Singapore',
+          'NL': 'Netherlands',
+          'SE': 'Sweden',
+          'CH': 'Switzerland',
+          'IE': 'Ireland',
+          'NZ': 'New Zealand',
+          'ES': 'Spain',
+          'IT': 'Italy',
+          'PT': 'Portugal',
+          'PL': 'Poland',
+          'OTHER': 'Other'
+        };
+        
+        const countryName = countryLabels[formData.country] || formData.country;
+        
+        if (formData.country === 'US' && formData.state) {
+          location = `${formData.city}, ${formData.state}, ${countryName}`;
+        } else if (formData.state && formData.state.trim()) {
+          location = `${formData.city}, ${formData.state}, ${countryName}`;
+        } else {
+          location = `${formData.city}, ${countryName}`;
+        }
+      }
+
+      // Format the job description before submission
+      let formattedDescription = formData.description;
+      try {
+        formattedDescription = await formatJobDescription({
+          description: formData.description,
+          title: formData.title,
+          companyName: formData.companyName,
+          seniorityLevel: formData.seniorityLevel
+        });
+        console.log('✅ Job description formatted successfully');
+      } catch (error) {
+        console.warn('⚠️ Job description formatting failed, using original:', error);
+        // Continue with original description if formatting fails
+      }
+
+      // Find the selected profile template if one was chosen
+      const selectedProfile = formData.selectedProfileTemplate 
+        ? generatedProfiles.find(p => p.id === formData.selectedProfileTemplate)
+        : undefined;
+
+      // Create the job data to submit
+      const jobData = {
+        userId: user.id,
+        companyName: formData.companyName,
+        title: formData.title,
+        idealCandidate: formData.idealCandidate,
+        description: formattedDescription,
+        seniorityLevel: formData.seniorityLevel as 'Junior' | 'Mid' | 'Senior' | 'Super Senior',
+        location: location,
+        salaryRangeMin: extractNumericValue(formData.salaryRangeMin),
+        salaryRangeMax: extractNumericValue(formData.salaryRangeMax),
+        mustHaveSkills: formData.mustHaveSkills,
+        selectedProfileTemplate: selectedProfile,
+        candidatesRequested: parseInt(formData.candidatesRequested)
+      };
+      
+      // Use the actual DataContext addJob function
+      const newJob = await addJob(jobData);
+      
+      // Save company name to user profile if not already set
+      if (userProfile && formData.companyName && !userProfile.company) {
+        try {
+          const { supabase } = await import('../../../lib/supabase');
+          const { error: updateError } = await supabase
+            .from('user_profiles')
+            .update({ company: formData.companyName.trim() })
+            .eq('id', user.id);
+          
+          if (updateError) {
+            console.warn('⚠️ Failed to save company to user profile:', updateError);
+          } else {
+            console.log('✅ Company name saved to user profile:', formData.companyName);
+          }
+        } catch (error) {
+          console.warn('⚠️ Error saving company to user profile:', error);
+          // Don't fail the job submission if profile update fails
+        }
+      }
+      
+      // Send job submission confirmation to Go High Level webhook
+      if (userProfile && newJob) {
+        try {
+          await ghlService.sendJobSubmissionConfirmation(newJob, userProfile);
+          console.log('✅ Job submission confirmation sent to GHL');
+        } catch (ghlError) {
+          console.warn('⚠️ GHL Job Submission Confirmation webhook failed:', ghlError);
+          // Don't fail the job submission if GHL webhook fails
+        }
+      }
+      
+      // Move to confirmation step
+      setCurrentStep('confirmation');
+    } catch (error) {
+      setAlertModal({
+        isOpen: true,
+        title: 'Submission Failed',
+        message: error instanceof Error ? error.message : 'An unknown error occurred. Please try again.',
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    user?.id,
+    userProfile,
+    formData,
+    generatedProfiles,
+    jobs,
+    candidates,
+    tiers,
+    creditTransactions,
+    addJob,
+    setIsSubmitting,
+    setAlertModal,
+    setCurrentStep,
+    navigate,
+    extractNumericValue
+  ]);
+
+  const handleReset = useCallback(() => {
+    resetForm();
+    setCurrentStep('job-title');
+  }, [resetForm, setCurrentStep]);
+
+  return {
+    handleSubmit,
+    handleReset
+  };
+};

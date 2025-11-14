@@ -1,0 +1,424 @@
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
+import { getUserUsageStats } from '../utils/userUsageStats';
+import { Button } from '../components/ui/Button';
+import { GeneralFeedbackModal } from '../components/ui/GeneralFeedbackModal';
+import { AlertModal } from '../components/ui/AlertModal';
+import { useGeneralFeedback } from '../hooks/useGeneralFeedback';
+import { useProfileEdit } from '../hooks/useProfileEdit';
+import { Users, Briefcase, CreditCard, LogOut, Crown, User, Edit3, Check, X, MessageCircle } from 'lucide-react';
+
+export const AccountPage: React.FC = () => {
+  const { userProfile, signOut } = useAuth();
+  const { jobs, candidates, tiers, creditTransactions } = useData();
+  const navigate = useNavigate();
+
+  // Redirect sourcers to their dedicated account page
+  useEffect(() => {
+    if (userProfile?.role === 'sourcer') {
+      navigate('/sourcer/account', { replace: true });
+    }
+  }, [userProfile, navigate]);
+  
+  // Use the profile editing hook
+  const {
+    name,
+    isEditingName,
+    nameLoading,
+    nameError,
+    setName,
+    handleEditName,
+    handleSaveName,
+    handleCancelName,
+    company,
+    isEditingCompany,
+    companyLoading,
+    companyError,
+    setCompany,
+    handleEditCompany,
+    handleSaveCompany,
+    handleCancelCompany,
+    avatar,
+    avatarLoading,
+    handleSelectAvatar,
+  } = useProfileEdit();
+
+  // General feedback functionality
+  const {
+    generalFeedbackModal,
+    alertModal,
+    handleOpenGeneralFeedbackModal,
+    handleCloseGeneralFeedbackModal,
+    handleGeneralFeedbackChange,
+    handleSubmitGeneralFeedback,
+    setAlertModal
+  } = useGeneralFeedback('account');
+
+  const stats = getUserUsageStats(userProfile as any, jobs, candidates, tiers, creditTransactions);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  if (!userProfile) {
+    return (
+      <div className="p-8 text-center text-guardian">
+        Loading account information...
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto p-4 md:p-8">
+      {/* Profile Information and Avatar Selection Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 md:mb-8">
+        {/* Profile Information Section - Left Side */}
+        <div className="bg-shadowforce-light/30 rounded-xl p-4 md:p-6 border border-guardian/10">
+          <h2 className="font-anton text-xl text-white-knight uppercase tracking-wide mb-6">
+            PROFILE INFORMATION
+          </h2>
+          
+          <div className="space-y-4">
+            {/* Selected Avatar Display */}
+            <div className="flex justify-center mb-4">
+              <div className="bg-supernova rounded-full w-32 h-32 flex items-center justify-center overflow-hidden relative">
+                {avatar?.startsWith('/avatars/') ? (
+                  <img 
+                    src={avatar} 
+                    alt="User avatar" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement!.innerHTML = '<div class="text-5xl">👤</div>';
+                    }}
+                  />
+                ) : avatar && avatar !== '👤' ? (
+                  <span className="text-5xl">{avatar}</span>
+                ) : (
+                  <User size={48} className="text-shadowforce" />
+                )}
+                {avatarLoading && (
+                  <div className="absolute inset-0 bg-supernova/80 rounded-full flex items-center justify-center">
+                    <div className="animate-spin w-8 h-8 border-2 border-shadowforce border-t-transparent rounded-full"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Name Field */}
+            <div>
+              <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                Name
+              </label>
+              <div className="flex items-center gap-3">
+                {!isEditingName ? (
+                  <>
+                    <h3 className="font-jakarta font-bold text-white-knight text-xl">
+                      {userProfile.name && userProfile.name.trim() !== '' 
+                        ? userProfile.name 
+                        : 'Complete Your Profile'}
+                    </h3>
+                    <button
+                      onClick={handleEditName}
+                      className="p-1 text-guardian hover:text-supernova transition-colors flex items-end"
+                      title="Edit name"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="font-jakarta font-bold text-white-knight text-xl bg-transparent border-b-2 border-supernova focus:outline-none focus:border-supernova-light"
+                      placeholder="Enter your name"
+                      autoFocus
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveName}
+                        disabled={!name.trim() || nameLoading}
+                        className="p-1 bg-supernova text-shadowforce rounded text-sm font-semibold hover:bg-supernova-light disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Save name"
+                      >
+                        {nameLoading ? '...' : <Check size={16} />}
+                      </button>
+                      <button
+                        onClick={handleCancelName}
+                        className="p-1 bg-guardian/20 text-guardian rounded text-sm font-semibold hover:bg-guardian/30"
+                        title="Cancel"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {nameError && (
+                <p className="text-red-400 text-sm mt-2">{nameError}</p>
+              )}
+            </div>
+
+            {/* Email Field */}
+            <div>
+              <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                Email
+              </label>
+              <p className="text-white-knight text-lg">{userProfile.email}</p>
+            </div>
+            
+            {/* Company Field */}
+            <div>
+              <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                Company
+              </label>
+              <div className="flex items-center gap-3">
+                {!isEditingCompany ? (
+                  <>
+                    <p className="text-white-knight text-lg">
+                      {userProfile.company && userProfile.company.trim() !== '' 
+                        ? userProfile.company 
+                        : 'No company specified'}
+                    </p>
+                    <button
+                      onClick={handleEditCompany}
+                      className="p-1 text-guardian hover:text-supernova transition-colors"
+                      title="Edit company"
+                    >
+                      <Edit3 size={14} />
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
+                      className="text-white-knight text-lg bg-transparent border-b-2 border-supernova focus:outline-none focus:border-supernova-light"
+                      placeholder="Enter your company name"
+                      autoFocus
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveCompany}
+                        disabled={companyLoading}
+                        className="p-1 bg-supernova text-shadowforce rounded text-sm font-semibold hover:bg-supernova-light disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Save company"
+                      >
+                        {companyLoading ? '...' : <Check size={14} />}
+                      </button>
+                      <button
+                        onClick={handleCancelCompany}
+                        className="p-1 bg-guardian/20 text-guardian rounded text-sm font-semibold hover:bg-guardian/30"
+                        title="Cancel"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {companyError && (
+                <p className="text-red-400 text-sm mt-2">{companyError}</p>
+              )}
+            </div>
+
+            {/* Plan */}
+            <div>
+              <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                Plan
+              </label>
+              <p className="text-white-knight text-lg">
+                {stats?.tierName || 'TIER 2'}
+              </p>
+            </div>
+            
+            {/* Next Credit Reset */}
+            {stats?.creditsResetDate && stats?.tierName !== 'Free' && (
+              <div>
+                <label className="block text-supernova text-sm font-semibold uppercase tracking-wide mb-2">
+                  Next Credit Reset
+                </label>
+                <p className="text-white-knight text-lg">
+                  {new Date(stats.creditsResetDate).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Choose Your Avatar Section - Right Side */}
+        <div className="bg-shadowforce-light/30 rounded-xl p-4 md:p-6 border border-guardian/10">
+          <h2 className="font-anton text-xl text-white-knight uppercase tracking-wide mb-6">
+            CHOOSE YOUR SUPER RECRUITER
+          </h2>
+          
+          {/* Avatar Grid */}
+          <div className="grid grid-cols-6 gap-3 max-h-[500px] overflow-y-auto p-2">
+            {Array.from({ length: 60 }, (_, i) => `/avatars/avatar-${i + 1}.png`).map((avatarOption, index) => (
+              <button
+                key={index}
+                onClick={() => handleSelectAvatar(avatarOption)}
+                disabled={avatarLoading}
+                className={`
+                  w-full aspect-square rounded-full flex items-center justify-center overflow-hidden
+                  transition-all duration-200 hover:scale-110
+                  ${avatar === avatarOption 
+                    ? 'ring-4 ring-supernova' 
+                    : 'border-2 border-guardian/30 hover:border-supernova/50'
+                  }
+                  ${avatarLoading ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+                title={`Avatar ${index + 1}`}
+              >
+                <img 
+                  src={avatarOption} 
+                  alt={`Avatar ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.parentElement!.innerHTML = '👤';
+                  }}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="mb-6 md:mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
+          <div className="flex flex-col items-center gap-2">
+            <Button 
+              onClick={handleOpenGeneralFeedbackModal}
+              variant="outline"
+              size="lg"
+              className="flex items-center justify-center gap-3 py-4 text-lg text-guardian hover:text-shadowforce border-guardian/30 hover:border-supernova/50 transition-all duration-300 w-full h-[60px]"
+            >
+              <MessageCircle size={20} />
+              SUBMIT FEEDBACK
+            </Button>
+            <span className="text-guardian text-sm">(50 free candidate reward)</span>
+          </div>
+          
+          <Button 
+            variant="outline"
+            size="lg"
+            className="flex items-center justify-center gap-3 py-4 text-lg text-guardian hover:text-shadowforce border-guardian/30 hover:border-supernova/50 transition-all duration-300 h-[60px]"
+            onClick={() => window.open('https://billing.stripe.com/p/login/test_fZu7sLaoK9lN1oRfap9R600', '_blank')}
+          >
+            <CreditCard size={20} />
+            MANAGE CREDITS
+          </Button>
+          
+          <Button 
+            onClick={() => navigate('/subscription')}
+            variant="outline"
+            size="lg"
+            className="flex items-center justify-center gap-3 py-4 text-lg text-guardian hover:text-shadowforce border-guardian/30 hover:border-supernova/50 transition-all duration-300 h-[60px]"
+          >
+            <Crown size={20} />
+            GET MORE CANDIDATES
+          </Button>
+        </div>
+      </div>
+
+      {/* Usage Statistics Section */}
+      <div className="bg-shadowforce-light/30 rounded-xl p-4 md:p-8 border border-guardian/10 mb-8 md:mb-12">
+        <h2 className="font-anton text-xl md:text-2xl text-white-knight uppercase tracking-wide mb-6 md:mb-8">
+          USAGE STATISTICS
+        </h2>
+
+        {/* Candidates Remaining - Full Width */}
+        <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10 mb-6">
+          <div className="flex items-center justify-center gap-4">
+            <Users size={24} className="text-supernova" />
+            <span className="text-guardian text-lg font-semibold">Candidates Remaining:</span>
+            <span className="text-white-knight font-bold text-3xl">{stats?.candidatesRemaining || 0}</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+          <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10">
+            <div className="flex items-center gap-4 mb-4">
+              <Users size={24} className="text-supernova" />
+              <span className="text-guardian text-lg font-semibold">Total Candidates Sourced</span>
+            </div>
+            <div className="text-white-knight font-bold text-3xl">{stats?.totalCandidatesSourced || 0}</div>
+          </div>
+          
+          <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10">
+            <div className="flex items-center gap-4 mb-4">
+              <Users size={24} className="text-supernova" />
+              <span className="text-guardian text-lg font-semibold">Candidates Sourced This Month</span>
+            </div>
+            <div className="text-white-knight font-bold text-3xl">{stats?.candidatesSourcedThisMonth || 0}</div>
+          </div>
+          
+          <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10">
+            <div className="flex items-center gap-4 mb-4">
+              <Briefcase size={24} className="text-supernova" />
+              <span className="text-guardian text-lg font-semibold">Total Jobs</span>
+            </div>
+            <div className="text-white-knight font-bold text-3xl">{stats?.totalJobs || 0}</div>
+          </div>
+          
+          <div className="bg-shadowforce-light/50 rounded-xl p-6 border border-guardian/10">
+            <div className="flex items-center gap-4 mb-4">
+              <Briefcase size={24} className="text-supernova" />
+              <span className="text-guardian text-lg font-semibold">Jobs This Month</span>
+            </div>
+            <div className="text-white-knight font-bold text-3xl">{stats?.jobsThisMonth || 0}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Sign Out Button - Bottom of Page */}
+      <div className="flex justify-center">
+        <Button 
+          onClick={handleSignOut}
+          variant="ghost"
+          size="lg"
+          className="flex items-center justify-center gap-3 py-4 text-lg"
+        >
+          <LogOut size={20} />
+          SIGN OUT
+        </Button>
+      </div>
+
+      {/* General Feedback Modal */}
+      <GeneralFeedbackModal
+        isOpen={generalFeedbackModal.isOpen}
+        onClose={handleCloseGeneralFeedbackModal}
+        feedback={generalFeedbackModal.feedback}
+        isSubmitting={generalFeedbackModal.isSubmitting}
+        onFeedbackChange={handleGeneralFeedbackChange}
+        onSubmit={handleSubmitGeneralFeedback}
+      />
+
+      {/* Alert Modal */}
+      {alertModal.isOpen && (
+        <AlertModal
+          isOpen={alertModal.isOpen}
+          onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+          title={alertModal.title}
+          message={alertModal.message}
+          type={alertModal.type}
+        />
+      )}
+    </div>
+  );
+};
