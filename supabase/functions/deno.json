@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.window", "deno.unstable", "dom"],
+    "allowJs": true,
+    "strict": false
+  },
+  "imports": {
+    "std/": "https://deno.land/std@0.168.0/"
+  }
+}
+
+
+

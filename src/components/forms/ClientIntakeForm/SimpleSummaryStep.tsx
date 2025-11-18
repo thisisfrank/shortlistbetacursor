@@ -179,9 +179,9 @@ export const SimpleSummaryStep: React.FC<SimpleSummaryStepProps> = ({
               <input
                 type="number"
                 name="candidatesRequested"
-                min="20"
+                min="0"
                 max="999"
-                value={candidatesRequested}
+                value={formData.candidatesRequested}
                 onChange={onChange}
                 className="w-24 px-3 py-2 bg-shadowforce border border-guardian/30 rounded-lg text-white-knight font-jakarta text-center text-xl font-bold focus:border-supernova focus:outline-none"
                 placeholder="#"

@@ -2,6 +2,7 @@ import { generateCandidateSummary } from './anthropicService';
 
 // ScrapingDog is now accessed via Supabase proxy for security
 // API key is stored securely in Supabase Edge Functions
+// Using ScrapingDog's LinkedIn Profile API for structured data
 
 export interface LinkedInProfile {
   firstName: string;
@@ -28,6 +29,50 @@ export interface ScrapingResult {
   error?: string;
 }
 
+// ScrapingDog Profile API response interface (based on actual API response)
+interface ScrapingDogProfile {
+  fullName?: string;
+  first_name?: string;
+  last_name?: string;
+  headline?: string;
+  location?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  about?: string;
+  connections?: string;
+  followers?: string;
+  experience?: Array<{
+    title?: string;
+    company?: string;
+    company_name?: string;
+    company_position?: string;
+    start_date?: string;
+    starts_at?: string;
+    end_date?: string;
+    ends_at?: string;
+    duration?: string;
+    company_duration?: string;
+    description?: string;
+  }>;
+  education?: Array<{
+    school?: string;
+    school_name?: string;
+    degree?: string;
+    field_of_study?: string;
+    start_date?: string;
+    starts_at?: string;
+    end_date?: string;
+    ends_at?: string;
+  }>;
+  skills?: Array<string | { name?: string; skill_name?: string }>;
+  volunteering?: Array<{
+    company_name?: string;
+    company_position?: string;
+    company_duration?: string;
+  }>;
+}
+
 // Helper function to extract name parts
 const extractName = (fullName: string): { firstName: string; lastName: string } => {
   if (!fullName || fullName.trim() === '') {
@@ -45,113 +90,70 @@ const extractName = (fullName: string): { firstName: string; lastName: string } 
   };
 };
 
-// Helper function to parse LinkedIn profile HTML
-const parseLinkedInHTML = (html: string, profileUrl: string): Partial<LinkedInProfile> | null => {
+// Map ScrapingDog profile data to our LinkedInProfile interface
+const mapScrapingDogProfile = (data: ScrapingDogProfile, profileUrl: string): Partial<LinkedInProfile> | null => {
   try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    // Extract name
+    let firstName = data.first_name || 'N/A';
+    let lastName = data.last_name || 'N/A';
     
-    // Extract full name - try multiple selectors
-    let fullName = '';
-    const nameSelectors = [
-      'h1.text-heading-xlarge',
-      '.pv-text-details__left-panel h1',
-      '.top-card-layout__title',
-      'h1[class*="top-card"]',
-      'h1'
-    ];
-    
-    for (const selector of nameSelectors) {
-      const nameElement = doc.querySelector(selector);
-      if (nameElement?.textContent?.trim()) {
-        fullName = nameElement.textContent.trim();
-        break;
-      }
-    }
-    
-    // Extract headline
-    let headline = 'N/A';
-    const headlineSelectors = [
-      '.text-body-medium',
-      '.pv-text-details__left-panel .text-body-medium',
-      '.top-card-layout__headline',
-      'div[class*="headline"]'
-    ];
-    
-    for (const selector of headlineSelectors) {
-      const headlineElement = doc.querySelector(selector);
-      if (headlineElement?.textContent?.trim()) {
-        headline = headlineElement.textContent.trim();
-        break;
-      }
+    // If first/last name not provided, try to split from full name
+    if ((!data.first_name || !data.last_name) && data.fullName) {
+      const nameInfo = extractName(data.fullName);
+      firstName = nameInfo.firstName;
+      lastName = nameInfo.lastName;
     }
     
     // Extract location
-    let location = 'N/A';
-    const locationSelectors = [
-      '.text-body-small.inline',
-      '.pv-text-details__left-panel .text-body-small',
-      '.top-card-layout__location-info',
-      'span[class*="location"]'
-    ];
+    const location = data.location || 
+                     [data.city, data.state, data.country].filter(Boolean).join(', ') || 
+                     'N/A';
     
-    for (const selector of locationSelectors) {
-      const locationElement = doc.querySelector(selector);
-      if (locationElement?.textContent?.trim()) {
-        location = locationElement.textContent.trim();
-        break;
-      }
-    }
+    // Map experience - handle various formats including minimal data
+    const experience = (data.experience || []).map(exp => {
+      const title = exp.title || exp.company_position || exp.description || 'Position not specified';
+      const company = exp.company || exp.company_name || 'Company not specified';
+      const startDate = exp.start_date || exp.starts_at || '';
+      const endDate = exp.end_date || exp.ends_at || '';
+      const duration = exp.duration || exp.company_duration || 
+                      (startDate && endDate ? `${startDate} - ${endDate}` : 
+                       startDate ? `${startDate} - Present` : 'Duration not specified');
+      
+      return { title, company, duration };
+    });
     
-    // Extract experience
-    const experience: Array<{ title: string; company: string; duration: string }> = [];
-    const experienceSection = doc.querySelector('#experience');
-    if (experienceSection) {
-      const experienceItems = experienceSection.querySelectorAll('li');
-      experienceItems.forEach(item => {
-        const title = item.querySelector('.t-bold')?.textContent?.trim() || '';
-        const company = item.querySelector('.t-14.t-normal')?.textContent?.trim() || '';
-        const duration = item.querySelector('.t-14.t-normal.t-black--light')?.textContent?.trim() || '';
-        
-        if (title) {
-          experience.push({ title, company: company || 'N/A', duration: duration || 'N/A' });
-        }
+    // If experience is empty but volunteering exists, use that
+    if (experience.length === 0 && data.volunteering && data.volunteering.length > 0) {
+      data.volunteering.slice(0, 3).forEach(vol => {
+        experience.push({
+          title: vol.company_position || 'Volunteer',
+          company: vol.company_name || 'Organization not specified',
+          duration: vol.company_duration || 'Duration not specified'
+        });
       });
     }
     
-    // Extract education
-    const education: Array<{ school: string; degree: string }> = [];
-    const educationSection = doc.querySelector('#education');
-    if (educationSection) {
-      const educationItems = educationSection.querySelectorAll('li');
-      educationItems.forEach(item => {
-        const school = item.querySelector('.t-bold')?.textContent?.trim() || '';
-        const degree = item.querySelector('.t-14.t-normal')?.textContent?.trim() || '';
-        
-        if (school) {
-          education.push({ school, degree: degree || 'N/A' });
-        }
-      });
-    }
+    // Map education
+    const education = (data.education || []).map(edu => {
+      const school = edu.school || edu.school_name || 'School not specified';
+      const degree = [edu.degree, edu.field_of_study].filter(Boolean).join(', ') || 'Degree not specified';
+      return { school, degree };
+    });
     
-    // Extract skills
-    const skills: string[] = [];
-    const skillsSection = doc.querySelector('#skills');
-    if (skillsSection) {
-      const skillItems = skillsSection.querySelectorAll('li');
-      skillItems.forEach(item => {
-        const skill = item.textContent?.trim();
-        if (skill) {
-          skills.push(skill);
-        }
-      });
-    }
+    // Map skills - handle string, object with name, or object with skill_name
+    const skills = (data.skills || []).map(skill => {
+      if (typeof skill === 'string') return skill;
+      if (typeof skill === 'object' && skill.skill_name) return skill.skill_name;
+      if (typeof skill === 'object' && skill.name) return skill.name;
+      return null;
+    }).filter(Boolean) as string[];
     
-    const nameInfo = extractName(fullName);
+    // Use about as headline if headline is empty
+    const headline = (data.headline && data.headline.trim()) ? data.headline : (data.about || 'Professional');
     
     return {
-      firstName: nameInfo.firstName,
-      lastName: nameInfo.lastName,
+      firstName,
+      lastName,
       headline,
       location,
       profileUrl,
@@ -160,16 +162,14 @@ const parseLinkedInHTML = (html: string, profileUrl: string): Partial<LinkedInPr
       skills
     };
   } catch (error) {
-    console.error('Error parsing LinkedIn HTML:', error);
+    console.error('Error mapping ScrapingDog profile:', error);
     return null;
   }
 };
 
-// Scrape a single LinkedIn profile
+// Scrape a single LinkedIn profile using ScrapingDog's Profile API
 const scrapeSingleProfile = async (linkedinUrl: string): Promise<LinkedInProfile | null> => {
   try {
-    console.log(`🔍 Scraping profile: ${linkedinUrl}`);
-    
     // Get Supabase configuration
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -179,8 +179,7 @@ const scrapeSingleProfile = async (linkedinUrl: string): Promise<LinkedInProfile
       return null;
     }
     
-    // Call our secure proxy function instead of ScrapingDog directly
-    console.log(`📡 Calling ScrapingDog proxy...`);
+    // Call our secure proxy function which uses ScrapingDog's LinkedIn Profile API
     const response = await fetch(`${supabaseUrl}/functions/v1/scrapingdog-proxy`, {
       method: 'POST',
       headers: {
@@ -189,66 +188,61 @@ const scrapeSingleProfile = async (linkedinUrl: string): Promise<LinkedInProfile
       },
       body: JSON.stringify({
         linkedinUrl,
-        dynamic: true,
         premium: true
       })
     });
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error(`❌ ScrapingDog proxy error for ${linkedinUrl}: ${response.status}`, errorData);
+      console.error(`❌ ScrapingDog API error (${response.status}) for ${linkedinUrl}`, errorData);
       return null;
     }
     
     const data = await response.json();
-    const html = data.html;
-    console.log(`✅ Received HTML (${html?.length || 0} characters)`);
+    const profileData = data.profile;
     
-    // If HTML is suspiciously short, log it for debugging
-    if (html.length < 1000) {
-      console.warn(`⚠️ Received very short HTML response (${html.length} chars). This may indicate an error or blocked request.`);
-      console.warn(`Response preview:`, html.substring(0, 200));
+    if (!profileData) {
+      console.error(`❌ No profile data received for ${linkedinUrl}`);
+      return null;
     }
     
-    // Parse the HTML to extract profile data
-    const profileData = parseLinkedInHTML(html, linkedinUrl);
+    // Map ScrapingDog's response to our LinkedInProfile interface
+    const mappedProfile = mapScrapingDogProfile(profileData, linkedinUrl);
     
-    if (!profileData || !profileData.firstName || profileData.firstName === 'N/A') {
-      console.warn(`⚠️ Could not extract profile data from ${linkedinUrl}. This usually means the profile is private, restricted, or LinkedIn blocked the request.`);
+    if (!mappedProfile || !mappedProfile.firstName || mappedProfile.firstName === 'N/A') {
+      console.warn(`⚠️ Could not extract valid profile data from ${linkedinUrl}`);
       return null;
     }
     
     // Prepare data for AI summary generation
     const candidateData = {
-      firstName: profileData.firstName,
-      lastName: profileData.lastName,
-      headline: profileData.headline !== 'N/A' ? profileData.headline : undefined,
-      location: profileData.location !== 'N/A' ? profileData.location : undefined,
-      experience: profileData.experience && profileData.experience.length > 0 ? profileData.experience : undefined,
-      education: profileData.education && profileData.education.length > 0 ? profileData.education : undefined,
-      skills: profileData.skills && profileData.skills.length > 0 ? profileData.skills : undefined
+      firstName: mappedProfile.firstName,
+      lastName: mappedProfile.lastName,
+      headline: mappedProfile.headline !== 'N/A' ? mappedProfile.headline : undefined,
+      location: mappedProfile.location !== 'N/A' ? mappedProfile.location : undefined,
+      experience: mappedProfile.experience && mappedProfile.experience.length > 0 ? mappedProfile.experience : undefined,
+      education: mappedProfile.education && mappedProfile.education.length > 0 ? mappedProfile.education : undefined,
+      skills: mappedProfile.skills && mappedProfile.skills.length > 0 ? mappedProfile.skills : undefined
     };
     
     // Generate AI summary
     let aiSummary: string;
     try {
-      console.log(`🤖 Generating AI summary for ${profileData.firstName} ${profileData.lastName}...`);
       aiSummary = await generateCandidateSummary(candidateData);
-      console.log(`✅ AI summary generated successfully`);
     } catch (error) {
-      console.warn(`⚠️ AI summary generation failed, using basic fallback:`, error);
-      aiSummary = `${profileData.firstName} ${profileData.lastName} is a ${profileData.headline || 'professional'} based in ${profileData.location || 'Unknown location'}.`;
+      // Fallback if AI summary fails
+      aiSummary = `${mappedProfile.firstName} ${mappedProfile.lastName} is a ${mappedProfile.headline || 'professional'} based in ${mappedProfile.location || 'Unknown location'}.`;
     }
     
     return {
-      firstName: profileData.firstName,
-      lastName: profileData.lastName || 'N/A',
-      headline: profileData.headline || 'N/A',
-      location: profileData.location || 'N/A',
+      firstName: mappedProfile.firstName,
+      lastName: mappedProfile.lastName || 'N/A',
+      headline: mappedProfile.headline || 'N/A',
+      location: mappedProfile.location || 'N/A',
       profileUrl: linkedinUrl,
-      experience: profileData.experience || [],
-      education: profileData.education || [],
-      skills: profileData.skills || [],
+      experience: mappedProfile.experience || [],
+      education: mappedProfile.education || [],
+      skills: mappedProfile.skills || [],
       summary: aiSummary
     };
   } catch (error) {
@@ -259,34 +253,19 @@ const scrapeSingleProfile = async (linkedinUrl: string): Promise<LinkedInProfile
 
 export const scrapeLinkedInProfiles = async (linkedinUrls: string[]): Promise<ScrapingResult> => {
   try {
-    console.log(`🔍 Attempting to scrape ${linkedinUrls.length} LinkedIn profiles:`);
-    linkedinUrls.forEach((url, index) => {
-      console.log(`  ${index + 1}. ${url}`);
-    });
-    
     // Scrape all profiles concurrently
     const scrapingPromises = linkedinUrls.map(url => scrapeSingleProfile(url));
     const results = await Promise.all(scrapingPromises);
     
     // Filter out null results (failed scrapes)
     const profiles = results.filter((profile): profile is LinkedInProfile => profile !== null);
-    
-    console.log(`✅ Successfully scraped ${profiles.length} out of ${linkedinUrls.length} profiles`);
-    
-    if (profiles.length < linkedinUrls.length) {
-      console.warn(`⚠️ WARNING: Only ${profiles.length} out of ${linkedinUrls.length} profiles were successfully scraped`);
-      console.warn(`⚠️ This usually means:`);
-      console.warn(`   - Some LinkedIn URLs are invalid or incorrectly formatted`);
-      console.warn(`   - Some profiles are private or restricted`);
-      console.warn(`   - LinkedIn may be blocking some requests`);
-    }
 
     return {
       success: true,
       profiles
     };
   } catch (error) {
-    console.error('Error scraping LinkedIn profiles:', error);
+    console.error('❌ Scraping error:', error);
     return {
       success: false,
       profiles: [],
@@ -298,17 +277,43 @@ export const scrapeLinkedInProfiles = async (linkedinUrls: string[]): Promise<Sc
 // Test function to see what ScrapingDog returns for a given LinkedIn URL
 export const testScrapingDogResponse = async (linkedinUrl: string): Promise<any> => {
   try {
-    console.log('Testing ScrapingDog with URL:', linkedinUrl);
+    console.log('\n🧪 TEST MODE: Scraping LinkedIn Profile');
+    console.log(`   📍 URL: ${linkedinUrl}`);
+    console.log('\n📡 STEP 1: Calling ScrapingDog API...');
     
     const profile = await scrapeSingleProfile(linkedinUrl);
     
-    return {
-      success: profile !== null,
-      profile,
-      error: profile === null ? 'Failed to scrape profile' : undefined
-    };
+    if (profile) {
+      console.log('\n✅ TEST SUCCESSFUL!');
+      console.log('   📊 Profile Data:');
+      console.log(`   • Name: ${profile.firstName} ${profile.lastName}`);
+      console.log(`   • Headline: ${profile.headline}`);
+      console.log(`   • Location: ${profile.location}`);
+      console.log(`   • Experience: ${profile.experience?.length || 0} positions`);
+      console.log(`   • Education: ${profile.education?.length || 0} schools`);
+      console.log(`   • Skills: ${profile.skills?.length || 0} skills`);
+      console.log(`   • Summary: ${profile.summary?.substring(0, 100)}...`);
+      
+      return {
+        success: true,
+        profile,
+        message: `✅ Successfully scraped profile for ${profile.firstName} ${profile.lastName}`
+      };
+    } else {
+      console.log('\n❌ TEST FAILED: Could not scrape profile');
+      console.log('   Possible reasons:');
+      console.log('   • Profile is private or restricted');
+      console.log('   • Invalid LinkedIn URL format');
+      console.log('   • LinkedIn is blocking the request');
+      
+      return {
+        success: false,
+        profile: null,
+        error: 'Failed to scrape profile. Check console for details.'
+      };
+    }
   } catch (error) {
-    console.error('Test error:', error);
+    console.log('\n❌ TEST ERROR:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',

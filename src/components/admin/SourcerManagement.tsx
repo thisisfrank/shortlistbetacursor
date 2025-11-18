@@ -3,7 +3,7 @@ import { useData } from '../../context/DataContext';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { JobDetailModal } from '../sourcer/JobDetailModal';
+import { ViewJobDetailsModal } from '../sourcer/ViewJobDetailsModal';
 import { Search, Award, Users, Clock, Target } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -817,13 +817,9 @@ export const SourcerManagement: React.FC = () => {
 
       {/* Job Detail Modal */}
       {selectedJobId && (
-        <JobDetailModal
+        <ViewJobDetailsModal
           job={jobs.find(job => job.id === selectedJobId)!}
           onClose={() => setSelectedJobId(null)}
-          onClaim={() => {
-            // Handle claim logic here if needed
-            setSelectedJobId(null);
-          }}
         />
       )}
     </div>

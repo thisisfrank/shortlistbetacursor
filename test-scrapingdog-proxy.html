@@ -38,7 +38,6 @@
                     },
                     body: JSON.stringify({
                         linkedinUrl: linkedinUrl,
-                        dynamic: true,
                         premium: true
                     })
                 });
@@ -46,10 +45,19 @@
                 const data = await response.json();
                 
                 if (response.ok) {
+                    // New API returns structured JSON profile data instead of HTML
                     resultEl.textContent = JSON.stringify({
                         success: data.success,
-                        htmlLength: data.length,
-                        message: 'Successfully scraped LinkedIn profile!'
+                        profile: {
+                            name: data.profile?.name || 'N/A',
+                            headline: data.profile?.headline || 'N/A',
+                            location: data.profile?.location || 'N/A',
+                            experienceCount: data.profile?.experience?.length || 0,
+                            educationCount: data.profile?.education?.length || 0,
+                            skillsCount: data.profile?.skills?.length || 0
+                        },
+                        fullProfile: data.profile,
+                        message: 'Successfully scraped LinkedIn profile using Profile API!'
                     }, null, 2);
                 } else {
                     resultEl.textContent = JSON.stringify(data, null, 2);
@@ -61,4 +69,5 @@
     </script>
 </body>
 </html>
+
 

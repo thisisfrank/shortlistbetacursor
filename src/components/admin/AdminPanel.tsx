@@ -3,12 +3,13 @@ import { useData } from '../../context/DataContext';
 import { Badge } from '../ui/Badge';
 import { Card, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
-import { JobDetailModal } from '../sourcer/JobDetailModal';
+import { ViewJobDetailsModal } from '../sourcer/ViewJobDetailsModal';
 import { Search, CalendarDays, Users, Filter, Zap, TrendingUp, Clock, CheckCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { ghlService } from '../../services/ghlService';
 
 export const AdminPanel: React.FC = () => {
-  const { jobs, tiers, getTierById, updateJob } = useData();
+  const { jobs, tiers, getTierById, updateJob, getUserProfileById } = useData();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -100,7 +101,50 @@ export const AdminPanel: React.FC = () => {
   const handleCompleteJob = async (jobId: string) => {
     if (window.confirm('Are you sure you want to mark this job as completed?')) {
       try {
+        // Get the job details
+        const job = jobs.find(j => j.id === jobId);
+        if (!job) {
+          console.error('Job not found for completion:', jobId);
+          return;
+        }
+
+        // Fetch fresh candidates from database
+        const { data: candidates, error: candidatesError } = await supabase
+          .from('candidates')
+          .select('*')
+          .eq('job_id', jobId);
+        
+        if (candidatesError) {
+          console.error('⚠️ Failed to fetch candidates for webhook:', candidatesError);
+        }
+        
+        console.log(`📊 [Admin] Found ${candidates?.length || 0} candidates for job ${jobId}`);
+        
+        // Get the user profile of the person who submitted the job
+        const userProfile = await getUserProfileById(job.userId);
+        
+        if (!userProfile) {
+          console.error('⚠️ User profile not found for webhook. User ID:', job.userId);
+        }
+        
+        // Update job status
         await updateJob(jobId, { status: 'Completed' });
+        
+        // Send job completion notification to GoHighLevel
+        try {
+          if (!userProfile) {
+            console.warn('⚠️ Skipping GHL webhook: User profile is null');
+          } else if (!candidates || candidates.length === 0) {
+            console.warn('⚠️ [Admin] Sending GHL webhook with 0 candidates');
+            await ghlService.sendJobCompletionNotification(job, userProfile, candidates || []);
+            console.log('✅ [Admin] Job completion notification sent to GHL (0 candidates)');
+          } else {
+            await ghlService.sendJobCompletionNotification(job, userProfile, candidates);
+            console.log(`✅ [Admin] Job completion notification sent to GHL for ${candidates.length} candidates`);
+          }
+        } catch (ghlError) {
+          console.error('❌ [Admin] GHL Job Completion Notification webhook FAILED:', ghlError);
+        }
       } catch (error) {
         console.error('Error updating job:', error);
         alert('Error updating job. Please try again.');
@@ -312,13 +356,9 @@ export const AdminPanel: React.FC = () => {
         
         {/* Job Detail Modal */}
         {selectedJob && (
-          <JobDetailModal
+          <ViewJobDetailsModal
             job={selectedJob}
             onClose={() => setSelectedJobId(null)}
-            onClaim={() => {
-              // Handle claim logic here if needed
-              setSelectedJobId(null);
-            }}
           />
         )}
       </div>

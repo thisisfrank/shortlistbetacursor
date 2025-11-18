@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
-import { JobDetailModal } from '../sourcer/JobDetailModal';
+import { ViewJobDetailsModal } from '../sourcer/ViewJobDetailsModal';
 import { JobTimer } from '../ui/JobTimer';
 import { Card, CardContent, CardHeader } from '../ui/Card';
 import { Badge } from '../ui/Badge';
@@ -336,13 +336,9 @@ export const JobManagement: React.FC = () => {
       
       {/* Job Detail Modal */}
       {selectedJob && (
-        <JobDetailModal
+        <ViewJobDetailsModal
           job={selectedJob}
           onClose={() => setSelectedJobId(null)}
-          onClaim={() => {
-            // Handle claim logic here if needed
-            setSelectedJobId(null);
-          }}
         />
       )}
 

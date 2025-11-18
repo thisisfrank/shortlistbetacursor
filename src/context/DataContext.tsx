@@ -877,15 +877,24 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         };
       }
       
-      // Use the actual ScrapingDog scraping service
+      // STEP 1: SCRAPE - Get profile data from LinkedIn
+      console.log(`\n📡 STEP 1: SCRAPING ${uniqueUrls.length} LinkedIn profiles...`);
       const scrapingResult = await scrapeLinkedInProfiles(uniqueUrls);
       
-      if (!scrapingResult.success) {
+      console.log(`✅ SCRAPING COMPLETE: ${scrapingResult.profiles.length} profiles successfully scraped`);
+      console.log(`📊 Scraping result:`, {
+        success: scrapingResult.success,
+        profileCount: scrapingResult.profiles.length,
+        failed: uniqueUrls.length - scrapingResult.profiles.length
+      });
+      
+      // If scraping completely failed, return early
+      if (!scrapingResult.success || scrapingResult.profiles.length === 0) {
         return {
           success: false,
           acceptedCount: 0,
           rejectedCount: 0,
-          error: scrapingResult.error || 'Failed to scrape LinkedIn profiles'
+          error: scrapingResult.error || `Failed to scrape any profiles. ${uniqueUrls.length - scrapingResult.profiles.length} profiles could not be accessed (private/blocked/invalid).`
         };
       }
       
@@ -907,12 +916,16 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         return false;
       };
 
-      // Step 1 & 2: Bypass AI scoring if flag is set, or fallback to always accept on error
+      // STEP 2: PROCESS - Score and categorize each candidate
+      console.log(`\n🎯 STEP 2: PROCESSING ${scrapingResult.profiles.length} profiles...`);
+      
       const acceptedCandidates: Candidate[] = [];
       const rejectedCandidates: any[] = [];
-      const failedScrapes = uniqueUrls.length - scrapingResult.profiles.length; // URLs that failed to scrape
+      const failedScrapes = uniqueUrls.length - scrapingResult.profiles.length;
       
-      for (const profile of scrapingResult.profiles) {
+      for (let i = 0; i < scrapingResult.profiles.length; i++) {
+        const profile = scrapingResult.profiles[i];
+        console.log(`\n  👤 [${i+1}/${scrapingResult.profiles.length}] Processing: ${profile.firstName} ${profile.lastName}`);
         // Fix for string | undefined and string | null issues in candidate mapping and job mapping
         const candidateData = {
           firstName: profile.firstName || '',
@@ -925,18 +938,20 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           about: profile.summary || ''
         };
 
-        // Check if candidate already works at the hiring company
-        if (candidateWorksAtHiringCompany(candidateData, job.companyName)) {
+        // Validation: Check if candidate works at the hiring company
+        const worksAtCompany = candidateWorksAtHiringCompany(candidateData, job.companyName);
+        if (worksAtCompany) {
+          console.log(`     ❌ REJECTED: Currently works at ${job.companyName}`);
           rejectedCandidates.push({
             name: `${candidateData.firstName} ${candidateData.lastName}`,
             score: 0,
             reasoning: `Candidate currently works at ${job.companyName} (hiring company). Cannot submit current employees as candidates.`
           });
-          continue; // Skip this candidate
+          continue;
         }
+        // AI Scoring: Determine if candidate is a good match
         if (BYPASS_AI_SCORING) {
-          // Accept all candidates, skip AI scoring entirely
-          console.log(`✅ Auto-accepting candidate (AI scoring bypassed): ${candidateData.firstName} ${candidateData.lastName}`);
+          console.log(`     ✅ ACCEPTED: AI scoring bypassed`);
           const candidate: Candidate = {
             id: crypto.randomUUID(),
             jobId,
@@ -961,9 +976,13 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               keySkills: job.keySellingPoints || [],
               candidateData
             };
+            
+            console.log(`     🤖 AI Scoring...`);
             const scoreResult = await generateJobMatchScore(matchData);
+            console.log(`     📊 Score: ${scoreResult.score}/100 (threshold: 60)`);
+            
             if (scoreResult.score >= 60) {
-              // Accept candidate - meets threshold
+              console.log(`     ✅ ACCEPTED: Score ${scoreResult.score} ≥ 60`);
               const candidate: Candidate = {
                 id: crypto.randomUUID(),
                 jobId,
@@ -980,7 +999,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               };
               acceptedCandidates.push(candidate);
             } else {
-              // Reject candidate - below threshold
+              console.log(`     ❌ REJECTED: Score ${scoreResult.score} < 60`);
               rejectedCandidates.push({
                 name: `${candidateData.firstName} ${candidateData.lastName}`,
                 score: scoreResult.score,
@@ -988,8 +1007,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               });
             }
           } catch (error) {
-            // Fallback: If AI scoring fails, auto-accept candidate (don't require AI to work)
-            console.warn(`⚠️ AI scoring failed for ${candidateData.firstName} ${candidateData.lastName}, auto-accepting candidate:`, error);
+            console.log(`     ⚠️ AI scoring error - auto-accepting:`, error);
             const candidate: Candidate = {
               id: crypto.randomUUID(),
               jobId,
@@ -1005,13 +1023,17 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
               submittedAt: new Date()
             };
             acceptedCandidates.push(candidate);
-            console.log(`✅ Candidate auto-accepted despite AI failure: ${candidateData.firstName} ${candidateData.lastName}`);
           }
         }
       }
+      
+      console.log(`\n📊 STEP 2 COMPLETE:`);
+      console.log(`   ✅ Accepted: ${acceptedCandidates.length}`);
+      console.log(`   ❌ Rejected: ${rejectedCandidates.length}`);
 
-      // Save accepted candidates to Supabase and update local state
+      // STEP 3: SAVE - Store accepted candidates to database
       if (acceptedCandidates.length > 0) {
+        console.log(`\n💾 STEP 3: SAVING ${acceptedCandidates.length} accepted candidates to database...`);
         try {
           
           // Prepare candidates for database insertion
@@ -1033,15 +1055,11 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
           );
           
           if (insertError) {
-            console.error('❌ Error inserting candidates to Supabase:', insertError);
-            console.error('❌ Insert error details:', {
-              code: insertError.code,
-              message: insertError.message,
-              details: insertError.details,
-              hint: insertError.hint
-            });
+            console.error(`   ❌ DATABASE ERROR:`, insertError.message);
             throw new Error(`Failed to save candidates: ${insertError.message}`);
           }
+          
+          console.log(`   ✅ Successfully saved ${insertedCandidates?.length || 0} candidates to database`);
           
           // Update local state with the actual database records
           const savedCandidates = (insertedCandidates || []).map((c: any) => ({
@@ -1111,6 +1129,14 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       // NOTE: Credit deduction now happens at job submission time (in addJob function),
       // not when candidates are submitted by sourcers. This ensures clients are charged
       // when they request candidates, not when sourcers deliver them.
+      
+      console.log(`\n✅ SUBMISSION COMPLETE!`);
+      console.log(`   📊 Final Results:`);
+      console.log(`   • Accepted: ${acceptedCandidates.length}`);
+      console.log(`   • Rejected: ${rejectedCandidates.length}`);
+      console.log(`   • Duplicates: ${duplicateUrls.length}`);
+      console.log(`   • Failed Scrapes: ${failedScrapes}`);
+      console.log(`   • Job Progress: ${newTotalAccepted}/${job.candidatesRequested} (${progressPercentage}%)`);
       
       // Return results with detailed information
       return {

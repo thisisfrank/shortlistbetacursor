@@ -10,6 +10,7 @@ import { Calendar, MapPin, DollarSign, Users, Briefcase, Target } from 'lucide-r
 interface JobCardProps {
   job: Job;
   onView: (jobId: string) => void;
+  onAddCandidates?: (jobId: string) => void;
   onClaim?: (jobId: string) => void;
   onComplete?: (jobId: string) => void;
   showActions?: boolean;
@@ -18,6 +19,7 @@ interface JobCardProps {
 export const JobCard: React.FC<JobCardProps> = ({
   job,
   onView,
+  onAddCandidates,
   onClaim,
   onComplete,
   showActions = true
@@ -174,12 +176,12 @@ export const JobCard: React.FC<JobCardProps> = ({
               </Button>
             )}
             
-            {job.status === 'Claimed' && job.sourcerId && onComplete && !isComplete && (
+            {job.status === 'Claimed' && job.sourcerId && onAddCandidates && !isComplete && (
               <Button 
                 variant="outline" 
                 size="sm" 
                 className="flex-1"
-                onClick={() => onView(job.id)}
+                onClick={() => onAddCandidates(job.id)}
               >
                 ADD CANDIDATES
               </Button>

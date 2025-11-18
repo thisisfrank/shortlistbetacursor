@@ -1,25 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Job } from '../../types';
 import { JobCard } from './JobCard';
-import { JobDetailModal } from './JobDetailModal';
+import { ViewJobDetailsModal } from './ViewJobDetailsModal';
+import { AddCandidatesModal } from './AddCandidatesModal';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/Button';
 import { Search, ClipboardList, Check, Clock, Zap, Target, Users } from 'lucide-react';
 import { ghlService } from '../../services/ghlService';
+import { supabase } from '../../lib/supabase';
 
 const SourcerDashboard: React.FC = () => {
   const { jobs, updateJob, loading, loadUserData, loadError, getCandidatesByJob, getUserProfileById } = useData();
   const { userProfile } = useAuth();
-  const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'unclaimed' | 'claimed' | 'completed'>('unclaimed');
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  
-  // Use the authenticated user's name and ID from their profile
-  const sourcerName = userProfile?.name || 'Unknown Sourcer';
-  const sourcerId = userProfile?.id || '';
+  const [modalType, setModalType] = useState<'view' | 'add' | null>(null);
 
   // On mount, check for a job to open from alerts
   useEffect(() => {
@@ -114,6 +111,19 @@ const SourcerDashboard: React.FC = () => {
   // Close job detail modal
   const handleCloseModal = () => {
     setSelectedJobId(null);
+    setModalType(null);
+  };
+
+  // Open view details modal
+  const handleViewDetails = (jobId: string) => {
+    setSelectedJobId(jobId);
+    setModalType('view');
+  };
+
+  // Open add candidates modal
+  const handleAddCandidates = (jobId: string) => {
+    setSelectedJobId(jobId);
+    setModalType('add');
   };
 
 
@@ -151,11 +161,24 @@ const SourcerDashboard: React.FC = () => {
           return;
         }
 
-        // Get candidates for this job
-        const candidates = getCandidatesByJob(jobId);
+        // Fetch fresh candidates from database instead of using stale state
+        const { data: candidates, error: candidatesError } = await supabase
+          .from('candidates')
+          .select('*')
+          .eq('job_id', jobId);
+        
+        if (candidatesError) {
+          console.error('⚠️ Failed to fetch candidates for webhook:', candidatesError);
+        }
+        
+        console.log(`📊 Found ${candidates?.length || 0} candidates for job ${jobId}`);
         
         // Get the user profile of the person who submitted the job
         const userProfile = await getUserProfileById(job.userId);
+        
+        if (!userProfile) {
+          console.error('⚠️ User profile not found for webhook. User ID:', job.userId);
+        }
         
         // Update job status
         const result = await updateJob(jobId, {
@@ -164,15 +187,21 @@ const SourcerDashboard: React.FC = () => {
         });
         
         if (result) {
-          // Send job completion notification to GoHighLevel
-          if (userProfile && candidates.length > 0) {
-            try {
+          // Send job completion notification to GoHighLevel - always attempt to send
+          try {
+            if (!userProfile) {
+              console.warn('⚠️ Skipping GHL webhook: User profile is null');
+            } else if (!candidates || candidates.length === 0) {
+              console.warn('⚠️ Sending GHL webhook with 0 candidates - this might be a data issue');
+              await ghlService.sendJobCompletionNotification(job, userProfile, candidates || []);
+              console.log('✅ Job completion notification sent to GHL (0 candidates)');
+            } else {
               await ghlService.sendJobCompletionNotification(job, userProfile, candidates);
-              console.log('✅ Job completion notification sent to GHL');
-            } catch (ghlError) {
-              console.warn('⚠️ GHL Job Completion Notification webhook failed:', ghlError);
-              // Don't fail the job completion if GHL webhook fails
+              console.log(`✅ Job completion notification sent to GHL for ${candidates.length} candidates`);
             }
+          } catch (ghlError) {
+            console.error('❌ GHL Job Completion Notification webhook FAILED:', ghlError);
+            // Don't fail the job completion if GHL webhook fails
           }
         }
       } catch (error) {
@@ -299,22 +328,6 @@ const SourcerDashboard: React.FC = () => {
             </div>
           </div>
           
-          {sourcerName && (
-            <div className="bg-supernova/10 border border-supernova/30 p-4 rounded-lg mb-6">
-              <div className="flex items-center justify-between">
-                <p className="text-supernova font-jakarta">
-                  Sourcing as: <span className="font-anton text-white-knight text-lg">{sourcerName.toUpperCase()}</span>
-                </p>
-                <button
-                  onClick={() => navigate('/sourcer/account')}
-                  className="text-supernova hover:text-white-knight transition-colors text-sm font-semibold px-3 py-1 rounded border border-supernova/30 hover:border-supernova"
-                >
-                  My Account
-                </button>
-              </div>
-            </div>
-          )}
-          
           {sortedJobs.length === 0 ? (
             <div className="text-center py-16">
               <div className="mb-6">
@@ -329,11 +342,12 @@ const SourcerDashboard: React.FC = () => {
                 <JobCard
                   key={job.id}
                   job={job}
-                  onView={(jobId) => setSelectedJobId(jobId)}
-                  onClaim={job.status === 'Unclaimed' ? (jobId) => setSelectedJobId(jobId) : undefined}
+                  onView={handleViewDetails}
+                  onAddCandidates={handleAddCandidates}
+                  onClaim={job.status === 'Unclaimed' ? handleViewDetails : undefined}
                   onComplete={
                     job.status === 'Claimed' && job.sourcerId === userProfile?.id 
-                      ? (jobId) => setSelectedJobId(jobId) 
+                      ? handleAddCandidates
                       : undefined
                   }
                 />
@@ -342,12 +356,19 @@ const SourcerDashboard: React.FC = () => {
           )}
         </div>
         
-        {/* Job Detail Modal - only show if jobs are loaded and selectedJob is valid */}
-        {selectedJob && !loading && (
-          <JobDetailModal
+        {/* View Job Details Modal */}
+        {selectedJob && !loading && modalType === 'view' && (
+          <ViewJobDetailsModal
             job={selectedJob}
             onClose={handleCloseModal}
-            onClaim={handleClaimJob}
+          />
+        )}
+        
+        {/* Add Candidates Modal */}
+        {selectedJob && !loading && modalType === 'add' && (
+          <AddCandidatesModal
+            job={selectedJob}
+            onClose={handleCloseModal}
             onComplete={handleCompleteJob}
           />
         )}

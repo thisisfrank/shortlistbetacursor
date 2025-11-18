@@ -48,6 +48,8 @@ GUIDELINES:
 - Emphasize the required skills naturally within the qualifications
 - Keep each bullet point concise but specific
 - DO NOT use hashtags (#) anywhere in the output
+- DO NOT use asterisks (**) for bold or emphasis formatting around section headers or text
+- Section headers should be plain text followed by a colon (e.g., "Overview:", not "**Overview:**")
 
 Return only the formatted job description with clear section headers.`;
 
@@ -166,6 +168,8 @@ FORMATTING GUIDELINES:
 - If content doesn't fit this structure perfectly, organize it in the most logical way
 - The goal is to make it clean and readable, not to rewrite it
 - DO NOT use hashtags (#) anywhere in the output
+- DO NOT use asterisks (**) for bold or emphasis formatting around section headers or text
+- Section headers should be plain text followed by a colon (e.g., "Overview:", not "**Overview:**")
 
 Return only the formatted job description, no explanations.`;
 
