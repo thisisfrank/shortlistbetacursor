@@ -312,6 +312,15 @@ export const CandidatesView: React.FC = () => {
   const getMatchScore = useCallback(async (candidateId: string, jobId: string) => {
     if (matchScoresRef.current[candidateId]) return; // Already calculated or loading
     
+    // BYPASS: Skip AI scoring and return default score
+    setMatchScores(prev => ({
+      ...prev,
+      [candidateId]: { score: 85, reasoning: 'AI scoring bypassed - default score', loading: false }
+    }));
+    return;
+    
+    // Original scoring code (disabled)
+    /*
     // Set loading state
     setMatchScores(prev => ({
       ...prev,
@@ -360,6 +369,7 @@ export const CandidatesView: React.FC = () => {
         [candidateId]: { score: 50, reasoning: 'Error calculating match score', loading: false }
       }));
     }
+    */
   }, [getJobById, candidates]);
   
   // Calculate match scores for selected job candidates (only for sourcers)

@@ -96,7 +96,9 @@ serve(async (req) => {
     // ScrapingDog returns an array of profiles, get the first one
     const profileData = Array.isArray(responseData) ? responseData[0] : responseData
     
+    // DEBUG: Log the experience data to see what we're actually getting
     console.log(`✅ Successfully scraped profile: ${profileData?.fullName || profileData?.first_name || 'Unknown'}`)
+    console.log('📊 Experience data received:', JSON.stringify(profileData?.experience, null, 2))
     
     return new Response(
       JSON.stringify({ 

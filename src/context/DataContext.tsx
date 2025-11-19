@@ -24,6 +24,28 @@ interface DataContextType {
     rejectedCount: number; 
     error?: string 
   }>;
+  processCandidatesForReview: (jobId: string, linkedinUrls: string[]) => Promise<{
+    success: boolean;
+    processedCandidates: Array<{
+      candidate: Omit<Candidate, 'id' | 'submittedAt'>;
+      score: number;
+      reasoning: string;
+      linkedinUrl: string;
+    }>;
+    rejectedCandidates: Array<{
+      name: string;
+      score: number;
+      reasoning: string;
+      linkedinUrl: string;
+    }>;
+    failedScrapes: number;
+    error?: string;
+  }>;
+  saveFinalizedCandidates: (jobId: string, candidates: Array<Omit<Candidate, 'id' | 'submittedAt'>>) => Promise<{
+    success: boolean;
+    savedCount: number;
+    error?: string;
+  }>;
   deleteCandidate: (candidateId: string) => Promise<boolean>;
   updateJob: (jobId: string, updates: Partial<Job>) => Promise<Job | null>;
   getCandidatesByJob: (jobId: string) => Candidate[];
@@ -802,7 +824,7 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   };
 
   // Bypass AI scoring - accept all candidates without requiring AI to work
-  const BYPASS_AI_SCORING = false; // Set to true to accept all candidates regardless of AI match score
+  const BYPASS_AI_SCORING = true; // Set to true to accept all candidates regardless of AI match score
 
   const addCandidatesFromLinkedIn = async (jobId: string, linkedinUrls: string[]): Promise<{ 
     success: boolean; 
@@ -1153,6 +1175,333 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         acceptedCount: 0,
         rejectedCount: 0,
         error: error instanceof Error ? error.message : 'Failed to scrape LinkedIn profiles' 
+      };
+    }
+  };
+
+  // NEW: Process candidates for review WITHOUT saving to database
+  const processCandidatesForReview = async (jobId: string, linkedinUrls: string[]) => {
+    try {
+      console.log(`\n🎯 PROCESSING ${linkedinUrls.length} candidates for REVIEW (not saving to DB yet)...`);
+      
+      // Enforce 200-candidate limit per submission
+      if (linkedinUrls.length > 200) {
+        return {
+          success: false,
+          processedCandidates: [],
+          rejectedCandidates: [],
+          failedScrapes: 0,
+          error: 'Cannot submit more than 200 candidates per job submission'
+        };
+      }
+
+      // Get the job
+      const job = data.jobs.find((j: Job) => j.id === jobId);
+      if (!job) {
+        return {
+          success: false,
+          processedCandidates: [],
+          rejectedCandidates: [],
+          failedScrapes: 0,
+          error: 'Job not found'
+        };
+      }
+
+      // Check for duplicates across all existing candidates
+      const existingLinkedInUrls = new Set(
+        data.candidates.map((c: Candidate) => c.linkedinUrl.toLowerCase().trim())
+      );
+      
+      const duplicateUrls: string[] = [];
+      const uniqueUrls: string[] = [];
+      
+      linkedinUrls.forEach(url => {
+        const normalizedUrl = url.toLowerCase().trim();
+        if (existingLinkedInUrls.has(normalizedUrl)) {
+          duplicateUrls.push(url);
+        } else {
+          uniqueUrls.push(url);
+        }
+      });
+      
+      // Check if we have any unique URLs to process
+      if (uniqueUrls.length === 0) {
+        return {
+          success: false,
+          processedCandidates: [],
+          rejectedCandidates: [],
+          failedScrapes: 0,
+          error: `All ${duplicateUrls.length} LinkedIn profiles have already been submitted for this job. Please try different profiles.`
+        };
+      }
+      
+      // STEP 1: SCRAPE - Get profile data from LinkedIn
+      console.log(`\n📡 STEP 1: SCRAPING ${uniqueUrls.length} LinkedIn profiles...`);
+      const scrapingResult = await scrapeLinkedInProfiles(uniqueUrls);
+      
+      console.log(`✅ SCRAPING COMPLETE: ${scrapingResult.profiles.length} profiles successfully scraped`);
+      
+      // If scraping completely failed, return early
+      if (!scrapingResult.success || scrapingResult.profiles.length === 0) {
+        return {
+          success: false,
+          processedCandidates: [],
+          rejectedCandidates: [],
+          failedScrapes: uniqueUrls.length,
+          error: scrapingResult.error || `Failed to scrape any profiles. ${uniqueUrls.length} profiles could not be accessed (private/blocked/invalid).`
+        };
+      }
+      
+      // Helper function to check if candidate works at the hiring company
+      const candidateWorksAtHiringCompany = (candidateData: any, jobCompanyName: string): boolean => {
+        if (!candidateData.experience || !Array.isArray(candidateData.experience)) {
+          return false;
+        }
+        
+        const mostRecentJob = candidateData.experience[0];
+        if (mostRecentJob?.company) {
+          const candidateCompany = mostRecentJob.company.toLowerCase().trim();
+          const hiringCompany = jobCompanyName.toLowerCase().trim();
+          return candidateCompany === hiringCompany;
+        }
+        
+        return false;
+      };
+
+      // STEP 2: PROCESS - Score and categorize each candidate
+      console.log(`\n🤖 STEP 2: SCORING ${scrapingResult.profiles.length} profiles...`);
+      
+      const processedCandidates: Array<{
+        candidate: Omit<Candidate, 'id' | 'submittedAt'>;
+        score: number;
+        reasoning: string;
+        linkedinUrl: string;
+      }> = [];
+      const rejectedCandidates: Array<{
+        name: string;
+        score: number;
+        reasoning: string;
+        linkedinUrl: string;
+      }> = [];
+      const failedScrapes = uniqueUrls.length - scrapingResult.profiles.length;
+      
+      for (let i = 0; i < scrapingResult.profiles.length; i++) {
+        const profile = scrapingResult.profiles[i];
+        const linkedinUrl = profile.profileUrl || linkedinUrls[scrapingResult.profiles.indexOf(profile)] || '';
+        
+        console.log(`\n  👤 [${i+1}/${scrapingResult.profiles.length}] Processing: ${profile.firstName} ${profile.lastName}`);
+        
+        const candidateData = {
+          firstName: profile.firstName || 'N/A',
+          lastName: profile.lastName || 'N/A',
+          headline: profile.headline || '',
+          location: profile.location || '',
+          experience: (profile.experience && profile.experience.length > 0 ? profile.experience : undefined),
+          education: (profile.education && profile.education.length > 0 ? profile.education : undefined),
+          skills: (profile.skills && profile.skills.length > 0 ? profile.skills : undefined),
+          about: profile.summary || ''
+        };
+
+        // Validation: Check if candidate works at the hiring company
+        const worksAtCompany = candidateWorksAtHiringCompany(candidateData, job.companyName);
+        if (worksAtCompany) {
+          console.log(`     ❌ REJECTED: Currently works at ${job.companyName}`);
+          rejectedCandidates.push({
+            name: `${candidateData.firstName} ${candidateData.lastName}`,
+            score: 0,
+            reasoning: `Candidate currently works at ${job.companyName} (hiring company). Cannot submit current employees as candidates.`,
+            linkedinUrl
+          });
+          continue;
+        }
+        
+        // AI Scoring: Determine if candidate is a good match
+        // BYPASS AI SCORING - Accept all candidates
+        if (BYPASS_AI_SCORING) {
+          console.log(`     ✅ ACCEPTED: AI scoring bypassed`);
+          const candidateForReview: Omit<Candidate, 'id' | 'submittedAt'> = {
+            jobId,
+            firstName: candidateData.firstName,
+            lastName: candidateData.lastName,
+            linkedinUrl,
+            headline: candidateData.headline,
+            location: candidateData.location,
+            experience: candidateData.experience,
+            education: candidateData.education,
+            skills: candidateData.skills,
+            summary: profile.summary
+          };
+          
+          processedCandidates.push({
+            candidate: candidateForReview,
+            score: 85,
+            reasoning: 'AI scoring bypassed - auto-accepted for review',
+            linkedinUrl
+          });
+        } else {
+          try {
+            const matchData = {
+              jobTitle: job.title || '',
+              jobDescription: job.description || '',
+              seniorityLevel: job.seniorityLevel || '',
+              keySkills: job.mustHaveSkills || [],
+              candidateData
+            };
+            
+            console.log(`     🤖 AI Scoring...`);
+            const scoreResult = await generateJobMatchScore(matchData);
+            console.log(`     📊 Score: ${scoreResult.score}/100 (threshold: 60)`);
+            
+            const candidateForReview: Omit<Candidate, 'id' | 'submittedAt'> = {
+              jobId,
+              firstName: candidateData.firstName,
+              lastName: candidateData.lastName,
+              linkedinUrl,
+              headline: candidateData.headline,
+              location: candidateData.location,
+              experience: candidateData.experience,
+              education: candidateData.education,
+              skills: candidateData.skills,
+              summary: profile.summary
+            };
+            
+            if (scoreResult.score >= 60) {
+              console.log(`     ✅ ACCEPTED: Score ${scoreResult.score} ≥ 60`);
+              processedCandidates.push({
+                candidate: candidateForReview,
+                score: scoreResult.score,
+                reasoning: scoreResult.reasoning,
+                linkedinUrl
+              });
+            } else {
+              console.log(`     ❌ REJECTED: Score ${scoreResult.score} < 60`);
+              rejectedCandidates.push({
+                name: `${candidateData.firstName} ${candidateData.lastName}`,
+                score: scoreResult.score,
+                reasoning: scoreResult.reasoning,
+                linkedinUrl
+              });
+            }
+          } catch (error) {
+            console.log(`     ⚠️ AI scoring error - auto-accepting:`, error);
+            // Auto-accept on error
+            const candidateForReview: Omit<Candidate, 'id' | 'submittedAt'> = {
+              jobId,
+              firstName: candidateData.firstName,
+              lastName: candidateData.lastName,
+              linkedinUrl,
+              headline: candidateData.headline,
+              location: candidateData.location,
+              experience: candidateData.experience,
+              education: candidateData.education,
+              skills: candidateData.skills,
+              summary: profile.summary
+            };
+            
+            processedCandidates.push({
+              candidate: candidateForReview,
+              score: 75, // Default score when AI fails
+              reasoning: 'AI scoring temporarily unavailable - candidate auto-accepted for review',
+              linkedinUrl
+            });
+          }
+        }
+      }
+      
+      console.log(`\n📊 PROCESSING COMPLETE:`);
+      console.log(`   ✅ Accepted for review: ${processedCandidates.length}`);
+      console.log(`   ❌ Rejected: ${rejectedCandidates.length}`);
+      console.log(`   ⚠️ Failed scrapes: ${failedScrapes}`);
+      
+      return {
+        success: true,
+        processedCandidates,
+        rejectedCandidates,
+        failedScrapes
+      };
+    } catch (error) {
+      console.error('Error processing candidates for review:', error);
+      return {
+        success: false,
+        processedCandidates: [],
+        rejectedCandidates: [],
+        failedScrapes: 0,
+        error: error instanceof Error ? error.message : 'Failed to process candidates'
+      };
+    }
+  };
+
+  // NEW: Save finalized candidates to database and complete job
+  const saveFinalizedCandidates = async (jobId: string, candidates: Array<Omit<Candidate, 'id' | 'submittedAt'>>) => {
+    try {
+      console.log(`\n💾 SAVING ${candidates.length} finalized candidates to database...`);
+      
+      if (candidates.length === 0) {
+        return {
+          success: false,
+          savedCount: 0,
+          error: 'No candidates to save'
+        };
+      }
+
+      // Prepare candidates for database insertion
+      const candidatesToInsert = candidates.map(candidate => ({
+        job_id: candidate.jobId || '',
+        first_name: candidate.firstName || '',
+        last_name: candidate.lastName || '',
+        linkedin_url: candidate.linkedinUrl || '',
+        headline: candidate.headline || '',
+        location: candidate.location || '',
+        experience: candidate.experience || [],
+        education: candidate.education || [],
+        skills: candidate.skills || [],
+        summary: candidate.summary || ''
+      }));
+
+      const { data: insertedCandidates, error: insertError } = await withTimeout(
+        supabase.from('candidates').insert(candidatesToInsert).select(),
+        15000 // 15 second timeout
+      );
+      
+      if (insertError) {
+        console.error(`   ❌ DATABASE ERROR:`, insertError.message);
+        throw new Error(`Failed to save candidates: ${insertError.message}`);
+      }
+      
+      console.log(`   ✅ Successfully saved ${insertedCandidates?.length || 0} candidates to database`);
+      
+      // Update local state with the actual database records
+      const savedCandidates = (insertedCandidates || []).map((c: any) => ({
+        id: (c.id || ''),
+        jobId: (c.job_id || ''),
+        firstName: (c.first_name || ''),
+        lastName: (c.last_name || ''),
+        linkedinUrl: (c.linkedin_url || ''),
+        headline: (c.headline || ''),
+        location: (c.location || ''),
+        experience: (c.experience || []),
+        education: (c.education || []),
+        skills: (c.skills || []),
+        summary: (c.summary || ''),
+        submittedAt: new Date(c.submitted_at || '')
+      }));
+      
+      setData(prev => {
+        const newData = { ...prev, candidates: [...prev.candidates, ...savedCandidates] };
+        saveDataToCache(newData);
+        return newData;
+      });
+      
+      return {
+        success: true,
+        savedCount: savedCandidates.length
+      };
+    } catch (error) {
+      console.error('💥 Error saving finalized candidates:', error);
+      return {
+        success: false,
+        savedCount: 0,
+        error: error instanceof Error ? error.message : 'Failed to save candidates'
       };
     }
   };
@@ -1573,6 +1922,8 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     addJob,
     addCandidate,
     addCandidatesFromLinkedIn,
+    processCandidatesForReview,
+    saveFinalizedCandidates,
     deleteCandidate,
     updateJob,
     getCandidatesByJob,

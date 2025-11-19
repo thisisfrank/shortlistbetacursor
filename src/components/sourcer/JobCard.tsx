@@ -13,6 +13,7 @@ interface JobCardProps {
   onAddCandidates?: (jobId: string) => void;
   onClaim?: (jobId: string) => void;
   onComplete?: (jobId: string) => void;
+  onViewCandidates?: (jobId: string) => void;
   showActions?: boolean;
 }
 
@@ -22,6 +23,7 @@ export const JobCard: React.FC<JobCardProps> = ({
   onAddCandidates,
   onClaim,
   onComplete,
+  onViewCandidates,
   showActions = true
 }) => {
   const { getCandidatesByJob } = useData();
@@ -184,6 +186,17 @@ export const JobCard: React.FC<JobCardProps> = ({
                 onClick={() => onAddCandidates(job.id)}
               >
                 ADD CANDIDATES
+              </Button>
+            )}
+            
+            {job.status === 'Completed' && onViewCandidates && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+                onClick={() => onViewCandidates(job.id)}
+              >
+                VIEW CANDIDATES
               </Button>
             )}
           </div>

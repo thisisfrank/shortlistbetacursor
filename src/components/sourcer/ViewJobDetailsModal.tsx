@@ -104,7 +104,7 @@ export const ViewJobDetailsModal: React.FC<ViewJobDetailsModalProps> = ({
             </div>
 
             <div className="mb-6">
-              <p className="text-sm font-jakarta font-semibold text-guardian uppercase tracking-wide mb-3">Key Selling Points</p>
+              <p className="text-sm font-jakarta font-semibold text-guardian uppercase tracking-wide mb-3">Key Skills</p>
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {job.mustHaveSkills.map((skill, index) => (
                   <li key={index} className="flex items-start">

@@ -214,7 +214,7 @@ export const generateJobMatchScore = async (matchData: JobMatchData): Promise<{ 
         messages: [
           {
             role: 'user',
-            content: `You are an expert recruiter. Analyze how well this candidate matches the job requirements and provide a match score from 0-100 and brief reasoning.
+            content: `You are an expert recruiter. Score this candidate using the following weighted criteria (0-100 scale):
 
 JOB REQUIREMENTS:
 Title: ${matchData.jobTitle}
@@ -245,10 +245,18 @@ ${matchData.candidateData.education && matchData.candidateData.education.length 
   : 'No education data available'
 }
 
+SCORING FORMULA (calculate each component, then sum to get total 0-100):
+1. Experience Relevance (35 points max): Score 0-35 based on how relevant their past roles are to this position
+2. Skills Match (35 points max): Score 0-35 based on percentage of required skills the candidate has
+3. Seniority Alignment (20 points max): Score 0-20 based on how well their level matches the required seniority
+4. Education Fit (10 points max): Score 0-10 based on education background relevance
+
+Calculate each component score, sum them for a total (0-100), and provide reasoning that shows your breakdown.
+
 Respond with ONLY a JSON object in this exact format:
 {
   "score": 85,
-  "reasoning": "Strong match due to relevant experience in similar role, 80% skill overlap, and appropriate seniority level"
+  "reasoning": "Experience: 30/35 (highly relevant roles), Skills: 28/35 (80% match), Seniority: 18/20 (senior level match), Education: 9/10 (relevant degree)"
 }`
           }
         ]

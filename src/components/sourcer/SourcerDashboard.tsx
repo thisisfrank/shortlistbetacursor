@@ -3,6 +3,7 @@ import { Job } from '../../types';
 import { JobCard } from './JobCard';
 import { ViewJobDetailsModal } from './ViewJobDetailsModal';
 import { AddCandidatesModal } from './AddCandidatesModal';
+import { ViewCandidatesModal } from './ViewCandidatesModal';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/Button';
@@ -16,7 +17,7 @@ const SourcerDashboard: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'unclaimed' | 'claimed' | 'completed'>('unclaimed');
   const [search, setSearch] = useState('');
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
-  const [modalType, setModalType] = useState<'view' | 'add' | null>(null);
+  const [modalType, setModalType] = useState<'view' | 'add' | 'viewCandidates' | null>(null);
 
   // On mount, check for a job to open from alerts
   useEffect(() => {
@@ -126,7 +127,11 @@ const SourcerDashboard: React.FC = () => {
     setModalType('add');
   };
 
-
+  // Open view candidates modal
+  const handleViewCandidates = (jobId: string) => {
+    setSelectedJobId(jobId);
+    setModalType('viewCandidates');
+  };
 
   // Claim a job
   const handleClaimJob = (jobId: string) => {
@@ -350,6 +355,7 @@ const SourcerDashboard: React.FC = () => {
                       ? handleAddCandidates
                       : undefined
                   }
+                  onViewCandidates={handleViewCandidates}
                 />
               ))}
             </div>
@@ -372,6 +378,15 @@ const SourcerDashboard: React.FC = () => {
             onComplete={handleCompleteJob}
           />
         )}
+        
+        {/* View Candidates Modal */}
+        {selectedJob && !loading && modalType === 'viewCandidates' && (
+          <ViewCandidatesModal
+            job={selectedJob}
+            onClose={handleCloseModal}
+          />
+        )}
+        
         {/* Show a loading overlay if a job is selected but jobs are still loading */}
         {selectedJobId && loading && (
           <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
