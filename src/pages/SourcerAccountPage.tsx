@@ -76,7 +76,7 @@ export const SourcerAccountPage: React.FC = () => {
 
             {/* Avatar Selection Grid */}
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-white-knight mb-3 text-center">Choose Your Avatar</h3>
+              <h3 className="text-lg text-white-knight mb-3 text-center">Choose Your Avatar</h3>
               <div className="grid grid-cols-6 gap-3 max-h-[300px] overflow-y-auto p-2 bg-shadowforce/30 rounded-lg">
                 {Array.from({ length: 60 }, (_, i) => `/avatars/avatar-${i + 1}.png`).map((avatarOption, index) => (
                   <button
