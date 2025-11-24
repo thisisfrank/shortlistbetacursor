@@ -160,54 +160,54 @@ export const LandingPage: React.FC = () => {
                 </h3>
                 
                 {/* Timeline Container */}
-                <div className="relative py-20">
-                  {/* Horizontal Timeline Line */}
-                  <div className="absolute top-1/2 left-0 right-0 h-1 bg-supernova/30 transform -translate-y-1/2"></div>
+                <div className="relative py-8 md:py-20">
+                  {/* Horizontal Timeline Line - Desktop Only */}
+                  <div className="hidden md:block absolute top-1/2 left-0 right-0 h-1 bg-supernova/30 transform -translate-y-1/2"></div>
                   
                   {/* Timeline Points Container */}
-                  <div className="relative flex justify-between items-center max-w-6xl mx-auto">
+                  <div className="relative flex flex-col md:flex-row justify-between items-stretch md:items-center max-w-6xl mx-auto gap-6 md:gap-0">
                     
-                    {/* Stage 1 - Below Timeline */}
-                    <div className="flex flex-col items-center w-1/3 relative pt-20">
-                      {/* Bubble on the line */}
-                      <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-                        <div className="bg-supernova text-shadowforce rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center font-anton font-bold text-xl md:text-2xl shadow-lg">
+                    {/* Stage 1 */}
+                    <div className="flex md:flex-col items-center md:w-1/3 relative md:pt-20 gap-4">
+                      {/* Bubble */}
+                      <div className="relative md:absolute md:left-1/2 md:top-1/2 md:transform md:-translate-x-1/2 md:-translate-y-1/2 z-10 flex-shrink-0">
+                        <div className="bg-supernova text-shadowforce rounded-full w-10 h-10 md:w-16 md:h-16 flex items-center justify-center font-anton font-bold text-lg md:text-2xl shadow-lg">
                           1
                         </div>
                       </div>
                       
-                      {/* Text below - aligned to top */}
-                      <p className="text-sm md:text-base lg:text-lg text-white font-jakarta leading-relaxed text-center px-2 md:px-4 mt-16 md:mt-20">
+                      {/* Text */}
+                      <p className="text-sm md:text-base lg:text-lg text-white font-jakarta leading-relaxed text-left md:text-center px-2 md:px-4 md:mt-16 md:mt-20">
                         Submit job requirements
                       </p>
                     </div>
                     
-                    {/* Stage 2 - Above Timeline */}
-                    <div className="flex flex-col items-center w-1/3 relative pb-20">
-                      {/* Text above - at top */}
-                      <p className="text-sm md:text-base lg:text-lg text-white font-jakarta leading-relaxed text-center px-2 md:px-4 mb-16 md:mb-20">
-                        Get high-quality candidates sent to you
-                      </p>
-                      
-                      {/* Bubble on the line */}
-                      <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-                        <div className="bg-supernova text-shadowforce rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center font-anton font-bold text-xl md:text-2xl shadow-lg">
+                    {/* Stage 2 */}
+                    <div className="flex md:flex-col items-center md:w-1/3 relative md:pb-20 gap-4">
+                      {/* Bubble */}
+                      <div className="relative md:absolute md:left-1/2 md:top-1/2 md:transform md:-translate-x-1/2 md:-translate-y-1/2 z-10 flex-shrink-0 md:order-last">
+                        <div className="bg-supernova text-shadowforce rounded-full w-10 h-10 md:w-16 md:h-16 flex items-center justify-center font-anton font-bold text-lg md:text-2xl shadow-lg">
                           2
                         </div>
                       </div>
+                      
+                      {/* Text above on desktop, inline on mobile */}
+                      <p className="text-sm md:text-base lg:text-lg text-white font-jakarta leading-relaxed text-left md:text-center px-2 md:px-4 md:mb-16 md:mb-20 md:order-first">
+                        Get high-quality candidates sent to you
+                      </p>
                     </div>
                     
-                    {/* Stage 3 - Below Timeline */}
-                    <div className="flex flex-col items-center w-1/3 relative pt-20">
-                      {/* Bubble on the line */}
-                      <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
-                        <div className="bg-supernova text-shadowforce rounded-full w-12 h-12 md:w-16 md:h-16 flex items-center justify-center font-anton font-bold text-xl md:text-2xl shadow-lg">
+                    {/* Stage 3 */}
+                    <div className="flex md:flex-col items-center md:w-1/3 relative md:pt-20 gap-4">
+                      {/* Bubble */}
+                      <div className="relative md:absolute md:left-1/2 md:top-1/2 md:transform md:-translate-x-1/2 md:-translate-y-1/2 z-10 flex-shrink-0">
+                        <div className="bg-supernova text-shadowforce rounded-full w-10 h-10 md:w-16 md:h-16 flex items-center justify-center font-anton font-bold text-lg md:text-2xl shadow-lg">
                           3
                         </div>
                       </div>
                       
-                      {/* Text below - aligned to top */}
-                      <p className="text-sm md:text-base lg:text-lg text-white font-jakarta leading-relaxed text-center px-2 md:px-4 mt-16 md:mt-20">
+                      {/* Text */}
+                      <p className="text-sm md:text-base lg:text-lg text-white font-jakarta leading-relaxed text-left md:text-center px-2 md:px-4 md:mt-16 md:mt-20">
                         Interview quality people not active on job boards
                       </p>
                     </div>

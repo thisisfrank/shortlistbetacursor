@@ -294,39 +294,39 @@ const SourcerDashboard: React.FC = () => {
               />
             </div>
             
-            <div className="flex space-x-3">
+            <div className="flex flex-col md:flex-row gap-2 md:space-x-2 md:gap-0">
               <Button
                 variant={filter === 'unclaimed' ? 'primary' : 'outline'}
                 size="md"
                 onClick={() => setFilter('unclaimed')}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 text-sm w-full md:w-auto"
               >
-                <Clock size={18} />
+                <Clock size={16} className="md:w-[18px] md:h-[18px]" />
                 AVAILABLE
               </Button>
               <Button
                 variant={filter === 'claimed' ? 'primary' : 'outline'}
                 size="md"
                 onClick={() => setFilter('claimed')}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 text-sm w-full md:w-auto"
               >
-                <Target size={18} />
+                <Target size={16} className="md:w-[18px] md:h-[18px]" />
                 IN PROGRESS
               </Button>
               <Button
                 variant={filter === 'completed' ? 'primary' : 'outline'}
                 size="md"
                 onClick={() => setFilter('completed')}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 text-sm w-full md:w-auto"
               >
-                <Check size={18} />
+                <Check size={16} className="md:w-[18px] md:h-[18px]" />
                 COMPLETED
               </Button>
               <Button
                 variant={filter === 'all' ? 'primary' : 'outline'}
                 size="md"
                 onClick={() => setFilter('all')}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 text-sm w-full md:w-auto"
               >
                 ALL
               </Button>
@@ -367,6 +367,7 @@ const SourcerDashboard: React.FC = () => {
           <ViewJobDetailsModal
             job={selectedJob}
             onClose={handleCloseModal}
+            onClaim={selectedJob.status === 'Unclaimed' ? handleClaimJob : undefined}
           />
         )}
         

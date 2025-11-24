@@ -42,6 +42,7 @@ export const JobTitleStep: React.FC<JobTitleStepProps> = ({
           type="submit"
           fullWidth
           size="lg"
+          className="text-sm md:text-base"
         >
           CONTINUE TO JOB DETAILS
         </Button>

@@ -2008,26 +2008,26 @@ export const CandidatesView: React.FC = () => {
         {/* Upgrade CTA */}
         <div className="mt-12">
           <Card className="bg-gradient-to-r from-supernova/20 via-supernova/10 to-transparent border-supernova/30 hover:border-supernova/50 transition-all duration-300">
-            <CardContent className="p-8">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <CardContent className="p-4 md:p-8">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
                 <div className="flex items-center">
-                  <div className="bg-supernova/20 rounded-full p-4 mr-6">
-                    <CreditCard className="text-supernova" size={32} />
+                  <div className="bg-supernova/20 rounded-full p-3 md:p-4 mr-3 md:mr-6 flex-shrink-0">
+                    <CreditCard className="text-supernova" size={24} />
                   </div>
                   <div>
-                    <h3 className="text-guardian font-anton text-xl uppercase tracking-wide">
-                    Get more candidates and unlimited job submissions by upgrading your plan today
+                    <h3 className="text-guardian font-anton text-sm md:text-xl uppercase tracking-tight md:tracking-wide leading-tight">
+                    Get more candidates and unlimited job submissions <br className="md:hidden" />by upgrading your plan today
                     </h3>
                   </div>
                 </div>
                 <Button 
                   onClick={handleGetMoreCredits}
-                  size="lg"
-                  className="glow-supernova flex items-center gap-3 whitespace-nowrap"
+                  size="md"
+                  className="glow-supernova flex items-center gap-2 whitespace-nowrap text-sm md:text-base w-full md:w-auto"
                   disabled={isCreatingCheckout}
                   isLoading={isCreatingCheckout}
                 >
-                  <Crown size={20} />
+                  <Crown size={16} className="md:w-5 md:h-5" />
                   {isCreatingCheckout ? 'OPENING CHECKOUT...' : 'UPGRADE'}
                 </Button>
               </div>
