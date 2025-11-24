@@ -1732,10 +1732,17 @@ export const CandidatesView: React.FC = () => {
                   </div>
                   <input
                     type="text"
+                    placeholder=""
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10 md:hidden w-full rounded-lg border-guardian/30 bg-shadowforce text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta"
+                  />
+                  <input
+                    type="text"
                     placeholder="Search jobs by title or company..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10 block w-full rounded-lg border-guardian/30 bg-shadowforce text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta"
+                    className="pl-10 hidden md:block w-full rounded-lg border-guardian/30 bg-shadowforce text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta"
                   />
                 </div>
                 
@@ -1809,8 +1816,8 @@ export const CandidatesView: React.FC = () => {
                       <CardContent className="p-6">
                         <div className="mb-4 p-3 rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
                           <p className="text-white-knight font-anton text-2xl md:text-3xl uppercase tracking-wide">{job.title}</p>
-                          <div className="flex flex-wrap items-center gap-2 md:gap-3">
-                            <div className={`px-3 py-2 rounded-lg border text-sm font-jakarta font-semibold uppercase tracking-wide ${
+                          <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-center gap-2 md:gap-3 w-full md:w-auto">
+                            <div className={`px-3 py-2 rounded-lg border text-sm font-jakarta font-semibold uppercase tracking-wide text-center ${
                               isCompleted 
                                 ? 'bg-green-500/10 border-green-500/30 text-green-400' 
                                 : hasCandidates
@@ -1819,52 +1826,54 @@ export const CandidatesView: React.FC = () => {
                             }`}>
                               {clientStatus}
                             </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleJobExpansion(job.id);
-                              }}
-                              className="flex items-center gap-2"
-                            >
-                              {isExpanded ? (
-                                <>
-                                  <ChevronDown size={16} />
-                                  COLLAPSE
-                                </>
-                              ) : (
-                                <>
-                                  <ChevronRight size={16} />
-                                  EXPAND
-                                </>
-                              )}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (isJobArchived) {
-                                  handleUnarchiveJob(job.id);
-                                } else {
-                                  handleArchiveJob(job.id);
-                                }
-                              }}
-                              className={`flex items-center gap-2 ${isJobArchived && showArchived ? 'text-orange-400 border-orange-400' : ''}`}
-                            >
-                              {showArchived && isJobArchived ? (
-                                <>
-                                  <Plus size={16} />
-                                  UNARCHIVE
-                                </>
-                              ) : (
-                                <>
-                                  <Minus size={16} />
-                                  ARCHIVE
-                                </>
-                              )}
-                            </Button>
+                            <div className="flex gap-2 md:contents">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleJobExpansion(job.id);
+                                }}
+                                className="flex items-center justify-center gap-2 flex-1 md:flex-none"
+                              >
+                                {isExpanded ? (
+                                  <>
+                                    <ChevronDown size={16} />
+                                    COLLAPSE
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChevronRight size={16} />
+                                    EXPAND
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (isJobArchived) {
+                                    handleUnarchiveJob(job.id);
+                                  } else {
+                                    handleArchiveJob(job.id);
+                                  }
+                                }}
+                                className={`flex items-center justify-center gap-2 flex-1 md:flex-none ${isJobArchived && showArchived ? 'text-orange-400 border-orange-400' : ''}`}
+                              >
+                                {showArchived && isJobArchived ? (
+                                  <>
+                                    <Plus size={16} />
+                                    UNARCHIVE
+                                  </>
+                                ) : (
+                                  <>
+                                    <Minus size={16} />
+                                    ARCHIVE
+                                  </>
+                                )}
+                              </Button>
+                            </div>
                           </div>
                         </div>
                         
@@ -2016,7 +2025,7 @@ export const CandidatesView: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-guardian font-anton text-sm md:text-xl uppercase tracking-tight md:tracking-wide leading-tight">
-                    Get more candidates and unlimited job submissions <br className="md:hidden" />by upgrading your plan today
+                    Get more candidates and unlimited job submissions by upgrading your plan today
                     </h3>
                   </div>
                 </div>

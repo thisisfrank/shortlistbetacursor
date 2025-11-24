@@ -721,7 +721,7 @@ Output ONLY the final message text with NO signature or closing.`;
          <div className="min-h-screen bg-gradient-to-br from-shadowforce via-shadowforce-light to-shadowforce">
        <div className="flex flex-col md:flex-row min-h-screen">
          {/* Left Panel - Jobs List */}
-         <div className="w-full md:w-1/3 bg-shadowforce-light/30 md:border-r border-guardian/20 p-4 md:p-6 overflow-y-auto max-h-[50vh] md:max-h-none">
+         <div className="w-full md:w-1/3 bg-shadowforce-light/30 md:border-r border-guardian/20 p-4 md:p-6 md:overflow-y-auto md:max-h-none">
           <div className="mb-4 md:mb-6">
             <h1 className="text-xl md:text-2xl font-bold text-white-knight font-jakarta mb-2">
               Message Generator

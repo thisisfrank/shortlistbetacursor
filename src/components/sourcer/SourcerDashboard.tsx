@@ -287,10 +287,17 @@ const SourcerDashboard: React.FC = () => {
               </div>
               <input
                 type="text"
+                placeholder=""
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-12 md:hidden w-full rounded-lg border-guardian/30 bg-shadowforce text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta text-lg py-4"
+              />
+              <input
+                type="text"
                 placeholder="Search jobs by title, description, or location"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-12 block w-full rounded-lg border-guardian/30 bg-shadowforce text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta text-lg py-4"
+                className="pl-12 hidden md:block w-full rounded-lg border-guardian/30 bg-shadowforce text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta text-lg py-4"
               />
             </div>
             
