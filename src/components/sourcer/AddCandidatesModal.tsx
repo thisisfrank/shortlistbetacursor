@@ -27,17 +27,15 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
   onClose,
   onComplete
 }) => {
-  const { processCandidatesForReview, saveFinalizedCandidates, getCandidatesByJob, deleteCandidate } = useData();
+  const { saveFinalizedCandidates, getCandidatesByJob, deleteCandidate } = useData();
   const { userProfile } = useAuth();
   
   // UI State
   const [stage, setStage] = useState<ProcessingStage>('input');
-  const [linkedinUrls, setLinkedinUrls] = useState(['']);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
-  const [submissionMethod, setSubmissionMethod] = useState<'urls' | 'csv'>('csv');
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvError, setCsvError] = useState('');
   const [deletingCandidateId, setDeletingCandidateId] = useState<string | null>(null);
@@ -119,110 +117,79 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
     });
   };
 
-  // Process candidates (scrape + score, don't save to DB yet)
-  const handleProcessCandidates = async () => {
+  // NEW: Upload candidates directly from CSV (NO SCRAPING)
+  const handleUploadCandidates = async () => {
     if (!userProfile) {
       setError('User information is still loading. Please wait and try again.');
       return;
     }
     
-    let validUrls: string[] = [];
+    if (!csvFile) {
+      setError('Please upload a CSV file');
+      return;
+    }
+    
     setSuccessMessage('');
     setError('');
-    
-    if (submissionMethod === 'csv') {
-      if (!csvFile) {
-        setError('Please upload a CSV file');
-        return;
-      }
-      
-      try {
-        validUrls = await parseCsvFile(csvFile);
-      } catch (error) {
-        setError(error instanceof Error ? error.message : 'Error processing CSV file');
-        return;
-      }
-    } else {
-      validUrls = linkedinUrls.filter(url => url.trim());
-    }
-    
-    if (validUrls.length === 0) {
-      setError('Please add at least one LinkedIn URL');
-      return;
-    }
-    
-    if (validUrls.length > MAX_CANDIDATES_PER_SUBMISSION) {
-      setError(`Cannot submit more than ${MAX_CANDIDATES_PER_SUBMISSION} candidates per job submission`);
-      return;
-    }
-    
-    const invalidUrls = validUrls.filter(url => !url.includes('linkedin.com'));
-    if (invalidUrls.length > 0) {
-      setError('Please ensure all LinkedIn URLs are valid');
-      return;
-    }
-    
     setIsProcessing(true);
-    setStage('processing');
     
     try {
-      // Process candidates (scrape + score, but don't save to DB)
-      const result = await processCandidatesForReview(job.id, validUrls);
+      // Parse CSV to get LinkedIn URLs
+      const validUrls = await parseCsvFile(csvFile);
       
-      if (!result.success) {
-        setError(result.error || 'Failed to process LinkedIn profiles');
+      if (validUrls.length === 0) {
+        setError('No valid LinkedIn URLs found in CSV file');
         setIsProcessing(false);
-        setStage('input');
         return;
       }
       
-      console.log(`Candidates processed for review: Accepted: ${result.processedCandidates.length}, Rejected: ${result.rejectedCandidates.length}`);
+      console.log(`📤 Uploading ${validUrls.length} candidates directly (no scraping)...`);
       
-      // Convert to draft format with temp IDs
-      const draftCandidates: DraftCandidate[] = result.processedCandidates.map(pc => ({
-        ...pc,
-        tempId: `temp-${Date.now()}-${Math.random()}`
-      }));
+      // Create basic candidate objects from URLs
+      const candidatesToSave = validUrls.map(url => {
+        // Extract name from LinkedIn URL if possible
+        const urlParts = url.split('/in/')[1]?.split('/')[0] || 'unknown';
+        const nameParts = urlParts.replace(/-/g, ' ').split(' ');
+        const firstName = nameParts[0] || 'Unknown';
+        const lastName = nameParts.slice(1).join(' ') || 'Candidate';
+        
+        return {
+          jobId: job.id,
+          firstName,
+          lastName,
+          linkedinUrl: url,
+          headline: 'LinkedIn Profile',
+          location: 'N/A',
+          experience: [],
+          education: [],
+          skills: [],
+          summary: `Candidate profile: ${url}`
+        };
+      });
       
-      // Add to draft (merges with existing if present)
-      const success = addToDraft(
-        job.id,
-        draftCandidates,
-        result.rejectedCandidates,
-        result.failedScrapes
-      );
+      // Save directly to database using saveFinalizedCandidates
+      const saveResult = await saveFinalizedCandidates(job.id, candidatesToSave);
       
-      if (!success) {
-        console.warn('⚠️ Failed to save draft to localStorage (might be full)');
-        setError('Warning: Draft could not be saved. Please complete submission now or your work may be lost.');
+      if (!saveResult.success) {
+        setError(saveResult.error || 'Failed to save candidates. Please try again.');
+        setIsProcessing(false);
+        return;
       }
       
-      // Reload draft from localStorage
-      const updatedDraft = loadDraft(job.id);
-      setDraft(updatedDraft);
+      console.log(`✅ Successfully uploaded ${saveResult.savedCount} candidates`);
       
-      // Show success message
-      let message = `✅ ${result.processedCandidates.length} candidate${result.processedCandidates.length === 1 ? '' : 's'} processed and ready for review!`;
+      // Refresh saved candidates list
+      const updated = getCandidatesByJob(job.id);
+      setSavedCandidates(updated);
       
-      if (result.rejectedCandidates.length > 0) {
-        message += ` (${result.rejectedCandidates.length} rejected due to low match scores)`;
-      }
-      
-      if (result.failedScrapes > 0) {
-        message += `\n\n⚠️ ${result.failedScrapes} profile${result.failedScrapes === 1 ? '' : 's'} could not be scraped (private/blocked).`;
-      }
-      
-      setSuccessMessage(message);
-      setError('');
-      setLinkedinUrls(['']);
+      setSuccessMessage(`✅ ${saveResult.savedCount} candidate${saveResult.savedCount === 1 ? '' : 's'} uploaded successfully!`);
       setCsvFile(null);
       setIsProcessing(false);
-      setStage('review');
+      
     } catch (error) {
-      console.error('Error processing candidates:', error);
-      setError('Failed to process LinkedIn profiles. Please try again.');
+      console.error('Error uploading candidates:', error);
+      setError(error instanceof Error ? error.message : 'Failed to upload candidates. Please try again.');
       setIsProcessing(false);
-      setStage('input');
     }
   };
 
@@ -323,28 +290,6 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
     }
   };
 
-  const addUrlField = () => {
-    if (linkedinUrls.length >= MAX_CANDIDATES_PER_SUBMISSION) {
-      setError(`Cannot add more than ${MAX_CANDIDATES_PER_SUBMISSION} LinkedIn URLs`);
-      return;
-    }
-    setLinkedinUrls([...linkedinUrls, '']);
-  };
-
-  const removeUrl = (index: number) => {
-    if (linkedinUrls.length > 1) {
-      const newUrls = linkedinUrls.filter((_, i) => i !== index);
-      setLinkedinUrls(newUrls);
-    }
-  };
-
-  const updateUrl = (index: number, value: string) => {
-    const newUrls = [...linkedinUrls];
-    newUrls[index] = value;
-    setLinkedinUrls(newUrls);
-    setError('');
-  };
-
   const handleCsvUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -366,11 +311,6 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
     setError('');
   };
 
-  const handleBackToInput = () => {
-    setStage('input');
-    setError('');
-    setSuccessMessage('');
-  };
 
   // Calculate progress
   const totalProcessed = (draft?.processedCandidates.length || 0) + savedCandidates.length;
@@ -417,45 +357,7 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
           {/* STAGE: INPUT */}
           {stage === 'input' && (
             <>
-              {/* Submission Method Toggle */}
-              <div className="mb-6">
-                <h5 className="font-anton text-lg text-white-knight mb-4 uppercase tracking-wide">
-                  Submission Method
-                </h5>
-                <div className="flex gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setSubmissionMethod('csv')}
-                    className={`flex-1 p-4 rounded-lg border-2 transition-all duration-200 ${
-                      submissionMethod === 'csv'
-                        ? 'border-supernova bg-supernova/10 text-supernova'
-                        : 'border-guardian/30 text-guardian hover:border-guardian/50'
-                    }`}
-                  >
-                    <div className="text-center">
-                      <div className="font-jakarta font-semibold text-white text-sm mb-1">CSV Upload</div>
-                      <div className="text-xs">Upload a CSV file with LinkedIn URLs</div>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSubmissionMethod('urls')}
-                    className={`flex-1 p-4 rounded-lg border-2 transition-all duration-200 ${
-                      submissionMethod === 'urls'
-                        ? 'border-supernova bg-supernova/10 text-supernova'
-                        : 'border-guardian/30 text-guardian hover:border-guardian/50'
-                    }`}
-                  >
-                    <div className="text-center">
-                      <div className="font-jakarta font-semibold text-white text-sm mb-1">Manual Entry</div>
-                      <div className="text-xs">Enter LinkedIn URLs individually</div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {submissionMethod === 'csv' ? (
-                /* CSV Upload Section */
+              {/* CSV Upload Section */}
                 <div className="mb-6">
                   <div className="flex items-center gap-2 mb-4">
                     <h5 className="font-anton text-lg text-white-knight uppercase tracking-wide">
@@ -470,6 +372,7 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
                           <li>• Header row is optional (will be automatically detected)</li>
                           <li>• Maximum {MAX_CANDIDATES_PER_SUBMISSION} URLs per file</li>
                           <li>• File size limit: 5MB</li>
+                          <li>• Candidates will be uploaded directly (no profile scraping)</li>
                         </ul>
                         <div className="text-xs text-guardian/80">
                           <div className="text-sm text-supernova font-jakarta font-semibold mb-1">Example format:</div>
@@ -512,87 +415,27 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
                     </div>
                   )}
                 </div>
-              ) : (
-                /* Manual URL Entry Section */
-                <div>
-                  <h5 className="font-anton text-lg text-white-knight uppercase tracking-wide mb-4">
-                    Manual Entry
-                  </h5>
-                  {linkedinUrls.map((url, index) => (
-                    <div key={index} className="mb-4">
-                      <div className="flex gap-2 items-start">
-                        <div className="flex-1">
-                          <input
-                            type="text"
-                            value={url}
-                            onChange={(e) => updateUrl(index, e.target.value)}
-                            placeholder="https://linkedin.com/in/candidate-profile"
-                            className="block w-full rounded-lg border-guardian/30 bg-shadowforce text-white-knight placeholder-guardian/60 focus:ring-supernova focus:border-supernova font-jakarta py-3 px-4"
-                          />
-                        </div>
-                        {linkedinUrls.length > 1 && (
-                          <Button
-                            variant="error"
-                            size="sm"
-                            onClick={() => removeUrl(index)}
-                            className="flex items-center gap-2"
-                          >
-                            <Trash2 size={16} />
-                            REMOVE
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  <Button
-                    variant="outline"
-                    onClick={addUrlField}
-                    disabled={linkedinUrls.length >= MAX_CANDIDATES_PER_SUBMISSION}
-                    className="flex items-center gap-2"
-                  >
-                    <Plus size={18} />
-                    {linkedinUrls.length >= MAX_CANDIDATES_PER_SUBMISSION 
-                      ? `MAXIMUM ${MAX_CANDIDATES_PER_SUBMISSION} URLS REACHED`
-                      : 'ADD ANOTHER URL'
-                    }
-                  </Button>
-                </div>
-              )}
 
               <Button 
-                onClick={handleProcessCandidates} 
+                onClick={handleUploadCandidates} 
                 fullWidth
                 size="lg"
-                disabled={isProcessing}
+                disabled={isProcessing || !csvFile}
                 className="flex items-center justify-center gap-2 glow-supernova mt-6"
               >
                 {isProcessing ? (
                   <>
                     <Loader className="animate-spin" size={20} />
-                    PROCESSING...
+                    UPLOADING...
                   </>
                 ) : (
                   <>
-                    <Zap size={20} />
-                    PROCESS CANDIDATES
+                    <Plus size={20} />
+                    UPLOAD CANDIDATES
                   </>
                 )}
               </Button>
             </>
-          )}
-
-          {/* STAGE: PROCESSING */}
-          {stage === 'processing' && (
-            <div className="text-center py-12">
-              <Loader className="animate-spin text-supernova mx-auto mb-4" size={64} />
-              <h3 className="text-2xl font-anton text-white-knight mb-2">PROCESSING CANDIDATES</h3>
-              <p className="text-guardian font-jakarta">
-                Scraping LinkedIn profiles and calculating match scores...
-              </p>
-              <p className="text-guardian/60 font-jakarta text-sm mt-2">
-                This may take a few minutes depending on the number of candidates.
-              </p>
-            </div>
           )}
 
           {/* STAGE: REVIEW */}
@@ -791,20 +634,12 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex gap-4">
-                <Button
-                  variant="outline"
-                  onClick={handleBackToInput}
-                  className="flex-1 flex items-center justify-center gap-2"
-                  disabled={isCompleting}
-                >
-                  <Plus size={18} />
-                  ADD MORE CANDIDATES
-                </Button>
+              {/* Action Button */}
+              <div>
                 <Button
                   onClick={handleCompleteJob}
-                  className={`flex-1 flex items-center justify-center gap-2 ${
+                  fullWidth
+                  className={`flex items-center justify-center gap-2 ${
                     canComplete ? 'glow-supernova' : 'opacity-50 cursor-not-allowed'
                   }`}
                   disabled={!canComplete || isCompleting}

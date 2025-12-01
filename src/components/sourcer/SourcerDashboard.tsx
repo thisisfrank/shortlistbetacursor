@@ -359,7 +359,7 @@ const SourcerDashboard: React.FC = () => {
                   onClaim={job.status === 'Unclaimed' ? handleViewDetails : undefined}
                   onComplete={
                     job.status === 'Claimed' && job.sourcerId === userProfile?.id 
-                      ? handleAddCandidates
+                      ? handleCompleteJob
                       : undefined
                   }
                   onViewCandidates={handleViewCandidates}

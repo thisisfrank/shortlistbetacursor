@@ -27,8 +27,8 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({ onReset }) =
         
         <div className="relative">
           {/* Timeline Line */}
-          <div className="absolute top-4 left-0 right-0 h-1 bg-supernova/30 rounded-full"></div>
-          <div className="absolute top-4 left-0 w-full h-1 bg-gradient-to-r from-supernova via-supernova to-supernova/30 rounded-full"></div>
+          <div className="absolute top-4 left-0 right-0 h-1 bg-supernova/30 rounded-full hidden md:block"></div>
+          <div className="absolute top-4 left-0 w-full h-1 bg-gradient-to-r from-supernova via-supernova to-supernova/30 rounded-full hidden md:block"></div>
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
             {/* Right Now */}

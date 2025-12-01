@@ -418,37 +418,39 @@ if (typeof window !== 'undefined') {
     ghlService.sendJobSubmissionConfirmation(testJob, testUserProfile);
   };
 
-  (window as any).testJobCompletionWebhook = () => {
+  (window as any).testJobCompletionWebhook = (customEmail?: string) => {
+    const targetEmail = customEmail || 'test@example.com';
     console.log('🧪 Testing Job Completion Notification webhook...');
+    console.log(`📧 Sending to: ${targetEmail}`);
+    
     const testJob = {
-      id: 'test-job-id',
+      id: 'test-job-12345',
       userId: 'test-user-id',
-      userEmail: 'test@example.com',
-      companyName: 'Test Company',
-      title: 'Test Software Engineer',
+      userEmail: targetEmail,
+      companyName: 'Acme Tech Solutions',
+      title: 'Senior Full Stack Developer',
       description: 'This is a test job description',
-      seniorityLevel: 'Mid' as const,
+      seniorityLevel: 'Senior' as const,
       workArrangement: 'Remote' as const,
-      location: 'Remote',
-      salaryRangeMin: 80000,
-      salaryRangeMax: 120000,
-      mustHaveSkills: ['React', 'TypeScript'],
+      location: 'San Francisco, CA',
+      salaryRangeMin: 120000,
+      salaryRangeMax: 160000,
+      mustHaveSkills: ['React', 'Node.js', 'TypeScript'],
       status: 'Completed' as const,
       sourcerId: 'test-sourcer-id',
-      completionLink: 'Test completion link',
-      candidatesRequested: 3,
+      completionLink: 'Candidates submitted via structured form',
+      candidatesRequested: 5,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
     
     const testUserProfile = {
       id: 'test-user-id',
-      email: 'test@example.com',
-      name: 'Test User',
+      email: targetEmail,
+      name: 'John Smith',
       role: 'client' as const,
       tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
       availableCredits: 50,
-
       creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -457,55 +459,61 @@ if (typeof window !== 'undefined') {
     const testCandidates = [
       {
         id: 'candidate-1',
-        jobId: 'test-job-id',
-        firstName: 'John',
-        lastName: 'Doe',
-        linkedinUrl: 'https://linkedin.com/in/johndoe',
-        headline: 'Senior Software Engineer',
+        jobId: 'test-job-12345',
+        firstName: 'Sarah',
+        lastName: 'Johnson',
+        linkedinUrl: 'https://linkedin.com/in/sarahjohnson',
+        headline: 'Senior Full Stack Engineer',
         location: 'San Francisco, CA',
-        experience: [
-          {
-            title: 'Senior Software Engineer',
-            company: 'Tech Corp',
-            duration: '2 years'
-          }
-        ],
-        education: [
-          {
-            school: 'Stanford University',
-            degree: 'Computer Science'
-          }
-        ],
-        skills: ['React', 'TypeScript', 'Node.js'],
-        summary: 'Experienced software engineer...',
         submittedAt: new Date(),
       },
       {
         id: 'candidate-2',
-        jobId: 'test-job-id',
-        firstName: 'Jane',
-        lastName: 'Smith',
-        linkedinUrl: 'https://linkedin.com/in/janesmith',
+        jobId: 'test-job-12345',
+        firstName: 'Michael',
+        lastName: 'Chen',
+        linkedinUrl: 'https://linkedin.com/in/michaelchen',
+        headline: 'Lead Software Developer',
+        location: 'Remote',
+        submittedAt: new Date(),
+      },
+      {
+        id: 'candidate-3',
+        jobId: 'test-job-12345',
+        firstName: 'Emily',
+        lastName: 'Rodriguez',
+        linkedinUrl: 'https://linkedin.com/in/emilyrodriguez',
+        headline: 'Senior Software Engineer',
+        location: 'Austin, TX',
+        submittedAt: new Date(),
+      },
+      {
+        id: 'candidate-4',
+        jobId: 'test-job-12345',
+        firstName: 'David',
+        lastName: 'Kim',
+        linkedinUrl: 'https://linkedin.com/in/davidkim',
         headline: 'Full Stack Developer',
-        location: 'New York, NY',
-        experience: [
-          {
-            title: 'Full Stack Developer',
-            company: 'Startup Inc',
-            duration: '3 years'
-          }
-        ],
-        education: [
-          {
-            school: 'MIT',
-            degree: 'Computer Science'
-          }
-        ],
-        skills: ['React', 'TypeScript', 'Python'],
-        summary: 'Passionate developer...',
+        location: 'Seattle, WA',
+        submittedAt: new Date(),
+      },
+      {
+        id: 'candidate-5',
+        jobId: 'test-job-12345',
+        firstName: 'Lisa',
+        lastName: 'Anderson',
+        linkedinUrl: 'https://linkedin.com/in/lisaanderson',
+        headline: 'Senior Web Developer',
+        location: 'Portland, OR',
         submittedAt: new Date(),
       }
     ];
+    
+    console.log('📦 Payload includes:');
+    console.log('  - User Name:', testUserProfile.name);
+    console.log('  - Job Title:', testJob.title);
+    console.log('  - Total Candidates:', testCandidates.length);
+    console.log('  - Company:', testJob.companyName);
     
     ghlService.sendJobCompletionNotification(testJob, testUserProfile, testCandidates);
   };
