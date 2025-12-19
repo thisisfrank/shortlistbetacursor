@@ -19,6 +19,7 @@ function mapDbProfileToUserProfile(profile: any): UserProfile {
     stripeCustomerId: profile.stripe_customer_id,
     subscriptionStatus: profile.subscription_status || 'free',
     subscriptionPeriodEnd: profile.subscription_period_end ? new Date(profile.subscription_period_end) : null,
+    hasReceivedWelcomeEmail: profile.has_received_welcome_email ?? false,
     createdAt: profile.created_at ? new Date(profile.created_at) : new Date(),
     updatedAt: profile.updated_at ? new Date(profile.updated_at) : new Date(),
   };
@@ -172,15 +173,23 @@ export const useAuth = () => {
             const mappedProfile = mapDbProfileToUserProfile(profile);
             setUserProfile(mappedProfile);
             
-            // Check if this is a new signup (profile created within last 5 minutes)
-            const profileCreatedAt = new Date(profile.created_at);
-            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-            const isNewSignup = profileCreatedAt > fiveMinutesAgo;
-            
-            if (isNewSignup) {
-              console.log('🎉 New user signup detected, sending welcome webhook');
+            // Check if welcome webhook needs to be sent (using flag instead of time-based check)
+            if (!profile.has_received_welcome_email) {
+              console.log('🎉 New user detected (welcome email not yet sent), sending welcome webhook');
               // Send signup thank you webhook (non-blocking)
               ghlService.sendSignupThankYouNotification(mappedProfile, 'web_signup')
+                .then(async () => {
+                  // Mark the welcome email as sent in the database
+                  const { error: updateError } = await supabase
+                    .from('user_profiles')
+                    .update({ has_received_welcome_email: true })
+                    .eq('id', profile.id);
+                  if (updateError) {
+                    console.error('⚠️ Failed to update welcome email flag:', updateError);
+                  } else {
+                    console.log('✅ Welcome email flag updated successfully');
+                  }
+                })
                 .catch(error => {
                   console.error('⚠️ Signup webhook failed (non-blocking):', error);
                 });
@@ -249,6 +258,7 @@ export const useAuth = () => {
                     role: 'client',
                     tier_id: FREE_TIER_ID,
                     available_credits: 50,
+                    has_received_welcome_email: false, // Will be set to true after webhook sent
                     // No credits_reset_date for free tier - one-time credits only
                   });
                   
@@ -257,7 +267,7 @@ export const useAuth = () => {
                     setUserProfile(null);
                   } else {
                     console.log('✅ Created missing user profile');
-                    setUserProfile({
+                    const newProfile: UserProfile = {
                       id: currentUser.id,
                       email: currentUser.email || '',
                       name: '', // Leave name empty for user to set
@@ -266,9 +276,30 @@ export const useAuth = () => {
                       tierId: FREE_TIER_ID,
                       availableCredits: 50,
                       creditsResetDate: null, // No reset date for free tier - one-time credits
+                      hasReceivedWelcomeEmail: false,
                       createdAt: new Date(),
                       updatedAt: new Date(),
-                    });
+                    };
+                    setUserProfile(newProfile);
+                    
+                    // Send welcome webhook for newly created fallback profile
+                    console.log('🎉 New fallback profile created, sending welcome webhook');
+                    ghlService.sendSignupThankYouNotification(newProfile, 'web_signup')
+                      .then(async () => {
+                        // Mark the welcome email as sent in the database
+                        const { error: updateError } = await supabase
+                          .from('user_profiles')
+                          .update({ has_received_welcome_email: true })
+                          .eq('id', currentUser.id);
+                        if (updateError) {
+                          console.error('⚠️ Failed to update welcome email flag:', updateError);
+                        } else {
+                          console.log('✅ Welcome email flag updated successfully');
+                        }
+                      })
+                      .catch(webhookError => {
+                        console.error('⚠️ Signup webhook failed (non-blocking):', webhookError);
+                      });
                   }
                 } else {
                   setUserProfile(null);
@@ -278,15 +309,23 @@ export const useAuth = () => {
                 const mappedProfile = mapDbProfileToUserProfile(profile);
                 setUserProfile(mappedProfile);
                 
-                // Check if this is a new signup (profile created within last 5 minutes)
-                const profileCreatedAt = new Date(profile.created_at);
-                const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-                const isNewSignup = profileCreatedAt > fiveMinutesAgo;
-                
-                if (isNewSignup) {
-                  console.log('🎉 New user signup detected, sending welcome webhook');
+                // Check if welcome webhook needs to be sent (using flag instead of time-based check)
+                if (!profile.has_received_welcome_email) {
+                  console.log('🎉 New user detected (welcome email not yet sent), sending welcome webhook');
                   // Send signup thank you webhook (non-blocking)
                   ghlService.sendSignupThankYouNotification(mappedProfile, 'web_signup')
+                    .then(async () => {
+                      // Mark the welcome email as sent in the database
+                      const { error: updateError } = await supabase
+                        .from('user_profiles')
+                        .update({ has_received_welcome_email: true })
+                        .eq('id', profile.id);
+                      if (updateError) {
+                        console.error('⚠️ Failed to update welcome email flag:', updateError);
+                      } else {
+                        console.log('✅ Welcome email flag updated successfully');
+                      }
+                    })
                     .catch(error => {
                       console.error('⚠️ Signup webhook failed (non-blocking):', error);
                     });

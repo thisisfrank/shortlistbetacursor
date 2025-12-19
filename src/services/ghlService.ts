@@ -1,21 +1,5 @@
 import { Job, UserProfile } from '../types';
-// GHL Service for webhook integration
-
-interface GHLWebhookPayload {
-  event: string;
-  userId: string;
-  userProfile: {
-    id: string;
-    email: string;
-    name: string;
-    role: 'client' | 'sourcer' | 'admin';
-    tierId: string;
-    createdAt: Date;
-    updatedAt: Date;
-  };
-  jobData?: Job;
-  message?: string;
-}
+// GHL Service for webhook integration - routes all webhooks through Supabase Edge Function proxy to avoid CORS
 
 interface GHLSignupPayload {
   event: 'user_signup';
@@ -28,172 +12,130 @@ interface GHLSignupPayload {
     createdAt: Date;
     updatedAt: Date;
     availableCredits: number;
-
     creditsResetDate: Date | null;
   };
   signupSource?: string;
   message?: string;
 }
 
+// Webhook types that map to the proxy's GHL_WEBHOOKS object
+type WebhookType = 'signup_thank_you' | 'job_submission' | 'job_completion' | 'plan_purchase' | 'feedback';
+
 class GHLService {
-  private signupThankYouWebhookUrl: string;
-  private jobSubmissionConfirmationWebhookUrl: string;
-  private jobCompletionNotificationWebhookUrl: string;
-  private planPurchaseWelcomeWebhookUrl: string;
-  private feedbackSubmissionWebhookUrl: string;
+  private proxyUrl: string;
 
   constructor() {
-    // Hardcoded signup webhook URL - triggers when someone first signs up
-    this.signupThankYouWebhookUrl = 'https://services.leadconnectorhq.com/hooks/QekUNBmcxjsxAKXluQc0/webhook-trigger/cecc5aea-aa4b-4c1a-9f45-4bff80833367';
-    // Hardcoded job submission webhook URL - triggers when a job is submitted
-    this.jobSubmissionConfirmationWebhookUrl = 'https://services.leadconnectorhq.com/hooks/QekUNBmcxjsxAKXluQc0/webhook-trigger/543083ea-d7ab-4ef5-8f87-dc35b3ed868b';
-    // Hardcoded job completion webhook URL - triggers when a job is completed
-    this.jobCompletionNotificationWebhookUrl = 'https://services.leadconnectorhq.com/hooks/QekUNBmcxjsxAKXluQc0/webhook-trigger/2c183ff3-08a7-4fcc-bc4d-aa0d55a9f636';
-    // Hardcoded plan purchase welcome webhook URL - triggers when user purchases a plan
-    this.planPurchaseWelcomeWebhookUrl = 'https://services.leadconnectorhq.com/hooks/QekUNBmcxjsxAKXluQc0/webhook-trigger/72bfee45-a750-4adb-b4d0-f492f641754c';
-    // Hardcoded feedback submission webhook URL - triggers when user submits feedback
-    this.feedbackSubmissionWebhookUrl = 'https://services.leadconnectorhq.com/hooks/QekUNBmcxjsxAKXluQc0/webhook-trigger/238d8a85-b4fc-4580-a379-102f69801702';
+    // Use Supabase Edge Function proxy to avoid CORS issues
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    this.proxyUrl = supabaseUrl ? `${supabaseUrl}/functions/v1/ghl-webhook-proxy` : '';
+  }
+
+  /**
+   * Send webhook through Supabase Edge Function proxy
+   */
+  private async sendViaProxy(webhookType: WebhookType, payload: any): Promise<void> {
+    if (!this.proxyUrl) {
+      console.warn(`⚠️ GHL proxy not configured (no SUPABASE_URL), skipping ${webhookType} webhook`);
+      return;
+    }
+
+    try {
+      console.log(`📞 Sending GHL ${webhookType} webhook via proxy...`);
+      
+      const response = await fetch(this.proxyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+        },
+        body: JSON.stringify({ webhookType, payload }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || `Proxy returned ${response.status}`);
+      }
+
+      console.log(`✅ GHL ${webhookType} webhook sent successfully via proxy`);
+    } catch (error) {
+      console.error(`❌ Error sending GHL ${webhookType} webhook:`, error);
+      // Don't throw - webhooks should never break the main flow
+    }
   }
 
   async sendSignupThankYouNotification(userProfile: UserProfile, signupSource?: string): Promise<void> {
-    if (!this.signupThankYouWebhookUrl) {
-      console.log('GHL Sign Up Thank You webhook URL not configured, skipping notification');
-      return;
-    }
+    const payload: GHLSignupPayload = {
+      event: 'user_signup',
+      userData: {
+        id: userProfile.id,
+        email: userProfile.email,
+        name: userProfile.name,
+        role: userProfile.role,
+        tierId: userProfile.tierId,
+        createdAt: userProfile.createdAt,
+        updatedAt: userProfile.updatedAt,
+        availableCredits: userProfile.availableCredits || 0,
+        creditsResetDate: userProfile.creditsResetDate || null,
+      },
+      signupSource,
+      message: `New ${userProfile.role} signup: ${userProfile.name} (${userProfile.email})`,
+    };
 
-    try {
-      const payload: GHLSignupPayload = {
-        event: 'user_signup',
-        userData: {
-          id: userProfile.id,
-          email: userProfile.email,
-          name: userProfile.name,
-          role: userProfile.role,
-          tierId: userProfile.tierId,
-          createdAt: userProfile.createdAt,
-          updatedAt: userProfile.updatedAt,
-          availableCredits: userProfile.availableCredits || 0,
-
-          creditsResetDate: userProfile.creditsResetDate || null,
-        },
-        signupSource,
-        message: `New ${userProfile.role} signup: ${userProfile.name} (${userProfile.email})`,
-      };
-
-      const response = await fetch(this.signupThankYouWebhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`GHL Sign Up Thank You webhook failed: ${response.status} ${response.statusText}`);
-      }
-
-      console.log('GHL Sign Up Thank You notification sent successfully');
-    } catch (error) {
-      console.error('Error sending GHL Sign Up Thank You notification:', error);
-      // Don't throw error to avoid breaking the signup flow
-    }
+    await this.sendViaProxy('signup_thank_you', payload);
   }
 
   async sendJobSubmissionConfirmation(job: Job, userProfile: UserProfile): Promise<void> {
-    if (!this.jobSubmissionConfirmationWebhookUrl) {
-      console.log('GHL Job Submission Confirmation webhook URL not configured, skipping notification');
-      return;
-    }
+    const payload = {
+      event: 'job_submission_confirmation',
+      userId: userProfile.id,
+      userProfile: {
+        id: userProfile.id,
+        email: userProfile.email,
+        name: userProfile.name,
+        role: userProfile.role,
+        tierId: userProfile.tierId,
+        createdAt: userProfile.createdAt,
+        updatedAt: userProfile.updatedAt,
+      },
+      jobData: {
+        id: job.id,
+        title: job.title,
+        companyName: job.companyName,
+        location: job.location,
+        seniorityLevel: job.seniorityLevel,
+        workArrangement: job.workArrangement,
+        salaryRangeMin: job.salaryRangeMin,
+        salaryRangeMax: job.salaryRangeMax,
+        mustHaveSkills: job.mustHaveSkills,
+        status: job.status,
+        candidatesRequested: job.candidatesRequested,
+        createdAt: job.createdAt,
+      },
+      message: `Job submitted: ${job.title} at ${job.companyName}`,
+    };
 
-    try {
-      const payload = {
-        event: 'job_submission_confirmation',
-        userId: userProfile.id,
-        userProfile: {
-          id: userProfile.id,
-          email: userProfile.email,
-          name: userProfile.name,
-          role: userProfile.role,
-          tierId: userProfile.tierId,
-          createdAt: userProfile.createdAt,
-          updatedAt: userProfile.updatedAt,
-        },
-        jobData: {
-          id: job.id,
-          title: job.title,
-          companyName: job.companyName,
-          location: job.location,
-          seniorityLevel: job.seniorityLevel,
-          workArrangement: job.workArrangement,
-          salaryRangeMin: job.salaryRangeMin,
-          salaryRangeMax: job.salaryRangeMax,
-          mustHaveSkills: job.mustHaveSkills,
-          status: job.status,
-          candidatesRequested: job.candidatesRequested,
-          createdAt: job.createdAt,
-        },
-        message: `Job submitted: ${job.title} at ${job.companyName}`,
-      };
-
-      const response = await fetch(this.jobSubmissionConfirmationWebhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`GHL Job Submission Confirmation webhook failed: ${response.status} ${response.statusText}`);
-      }
-
-      console.log('GHL Job Submission Confirmation sent successfully');
-    } catch (error) {
-      console.error('Error sending GHL Job Submission Confirmation:', error);
-      // Don't throw error to avoid breaking the job submission flow
-    }
+    await this.sendViaProxy('job_submission', payload);
   }
 
   async sendJobCompletionNotification(job: Job, userProfile: UserProfile, candidates: any[]): Promise<void> {
-    if (!this.jobCompletionNotificationWebhookUrl) {
-      console.log('GHL Job Completion Notification webhook URL not configured, skipping notification');
-      return;
-    }
+    // Get the app URL for the direct link to candidates
+    const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+    // Job-specific link with jobId parameter
+    const candidatesPageLink = `${appUrl}/candidates?jobId=${job.id}`;
 
-    try {
-      // Get the app URL for the direct link to candidates
-      const appUrl = import.meta.env.VITE_APP_URL || window.location.origin;
-      // Job-specific link with jobId parameter
-      const candidatesPageLink = `${appUrl}/candidates?jobId=${job.id}`;
+    const payload = {
+      event: 'job_completion_notification',
+      userEmail: userProfile.email,
+      userName: userProfile.name,
+      jobTitle: job.title,
+      companyName: job.companyName,
+      totalCandidates: candidates.length,
+      viewCandidatesLink: candidatesPageLink,
+      message: `Your ${candidates.length} candidates are ready for ${job.title} at ${job.companyName}!`,
+    };
 
-      const payload = {
-        event: 'job_completion_notification',
-        userEmail: userProfile.email,
-        userName: userProfile.name,
-        jobTitle: job.title,
-        companyName: job.companyName,
-        totalCandidates: candidates.length,
-        viewCandidatesLink: candidatesPageLink,
-        message: `Your ${candidates.length} candidates are ready for ${job.title} at ${job.companyName}!`,
-      };
-
-      const response = await fetch(this.jobCompletionNotificationWebhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`GHL Job Completion Notification webhook failed: ${response.status} ${response.statusText}`);
-      }
-
-      console.log('GHL Job Completion Notification sent successfully');
-    } catch (error) {
-      console.error('Error sending GHL Job Completion Notification:', error);
-      // Don't throw error to avoid breaking the job completion flow
-    }
+    await this.sendViaProxy('job_completion', payload);
   }
 
   async sendPlanPurchaseWelcome(
@@ -203,44 +145,22 @@ class GHLService {
     creditsGranted: number,
     tierId: string
   ): Promise<void> {
-    if (!this.planPurchaseWelcomeWebhookUrl) {
-      console.log('GHL Plan Purchase Welcome webhook URL not configured, skipping notification');
-      return;
-    }
+    const payload = {
+      event: 'plan_purchase_welcome',
+      userEmail: userEmail,
+      userName: userName,
+      planDetails: {
+        tierName: tierName,
+        tierId: tierId,
+        creditsGranted: creditsGranted,
+      },
+      clayReferralLink: 'https://clay.com?via=bae546',
+      clayReferralBonus: 3000,
+      welcomeMessage: `Welcome to ${tierName}! You now have ${creditsGranted} candidate credits available.`,
+      timestamp: new Date().toISOString(),
+    };
 
-    try {
-      const payload = {
-        event: 'plan_purchase_welcome',
-        userEmail: userEmail,
-        userName: userName,
-        planDetails: {
-          tierName: tierName,
-          tierId: tierId,
-          creditsGranted: creditsGranted,
-        },
-        clayReferralLink: 'https://clay.com?via=bae546',
-        clayReferralBonus: 3000,
-        welcomeMessage: `Welcome to ${tierName}! You now have ${creditsGranted} candidate credits available.`,
-        timestamp: new Date().toISOString(),
-      };
-
-      const response = await fetch(this.planPurchaseWelcomeWebhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`GHL Plan Purchase Welcome webhook failed: ${response.status} ${response.statusText}`);
-      }
-
-      console.log('✅ GHL Plan Purchase Welcome notification sent successfully');
-    } catch (error) {
-      console.error('❌ Error sending GHL Plan Purchase Welcome notification:', error);
-      // Don't throw error to avoid breaking the purchase flow
-    }
+    await this.sendViaProxy('plan_purchase', payload);
   }
 
   async sendFeedbackSubmission(
@@ -263,124 +183,59 @@ class GHLService {
       };
     }
   ): Promise<void> {
-    if (!this.feedbackSubmissionWebhookUrl) {
-      console.log('GHL Feedback Submission webhook URL not configured, skipping notification');
-      return;
-    }
+    const payload = {
+      event: 'feedback_submission',
+      userEmail: feedbackData.user.email || 'unknown@example.com',
+      userName: feedbackData.user.name || 'Unknown User',
+      userId: feedbackData.user.id,
+      userRole: feedbackData.user.role || 'client',
+      feedbackDetails: {
+        feedback: feedbackData.feedback,
+        feedbackType: feedbackData.context?.feedbackType || 'general',
+        page: feedbackData.context?.page || 'unknown',
+        context: feedbackData.context?.currentContext || '',
+      },
+      jobContext: feedbackData.context?.jobId ? {
+        jobId: feedbackData.context.jobId,
+        jobTitle: feedbackData.context.jobTitle,
+        companyName: feedbackData.context.companyName,
+        candidateCount: feedbackData.context.candidateCount,
+      } : null,
+      timestamp: new Date().toISOString(),
+    };
 
-    try {
-      const payload = {
-        event: 'feedback_submission',
-        userEmail: feedbackData.user.email || 'unknown@example.com',
-        userName: feedbackData.user.name || 'Unknown User',
-        userId: feedbackData.user.id,
-        userRole: feedbackData.user.role || 'client',
-        feedbackDetails: {
-          feedback: feedbackData.feedback,
-          feedbackType: feedbackData.context?.feedbackType || 'general',
-          page: feedbackData.context?.page || 'unknown',
-          context: feedbackData.context?.currentContext || '',
-        },
-        jobContext: feedbackData.context?.jobId ? {
-          jobId: feedbackData.context.jobId,
-          jobTitle: feedbackData.context.jobTitle,
-          companyName: feedbackData.context.companyName,
-          candidateCount: feedbackData.context.candidateCount,
-        } : null,
-        timestamp: new Date().toISOString(),
-      };
-
-      const response = await fetch(this.feedbackSubmissionWebhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`GHL Feedback Submission webhook failed: ${response.status} ${response.statusText}`);
-      }
-
-      console.log('✅ GHL Feedback Submission notification sent successfully');
-    } catch (error) {
-      console.error('❌ Error sending GHL Feedback Submission notification:', error);
-      // Don't throw error to avoid breaking the feedback flow
-    }
+    await this.sendViaProxy('feedback', payload);
   }
 
   async sendTestNotification(): Promise<void> {
-    if (!this.signupThankYouWebhookUrl) {
-      console.log('GHL webhook URL not configured, skipping test notification');
-      return;
-    }
+    const testUserProfile: UserProfile = {
+      id: 'test-user-id',
+      email: 'test@example.com',
+      name: 'Test User',
+      role: 'client',
+      tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
+      availableCredits: 50,
+      creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
-    try {
-      const testUserProfile: UserProfile = {
-        id: 'test-user-id',
-        email: 'test@example.com',
-        name: 'Test User',
-        role: 'client',
-        tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
-        availableCredits: 50,
-
-        creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      const payload: GHLSignupPayload = {
-        event: 'user_signup',
-        userData: {
-          id: testUserProfile.id,
-          email: testUserProfile.email,
-          name: testUserProfile.name,
-          role: testUserProfile.role,
-          tierId: testUserProfile.tierId,
-          createdAt: testUserProfile.createdAt,
-          updatedAt: testUserProfile.updatedAt,
-          availableCredits: testUserProfile.availableCredits || 0,
-
-          creditsResetDate: testUserProfile.creditsResetDate || null,
-        },
-        signupSource: 'test_webhook',
-        message: 'TEST: New client signup: Test User (test@example.com)',
-      };
-
-      console.log('🧪 Sending test webhook payload:', payload);
-
-      const response = await fetch(this.signupThankYouWebhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`GHL webhook failed: ${response.status} ${response.statusText}`);
-      }
-
-      console.log('✅ Test webhook sent successfully!');
-      console.log('📊 Response status:', response.status);
-      console.log('📊 Response headers:', Object.fromEntries(response.headers.entries()));
-    } catch (error) {
-      console.error('❌ Error sending test webhook:', error);
-    }
+    console.log('🧪 Sending test signup webhook via proxy...');
+    await this.sendSignupThankYouNotification(testUserProfile, 'test_webhook');
   }
 }
 
 export const ghlService = new GHLService();
 
-// Make test function available globally for easy testing
+// Make test functions available globally for easy testing
 if (typeof window !== 'undefined') {
   (window as any).testGHLWebhook = () => {
-    console.log('🧪 Testing GoHighLevel webhook...');
+    console.log('🧪 Testing GoHighLevel webhook via proxy...');
     ghlService.sendTestNotification();
   };
   
   (window as any).testJobSubmissionWebhook = () => {
-    console.log('🧪 Testing Job Submission Confirmation webhook...');
+    console.log('🧪 Testing Job Submission Confirmation webhook via proxy...');
     const testJob = {
       id: 'test-job-id',
       userId: 'test-user-id',
@@ -409,7 +264,6 @@ if (typeof window !== 'undefined') {
       role: 'client' as const,
       tierId: '5841d1d6-20d7-4360-96f8-0444305fac5b',
       availableCredits: 50,
-
       creditsResetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -420,7 +274,7 @@ if (typeof window !== 'undefined') {
 
   (window as any).testJobCompletionWebhook = (customEmail?: string) => {
     const targetEmail = customEmail || 'test@example.com';
-    console.log('🧪 Testing Job Completion Notification webhook...');
+    console.log('🧪 Testing Job Completion Notification webhook via proxy...');
     console.log(`📧 Sending to: ${targetEmail}`);
     
     const testJob = {
@@ -457,56 +311,11 @@ if (typeof window !== 'undefined') {
     };
 
     const testCandidates = [
-      {
-        id: 'candidate-1',
-        jobId: 'test-job-12345',
-        firstName: 'Sarah',
-        lastName: 'Johnson',
-        linkedinUrl: 'https://linkedin.com/in/sarahjohnson',
-        headline: 'Senior Full Stack Engineer',
-        location: 'San Francisco, CA',
-        submittedAt: new Date(),
-      },
-      {
-        id: 'candidate-2',
-        jobId: 'test-job-12345',
-        firstName: 'Michael',
-        lastName: 'Chen',
-        linkedinUrl: 'https://linkedin.com/in/michaelchen',
-        headline: 'Lead Software Developer',
-        location: 'Remote',
-        submittedAt: new Date(),
-      },
-      {
-        id: 'candidate-3',
-        jobId: 'test-job-12345',
-        firstName: 'Emily',
-        lastName: 'Rodriguez',
-        linkedinUrl: 'https://linkedin.com/in/emilyrodriguez',
-        headline: 'Senior Software Engineer',
-        location: 'Austin, TX',
-        submittedAt: new Date(),
-      },
-      {
-        id: 'candidate-4',
-        jobId: 'test-job-12345',
-        firstName: 'David',
-        lastName: 'Kim',
-        linkedinUrl: 'https://linkedin.com/in/davidkim',
-        headline: 'Full Stack Developer',
-        location: 'Seattle, WA',
-        submittedAt: new Date(),
-      },
-      {
-        id: 'candidate-5',
-        jobId: 'test-job-12345',
-        firstName: 'Lisa',
-        lastName: 'Anderson',
-        linkedinUrl: 'https://linkedin.com/in/lisaanderson',
-        headline: 'Senior Web Developer',
-        location: 'Portland, OR',
-        submittedAt: new Date(),
-      }
+      { id: 'candidate-1', firstName: 'Sarah', lastName: 'Johnson' },
+      { id: 'candidate-2', firstName: 'Michael', lastName: 'Chen' },
+      { id: 'candidate-3', firstName: 'Emily', lastName: 'Rodriguez' },
+      { id: 'candidate-4', firstName: 'David', lastName: 'Kim' },
+      { id: 'candidate-5', firstName: 'Lisa', lastName: 'Anderson' },
     ];
     
     console.log('📦 Payload includes:');
@@ -519,7 +328,7 @@ if (typeof window !== 'undefined') {
   };
 
   (window as any).testPlanPurchaseWelcome = () => {
-    console.log('🧪 Testing Plan Purchase Welcome webhook...');
+    console.log('🧪 Testing Plan Purchase Welcome webhook via proxy...');
     
     ghlService.sendPlanPurchaseWelcome(
       'test@example.com',          // userEmail
@@ -531,7 +340,7 @@ if (typeof window !== 'undefined') {
   };
 
   (window as any).testFeedbackSubmission = () => {
-    console.log('🧪 Testing Feedback Submission webhook...');
+    console.log('🧪 Testing Feedback Submission webhook via proxy...');
     
     const testFeedbackData = {
       feedback: 'This is a test feedback! The app is working great and the candidates are high quality.',
@@ -555,10 +364,10 @@ if (typeof window !== 'undefined') {
     ghlService.sendFeedbackSubmission(testFeedbackData);
   };
 
-  (window as any).debugGHLEnvVars = () => {
-    console.log('🔍 Debugging GHL Environment Variables:');
-    console.log('VITE_SIGNUP_THANK_YOU_URL:', import.meta.env.VITE_SIGNUP_THANK_YOU_URL);
-    console.log('VITE_GHL_JOB_SUBMISSION_CONFIRMATION_WEBHOOK_URL:', import.meta.env.VITE_GHL_JOB_SUBMISSION_CONFIRMATION_WEBHOOK_URL);
-    console.log('VITE_GHL_JOB_COMPLETION_NOTIFICATION_WEBHOOK_URL:', import.meta.env.VITE_GHL_JOB_COMPLETION_NOTIFICATION_WEBHOOK_URL);
+  (window as any).debugGHLProxy = () => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    console.log('🔍 Debugging GHL Proxy Configuration:');
+    console.log('VITE_SUPABASE_URL:', supabaseUrl);
+    console.log('Proxy URL:', supabaseUrl ? `${supabaseUrl}/functions/v1/ghl-webhook-proxy` : 'NOT CONFIGURED');
   };
-} 
+}

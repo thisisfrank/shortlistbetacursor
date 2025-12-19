@@ -11,6 +11,7 @@ export interface UserProfile {
   stripeCustomerId?: string | null;
   subscriptionStatus?: string;
   subscriptionPeriodEnd?: Date | null;
+  hasReceivedWelcomeEmail?: boolean; // Tracks if welcome webhook was sent
   createdAt: Date;
   updatedAt: Date;
 }

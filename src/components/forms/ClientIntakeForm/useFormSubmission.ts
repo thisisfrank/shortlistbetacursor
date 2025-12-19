@@ -153,6 +153,13 @@ export const useFormSubmission = ({ setCurrentStep }: UseFormSubmissionProps) =>
           console.warn('⚠️ GHL Job Submission Confirmation webhook failed:', ghlError);
           // Don't fail the job submission if GHL webhook fails
         }
+      } else {
+        console.warn('⚠️ Skipping GHL job submission webhook - missing required data:', {
+          hasUserProfile: !!userProfile,
+          hasNewJob: !!newJob,
+          userProfileId: userProfile?.id || 'N/A',
+          newJobId: newJob?.id || 'N/A'
+        });
       }
       
       // Move to confirmation step
