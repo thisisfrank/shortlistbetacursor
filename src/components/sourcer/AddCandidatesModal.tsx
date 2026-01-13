@@ -74,25 +74,91 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
       reader.onload = (e) => {
         try {
           const text = e.target?.result as string;
-          const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+          // Handle both Windows (\r\n) and Unix (\n) line endings
+          const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+          const lines = normalizedText.split('\n').map(line => line.trim()).filter(line => line);
           
-          // Skip header row if it exists
-          const startIndex = lines[0]?.toLowerCase().includes('linkedin') || lines[0]?.toLowerCase().includes('url') ? 1 : 0;
+          console.log('📄 CSV Debug - Total lines:', lines.length);
+          console.log('📄 CSV Debug - First 3 lines:', lines.slice(0, 3));
+          console.log('📄 CSV Debug - Raw text preview (first 500 chars):', text.substring(0, 500));
           
           const urls: string[] = [];
           
-          for (let i = startIndex; i < lines.length; i++) {
-            const line = lines[i];
-            const columns = line.split(',').map(col => col.trim().replace(/"/g, ''));
-            const linkedinUrl = columns.find(col => col.includes('linkedin.com')) || columns[0];
+          // Determine the actual start index
+          let actualStartIndex: number;
+          if (lines.length === 1) {
+            // If there's only one line, assume it's data (no header)
+            actualStartIndex = 0;
+            console.log('📄 CSV Debug - Single line detected, treating as data (no header)');
+          } else {
+            // Check if first line is a header (contains "linkedin" or "url" but doesn't look like a URL)
+            const firstLine = lines[0] || '';
+            const firstLineLower = firstLine.toLowerCase();
+            const isHeader = (firstLineLower.includes('linkedin') || firstLineLower.includes('url')) && 
+                            !firstLineLower.includes('linkedin.com/in/') && 
+                            !firstLineLower.includes('www.linkedin.com') &&
+                            !firstLineLower.startsWith('http');
             
-            if (linkedinUrl && linkedinUrl.includes('linkedin.com')) {
-              urls.push(linkedinUrl);
-            }
+            actualStartIndex = isHeader ? 1 : 0;
+            console.log('📄 CSV Debug - First line:', firstLine);
+            console.log('📄 CSV Debug - Is header?', isHeader);
+            console.log('📄 CSV Debug - Start index (after header check):', actualStartIndex);
           }
           
+          console.log('📄 CSV Debug - Will process lines from index', actualStartIndex, 'to', lines.length - 1);
+          
+          for (let i = actualStartIndex; i < lines.length; i++) {
+            const line = lines[i];
+            // Try multiple delimiters: comma, semicolon, tab
+            let columns = line.split(',').map(col => col.trim().replace(/"/g, ''));
+            if (columns.length === 1) {
+              columns = line.split(';').map(col => col.trim().replace(/"/g, ''));
+            }
+            if (columns.length === 1) {
+              columns = line.split('\t').map(col => col.trim().replace(/"/g, ''));
+            }
+            console.log(`📄 CSV Debug - Line ${i}:`, { line, columns, columnCount: columns.length });
+            
+            // Process all columns in this line - a single line might have multiple URLs
+            columns.forEach((col, colIndex) => {
+              if (!col || col.trim() === '') return;
+              
+              const lowerCol = col.toLowerCase();
+              const isLinkedInUrl = lowerCol.includes('linkedin.com') || 
+                                   lowerCol.includes('linkedin.com/in/') ||
+                                   lowerCol.includes('www.linkedin.com') ||
+                                   (lowerCol.startsWith('http') && lowerCol.includes('linkedin'));
+              
+              console.log(`📄 CSV Debug - Column ${colIndex}: "${col}" - Is LinkedIn? ${isLinkedInUrl}`);
+              
+              if (isLinkedInUrl) {
+                // Ensure URL has protocol
+                let finalUrl = col.trim();
+                if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+                  finalUrl = 'https://' + finalUrl;
+                }
+                // Avoid duplicates
+                if (!urls.includes(finalUrl)) {
+                  urls.push(finalUrl);
+                  console.log(`✅ CSV Debug - Valid URL added:`, finalUrl);
+                } else {
+                  console.log(`⚠️ CSV Debug - URL already added (duplicate):`, finalUrl);
+                }
+              }
+            });
+          }
+          
+          console.log('📄 CSV Debug - Total valid URLs found:', urls.length);
+          console.log('📄 CSV Debug - All found URLs:', urls);
+          
           if (urls.length === 0) {
-            reject(new Error('No valid LinkedIn URLs found in CSV file'));
+            const errorMsg = `No valid LinkedIn URLs found in CSV file. 
+- Total lines in file: ${lines.length}
+- Lines to process: ${lines.length - startIndex}
+- First line content: "${lines[0] || 'empty'}"
+- Please ensure your CSV contains LinkedIn URLs (e.g., https://linkedin.com/in/username)`;
+            console.error('❌ CSV Debug - Error details:', errorMsg);
+            reject(new Error(errorMsg));
             return;
           }
           
