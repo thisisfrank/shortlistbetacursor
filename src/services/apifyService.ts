@@ -29,14 +29,14 @@ export interface ApifyScrapingResult {
   error?: string;
 }
 
-// Helper function to extract company name from subtitle
-const extractCompanyName = (subtitle: string): string => {
-  if (!subtitle) return 'N/A';
+// Helper function to calculate duration from dates
+const calculateDuration = (startDate: string | null, endDate: string | null, stillWorking: boolean): string => {
+  if (!startDate) return 'N/A';
   
-  // The subtitle often contains "Company Name · Employment Type"
-  // We want to extract just the company name
-  const parts = subtitle.split('·');
-  return parts[0]?.trim() || subtitle.trim();
+  if (stillWorking || !endDate) {
+    return `${startDate} - Present`;
+  }
+  return `${startDate} - ${endDate}`;
 };
 
 // Helper function to transform experience data according to the template
@@ -45,8 +45,8 @@ const transformExperience = (experiences: any[]): Array<{ title: string; company
   
   return experiences.map(exp => ({
     title: exp.title || 'N/A',
-    company: extractCompanyName(exp.subtitle || ''),
-    duration: exp.caption || 'N/A'
+    company: exp.companyName || 'N/A',
+    duration: calculateDuration(exp.jobStartedOn, exp.jobEndedOn, exp.jobStillWorking)
   })).filter(exp => exp.title !== 'N/A' || exp.company !== 'N/A');
 };
 

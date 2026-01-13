@@ -71,7 +71,12 @@ serve(async (req) => {
       )
     }
 
-    const profiles = await response.json()
+    const rawResponse = await response.json()
+    
+    // Handle wrapped response structure: [{ data: [profiles...] }]
+    const profiles = Array.isArray(rawResponse) && rawResponse[0]?.data 
+      ? rawResponse[0].data 
+      : rawResponse;
     
     console.log(`✅ Successfully scraped ${profiles.length} profiles from Apify`)
     if (profiles.length < linkedinUrls.length) {

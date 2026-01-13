@@ -157,6 +157,8 @@ export const CandidatesView: React.FC = () => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [expandedCandidates, setExpandedCandidates] = useState<Set<string>>(new Set());
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
+  const [expandedExperience, setExpandedExperience] = useState<Set<string>>(new Set());
+  const [expandedEducation, setExpandedEducation] = useState<Set<string>>(new Set());
   const [matchScores, setMatchScores] = useState<Record<string, { score: number; reasoning: string; loading: boolean }>>({});
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   const [alertModal, setAlertModal] = useState<{
@@ -989,12 +991,12 @@ export const CandidatesView: React.FC = () => {
           {/* Candidate Selection and Export Controls */}
           {currentJobCandidates.length > 0 && (
             <div className="mb-8">
-              <Card className="bg-gradient-to-r from-blue-500/20 to-blue-500/10 border-blue-500/30">
+              <Card className="bg-shadowforce-light border-guardian/30">
                 <CardContent className="p-6">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center">
-                        <Users className="text-blue-400 mr-2" size={20} />
+                        <Users className="text-supernova mr-2" size={20} />
                         <span className="text-white-knight font-jakarta font-semibold text-sm md:text-base">
                           {selectedCandidates.size} of {currentJobCandidates.length} candidates selected
                         </span>
@@ -1154,7 +1156,7 @@ export const CandidatesView: React.FC = () => {
                     <Card key={candidate.id} className="hover:shadow-2xl transition-all duration-300 border-l-4 border-l-supernova">
                       <CardContent className="p-4 md:p-8">
                         {/* Main candidate info row - always visible */}
-                        <div className={`flex flex-col md:grid ${userProfile?.role === 'sourcer' ? 'md:grid-cols-7' : 'md:grid-cols-6'} gap-4 md:gap-6 items-start md:items-center mb-4 md:mb-6`}>
+                        <div className={`flex flex-col md:grid ${userProfile?.role === 'sourcer' ? 'md:grid-cols-7' : 'md:grid-cols-6'} gap-4 md:gap-6 items-start md:items-center`}>
                           {/* AI Match Score - Only visible to sourcers */}
                           {userProfile?.role === 'sourcer' && (
                             <div className="md:col-span-1 flex items-center justify-start md:justify-center w-full md:h-full">
@@ -1177,12 +1179,25 @@ export const CandidatesView: React.FC = () => {
                             </div>
                           )}
                           {/* Name and basic info */}
-                          <div className="md:col-span-2 flex items-center w-full md:h-full">
-                            <h4 className="text-2xl md:text-3xl font-anton text-white-knight mb-0 uppercase tracking-wide">
+                          <div className="md:col-span-2 flex flex-col justify-center w-full md:h-full">
+                            <h4 className="text-2xl md:text-3xl font-anton text-white-knight m-0 uppercase tracking-wide leading-tight">
                               {candidate.firstName === 'N/A' && candidate.lastName === 'N/A' 
                                 ? 'N/A' 
                                 : `${candidate.firstName} ${candidate.lastName}`}
                             </h4>
+                            {(candidate.headline || candidate.experience?.[0]?.title) && (
+                              <p className="text-sm text-guardian font-jakarta mt-1">
+                                {candidate.headline || candidate.experience?.[0]?.title}
+                                {candidate.experience && candidate.experience.length > 0 && (() => {
+                                  const years = calculateYearsOfExperience(candidate.experience);
+                                  return years > 0 ? (
+                                    <span className="text-guardian/60 ml-2">
+                                      • {years} {years === 1 ? 'year' : 'years'} exp
+                                    </span>
+                                  ) : null;
+                                })()}
+                              </p>
+                            )}
                           </div>
                           {/* Spacer to push controls to the right */}
                           <div className="hidden md:block md:col-span-3"></div>
@@ -1300,7 +1315,10 @@ export const CandidatesView: React.FC = () => {
                                       <p className="text-sm font-jakarta font-semibold text-green-400 uppercase tracking-wide">Recent Experience</p>
                                     </div>
                                     <div className="space-y-2">
-                                      {candidate.experience.slice(0, 3).map((exp, index) => (
+                                      {(expandedExperience.has(candidate.id) 
+                                        ? candidate.experience 
+                                        : candidate.experience.slice(0, 3)
+                                      ).map((exp, index) => (
                                         <div key={index} className="text-sm bg-green-500/5 border border-green-500/20 p-3 rounded-lg">
                                           <p className="text-white-knight font-jakarta font-semibold">{exp.title}</p>
                                           <p className="text-guardian font-jakarta">{exp.company}</p>
@@ -1310,11 +1328,26 @@ export const CandidatesView: React.FC = () => {
                                         </div>
                                       ))}
                                       {candidate.experience.length > 3 && (
-                                        <div className="text-center">
-                                          <span className="text-xs text-guardian/60 font-jakarta">
-                                            +{candidate.experience.length - 3} more positions
+                                        <button
+                                          onClick={() => {
+                                            setExpandedExperience(prev => {
+                                              const newSet = new Set(prev);
+                                              if (newSet.has(candidate.id)) {
+                                                newSet.delete(candidate.id);
+                                              } else {
+                                                newSet.add(candidate.id);
+                                              }
+                                              return newSet;
+                                            });
+                                          }}
+                                          className="w-full text-center py-2 hover:bg-green-500/10 rounded-lg transition-colors"
+                                        >
+                                          <span className="text-xs text-supernova font-jakarta hover:underline">
+                                            {expandedExperience.has(candidate.id) 
+                                              ? 'Show less' 
+                                              : `+${candidate.experience.length - 3} more positions`}
                                           </span>
-                                        </div>
+                                        </button>
                                       )}
                                     </div>
                                   </div>
@@ -1343,18 +1376,36 @@ export const CandidatesView: React.FC = () => {
                                       <p className="text-sm font-jakarta font-semibold text-purple-400 uppercase tracking-wide">Education</p>
                                     </div>
                                     <div className="space-y-1">
-                                      {candidate.education.slice(0, 2).map((edu, index) => (
+                                      {(expandedEducation.has(candidate.id) 
+                                        ? candidate.education 
+                                        : candidate.education.slice(0, 2)
+                                      ).map((edu, index) => (
                                         <div key={index} className="text-sm bg-purple-500/5 border border-purple-500/20 p-3 rounded-lg">
                                           <p className="text-white-knight font-jakarta font-semibold">{edu.degree}</p>
                                           <p className="text-guardian font-jakarta">{edu.school}</p>
                                         </div>
                                       ))}
                                       {candidate.education.length > 2 && (
-                                        <div className="text-center">
-                                          <span className="text-xs text-guardian/60 font-jakarta">
-                                            +{candidate.education.length - 2} more
+                                        <button
+                                          onClick={() => {
+                                            setExpandedEducation(prev => {
+                                              const newSet = new Set(prev);
+                                              if (newSet.has(candidate.id)) {
+                                                newSet.delete(candidate.id);
+                                              } else {
+                                                newSet.add(candidate.id);
+                                              }
+                                              return newSet;
+                                            });
+                                          }}
+                                          className="w-full text-center py-2 hover:bg-purple-500/10 rounded-lg transition-colors"
+                                        >
+                                          <span className="text-xs text-supernova font-jakarta hover:underline">
+                                            {expandedEducation.has(candidate.id) 
+                                              ? 'Show less' 
+                                              : `+${candidate.education.length - 2} more`}
                                           </span>
-                                        </div>
+                                        </button>
                                       )}
                                     </div>
                                   </div>
