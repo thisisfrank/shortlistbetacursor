@@ -105,10 +105,9 @@ export const ViewCandidatesModal: React.FC<ViewCandidatesModalProps> = ({ job, o
                 <table className="w-full table-fixed">
                   <thead>
                     <tr className="border-b border-guardian/20">
-                      <th className="text-left py-3 px-4 text-sm font-anton font-normal text-guardian uppercase tracking-wide w-[40%]">Name</th>
-                      <th className="text-center py-3 px-4 text-sm font-anton font-normal text-guardian uppercase tracking-wide w-[20%]">Score</th>
-                      <th className="text-center py-3 px-4 text-sm font-anton font-normal text-guardian uppercase tracking-wide w-[20%]">LinkedIn</th>
-                      <th className="text-center py-3 px-4 text-sm font-anton font-normal text-guardian uppercase tracking-wide w-[20%]">Actions</th>
+                      <th className="text-left py-3 px-4 text-sm font-anton font-normal text-guardian uppercase tracking-wide w-[50%]">Name</th>
+                      <th className="text-center py-3 px-4 text-sm font-anton font-normal text-guardian uppercase tracking-wide w-[25%]">LinkedIn</th>
+                      <th className="text-center py-3 px-4 text-sm font-anton font-normal text-guardian uppercase tracking-wide w-[25%]">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -118,9 +117,6 @@ export const ViewCandidatesModal: React.FC<ViewCandidatesModalProps> = ({ job, o
                           <span className="text-white-knight font-jakarta text-sm">
                             {candidate.firstName} {candidate.lastName}
                           </span>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span className="text-green-400 font-anton text-lg">85%</span>
                         </td>
                         <td className="py-3 px-4 text-center">
                           <a

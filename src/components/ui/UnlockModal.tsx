@@ -155,7 +155,7 @@ export const UnlockModal: React.FC<UnlockModalProps> = ({
                     Need {requiredPoints - userPoints} more XP
                   </p>
                   <p className="text-guardian text-sm mt-1">
-                    Create jobs (+50 XP) • Daily bonus (+10 XP/day)
+                    +50 XP per job created • +10 XP automatically each day
                   </p>
                 </div>
               )}

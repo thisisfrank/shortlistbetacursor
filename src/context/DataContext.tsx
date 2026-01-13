@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { Job, Candidate, Tier, CreditTransaction, UserProfile, Shortlist, ShortlistCandidate, MarketplaceUnlock } from '../types';
-import { scrapeLinkedInProfiles } from '../services/scrapingDogService';
+import { scrapeLinkedInProfiles } from '../services/apifyService';
 import { generateJobMatchScore } from '../services/anthropicService';
 import { webhookService } from '../services/webhookService';
 import { useAuth } from './AuthContext';
@@ -1181,17 +1181,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
 
   // NEW: Process candidates for review WITHOUT saving to database
   const processCandidatesForReview = async (jobId: string, linkedinUrls: string[]) => {
-    // 🚫 SCRAPING DISABLED - Return immediately
-    console.log('🚫 Candidate scraping is currently disabled');
-    return {
-      success: false,
-      processedCandidates: [],
-      rejectedCandidates: [],
-      failedScrapes: linkedinUrls.length,
-      error: '🚫 Candidate scraping is currently disabled. Please contact support if you need to add candidates.'
-    };
-    
-    /* DISABLED - Keep for future
     try {
       console.log(`\n🎯 PROCESSING ${linkedinUrls.length} candidates for REVIEW (not saving to DB yet)...`);
       
@@ -1440,7 +1429,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
         error: error instanceof Error ? error.message : 'Failed to process candidates'
       };
     }
-    */
   };
 
   // NEW: Save finalized candidates to database and complete job

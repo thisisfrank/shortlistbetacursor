@@ -1,16 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Job, Candidate } from '../../types';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/Button';
-import { X, AlertCircle, Plus, Trash2, ExternalLink, Loader, Zap, HelpCircle, Check, CheckCircle } from 'lucide-react';
+import { X, AlertCircle, Trash2, ExternalLink, Loader, Zap, HelpCircle, CheckCircle } from 'lucide-react';
 import {
   loadDraft,
   saveDraft,
   clearDraft,
-  addToDraft,
   removeCandidateFromDraft,
-  DraftCandidate,
   CandidateDraft
 } from '../../utils/candidateDraftStorage';
 
@@ -27,7 +25,7 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
   onClose,
   onComplete
 }) => {
-  const { saveFinalizedCandidates, getCandidatesByJob, deleteCandidate } = useData();
+  const { saveFinalizedCandidates, getCandidatesByJob, deleteCandidate, processCandidatesForReview } = useData();
   const { userProfile } = useAuth();
   
   // UI State
@@ -117,7 +115,7 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
     });
   };
 
-  // NEW: Upload candidates directly from CSV (NO SCRAPING)
+  // Process candidates: scrape LinkedIn profiles and score them
   const handleUploadCandidates = async () => {
     if (!userProfile) {
       setError('User information is still loading. Please wait and try again.');
@@ -132,6 +130,7 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
     setSuccessMessage('');
     setError('');
     setIsProcessing(true);
+    setStage('processing');
     
     try {
       // Parse CSV to get LinkedIn URLs
@@ -140,56 +139,53 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
       if (validUrls.length === 0) {
         setError('No valid LinkedIn URLs found in CSV file');
         setIsProcessing(false);
+        setStage('input');
         return;
       }
       
-      console.log(`📤 Uploading ${validUrls.length} candidates directly (no scraping)...`);
+      console.log(`📡 Scraping ${validUrls.length} LinkedIn profiles...`);
       
-      // Create basic candidate objects from URLs
-      const candidatesToSave = validUrls.map(url => {
-        // Extract name from LinkedIn URL if possible
-        const urlParts = url.split('/in/')[1]?.split('/')[0] || 'unknown';
-        const nameParts = urlParts.replace(/-/g, ' ').split(' ');
-        const firstName = nameParts[0] || 'Unknown';
-        const lastName = nameParts.slice(1).join(' ') || 'Candidate';
-        
-        return {
-          jobId: job.id,
-          firstName,
-          lastName,
-          linkedinUrl: url,
-          headline: 'LinkedIn Profile',
-          location: 'N/A',
-          experience: [],
-          education: [],
-          skills: [],
-          summary: `Candidate profile: ${url}`
-        };
-      });
+      // Call the scraping function
+      const result = await processCandidatesForReview(job.id, validUrls);
       
-      // Save directly to database using saveFinalizedCandidates
-      const saveResult = await saveFinalizedCandidates(job.id, candidatesToSave);
-      
-      if (!saveResult.success) {
-        setError(saveResult.error || 'Failed to save candidates. Please try again.');
+      if (!result.success) {
+        setError(result.error || 'Failed to process candidates. Please try again.');
         setIsProcessing(false);
+        setStage('input');
         return;
       }
       
-      console.log(`✅ Successfully uploaded ${saveResult.savedCount} candidates`);
+      console.log(`✅ Scraping complete: ${result.processedCandidates.length} accepted, ${result.rejectedCandidates.length} rejected`);
       
-      // Refresh saved candidates list
-      const updated = getCandidatesByJob(job.id);
-      setSavedCandidates(updated);
+      // Create draft with scraped candidates
+      const newDraft: CandidateDraft = {
+        jobId: job.id,
+        processedCandidates: result.processedCandidates.map((pc, index) => ({
+          tempId: `temp-${Date.now()}-${index}`,
+          candidate: pc.candidate,
+          score: pc.score,
+          reasoning: pc.reasoning,
+          linkedinUrl: pc.linkedinUrl
+        })),
+        rejectedCandidates: result.rejectedCandidates,
+        failedScrapes: result.failedScrapes,
+        timestamp: Date.now(),
+        lastSaved: Date.now()
+      };
       
-      setSuccessMessage(`✅ ${saveResult.savedCount} candidate${saveResult.savedCount === 1 ? '' : 's'} uploaded successfully!`);
+      setDraft(newDraft);
+      saveDraft(newDraft);
+      
+      setSuccessMessage(`✅ ${result.processedCandidates.length} candidate${result.processedCandidates.length === 1 ? '' : 's'} scraped and ready for review!`);
       setCsvFile(null);
       setIsProcessing(false);
+      setStage('review');
       
     } catch (error) {
-      console.error('Error uploading candidates:', error);
-      setError(error instanceof Error ? error.message : 'Failed to upload candidates. Please try again.');
+      console.error('Error processing candidates:', error);
+      setError(error instanceof Error ? error.message : 'Failed to process candidates. Please try again.');
       setIsProcessing(false);
+      setStage('input');
     }
   };
 
@@ -354,6 +350,20 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
             </div>
           </div>
 
+          {/* STAGE: PROCESSING */}
+          {stage === 'processing' && (
+            <div className="flex flex-col items-center justify-center py-16">
+              <Loader className="animate-spin text-supernova mb-6" size={48} />
+              <h5 className="text-xl font-anton text-white-knight uppercase tracking-wide mb-2">
+                Scraping LinkedIn Profiles
+              </h5>
+              <p className="text-guardian font-jakarta text-center max-w-md">
+                This may take a few minutes depending on the number of profiles.
+                Please don't close this window.
+              </p>
+            </div>
+          )}
+
           {/* STAGE: INPUT */}
           {stage === 'input' && (
             <>
@@ -365,23 +375,8 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
                     </h5>
                     <div className="relative group">
                       <HelpCircle size={18} className="text-guardian hover:text-supernova cursor-help transition-colors" />
-                      <div className="absolute left-0 top-8 hidden group-hover:block z-50 w-80 bg-shadowforce-light border border-supernova/30 rounded-lg p-4 shadow-2xl">
-                        <h6 className="font-jakarta font-semibold text-supernova text-sm mb-2">CSV Format Requirements:</h6>
-                        <ul className="text-guardian font-jakarta text-xs space-y-1 mb-3">
-                          <li>• First column should contain LinkedIn URLs</li>
-                          <li>• Header row is optional (will be automatically detected)</li>
-                          <li>• Maximum {MAX_CANDIDATES_PER_SUBMISSION} URLs per file</li>
-                          <li>• File size limit: 5MB</li>
-                          <li>• Candidates will be uploaded directly (no profile scraping)</li>
-                        </ul>
-                        <div className="text-xs text-guardian/80">
-                          <div className="text-sm text-supernova font-jakarta font-semibold mb-1">Example format:</div>
-                          <code className="text-xs text-white-knight font-jakarta block bg-shadowforce p-2 rounded">
-                            linkedin_url<br/>
-                            https://linkedin.com/in/candidate1<br/>
-                            https://linkedin.com/in/candidate2
-                          </code>
-                        </div>
+                      <div className="absolute left-6 bottom-full mb-2 hidden group-hover:block z-[100] w-48 bg-shadowforce border border-supernova rounded-lg p-2 shadow-2xl">
+                        <p className="text-white-knight font-jakarta text-xs">Column header optional, 200 URLs max, 5 MB max</p>
                       </div>
                     </div>
                   </div>
@@ -426,12 +421,12 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
                 {isProcessing ? (
                   <>
                     <Loader className="animate-spin" size={20} />
-                    UPLOADING...
+                    SCRAPING PROFILES...
                   </>
                 ) : (
                   <>
-                    <Plus size={20} />
-                    UPLOAD CANDIDATES
+                    <Zap size={20} />
+                    SCRAPE & PROCESS CANDIDATES
                   </>
                 )}
               </Button>
@@ -453,10 +448,9 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
                     <table className="w-full table-fixed">
                       <thead>
                         <tr className="border-b border-guardian/20">
-                          <th className="text-left py-3 px-4 text-sm font-anton font-normal text-guardian uppercase tracking-wide w-[40%]">Name</th>
-                          <th className="text-center py-3 px-4 text-sm font-anton font-normal text-guardian uppercase tracking-wide w-[20%]">Score</th>
-                          <th className="text-center py-3 px-4 text-sm font-anton font-normal text-guardian uppercase tracking-wide w-[20%]">LinkedIn</th>
-                          <th className="text-center py-3 px-4 text-sm font-anton font-normal text-guardian uppercase tracking-wide w-[20%]">Actions</th>
+                          <th className="text-left py-3 px-4 text-sm font-anton font-normal text-guardian uppercase tracking-wide w-[50%]">Name</th>
+                          <th className="text-center py-3 px-4 text-sm font-anton font-normal text-guardian uppercase tracking-wide w-[25%]">LinkedIn</th>
+                          <th className="text-center py-3 px-4 text-sm font-anton font-normal text-guardian uppercase tracking-wide w-[25%]">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -466,19 +460,6 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
                               <span className="text-white-knight font-jakarta text-sm">
                                 {dc.candidate.firstName} {dc.candidate.lastName}
                               </span>
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              <div className="group cursor-help inline-block">
-                                <span className="text-green-400 font-anton text-lg">{dc.score}%</span>
-                                {dc.reasoning && (
-                                  <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 hidden group-hover:block z-[9999] w-[32rem] max-w-[90vw] bg-shadowforce-light border-2 border-supernova/50 rounded-lg p-6 shadow-2xl pointer-events-none">
-                                    <h6 className="font-jakarta font-semibold text-supernova text-base mb-3">Match Score Reasoning:</h6>
-                                    <p className="text-guardian font-jakarta text-sm leading-relaxed whitespace-pre-wrap break-words">
-                                      {dc.reasoning}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
                             </td>
                             <td className="py-3 px-4 text-center">
                               <a 
@@ -658,6 +639,13 @@ export const AddCandidatesModal: React.FC<AddCandidatesModalProps> = ({
                 </Button>
               </div>
             </>
+          )}
+
+          {/* Success Messages */}
+          {successMessage && (
+            <div className="mt-6 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+              <p className="text-green-400 font-jakarta text-sm">{successMessage}</p>
+            </div>
           )}
 
           {/* Error Messages */}

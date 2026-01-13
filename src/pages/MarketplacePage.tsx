@@ -270,7 +270,7 @@ export const MarketplacePage: React.FC = () => {
             Unlock premium hiring tools and resources
           </p>
           <p className="text-xs md:text-sm text-guardian/80 mb-4">
-            Earn XP: Create jobs (+50) • Daily bonus (+10/day)
+            Your XP grows: +50 per job created • +10 automatically each day
           </p>
           <div className="flex justify-center gap-4">
             <div className="inline-flex items-center gap-2 bg-supernova/20 border border-supernova px-4 py-2 rounded-lg">

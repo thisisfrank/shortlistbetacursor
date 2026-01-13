@@ -379,7 +379,7 @@ const SourcerDashboard: React.FC = () => {
         )}
         
         {/* Add Candidates Modal */}
-        {selectedJob && !loading && modalType === 'add' && (
+        {selectedJob && modalType === 'add' && (
           <AddCandidatesModal
             job={selectedJob}
             onClose={handleCloseModal}

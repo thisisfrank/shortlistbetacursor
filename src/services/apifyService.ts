@@ -1,19 +1,8 @@
 import { generateCandidateSummary } from './anthropicService';
 
-const APIFY_API_TOKEN = import.meta.env.VITE_APIFY_API_TOKEN;
-
-// Debug logging for environment variables
-console.log('🔧 Apify Debug Info:', {
-  hasToken: !!APIFY_API_TOKEN,
-  tokenLength: APIFY_API_TOKEN?.length || 0,
-  tokenPreview: APIFY_API_TOKEN ? `${APIFY_API_TOKEN.substring(0, 15)}...` : 'undefined',
-  allEnvVars: Object.keys(import.meta.env).filter(key => key.startsWith('VITE_'))
-});
-
-if (!APIFY_API_TOKEN) {
-  console.warn('⚠️ VITE_APIFY_API_TOKEN not configured. Apify LinkedIn scraping will not work.');
-}
-const APIFY_ACTOR_ID = '2SyF0bVxmgGr8IVCZ';
+// Supabase configuration for edge function calls
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export interface LinkedInProfile {
   firstName: string;
@@ -45,7 +34,7 @@ const extractCompanyName = (subtitle: string): string => {
   if (!subtitle) return 'N/A';
   
   // The subtitle often contains "Company Name · Employment Type"
-  // We want to extract just the company name=
+  // We want to extract just the company name
   const parts = subtitle.split('·');
   return parts[0]?.trim() || subtitle.trim();
 };
@@ -101,34 +90,32 @@ const extractName = (fullName: string): { firstName: string; lastName: string } 
 
 export const scrapeLinkedInProfiles = async (linkedinUrls: string[]): Promise<ApifyScrapingResult> => {
   try {
-    console.log(`🔍 Attempting to scrape ${linkedinUrls.length} LinkedIn profiles:`);
+    console.log(`🔍 Attempting to scrape ${linkedinUrls.length} LinkedIn profiles via Apify edge function:`);
     linkedinUrls.forEach((url, index) => {
       console.log(`  ${index + 1}. ${url}`);
     });
     
-    // Prepare the input for the Apify actor
-    const input = {
-      profileUrls: linkedinUrls
-    };
-
-    // Make the API call to Apify using the run-sync endpoint
-    const response = await fetch(
-      `https://api.apify.com/v2/acts/${APIFY_ACTOR_ID}/run-sync-get-dataset-items?token=${APIFY_API_TOKEN}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(input),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Apify API error: ${response.status} - ${errorText}`);
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Supabase configuration missing');
     }
 
-    const data = await response.json();
+    // Call secure edge function instead of Apify directly
+    const response = await fetch(`${supabaseUrl}/functions/v1/apify-proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({ linkedinUrls }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Apify proxy error: ${response.status} - ${errorData.error || 'Unknown error'}`);
+    }
+
+    const responseData = await response.json();
+    const data = responseData.profiles || [];
     
     console.log(`✅ Apify returned ${data.length} profiles out of ${linkedinUrls.length} requested`);
     
@@ -220,33 +207,29 @@ export const testApifyResponse = async (linkedinUrl: string): Promise<any> => {
   try {
     console.log('Testing Apify with URL:', linkedinUrl);
     
-    const input = {
-      profileUrls: [linkedinUrl]
-    };
-
-    console.log('Sending input to Apify:', input);
-
-    const response = await fetch(
-      `https://api.apify.com/v2/acts/${APIFY_ACTOR_ID}/run-sync-get-dataset-items?token=${APIFY_API_TOKEN}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(input),
-      }
-    );
-
-    console.log('Apify response status:', response.status);
-    console.log('Apify response headers:', Object.fromEntries(response.headers.entries()));
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Apify error response:', errorText);
-      throw new Error(`Apify API error: ${response.status} - ${errorText}`);
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Supabase configuration missing');
     }
 
-    const data = await response.json();
+    // Call secure edge function
+    const response = await fetch(`${supabaseUrl}/functions/v1/apify-proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({ linkedinUrls: [linkedinUrl] }),
+    });
+
+    console.log('Apify proxy response status:', response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Apify proxy error: ${response.status} - ${errorData.error || 'Unknown error'}`);
+    }
+
+    const responseData = await response.json();
+    const data = responseData.profiles || [];
     console.log('Raw Apify response:', data);
     
     // Transform according to template for testing
